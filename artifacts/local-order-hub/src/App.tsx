@@ -31,13 +31,14 @@ import AdminOverview from "@/pages/dashboard/admin/overview";
 import AdminBusinesses from "@/pages/dashboard/admin/businesses";
 import AdminOrders from "@/pages/dashboard/admin/orders";
 import AdminUsers from "@/pages/dashboard/admin/users";
+import Setup from "@/pages/setup";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
 
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const clerkProxyUrl = `${window.location.origin}/api/__clerk`;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function stripBase(path: string): string {
@@ -122,7 +123,7 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-const PUBLIC_PATHS = ["/", "/businesses", "/sign-in", "/sign-up"];
+const PUBLIC_PATHS = ["/", "/businesses", "/sign-in", "/sign-up", "/setup"];
 
 function PostSignInRedirector() {
   const { isSignedIn, isLoaded } = useUser();
@@ -210,6 +211,7 @@ function ClerkProviderWithRoutes() {
 
                 <Route path="/sign-in/*?" component={SignInPage} />
                 <Route path="/sign-up/*?" component={SignUpPage} />
+                <Route path="/setup" component={Setup} />
 
                 {/* Business owner dashboard */}
                 <ProtectedRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />

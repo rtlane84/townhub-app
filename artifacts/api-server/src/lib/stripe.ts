@@ -3,7 +3,7 @@ import Stripe from "stripe";
 const stripeKey = process.env.STRIPE_SECRET_KEY;
 
 export const stripe = stripeKey
-  ? new Stripe(stripeKey, { apiVersion: "2025-05-28.basil" })
+  ? new Stripe(stripeKey, { apiVersion: "2026-05-27.dahlia" })
   : null;
 
 export const isMockMode = !stripeKey;
