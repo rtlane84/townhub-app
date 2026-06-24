@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useUser, SignInButton } from "@clerk/react";
+import { useUser, useAuth, SignInButton } from "@clerk/react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export default function Setup() {
   const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -21,7 +22,11 @@ export default function Setup() {
   async function claimAdmin() {
     setStatus("loading");
     try {
-      const res = await fetch("/api/admin/bootstrap", { method: "POST" });
+      const token = await getToken();
+      const res = await fetch("/api/admin/bootstrap", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const body = await res.json();
       if (!res.ok) {
         setStatus("error");

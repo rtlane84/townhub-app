@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useUser, SignInButton } from "@clerk/react";
+import { useUser, useAuth, SignInButton } from "@clerk/react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ function slugPreview(name: string) {
 
 export default function ListYourBusiness() {
   const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
@@ -68,9 +69,13 @@ export default function ListYourBusiness() {
     setSubmitting(true);
     setError("");
     try {
+      const token = await getToken();
       const res = await fetch("/api/businesses/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           name: form.name.trim(),
           type: form.type,
