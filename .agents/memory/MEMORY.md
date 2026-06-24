@@ -1,1 +1,2 @@
 - [Clerk proxy URL must be env var](clerk-proxy-url.md) — hardcoding `${window.location.origin}/api/__clerk` breaks dev; must be `import.meta.env.VITE_CLERK_PROXY_URL`
+- [Replit iframe Clerk auth](replit-iframe-clerk-auth.md) — Clerk SameSite cookies are blocked in the preview iframe; use ClerkApiTokenBridge (Bearer token) to fix 401s.

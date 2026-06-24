@@ -1,29 +1,48 @@
 import { Link, useLocation } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
-import { ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle, Wrench } from "lucide-react";
+import {
+  ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
+  Wrench, Menu, ExternalLink,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
 import { Badge } from "./ui/badge";
 import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useUser();
   const { itemCount } = useCart();
   const [location] = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
 
   const isAdmin = me?.role === "ADMIN";
   const isBusinessOwner = me?.role === "BUSINESS_OWNER";
+  const isCustomer = isLoaded && isSignedIn && !isAdmin && !isBusinessOwner;
+  const isLoggedOut = isLoaded && !isSignedIn;
 
   const dashboardHref = isAdmin ? "/dashboard/admin" : "/dashboard/business";
-  const dashboardLabel = isAdmin ? "Admin" : "Business Hub";
+  const dashboardLabel = isAdmin ? "Admin Dashboard" : "Business Hub";
   const DashboardIcon = isAdmin ? ShieldCheck : LayoutDashboard;
+
+  function navLinkClass(href: string) {
+    const active = location === href || (href !== "/" && location.startsWith(href + "/"));
+    return cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+      active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted");
+  }
+
+  function close() { setMobileOpen(false); }
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+
+          {/* Left: logo + desktop nav */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
               <Store className="h-6 w-6 text-primary" />
@@ -32,54 +51,37 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-              <Link
-                href="/businesses"
-                className={`transition-colors hover:text-foreground ${location === "/businesses" ? "text-foreground" : ""}`}
-              >
+            {/* Desktop nav */}
+            <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-muted-foreground">
+              <Link href="/businesses" className={navLinkClass("/businesses")}>
                 All Businesses
               </Link>
 
-              {isLoaded && isSignedIn && (isAdmin || isBusinessOwner) && (
-                <Link
-                  href={dashboardHref}
-                  className={`flex items-center gap-1.5 transition-colors hover:text-foreground ${
-                    location.startsWith("/dashboard") ? "text-foreground" : ""
-                  }`}
-                >
+              {isLoaded && (isAdmin || isBusinessOwner) && (
+                <Link href={dashboardHref} className={navLinkClass("/dashboard")}>
                   <DashboardIcon className="h-3.5 w-3.5" />
-                  {dashboardLabel}
+                  {isAdmin ? "Admin" : "Business Hub"}
                 </Link>
               )}
 
-              {isLoaded && !isAdmin && !isBusinessOwner && (
-                <Link
-                  href="/list-your-business"
-                  className={`flex items-center gap-1.5 transition-colors hover:text-foreground ${
-                    location === "/list-your-business" ? "text-foreground" : ""
-                  }`}
-                >
+              {(isLoggedOut || isCustomer) && (
+                <Link href="/list-your-business" className={navLinkClass("/list-your-business")}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   List Your Business
                 </Link>
               )}
 
-              {/* Setup link — visible to anyone not yet signed in or without a role */}
-              {isLoaded && !isAdmin && !isBusinessOwner && (
-                <Link
-                  href="/setup"
-                  className={`flex items-center gap-1.5 transition-colors hover:text-foreground ${
-                    location === "/setup" ? "text-foreground" : ""
-                  }`}
-                >
+              {(isLoggedOut || isCustomer) && (
+                <Link href="/setup" className={navLinkClass("/setup")}>
                   <Wrench className="h-3.5 w-3.5" />
-                  Setup
+                  Admin Setup
                 </Link>
               )}
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Right: cart + auth + mobile menu */}
+          <div className="flex items-center gap-2">
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative text-foreground">
                 <ShoppingBag className="h-5 w-5" />
@@ -94,22 +96,93 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {isLoaded && !isSignedIn && (
               <SignInButton mode="modal">
-                <Button>Sign In</Button>
+                <Button size="sm">Sign In</Button>
               </SignInButton>
             )}
 
-            {isLoaded && isSignedIn && (
-              <div className="flex items-center gap-2">
-                {(isAdmin || isBusinessOwner) && (
-                  <Link href={dashboardHref} className="sm:hidden">
-                    <Button variant="outline" size="icon">
-                      <DashboardIcon className="h-4 w-4" />
-                    </Button>
+            {isLoaded && isSignedIn && <UserButton />}
+
+            {/* Mobile hamburger — shows nav on small screens */}
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 p-0">
+                <SheetHeader className="p-6 pb-4 border-b">
+                  <SheetTitle className="font-serif text-left flex items-center gap-2">
+                    <Store className="h-5 w-5 text-primary" />
+                    LocalOrderHub
+                  </SheetTitle>
+                </SheetHeader>
+
+                <nav className="p-4 space-y-1">
+                  <Link href="/businesses" onClick={close}>
+                    <span className={navLinkClass("/businesses")}>
+                      <Store className="h-4 w-4" /> All Businesses
+                    </span>
                   </Link>
+
+                  {isLoaded && (isAdmin || isBusinessOwner) && (
+                    <Link href={dashboardHref} onClick={close}>
+                      <span className={navLinkClass("/dashboard")}>
+                        <DashboardIcon className="h-4 w-4" /> {dashboardLabel}
+                      </span>
+                    </Link>
+                  )}
+
+                  {(isLoggedOut || isCustomer) && (
+                    <Link href="/list-your-business" onClick={close}>
+                      <span className={navLinkClass("/list-your-business")}>
+                        <PlusCircle className="h-4 w-4" /> List Your Business
+                      </span>
+                    </Link>
+                  )}
+
+                  {(isLoggedOut || isCustomer) && (
+                    <Link href="/setup" onClick={close}>
+                      <span className={navLinkClass("/setup")}>
+                        <Wrench className="h-4 w-4" /> Admin Setup
+                        <span className="ml-auto text-xs text-muted-foreground">First-time</span>
+                      </span>
+                    </Link>
+                  )}
+
+                  {!isSignedIn && isLoaded && (
+                    <div className="pt-3 border-t">
+                      <SignInButton mode="modal">
+                        <Button className="w-full" onClick={close}>Sign In</Button>
+                      </SignInButton>
+                    </div>
+                  )}
+
+                  {isSignedIn && isCustomer && (
+                    <div className="pt-3 border-t">
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
+                        Signed in as customer. Visit <strong>Admin Setup</strong> to claim admin access, or <strong>List Your Business</strong> to become a business owner.
+                      </p>
+                    </div>
+                  )}
+                </nav>
+
+                {(isLoggedOut || isCustomer) && (
+                  <div className="absolute bottom-6 left-4 right-4">
+                    <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
+                      <p className="text-xs font-semibold text-primary">First time here?</p>
+                      <p className="text-xs text-muted-foreground">Sign in → go to Admin Setup → claim admin access to manage the platform.</p>
+                      <Link href="/setup" onClick={close}>
+                        <Button size="sm" className="w-full mt-1">
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                          Go to Admin Setup
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 )}
-                <UserButton />
-              </div>
-            )}
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>

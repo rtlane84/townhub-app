@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useUser } from "@clerk/react";
-import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, setAuthTokenGetter } from "@workspace/api-client-react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -131,6 +131,29 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+/**
+ * Wires the Clerk session JWT as a Bearer token for all API calls.
+ *
+ * In the Replit preview the app runs inside an iframe whose top-level origin is
+ * replit.com, which makes janeway.replit.dev a cross-site context. Browsers
+ * apply SameSite=Lax to Clerk's session cookies, so they are silently stripped
+ * from every API request.  Sending the JWT as Authorization: Bearer sidesteps
+ * the cookie restriction in both dev (iframe) and prod (published domain).
+ */
+function ClerkApiTokenBridge() {
+  const { getToken, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      setAuthTokenGetter(() => getToken());
+    } else {
+      setAuthTokenGetter(null);
+    }
+  }, [isSignedIn, getToken]);
+
+  return null;
+}
+
 const PUBLIC_PATHS = ["/", "/businesses", "/sign-in", "/sign-up", "/setup", "/list-your-business"];
 
 function PostSignInRedirector() {
@@ -211,6 +234,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <ClerkApiTokenBridge />
         <PostSignInRedirector />
         <PlatformThemeProvider>
         <CartProvider>
