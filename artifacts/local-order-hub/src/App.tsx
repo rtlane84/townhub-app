@@ -31,6 +31,7 @@ import BusinessBilling from "@/pages/dashboard/business/billing";
 import BusinessLocations from "@/pages/dashboard/business/locations";
 
 import AdminOverview from "@/pages/dashboard/admin/overview";
+import AdminApplications from "@/pages/dashboard/admin/applications";
 import AdminBusinesses from "@/pages/dashboard/admin/businesses";
 import AdminOrders from "@/pages/dashboard/admin/orders";
 import AdminUsers from "@/pages/dashboard/admin/users";
@@ -264,6 +265,7 @@ function ClerkProviderWithRoutes() {
                 <ProtectedRoute path="/dashboard/business" component={BusinessOverview} />
 
                 {/* Admin dashboard */}
+                <ProtectedRoute path="/dashboard/admin/applications" component={AdminApplications} />
                 <ProtectedRoute path="/dashboard/admin/businesses" component={AdminBusinesses} />
                 <ProtectedRoute path="/dashboard/admin/orders" component={AdminOrders} />
                 <ProtectedRoute path="/dashboard/admin/users" component={AdminUsers} />

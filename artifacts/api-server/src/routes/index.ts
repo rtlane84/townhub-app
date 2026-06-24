@@ -8,6 +8,7 @@ import adminRouter from "./admin";
 import eventsRouter from "./events";
 import highlightsRouter from "./highlights";
 import subscriptionsRouter from "./subscriptions";
+import applicationsRouter from "./applications";
 import foodTruckRouter from "./food-truck";
 import platformRouter from "./platform";
 
@@ -18,6 +19,7 @@ router.use(authRouter);
 router.use(eventsRouter);
 router.use(highlightsRouter);
 router.use(subscriptionsRouter);
+router.use(applicationsRouter);
 router.use(foodTruckRouter);
 router.use(platformRouter);
 router.use(businessesRouter);

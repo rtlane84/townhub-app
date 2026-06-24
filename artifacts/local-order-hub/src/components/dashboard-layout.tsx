@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -107,6 +107,7 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
 
   const navItems: NavItem[] = [
     { href: "/dashboard/admin", label: "Overview", icon: LayoutDashboard },
+    { href: "/dashboard/admin/applications", label: "Applications", icon: ClipboardList },
     { href: "/dashboard/admin/businesses", label: "Businesses", icon: Store },
     { href: "/dashboard/admin/orders", label: "Orders", icon: ShoppingBag },
     { href: "/dashboard/admin/users", label: "Users", icon: Users },

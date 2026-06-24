@@ -7,3 +7,4 @@ export * from "./highlights";
 export * from "./subscriptions";
 export * from "./notifications";
 export * from "./platform";
+export * from "./applications";

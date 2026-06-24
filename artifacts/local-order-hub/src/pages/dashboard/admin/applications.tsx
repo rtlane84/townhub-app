@@ -1,0 +1,315 @@
+import { useState } from "react";
+import { useAuth } from "@clerk/react";
+import { AdminDashboardLayout } from "@/components/dashboard-layout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { CheckCircle2, XCircle, Building2, User, Calendar, Layers, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface Application {
+  id: number;
+  userId: string;
+  userEmail: string | null;
+  name: string;
+  type: string;
+  description: string | null;
+  address: string | null;
+  phone: string | null;
+  hours: string | null;
+  planId: number | null;
+  planName: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  businessId: number | null;
+  createdAt: string;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  APPROVED: "bg-green-100 text-green-800 border-green-200",
+  REJECTED: "bg-red-100 text-red-800 border-red-200",
+};
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+  });
+}
+
+function useApplications(getToken: () => Promise<string | null>) {
+  return useQuery<Application[]>({
+    queryKey: ["admin", "applications"],
+    queryFn: async () => {
+      const token = await getToken();
+      const res = await fetch("/api/admin/applications", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Failed to load applications");
+      return res.json() as Promise<Application[]>;
+    },
+  });
+}
+
+export default function AdminApplications() {
+  const { getToken } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [filter, setFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
+  const [rejectDialog, setRejectDialog] = useState<{ id: number; name: string } | null>(null);
+  const [rejectNote, setRejectNote] = useState("");
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+
+  const { data: applications, isLoading } = useApplications(getToken);
+
+  async function handleApprove(id: number) {
+    setActionLoading(id);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/applications/${id}/approve`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        toast({ title: "Error", description: body.error ?? "Failed to approve", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Approved", description: body.message });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "applications"] });
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleReject() {
+    if (!rejectDialog) return;
+    setActionLoading(rejectDialog.id);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/applications/${rejectDialog.id}/reject`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ note: rejectNote }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        toast({ title: "Error", description: body.error ?? "Failed to reject", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Rejected", description: body.message });
+      setRejectDialog(null);
+      setRejectNote("");
+      await queryClient.invalidateQueries({ queryKey: ["admin", "applications"] });
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  const filtered = (applications ?? []).filter(
+    (a) => filter === "ALL" || a.status === filter,
+  );
+
+  const counts = {
+    ALL: applications?.length ?? 0,
+    PENDING: applications?.filter((a) => a.status === "PENDING").length ?? 0,
+    APPROVED: applications?.filter((a) => a.status === "APPROVED").length ?? 0,
+    REJECTED: applications?.filter((a) => a.status === "REJECTED").length ?? 0,
+  };
+
+  return (
+    <AdminDashboardLayout>
+      <div className="space-y-6 max-w-4xl">
+        <div>
+          <h1 className="font-serif text-2xl font-bold">Business Applications</h1>
+          <p className="text-muted-foreground mt-1">Review and manage listing requests from business owners.</p>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="flex gap-2 flex-wrap">
+          {(["PENDING", "ALL", "APPROVED", "REJECTED"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border",
+                filter === f
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {f === "ALL" ? "All" : f.charAt(0) + f.slice(1).toLowerCase()}
+              <span className="ml-1.5 text-xs opacity-70">({counts[f]})</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Loading */}
+        {isLoading && (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && filtered.length === 0 && (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <Clock className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="font-medium">No {filter === "ALL" ? "" : filter.toLowerCase() + " "}applications</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {filter === "PENDING"
+                  ? "No applications waiting for review."
+                  : "Applications will appear here as they come in."}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Application cards */}
+        <div className="space-y-4">
+          {filtered.map((app) => (
+            <Card key={app.id} className="overflow-hidden">
+              <CardContent className="p-5">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                  <div className="flex-1 min-w-0 space-y-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold">{app.name}</h3>
+                          <span
+                            className={cn(
+                              "text-xs px-2 py-0.5 rounded-full border font-medium",
+                              STATUS_COLORS[app.status],
+                            )}
+                          >
+                            {app.status.charAt(0) + app.status.slice(1).toLowerCase()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{app.type}</p>
+                      </div>
+                    </div>
+
+                    {/* Details grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <User className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{app.userEmail ?? app.userId}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5 shrink-0" />
+                        <span>Applied {formatDate(app.createdAt)}</span>
+                      </div>
+                      {app.planName && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Layers className="h-3.5 w-3.5 shrink-0" />
+                          <span>Plan: <strong className="text-foreground">{app.planName}</strong></span>
+                        </div>
+                      )}
+                      {app.address && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Building2 className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate">{app.address}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {app.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{app.description}</p>
+                    )}
+
+                    {app.reviewNote && (
+                      <div className="rounded-lg bg-muted/60 px-3 py-2 text-sm">
+                        <span className="font-medium">Review note: </span>
+                        {app.reviewNote}
+                      </div>
+                    )}
+
+                    {app.status === "APPROVED" && app.businessId && (
+                      <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
+                        Business #{app.businessId} created
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  {app.status === "PENDING" && (
+                    <div className="flex sm:flex-col gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => handleApprove(app.id)}
+                        disabled={actionLoading === app.id}
+                        className="flex-1 sm:flex-none"
+                      >
+                        {actionLoading === app.id ? (
+                          <span className="flex items-center gap-1.5"><span className="h-3 w-3 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Approving…</span>
+                        ) : (
+                          <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> Approve</span>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => { setRejectDialog({ id: app.id, name: app.name }); setRejectNote(""); }}
+                        disabled={actionLoading === app.id}
+                        className="flex-1 sm:flex-none text-destructive border-destructive/30 hover:bg-destructive/5"
+                      >
+                        <XCircle className="h-3.5 w-3.5 mr-1.5" /> Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Reject dialog */}
+      <Dialog open={!!rejectDialog} onOpenChange={(o) => { if (!o) setRejectDialog(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Application</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Rejecting <strong>{rejectDialog?.name}</strong>. The applicant may reapply.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="note">Reason (optional)</Label>
+            <Textarea
+              id="note"
+              placeholder="e.g. Incomplete information, duplicate listing…"
+              value={rejectNote}
+              onChange={(e) => setRejectNote(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialog(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={actionLoading === rejectDialog?.id}
+            >
+              {actionLoading === rejectDialog?.id ? "Rejecting…" : "Reject Application"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </AdminDashboardLayout>
+  );
+}
