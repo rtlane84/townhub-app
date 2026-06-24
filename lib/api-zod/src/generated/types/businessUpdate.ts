@@ -23,4 +23,14 @@ export interface BusinessUpdate {
   minimumOrder?: number;
   payAtPickupEnabled?: boolean;
   orderCutoffTime?: string;
+  minimumOrderForDelivery?: number;
+  deliveryRadiusMiles?: number;
+  deliveryNotes?: string;
+  pickupInstructions?: string;
+  deliveryInstructions?: string;
+  orderNotificationEmail?: string;
+  eventLocationEnabled?: boolean;
+  accentColor?: string;
+  buttonColor?: string;
+  bannerText?: string;
 }

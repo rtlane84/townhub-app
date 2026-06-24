@@ -10,7 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Loader2 } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Loader2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/react";
 
@@ -20,17 +20,25 @@ export default function Cart() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>("PICKUP");
+  const { data: business } = useGetBusiness(cart.businessId!, {
+    query: { enabled: !!cart.businessId, queryKey: ["/api/businesses/manage", cart.businessId] },
+  });
+
+  const bx = business as unknown as Record<string, unknown> | undefined;
+  const pickupInstructions = bx?.pickupInstructions as string | undefined;
+  const deliveryInstructions = bx?.deliveryInstructions as string | undefined;
+  const minimumOrderForDelivery = bx?.minimumOrderForDelivery as number | undefined;
+
+  const defaultFulfillment: FulfillmentType =
+    business?.pickupEnabled ? "PICKUP" : business?.deliveryEnabled ? "DELIVERY" : "PICKUP";
+
+  const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>(defaultFulfillment);
   const [customerName, setCustomerName] = useState(user?.fullName || "");
   const [customerEmail, setCustomerEmail] = useState(user?.primaryEmailAddress?.emailAddress || "");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { data: business } = useGetBusiness(cart.businessId!, {
-    query: { enabled: !!cart.businessId, queryKey: ['/api/businesses/manage', cart.businessId] }
-  });
 
   const createOrder = useCreateOrder();
   const createCheckoutSession = useCreateCheckoutSession();
@@ -53,6 +61,9 @@ export default function Cart() {
   const deliveryFee = fulfillmentType === "DELIVERY" ? (business?.deliveryFee || 0) : 0;
   const finalTotal = total + deliveryFee;
 
+  const meetsDeliveryMinimum =
+    !minimumOrderForDelivery || total >= minimumOrderForDelivery;
+
   const handleCheckout = async (payAtPickup: boolean) => {
     if (!customerName || !customerEmail) {
       toast({ title: "Missing details", description: "Please provide your name and email.", variant: "destructive" });
@@ -60,6 +71,10 @@ export default function Cart() {
     }
     if (fulfillmentType === "DELIVERY" && !deliveryAddress) {
       toast({ title: "Missing details", description: "Please provide a delivery address.", variant: "destructive" });
+      return;
+    }
+    if (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) {
+      toast({ title: "Minimum not met", description: `Add $${(minimumOrderForDelivery! - total).toFixed(2)} more to qualify for delivery.`, variant: "destructive" });
       return;
     }
 
@@ -75,11 +90,8 @@ export default function Cart() {
           deliveryAddress: fulfillmentType === "DELIVERY" ? deliveryAddress : undefined,
           notes,
           paymentMethod: payAtPickup ? "IN_PERSON" : "STRIPE",
-          items: cart.items.map(item => ({
-            productId: item.id,
-            quantity: item.quantity
-          }))
-        }
+          items: cart.items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+        },
       });
 
       if (payAtPickup) {
@@ -87,29 +99,29 @@ export default function Cart() {
         setLocation(`/order/${order.id}`);
         toast({ title: "Order placed successfully!" });
       } else {
-        const session = await createCheckoutSession.mutateAsync({
-          data: { orderId: order.id }
-        });
+        const session = await createCheckoutSession.mutateAsync({ data: { orderId: order.id } });
         if (session.url) {
           window.location.href = session.url;
         } else {
-          // fallback if mock mode
           clearCart();
           setLocation(`/order/${order.id}`);
           toast({ title: "Order placed successfully!" });
         }
       }
-    } catch (error) {
+    } catch {
       toast({ title: "Error", description: "Failed to place order. Please try again.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const showPickup = business?.pickupEnabled !== false;
+  const showDelivery = business?.deliveryEnabled === true;
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
       <h1 className="text-3xl font-serif font-bold text-foreground mb-8">Checkout</h1>
-      
+
       <div className="grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-7 space-y-6">
           <Card>
@@ -117,25 +129,70 @@ export default function Cart() {
               <CardTitle className="font-serif">Order Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
+              {/* Fulfillment type selector */}
+              <div className="space-y-3">
                 <Label>How would you like to receive your order?</Label>
-                <RadioGroup 
-                  value={fulfillmentType} 
+                <RadioGroup
+                  value={fulfillmentType}
                   onValueChange={(v) => setFulfillmentType(v as FulfillmentType)}
-                  className="flex flex-col sm:flex-row gap-4"
+                  className="flex flex-col sm:flex-row gap-3"
                 >
-                  <div className={`flex items-center space-x-2 border rounded-lg p-4 flex-1 cursor-pointer transition-colors ${fulfillmentType === 'PICKUP' ? 'border-primary bg-primary/5' : 'border-border'}`} onClick={() => setFulfillmentType('PICKUP')}>
-                    <RadioGroupItem value="PICKUP" id="pickup" />
-                    <Label htmlFor="pickup" className="cursor-pointer font-medium">Store Pickup</Label>
-                  </div>
-                  <div className={`flex items-center space-x-2 border rounded-lg p-4 flex-1 cursor-pointer transition-colors ${(fulfillmentType === 'DELIVERY' && business?.deliveryEnabled) ? 'border-primary bg-primary/5' : 'border-border'} ${!business?.deliveryEnabled ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => business?.deliveryEnabled && setFulfillmentType('DELIVERY')}>
-                    <RadioGroupItem value="DELIVERY" id="delivery" disabled={!business?.deliveryEnabled} />
-                    <Label htmlFor="delivery" className="cursor-pointer font-medium">
-                      Delivery
-                      {!business?.deliveryEnabled && <span className="block text-xs text-muted-foreground mt-1">Not available</span>}
-                    </Label>
-                  </div>
+                  {showPickup && (
+                    <div
+                      className={`flex items-center space-x-2 border rounded-lg p-4 flex-1 cursor-pointer transition-colors ${fulfillmentType === "PICKUP" ? "border-primary bg-primary/5" : "border-border"}`}
+                      onClick={() => setFulfillmentType("PICKUP")}
+                    >
+                      <RadioGroupItem value="PICKUP" id="pickup" />
+                      <div>
+                        <Label htmlFor="pickup" className="cursor-pointer font-medium">Store Pickup</Label>
+                        {business?.orderCutoffTime && (
+                          <p className="text-xs text-muted-foreground mt-0.5">Order by {business.orderCutoffTime}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {showDelivery && (
+                    <div
+                      className={`flex items-center space-x-2 border rounded-lg p-4 flex-1 cursor-pointer transition-colors ${fulfillmentType === "DELIVERY" ? "border-primary bg-primary/5" : "border-border"}`}
+                      onClick={() => setFulfillmentType("DELIVERY")}
+                    >
+                      <RadioGroupItem value="DELIVERY" id="delivery" />
+                      <div>
+                        <Label htmlFor="delivery" className="cursor-pointer font-medium">
+                          Delivery
+                          {business?.deliveryFee ? ` (+$${business.deliveryFee.toFixed(2)})` : " (Free)"}
+                        </Label>
+                        {minimumOrderForDelivery && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            ${minimumOrderForDelivery.toFixed(2)} minimum
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </RadioGroup>
+
+                {/* Fulfillment instructions */}
+                {fulfillmentType === "PICKUP" && pickupInstructions && (
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground bg-primary/5 border border-primary/20 rounded-lg p-3">
+                    <Info className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                    <span>{pickupInstructions}</span>
+                  </div>
+                )}
+                {fulfillmentType === "DELIVERY" && deliveryInstructions && (
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
+                    <span>{deliveryInstructions}</span>
+                  </div>
+                )}
+                {fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum && minimumOrderForDelivery && (
+                  <div className="flex items-start gap-2 text-xs bg-amber-50 border border-amber-200 text-amber-700 rounded-lg p-3">
+                    <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>
+                      Add <strong>${(minimumOrderForDelivery - total).toFixed(2)}</strong> more to qualify for delivery.
+                    </span>
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -145,15 +202,15 @@ export default function Cart() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
-                    <Input id="name" value={customerName} onChange={e => setCustomerName(e.target.value)} required />
+                    <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+                    <Input id="phone" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
                   </div>
                   <div className="col-span-2 space-y-2">
                     <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
-                    <Input id="email" type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} required />
+                    <Input id="email" type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} required />
                   </div>
                 </div>
               </div>
@@ -162,11 +219,13 @@ export default function Cart() {
                 <>
                   <Separator />
                   <div className="space-y-4">
-                    <Label className="text-lg font-serif">Delivery Address <span className="text-destructive">*</span></Label>
-                    <Textarea 
-                      placeholder="123 Main St, Apt 4B..." 
+                    <Label className="text-lg font-serif">
+                      Delivery Address <span className="text-destructive">*</span>
+                    </Label>
+                    <Textarea
+                      placeholder="123 Main St, Apt 4B..."
                       value={deliveryAddress}
-                      onChange={e => setDeliveryAddress(e.target.value)}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
                       required
                     />
                   </div>
@@ -177,13 +236,12 @@ export default function Cart() {
 
               <div className="space-y-4">
                 <Label className="text-lg font-serif">Order Notes</Label>
-                <Textarea 
-                  placeholder="Any special requests or instructions..." 
+                <Textarea
+                  placeholder="Any special requests or instructions..."
                   value={notes}
-                  onChange={e => setNotes(e.target.value)}
+                  onChange={(e) => setNotes(e.target.value)}
                 />
               </div>
-
             </CardContent>
           </Card>
         </div>
@@ -195,7 +253,9 @@ export default function Cart() {
                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
                   {business?.logoUrl ? (
                     <img src={business.logoUrl} alt="logo" className="w-full h-full rounded-full object-cover" />
-                  ) : <Store className="h-5 w-5 text-muted-foreground" />}
+                  ) : (
+                    <Store className="h-5 w-5 text-muted-foreground" />
+                  )}
                 </div>
                 <div>
                   <CardTitle className="text-lg">{business?.name || "Loading..."}</CardTitle>
@@ -205,7 +265,7 @@ export default function Cart() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50 max-h-[40vh] overflow-y-auto">
-                {cart.items.map(item => (
+                {cart.items.map((item) => (
                   <div key={item.id} className="p-4 flex gap-4">
                     {item.imageUrl ? (
                       <img src={item.imageUrl} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
@@ -244,7 +304,7 @@ export default function Cart() {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
-                {fulfillmentType === "DELIVERY" && (
+                {fulfillmentType === "DELIVERY" && deliveryFee > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Delivery Fee</span>
                     <span>${deliveryFee.toFixed(2)}</span>
@@ -258,21 +318,21 @@ export default function Cart() {
               </div>
 
               <div className="w-full space-y-3 pt-4">
-                <Button 
-                  className="w-full h-12 text-lg rounded-full" 
+                <Button
+                  className="w-full h-12 text-lg rounded-full"
                   onClick={() => handleCheckout(false)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum)}
                 >
                   {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CreditCard className="h-5 w-5 mr-2" />}
                   Pay with Card
                 </Button>
-                
+
                 {business?.payAtPickupEnabled && (
-                  <Button 
+                  <Button
                     variant="outline"
-                    className="w-full h-12 text-lg rounded-full" 
+                    className="w-full h-12 text-lg rounded-full"
                     onClick={() => handleCheckout(true)}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum)}
                   >
                     {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Store className="h-5 w-5 mr-2" />}
                     Pay at {fulfillmentType === "DELIVERY" ? "Delivery" : "Pickup"}

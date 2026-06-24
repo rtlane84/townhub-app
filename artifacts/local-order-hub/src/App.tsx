@@ -26,11 +26,17 @@ import BusinessOrderDetail from "@/pages/dashboard/business/order-detail";
 import BusinessProducts from "@/pages/dashboard/business/products";
 import BusinessCategories from "@/pages/dashboard/business/categories";
 import BusinessSettings from "@/pages/dashboard/business/settings";
+import BusinessBilling from "@/pages/dashboard/business/billing";
+import BusinessLocations from "@/pages/dashboard/business/locations";
 
 import AdminOverview from "@/pages/dashboard/admin/overview";
 import AdminBusinesses from "@/pages/dashboard/admin/businesses";
 import AdminOrders from "@/pages/dashboard/admin/orders";
 import AdminUsers from "@/pages/dashboard/admin/users";
+import AdminEvents from "@/pages/dashboard/admin/events";
+import AdminHighlights from "@/pages/dashboard/admin/highlights";
+import AdminPlans from "@/pages/dashboard/admin/plans";
+
 import Setup from "@/pages/setup";
 import ListYourBusiness from "@/pages/list-your-business";
 
@@ -110,10 +116,7 @@ function ClerkQueryClientCacheInvalidator() {
   useEffect(() => {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
-      if (
-        prevUserIdRef.current !== undefined &&
-        prevUserIdRef.current !== userId
-      ) {
+      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
         queryClient.clear();
       }
       prevUserIdRef.current = userId;
@@ -166,7 +169,13 @@ function PostSignInRedirector() {
   return null;
 }
 
-function ProtectedRoute({ component: Component, ...rest }: { component: React.ComponentType<{ params: Record<string, string> }>; path: string }) {
+function ProtectedRoute({
+  component: Component,
+  ...rest
+}: {
+  component: React.ComponentType<{ params: Record<string, string> }>;
+  path: string;
+}) {
   return (
     <Route {...rest}>
       {(params) => (
@@ -220,6 +229,8 @@ function ClerkProviderWithRoutes() {
                 <ProtectedRoute path="/dashboard/business/orders" component={BusinessOrders} />
                 <ProtectedRoute path="/dashboard/business/products" component={BusinessProducts} />
                 <ProtectedRoute path="/dashboard/business/categories" component={BusinessCategories} />
+                <ProtectedRoute path="/dashboard/business/locations" component={BusinessLocations} />
+                <ProtectedRoute path="/dashboard/business/billing" component={BusinessBilling} />
                 <ProtectedRoute path="/dashboard/business/settings" component={BusinessSettings} />
                 <ProtectedRoute path="/dashboard/business" component={BusinessOverview} />
 
@@ -227,6 +238,9 @@ function ClerkProviderWithRoutes() {
                 <ProtectedRoute path="/dashboard/admin/businesses" component={AdminBusinesses} />
                 <ProtectedRoute path="/dashboard/admin/orders" component={AdminOrders} />
                 <ProtectedRoute path="/dashboard/admin/users" component={AdminUsers} />
+                <ProtectedRoute path="/dashboard/admin/events" component={AdminEvents} />
+                <ProtectedRoute path="/dashboard/admin/highlights" component={AdminHighlights} />
+                <ProtectedRoute path="/dashboard/admin/plans" component={AdminPlans} />
                 <ProtectedRoute path="/dashboard/admin" component={AdminOverview} />
 
                 <Route component={NotFound} />

@@ -51,6 +51,16 @@ export const GetMyBusinessResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "orderNotificationEmail": zod.string().nullish(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
   "ownerId": zod.string().nullish(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -84,6 +94,16 @@ export const ListBusinessesResponseItem = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "orderNotificationEmail": zod.string().nullish(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
   "ownerId": zod.string().nullish(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -158,6 +178,16 @@ export const GetBusinessBySlugResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "orderNotificationEmail": zod.string().nullish(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
   "ownerId": zod.string().nullish(),
   "createdAt": zod.coerce.date().optional()
 }),
@@ -251,6 +281,16 @@ export const GetBusinessResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "orderNotificationEmail": zod.string().nullish(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
   "ownerId": zod.string().nullish(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -279,7 +319,17 @@ export const UpdateBusinessBody = zod.object({
   "deliveryFee": zod.number().optional(),
   "minimumOrder": zod.number().optional(),
   "payAtPickupEnabled": zod.boolean().optional(),
-  "orderCutoffTime": zod.string().optional()
+  "orderCutoffTime": zod.string().optional(),
+  "minimumOrderForDelivery": zod.number().optional(),
+  "deliveryRadiusMiles": zod.number().optional(),
+  "deliveryNotes": zod.string().optional(),
+  "pickupInstructions": zod.string().optional(),
+  "deliveryInstructions": zod.string().optional(),
+  "orderNotificationEmail": zod.string().optional(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "accentColor": zod.string().optional(),
+  "buttonColor": zod.string().optional(),
+  "bannerText": zod.string().optional()
 })
 
 export const UpdateBusinessResponse = zod.object({
@@ -301,6 +351,16 @@ export const UpdateBusinessResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "orderNotificationEmail": zod.string().nullish(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
   "ownerId": zod.string().nullish(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -775,8 +835,518 @@ export const AssignBusinessOwnerResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "orderNotificationEmail": zod.string().nullish(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
   "ownerId": zod.string().nullish(),
   "createdAt": zod.coerce.date().optional()
 })
+
+
+/**
+ * @summary List active events
+ */
+export const ListEventsQueryParams = zod.object({
+  "featured": zod.coerce.boolean().optional(),
+  "upcoming": zod.coerce.boolean().optional()
+})
+
+export const ListEventsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "date": zod.string(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "relatedBusinessId": zod.number().nullish(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
+  "featured": zod.boolean(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date().optional()
+})
+export const ListEventsResponse = zod.array(ListEventsResponseItem)
+
+
+/**
+ * @summary Create an event (admin)
+ */
+export const CreateEventBody = zod.object({
+  "title": zod.string(),
+  "date": zod.string(),
+  "startTime": zod.string().optional(),
+  "endTime": zod.string().optional(),
+  "location": zod.string().optional(),
+  "description": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "relatedBusinessId": zod.number().optional(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
+  "featured": zod.boolean().optional(),
+  "active": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Get a single event
+ */
+export const GetEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetEventResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "date": zod.string(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "relatedBusinessId": zod.number().nullish(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
+  "featured": zod.boolean(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Update an event (admin)
+ */
+export const UpdateEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateEventBody = zod.object({
+  "title": zod.string(),
+  "date": zod.string(),
+  "startTime": zod.string().optional(),
+  "endTime": zod.string().optional(),
+  "location": zod.string().optional(),
+  "description": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "relatedBusinessId": zod.number().optional(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
+  "featured": zod.boolean().optional(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateEventResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "date": zod.string(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "relatedBusinessId": zod.number().nullish(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
+  "featured": zod.boolean(),
+  "active": zod.boolean(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Delete an event (admin)
+ */
+export const DeleteEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List active highlights
+ */
+export const ListHighlightsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "relatedBusinessId": zod.number().nullish(),
+  "buttonText": zod.string().nullish(),
+  "buttonUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.coerce.date().optional()
+})
+export const ListHighlightsResponse = zod.array(ListHighlightsResponseItem)
+
+
+/**
+ * @summary Create a highlight (admin)
+ */
+export const CreateHighlightBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "relatedBusinessId": zod.number().optional(),
+  "buttonText": zod.string().optional(),
+  "buttonUrl": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "sortOrder": zod.number().optional()
+})
+
+
+/**
+ * @summary Get a single highlight
+ */
+export const GetHighlightParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetHighlightResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "relatedBusinessId": zod.number().nullish(),
+  "buttonText": zod.string().nullish(),
+  "buttonUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Update a highlight (admin)
+ */
+export const UpdateHighlightParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateHighlightBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "relatedBusinessId": zod.number().optional(),
+  "buttonText": zod.string().optional(),
+  "buttonUrl": zod.string().optional(),
+  "active": zod.boolean().optional(),
+  "sortOrder": zod.number().optional()
+})
+
+export const UpdateHighlightResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "relatedBusinessId": zod.number().nullish(),
+  "buttonText": zod.string().nullish(),
+  "buttonUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Delete a highlight (admin)
+ */
+export const DeleteHighlightParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List all subscription plans (admin)
+ */
+export const ListSubscriptionPlansResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isActive": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.coerce.date().optional()
+})
+export const ListSubscriptionPlansResponse = zod.array(ListSubscriptionPlansResponseItem)
+
+
+/**
+ * @summary Create a subscription plan (admin)
+ */
+export const CreateSubscriptionPlanBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "monthlyPrice": zod.number(),
+  "setupFee": zod.number().optional(),
+  "transactionFeePercent": zod.number().optional(),
+  "trialDays": zod.number().optional(),
+  "isActive": zod.boolean().optional(),
+  "isDefault": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update a subscription plan (admin)
+ */
+export const UpdateSubscriptionPlanParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSubscriptionPlanBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "monthlyPrice": zod.number(),
+  "setupFee": zod.number().optional(),
+  "transactionFeePercent": zod.number().optional(),
+  "trialDays": zod.number().optional(),
+  "isActive": zod.boolean().optional(),
+  "isDefault": zod.boolean().optional()
+})
+
+export const UpdateSubscriptionPlanResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isActive": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Delete a subscription plan (admin)
+ */
+export const DeleteSubscriptionPlanParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Get subscription for a business (admin)
+ */
+export const GetBusinessSubscriptionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetBusinessSubscriptionResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "planId": zod.number(),
+  "status": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']),
+  "trialEndsAt": zod.coerce.date().nullish(),
+  "currentPeriodStart": zod.coerce.date().nullish(),
+  "currentPeriodEnd": zod.coerce.date().nullish(),
+  "stripeSubscriptionId": zod.string().nullish(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isActive": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.coerce.date().optional()
+}).optional(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Set or update a business subscription (admin)
+ */
+export const UpsertBusinessSubscriptionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpsertBusinessSubscriptionBody = zod.object({
+  "planId": zod.number(),
+  "status": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']),
+  "trialEndsAt": zod.coerce.date().optional()
+})
+
+export const UpsertBusinessSubscriptionResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "planId": zod.number(),
+  "status": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']),
+  "trialEndsAt": zod.coerce.date().nullish(),
+  "currentPeriodStart": zod.coerce.date().nullish(),
+  "currentPeriodEnd": zod.coerce.date().nullish(),
+  "stripeSubscriptionId": zod.string().nullish(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isActive": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.coerce.date().optional()
+}).optional(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Get my business subscription (business owner)
+ */
+export const GetMySubscriptionParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetMySubscriptionResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "planId": zod.number(),
+  "status": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']),
+  "trialEndsAt": zod.coerce.date().nullish(),
+  "currentPeriodStart": zod.coerce.date().nullish(),
+  "currentPeriodEnd": zod.coerce.date().nullish(),
+  "stripeSubscriptionId": zod.string().nullish(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isActive": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.coerce.date().optional()
+}).optional(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary List food truck location schedule for a business
+ */
+export const ListFoodTruckLocationsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListFoodTruckLocationsResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "locationName": zod.string(),
+  "address": zod.string().nullish(),
+  "latitude": zod.string().nullish(),
+  "longitude": zod.string().nullish(),
+  "locationDate": zod.string(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "locationNotes": zod.string().nullish(),
+  "isActive": zod.boolean()
+})
+export const ListFoodTruckLocationsResponse = zod.array(ListFoodTruckLocationsResponseItem)
+
+
+/**
+ * @summary Add a food truck location entry (business owner)
+ */
+export const CreateFoodTruckLocationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateFoodTruckLocationBody = zod.object({
+  "locationName": zod.string(),
+  "address": zod.string().optional(),
+  "latitude": zod.string().optional(),
+  "longitude": zod.string().optional(),
+  "locationDate": zod.string(),
+  "startTime": zod.string().optional(),
+  "endTime": zod.string().optional(),
+  "locationNotes": zod.string().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update a food truck location (business owner)
+ */
+export const UpdateFoodTruckLocationParams = zod.object({
+  "id": zod.coerce.number(),
+  "locationId": zod.coerce.number()
+})
+
+export const UpdateFoodTruckLocationBody = zod.object({
+  "locationName": zod.string(),
+  "address": zod.string().optional(),
+  "latitude": zod.string().optional(),
+  "longitude": zod.string().optional(),
+  "locationDate": zod.string(),
+  "startTime": zod.string().optional(),
+  "endTime": zod.string().optional(),
+  "locationNotes": zod.string().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateFoodTruckLocationResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "locationName": zod.string(),
+  "address": zod.string().nullish(),
+  "latitude": zod.string().nullish(),
+  "longitude": zod.string().nullish(),
+  "locationDate": zod.string(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "locationNotes": zod.string().nullish(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary Delete a food truck location (business owner)
+ */
+export const DeleteFoodTruckLocationParams = zod.object({
+  "id": zod.coerce.number(),
+  "locationId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List today's active food truck locations (public)
+ */
+export const ListTodayFoodTrucksResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "businessName": zod.string().optional(),
+  "businessSlug": zod.string().optional(),
+  "businessLogoUrl": zod.string().nullish(),
+  "locationName": zod.string(),
+  "address": zod.string().nullish(),
+  "locationDate": zod.string(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "locationNotes": zod.string().nullish(),
+  "isActive": zod.boolean()
+})
+export const ListTodayFoodTrucksResponse = zod.array(ListTodayFoodTrucksResponseItem)
 
 

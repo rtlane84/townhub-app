@@ -36,6 +36,25 @@ export interface Business {
   /** @nullable */
   orderCutoffTime?: string | null;
   /** @nullable */
+  minimumOrderForDelivery?: number | null;
+  /** @nullable */
+  deliveryRadiusMiles?: number | null;
+  /** @nullable */
+  deliveryNotes?: string | null;
+  /** @nullable */
+  pickupInstructions?: string | null;
+  /** @nullable */
+  deliveryInstructions?: string | null;
+  /** @nullable */
+  orderNotificationEmail?: string | null;
+  eventLocationEnabled?: boolean;
+  /** @nullable */
+  accentColor?: string | null;
+  /** @nullable */
+  buttonColor?: string | null;
+  /** @nullable */
+  bannerText?: string | null;
+  /** @nullable */
   ownerId?: string | null;
   createdAt?: Date;
 }

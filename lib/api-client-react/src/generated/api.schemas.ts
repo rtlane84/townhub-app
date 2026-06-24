@@ -93,6 +93,25 @@ export interface Business {
   /** @nullable */
   orderCutoffTime?: string | null;
   /** @nullable */
+  minimumOrderForDelivery?: number | null;
+  /** @nullable */
+  deliveryRadiusMiles?: number | null;
+  /** @nullable */
+  deliveryNotes?: string | null;
+  /** @nullable */
+  pickupInstructions?: string | null;
+  /** @nullable */
+  deliveryInstructions?: string | null;
+  /** @nullable */
+  orderNotificationEmail?: string | null;
+  eventLocationEnabled?: boolean;
+  /** @nullable */
+  accentColor?: string | null;
+  /** @nullable */
+  buttonColor?: string | null;
+  /** @nullable */
+  bannerText?: string | null;
+  /** @nullable */
   ownerId?: string | null;
   createdAt?: string;
 }
@@ -175,6 +194,16 @@ export interface BusinessUpdate {
   minimumOrder?: number;
   payAtPickupEnabled?: boolean;
   orderCutoffTime?: string;
+  minimumOrderForDelivery?: number;
+  deliveryRadiusMiles?: number;
+  deliveryNotes?: string;
+  pickupInstructions?: string;
+  deliveryInstructions?: string;
+  orderNotificationEmail?: string;
+  eventLocationEnabled?: boolean;
+  accentColor?: string;
+  buttonColor?: string;
+  bannerText?: string;
 }
 
 export interface CategoryInput {
@@ -316,6 +345,201 @@ export interface BusinessOwnerAssignment {
   ownerId: string;
 }
 
+export type EventType = typeof EventType[keyof typeof EventType];
+
+
+export const EventType = {
+  COMMUNITY: 'COMMUNITY',
+  FOOD_TRUCK: 'FOOD_TRUCK',
+  SEASONAL: 'SEASONAL',
+  SALE: 'SALE',
+  HOLIDAY: 'HOLIDAY',
+  MARKET: 'MARKET',
+  OTHER: 'OTHER',
+} as const;
+
+export interface Event {
+  id: number;
+  title: string;
+  date: string;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  relatedBusinessId?: number | null;
+  eventType: EventType;
+  featured: boolean;
+  active: boolean;
+  createdAt?: string;
+}
+
+export interface EventInput {
+  title: string;
+  date: string;
+  startTime?: string;
+  endTime?: string;
+  location?: string;
+  description?: string;
+  imageUrl?: string;
+  relatedBusinessId?: number;
+  eventType: EventType;
+  featured?: boolean;
+  active?: boolean;
+}
+
+export interface Highlight {
+  id: number;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  startDate: string;
+  endDate: string;
+  /** @nullable */
+  relatedBusinessId?: number | null;
+  /** @nullable */
+  buttonText?: string | null;
+  /** @nullable */
+  buttonUrl?: string | null;
+  active: boolean;
+  sortOrder: number;
+  createdAt?: string;
+}
+
+export interface HighlightInput {
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  startDate: string;
+  endDate: string;
+  relatedBusinessId?: number;
+  buttonText?: string;
+  buttonUrl?: string;
+  active?: boolean;
+  sortOrder?: number;
+}
+
+export interface SubscriptionPlan {
+  id: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  monthlyPrice: number;
+  /** @nullable */
+  setupFee?: number | null;
+  /** @nullable */
+  transactionFeePercent?: number | null;
+  trialDays: number;
+  isActive: boolean;
+  isDefault: boolean;
+  createdAt?: string;
+}
+
+export interface SubscriptionPlanInput {
+  name: string;
+  description?: string;
+  monthlyPrice: number;
+  setupFee?: number;
+  transactionFeePercent?: number;
+  trialDays?: number;
+  isActive?: boolean;
+  isDefault?: boolean;
+}
+
+export type BusinessSubscriptionStatus = typeof BusinessSubscriptionStatus[keyof typeof BusinessSubscriptionStatus];
+
+
+export const BusinessSubscriptionStatus = {
+  TRIALING: 'TRIALING',
+  ACTIVE: 'ACTIVE',
+  PAST_DUE: 'PAST_DUE',
+  CANCELED: 'CANCELED',
+  PAUSED: 'PAUSED',
+} as const;
+
+export interface BusinessSubscription {
+  id: number;
+  businessId: number;
+  planId: number;
+  status: BusinessSubscriptionStatus;
+  /** @nullable */
+  trialEndsAt?: string | null;
+  /** @nullable */
+  currentPeriodStart?: string | null;
+  /** @nullable */
+  currentPeriodEnd?: string | null;
+  /** @nullable */
+  stripeSubscriptionId?: string | null;
+  plan?: SubscriptionPlan;
+  createdAt?: string;
+}
+
+export interface BusinessSubscriptionInput {
+  planId: number;
+  status: BusinessSubscriptionStatus;
+  trialEndsAt?: string;
+}
+
+export interface FoodTruckLocation {
+  id: number;
+  businessId: number;
+  locationName: string;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  latitude?: string | null;
+  /** @nullable */
+  longitude?: string | null;
+  locationDate: string;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
+  /** @nullable */
+  locationNotes?: string | null;
+  isActive: boolean;
+}
+
+export interface FoodTruckLocationInput {
+  locationName: string;
+  address?: string;
+  latitude?: string;
+  longitude?: string;
+  locationDate: string;
+  startTime?: string;
+  endTime?: string;
+  locationNotes?: string;
+  isActive?: boolean;
+}
+
+export interface FoodTruckLocationWithBusiness {
+  id: number;
+  businessId: number;
+  businessName?: string;
+  businessSlug?: string;
+  /** @nullable */
+  businessLogoUrl?: string | null;
+  locationName: string;
+  /** @nullable */
+  address?: string | null;
+  locationDate: string;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
+  /** @nullable */
+  locationNotes?: string | null;
+  isActive: boolean;
+}
+
 export type ListBusinessesParams = {
 /**
  * Filter by business type
@@ -335,5 +559,10 @@ export type ListAllOrdersParams = {
 businessId?: number;
 status?: string;
 date?: string;
+};
+
+export type ListEventsParams = {
+featured?: boolean;
+upcoming?: boolean;
 };
 

@@ -1,0 +1,299 @@
+import { useState } from "react";
+import {
+  useGetMyBusiness,
+  useUpdateBusiness,
+  useListFoodTruckLocations,
+  useCreateFoodTruckLocation,
+  useUpdateFoodTruckLocation,
+  useDeleteFoodTruckLocation,
+  getListFoodTruckLocationsQueryKey,
+  getGetMyBusinessQueryKey,
+} from "@workspace/api-client-react";
+import type { FoodTruckLocation, FoodTruckLocationInput } from "@workspace/api-client-react";
+import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { Plus, Pencil, Trash2, MapPin, Truck } from "lucide-react";
+
+const BLANK: FoodTruckLocationInput = {
+  locationName: "",
+  address: "",
+  locationDate: "",
+  startTime: "",
+  endTime: "",
+  locationNotes: "",
+  isActive: true,
+};
+
+export default function BusinessLocations() {
+  const { data: business, isLoading: bizLoading } = useGetMyBusiness();
+  const { data: locations = [], isLoading: locLoading } = useListFoodTruckLocations(
+    business?.id ?? 0,
+    { query: { enabled: !!business?.id, queryKey: getListFoodTruckLocationsQueryKey(business?.id ?? 0) } },
+  );
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<FoodTruckLocation | null>(null);
+  const [form, setForm] = useState<FoodTruckLocationInput>({ ...BLANK });
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const invalidateLocs = () => {
+    if (business?.id) queryClient.invalidateQueries({ queryKey: getListFoodTruckLocationsQueryKey(business.id) });
+  };
+
+  const updateBusiness = useUpdateBusiness({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
+        toast({ title: "Settings saved" });
+      },
+    },
+  });
+
+  const createLoc = useCreateFoodTruckLocation({
+    mutation: {
+      onSuccess: () => { invalidateLocs(); toast({ title: "Location added" }); setOpen(false); },
+      onError: () => toast({ title: "Failed to add location", variant: "destructive" }),
+    },
+  });
+
+  const updateLoc = useUpdateFoodTruckLocation({
+    mutation: {
+      onSuccess: () => { invalidateLocs(); toast({ title: "Location updated" }); setOpen(false); },
+      onError: () => toast({ title: "Failed to update location", variant: "destructive" }),
+    },
+  });
+
+  const deleteLoc = useDeleteFoodTruckLocation({
+    mutation: {
+      onSuccess: () => { invalidateLocs(); toast({ title: "Location deleted" }); setDeleteId(null); },
+      onError: () => toast({ title: "Failed to delete location", variant: "destructive" }),
+    },
+  });
+
+  function openCreate() {
+    setEditing(null);
+    const today = new Date().toISOString().slice(0, 10);
+    setForm({ ...BLANK, locationDate: today });
+    setOpen(true);
+  }
+
+  function openEdit(loc: FoodTruckLocation) {
+    setEditing(loc);
+    setForm({
+      locationName: loc.locationName,
+      address: loc.address ?? "",
+      locationDate: loc.locationDate,
+      startTime: loc.startTime ?? "",
+      endTime: loc.endTime ?? "",
+      locationNotes: loc.locationNotes ?? "",
+      isActive: loc.isActive,
+    });
+    setOpen(true);
+  }
+
+  function handleSave() {
+    if (!business) return;
+    const data: FoodTruckLocationInput = {
+      ...form,
+      address: form.address || undefined,
+      startTime: form.startTime || undefined,
+      endTime: form.endTime || undefined,
+      locationNotes: form.locationNotes || undefined,
+    };
+    if (editing) {
+      updateLoc.mutate({ id: business.id, locationId: editing.id, data });
+    } else {
+      createLoc.mutate({ id: business.id, data });
+    }
+  }
+
+  function f(key: keyof FoodTruckLocationInput) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((prev) => ({ ...prev, [key]: e.target.value }));
+  }
+
+  const pending = createLoc.isPending || updateLoc.isPending;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingLocs = locations.filter((l) => l.locationDate >= today && l.isActive);
+  const pastLocs = locations.filter((l) => l.locationDate < today || !l.isActive);
+
+  return (
+    <BusinessDashboardLayout>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div>
+          <h1 className="font-serif text-3xl font-bold">Food Truck Locations</h1>
+          <p className="text-muted-foreground mt-1">Manage your mobile location schedule</p>
+        </div>
+
+        {bizLoading ? (
+          <Skeleton className="h-20 w-full" />
+        ) : business && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Truck className="h-4 w-4" /> Food Truck Mode
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Show location schedule on your storefront</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Customers will see your upcoming locations on your page and the homepage
+                  </p>
+                </div>
+                <Switch
+                  checked={!!business.eventLocationEnabled}
+                  onCheckedChange={(v) =>
+                    updateBusiness.mutate({ id: business.id, data: { eventLocationEnabled: v } as never })
+                  }
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Location Schedule</CardTitle>
+              <Button size="sm" onClick={openCreate}>
+                <Plus className="h-4 w-4 mr-2" /> Add Location
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {locLoading ? (
+              <div className="p-6 space-y-3">
+                {[1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : locations.length === 0 ? (
+              <div className="p-10 text-center text-muted-foreground">
+                <MapPin className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                <p>No locations scheduled yet.</p>
+              </div>
+            ) : (
+              <>
+                {upcomingLocs.length > 0 && (
+                  <div>
+                    <div className="px-6 py-2 bg-muted/30 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Upcoming
+                    </div>
+                    {upcomingLocs.map((loc) => (
+                      <div key={loc.id} className="flex items-center justify-between px-6 py-3 border-b hover:bg-muted/20">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{loc.locationName}</span>
+                            {loc.locationDate === today && <Badge variant="default" className="text-xs">Today</Badge>}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {loc.locationDate} {loc.startTime ? `· ${loc.startTime}${loc.endTime ? `–${loc.endTime}` : ""}` : ""}
+                            {loc.address ? ` · ${loc.address}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(loc)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(loc.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {pastLocs.length > 0 && (
+                  <div>
+                    <div className="px-6 py-2 bg-muted/30 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Past / Inactive
+                    </div>
+                    {pastLocs.map((loc) => (
+                      <div key={loc.id} className="flex items-center justify-between px-6 py-3 border-b hover:bg-muted/20 opacity-60">
+                        <div>
+                          <span className="font-medium text-sm">{loc.locationName}</span>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {loc.locationDate}{loc.address ? ` · ${loc.address}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(loc)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(loc.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit Location" : "Add Location"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Location Name *</label>
+              <Input value={form.locationName} onChange={f("locationName")} placeholder="Downtown Farmers Market" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Date *</label>
+              <Input type="date" value={form.locationDate} onChange={f("locationDate")} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Start Time</label>
+                <Input value={form.startTime} onChange={f("startTime")} placeholder="9:00 AM" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">End Time</label>
+                <Input value={form.endTime} onChange={f("endTime")} placeholder="2:00 PM" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Address</label>
+              <Input value={form.address} onChange={f("address")} placeholder="123 Main St" />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Notes</label>
+              <Input value={form.locationNotes} onChange={f("locationNotes")} placeholder="Look for the red tent!" />
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <label className="text-sm font-medium">Active</label>
+              <Switch checked={!!form.isActive} onCheckedChange={(v) => setForm((p) => ({ ...p, isActive: v }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave} disabled={pending || !form.locationName || !form.locationDate}>
+              {pending ? "Saving…" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Delete this location?</DialogTitle></DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={() => deleteId !== null && deleteLoc.mutate({ id: business?.id ?? 0, locationId: deleteId })} disabled={deleteLoc.isPending}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </BusinessDashboardLayout>
+  );
+}

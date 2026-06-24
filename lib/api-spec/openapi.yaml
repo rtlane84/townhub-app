@@ -24,6 +24,14 @@ tags:
     description: Authentication / user profile
   - name: admin
     description: Platform admin operations
+  - name: events
+    description: Community events calendar
+  - name: highlights
+    description: Seasonal highlights and promotions
+  - name: subscriptions
+    description: Subscription plans and billing
+  - name: food-truck
+    description: Food truck location management
 
 paths:
   /healthz:
@@ -647,6 +655,434 @@ paths:
               schema:
                 $ref: "#/components/schemas/Business"
 
+  # ─── Events ────────────────────────────────────────────────────
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List active events
+      parameters:
+        - in: query
+          name: featured
+          schema:
+            type: boolean
+        - in: query
+          name: upcoming
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create an event (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+  /events/{id}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get a single event
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+    put:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update an event (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete an event (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Highlights ────────────────────────────────────────────────
+  /highlights:
+    get:
+      operationId: listHighlights
+      tags: [highlights]
+      summary: List active highlights
+      responses:
+        "200":
+          description: List of highlights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Highlight"
+    post:
+      operationId: createHighlight
+      tags: [highlights]
+      summary: Create a highlight (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HighlightInput"
+      responses:
+        "201":
+          description: Created highlight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Highlight"
+
+  /highlights/{id}:
+    get:
+      operationId: getHighlight
+      tags: [highlights]
+      summary: Get a single highlight
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Highlight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Highlight"
+    put:
+      operationId: updateHighlight
+      tags: [highlights]
+      summary: Update a highlight (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HighlightInput"
+      responses:
+        "200":
+          description: Updated highlight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Highlight"
+    delete:
+      operationId: deleteHighlight
+      tags: [highlights]
+      summary: Delete a highlight (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Subscription Plans ─────────────────────────────────────────
+  /admin/subscription-plans:
+    get:
+      operationId: listSubscriptionPlans
+      tags: [subscriptions]
+      summary: List all subscription plans (admin)
+      responses:
+        "200":
+          description: List of plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionPlan"
+    post:
+      operationId: createSubscriptionPlan
+      tags: [subscriptions]
+      summary: Create a subscription plan (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionPlanInput"
+      responses:
+        "201":
+          description: Created plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionPlan"
+
+  /admin/subscription-plans/{id}:
+    put:
+      operationId: updateSubscriptionPlan
+      tags: [subscriptions]
+      summary: Update a subscription plan (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionPlanInput"
+      responses:
+        "200":
+          description: Updated plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionPlan"
+    delete:
+      operationId: deleteSubscriptionPlan
+      tags: [subscriptions]
+      summary: Delete a subscription plan (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/businesses/{id}/subscription:
+    get:
+      operationId: getBusinessSubscription
+      tags: [subscriptions]
+      summary: Get subscription for a business (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Business subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSubscription"
+    put:
+      operationId: upsertBusinessSubscription
+      tags: [subscriptions]
+      summary: Set or update a business subscription (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessSubscriptionInput"
+      responses:
+        "200":
+          description: Updated subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSubscription"
+
+  /businesses/{id}/subscription:
+    get:
+      operationId: getMySubscription
+      tags: [subscriptions]
+      summary: Get my business subscription (business owner)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSubscription"
+        "404":
+          description: No subscription
+
+  # ─── Food Truck Locations ───────────────────────────────────────
+  /businesses/{id}/food-truck-locations:
+    get:
+      operationId: listFoodTruckLocations
+      tags: [food-truck]
+      summary: List food truck location schedule for a business
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodTruckLocation"
+    post:
+      operationId: createFoodTruckLocation
+      tags: [food-truck]
+      summary: Add a food truck location entry (business owner)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodTruckLocationInput"
+      responses:
+        "201":
+          description: Created location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodTruckLocation"
+
+  /businesses/{id}/food-truck-locations/{locationId}:
+    put:
+      operationId: updateFoodTruckLocation
+      tags: [food-truck]
+      summary: Update a food truck location (business owner)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: locationId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodTruckLocationInput"
+      responses:
+        "200":
+          description: Updated location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodTruckLocation"
+    delete:
+      operationId: deleteFoodTruckLocation
+      tags: [food-truck]
+      summary: Delete a food truck location (business owner)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: locationId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Public food truck schedule ─────────────────────────────────
+  /food-truck-locations/today:
+    get:
+      operationId: listTodayFoodTrucks
+      tags: [food-truck]
+      summary: List today's active food truck locations (public)
+      responses:
+        "200":
+          description: Today's food truck locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodTruckLocationWithBusiness"
+
 components:
   schemas:
     HealthStatus:
@@ -751,6 +1187,26 @@ components:
         payAtPickupEnabled:
           type: boolean
         orderCutoffTime:
+          type: ["string", "null"]
+        minimumOrderForDelivery:
+          type: ["number", "null"]
+        deliveryRadiusMiles:
+          type: ["number", "null"]
+        deliveryNotes:
+          type: ["string", "null"]
+        pickupInstructions:
+          type: ["string", "null"]
+        deliveryInstructions:
+          type: ["string", "null"]
+        orderNotificationEmail:
+          type: ["string", "null"]
+        eventLocationEnabled:
+          type: boolean
+        accentColor:
+          type: ["string", "null"]
+        buttonColor:
+          type: ["string", "null"]
+        bannerText:
           type: ["string", "null"]
         ownerId:
           type: ["string", "null"]
@@ -864,6 +1320,26 @@ components:
         payAtPickupEnabled:
           type: boolean
         orderCutoffTime:
+          type: string
+        minimumOrderForDelivery:
+          type: number
+        deliveryRadiusMiles:
+          type: number
+        deliveryNotes:
+          type: string
+        pickupInstructions:
+          type: string
+        deliveryInstructions:
+          type: string
+        orderNotificationEmail:
+          type: string
+        eventLocationEnabled:
+          type: boolean
+        accentColor:
+          type: string
+        buttonColor:
+          type: string
+        bannerText:
           type: string
 
     Category:
@@ -1145,3 +1621,308 @@ components:
       properties:
         ownerId:
           type: string
+
+    # ─── Events ───────────────────────────────────────────────────
+    EventType:
+      type: string
+      enum:
+        - COMMUNITY
+        - FOOD_TRUCK
+        - SEASONAL
+        - SALE
+        - HOLIDAY
+        - MARKET
+        - OTHER
+
+    Event:
+      type: object
+      required: [id, title, date, eventType, featured, active]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        date:
+          type: string
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        relatedBusinessId:
+          type: ["integer", "null"]
+        eventType:
+          $ref: "#/components/schemas/EventType"
+        featured:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    EventInput:
+      type: object
+      required: [title, date, eventType]
+      properties:
+        title:
+          type: string
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        relatedBusinessId:
+          type: integer
+        eventType:
+          $ref: "#/components/schemas/EventType"
+        featured:
+          type: boolean
+        active:
+          type: boolean
+
+    # ─── Highlights ───────────────────────────────────────────────
+    Highlight:
+      type: object
+      required: [id, title, startDate, endDate, active, sortOrder]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        relatedBusinessId:
+          type: ["integer", "null"]
+        buttonText:
+          type: ["string", "null"]
+        buttonUrl:
+          type: ["string", "null"]
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    HighlightInput:
+      type: object
+      required: [title, startDate, endDate]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        relatedBusinessId:
+          type: integer
+        buttonText:
+          type: string
+        buttonUrl:
+          type: string
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    # ─── Subscriptions ────────────────────────────────────────────
+    SubscriptionPlan:
+      type: object
+      required: [id, name, monthlyPrice, trialDays, isActive, isDefault]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        monthlyPrice:
+          type: number
+        setupFee:
+          type: ["number", "null"]
+        transactionFeePercent:
+          type: ["number", "null"]
+        trialDays:
+          type: integer
+        isActive:
+          type: boolean
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    SubscriptionPlanInput:
+      type: object
+      required: [name, monthlyPrice]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        monthlyPrice:
+          type: number
+        setupFee:
+          type: number
+        transactionFeePercent:
+          type: number
+        trialDays:
+          type: integer
+        isActive:
+          type: boolean
+        isDefault:
+          type: boolean
+
+    BusinessSubscriptionStatus:
+      type: string
+      enum:
+        - TRIALING
+        - ACTIVE
+        - PAST_DUE
+        - CANCELED
+        - PAUSED
+
+    BusinessSubscription:
+      type: object
+      required: [id, businessId, planId, status]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        planId:
+          type: integer
+        status:
+          $ref: "#/components/schemas/BusinessSubscriptionStatus"
+        trialEndsAt:
+          type: ["string", "null"]
+          format: date-time
+        currentPeriodStart:
+          type: ["string", "null"]
+          format: date-time
+        currentPeriodEnd:
+          type: ["string", "null"]
+          format: date-time
+        stripeSubscriptionId:
+          type: ["string", "null"]
+        plan:
+          $ref: "#/components/schemas/SubscriptionPlan"
+        createdAt:
+          type: string
+          format: date-time
+
+    BusinessSubscriptionInput:
+      type: object
+      required: [planId, status]
+      properties:
+        planId:
+          type: integer
+        status:
+          $ref: "#/components/schemas/BusinessSubscriptionStatus"
+        trialEndsAt:
+          type: string
+          format: date-time
+
+    # ─── Food Truck Locations ─────────────────────────────────────
+    FoodTruckLocation:
+      type: object
+      required: [id, businessId, locationName, locationDate, isActive]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        locationName:
+          type: string
+        address:
+          type: ["string", "null"]
+        latitude:
+          type: ["string", "null"]
+        longitude:
+          type: ["string", "null"]
+        locationDate:
+          type: string
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        locationNotes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+
+    FoodTruckLocationInput:
+      type: object
+      required: [locationName, locationDate]
+      properties:
+        locationName:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: string
+        longitude:
+          type: string
+        locationDate:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        locationNotes:
+          type: string
+        isActive:
+          type: boolean
+
+    FoodTruckLocationWithBusiness:
+      type: object
+      required: [id, businessId, locationName, locationDate, isActive]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        businessName:
+          type: string
+        businessSlug:
+          type: string
+        businessLogoUrl:
+          type: ["string", "null"]
+        locationName:
+          type: string
+        address:
+          type: ["string", "null"]
+        locationDate:
+          type: string
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        locationNotes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean

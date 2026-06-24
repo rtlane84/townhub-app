@@ -46,8 +46,18 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     deliveryEnabled: b.deliveryEnabled,
     deliveryFee: b.deliveryFee ? parseFloat(b.deliveryFee) : null,
     minimumOrder: b.minimumOrder ? parseFloat(b.minimumOrder) : null,
+    minimumOrderForDelivery: b.minimumOrderForDelivery ? parseFloat(b.minimumOrderForDelivery) : null,
+    deliveryRadiusMiles: b.deliveryRadiusMiles ? parseFloat(b.deliveryRadiusMiles) : null,
+    deliveryNotes: b.deliveryNotes,
+    pickupInstructions: b.pickupInstructions,
+    deliveryInstructions: b.deliveryInstructions,
     payAtPickupEnabled: b.payAtPickupEnabled,
     orderCutoffTime: b.orderCutoffTime,
+    orderNotificationEmail: b.orderNotificationEmail,
+    eventLocationEnabled: b.eventLocationEnabled,
+    accentColor: b.accentColor,
+    buttonColor: b.buttonColor,
+    bannerText: b.bannerText,
     ownerId: b.ownerId,
     createdAt: b.createdAt,
   };
@@ -338,6 +348,30 @@ router.patch("/businesses/manage/:id", async (req, res): Promise<void> => {
     updateData.payAtPickupEnabled = d.payAtPickupEnabled;
   if (d.orderCutoffTime !== undefined)
     updateData.orderCutoffTime = d.orderCutoffTime;
+  if ((d as Record<string, unknown>).minimumOrderForDelivery !== undefined)
+    updateData.minimumOrderForDelivery = (d as Record<string, unknown>).minimumOrderForDelivery
+      ? String((d as Record<string, unknown>).minimumOrderForDelivery)
+      : null;
+  if ((d as Record<string, unknown>).deliveryRadiusMiles !== undefined)
+    updateData.deliveryRadiusMiles = (d as Record<string, unknown>).deliveryRadiusMiles
+      ? String((d as Record<string, unknown>).deliveryRadiusMiles)
+      : null;
+  if ((d as Record<string, unknown>).deliveryNotes !== undefined)
+    updateData.deliveryNotes = (d as Record<string, unknown>).deliveryNotes;
+  if ((d as Record<string, unknown>).pickupInstructions !== undefined)
+    updateData.pickupInstructions = (d as Record<string, unknown>).pickupInstructions;
+  if ((d as Record<string, unknown>).deliveryInstructions !== undefined)
+    updateData.deliveryInstructions = (d as Record<string, unknown>).deliveryInstructions;
+  if ((d as Record<string, unknown>).orderNotificationEmail !== undefined)
+    updateData.orderNotificationEmail = (d as Record<string, unknown>).orderNotificationEmail;
+  if ((d as Record<string, unknown>).eventLocationEnabled !== undefined)
+    updateData.eventLocationEnabled = (d as Record<string, unknown>).eventLocationEnabled;
+  if ((d as Record<string, unknown>).accentColor !== undefined)
+    updateData.accentColor = (d as Record<string, unknown>).accentColor;
+  if ((d as Record<string, unknown>).buttonColor !== undefined)
+    updateData.buttonColor = (d as Record<string, unknown>).buttonColor;
+  if ((d as Record<string, unknown>).bannerText !== undefined)
+    updateData.bannerText = (d as Record<string, unknown>).bannerText;
 
   const [business] = await db
     .update(businessesTable)
