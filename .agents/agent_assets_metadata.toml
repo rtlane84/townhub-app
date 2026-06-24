@@ -6,3 +6,9 @@ id = "bD8JjM2orJ2v2JIU2jgSK"
 uri = "file://README.md"
 type = "text"
 title = "LocalOrderHub — Handoff README"
+
+[[outputs]]
+id = "n_qWemnd5cWwCPqBTyt98"
+uri = "file://SECURITY.md"
+type = "text"
+title = "SECURITY.md — Security Hardening & Production Readiness"
