@@ -1,0 +1,3 @@
+- [Price display gotcha](price-display.md) — API returns dollar floats; never divide by 100 in frontend
+- [CSS import order](css-import-order.md) — Google Fonts must use HTML link tag, not CSS @import url(), due to PostCSS/Tailwind processing order
+- [Clerk proxy setup](clerk-proxy.md) — clerkProxyMiddleware must be mounted before body parsers; publishableKeyFromHost used for multi-domain

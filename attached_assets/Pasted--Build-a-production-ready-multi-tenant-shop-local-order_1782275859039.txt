@@ -1,0 +1,329 @@
+
+Build a production-ready multi-tenant “shop local” ordering marketplace SaaS.
+
+App concept:
+A small-town local ordering hub where customers can browse participating local businesses, click a business, view that business’s storefront, order items for pickup or local delivery, and pay online. Think “local marketplace homepage + individual business storefronts.”
+
+Working name:
+LocalOrderHub
+
+Primary example businesses:
+1. Flower shop
+2. Diner/cafe
+3. Greenhouse / small market
+
+Core idea:
+Version A marketplace:
+- Main public homepage lists all participating businesses
+- Each business has its own storefront page inside the platform
+- Customers can order from one business at a time
+- Each business has its own admin dashboard
+- Platform owner has a master admin dashboard
+
+Tech requirements:
+- Use Next.js 14 App Router
+- TypeScript
+- Tailwind CSS
+- Prisma ORM
+- PostgreSQL
+- NextAuth/Auth.js for authentication
+- Stripe for payments, but make it easy to run in test mode
+- Zod for validation
+- Responsive mobile-first design
+- Clean README with setup instructions
+- Seed data for demo businesses/products/orders
+- Modern rural/small-town design, clean and professional
+
+User roles:
+1. Customer
+   - Can browse businesses
+   - Can view storefronts
+   - Can add items to cart
+   - Can checkout
+   - Can receive order confirmation
+
+2. Business Owner
+   - Can log in
+   - Can manage only their own business
+   - Can manage products/categories
+   - Can view orders
+   - Can update order status
+   - Can edit business profile/settings
+
+3. Platform Admin
+   - Can manage all businesses
+   - Can create/edit/disable businesses
+   - Can assign business owners
+   - Can view all orders
+   - Can view basic platform stats
+
+Public pages:
+1. Homepage
+   - Hero section: “Order Local. Support Local.”
+   - Short subtitle about ordering from local businesses
+   - Featured businesses
+   - Categories: Food, Flowers, Plants & Market
+   - Today’s specials section
+   - Call-to-action for businesses: “List your business”
+
+2. Business directory page
+   - List all active businesses
+   - Filter by business type
+   - Search by business name
+   - Cards should show:
+     - logo
+     - business name
+     - type
+     - pickup/delivery availability
+     - open/closed status
+     - short description
+
+3. Business storefront page
+   URL pattern: /business/[slug]
+   - Business logo/name
+   - description
+   - address/phone/hours
+   - pickup/delivery badges
+   - product categories
+   - product cards
+   - add-to-cart buttons
+   - business-specific ordering fields at checkout based on business type
+
+4. Cart/checkout page
+   - Customer can only checkout from one business at a time
+   - Show cart items
+   - Customer info:
+     - name
+     - email
+     - phone
+   - Fulfillment:
+     - pickup or delivery
+     - pickup time/date when applicable
+     - delivery address when applicable
+   - Notes field
+   - Business-type fields:
+     Florist:
+       - recipient name
+       - card message
+       - occasion type
+       - delivery date
+     Diner:
+       - pickup time
+       - special instructions
+     Greenhouse:
+       - pickup date
+       - substitute if sold out checkbox
+   - Stripe checkout integration
+   - Also allow “pay at pickup” if business has that enabled
+
+5. Order confirmation page
+   - order number
+   - business name
+   - order summary
+   - pickup/delivery details
+   - customer confirmation message
+
+Business owner dashboard:
+Route prefix: /dashboard/business
+
+Pages:
+1. Overview
+   - today’s orders
+   - upcoming orders
+   - recent revenue
+   - pending orders
+
+2. Orders
+   - list orders for that business only
+   - filter by status/date
+   - order statuses:
+     - NEW
+     - CONFIRMED
+     - PREPARING
+     - READY_FOR_PICKUP
+     - OUT_FOR_DELIVERY
+     - COMPLETED
+     - CANCELED
+   - order detail page
+   - update status button
+
+3. Products
+   - create/edit/delete products
+   - mark available/sold out
+   - upload/store image URL
+   - product fields:
+     - name
+     - description
+     - price
+     - category
+     - imageUrl
+     - available
+     - featured
+     - prepTimeMinutes
+
+4. Categories
+   - create/edit/delete categories
+
+5. Business Settings
+   - business name
+   - slug
+   - logo URL
+   - hero image URL
+   - description
+   - address
+   - phone
+   - hours
+- Business types:
+        - FOOD_VENDOR: diners, food trucks, bakeries, catering
+	- FLORIST: flower shops, funeral flowers, prom flowers
+	- GARDEN_MARKET: greenhouses, produce stands, small grocery/marker
+	- RETAIL_STORE: hardware stores, gift shops, general retail, cannabis store menu/reservation mode
+	- BUILDING_SUPPLY: lumber yards, contractor materials, quote requests
+	- SERVICE_PROVIDER: salons, barbers, IT services, repair shops
+	- FUNERAL_SERVICE: funeral homes, memorial service-related requests
+	- GENERAL: fallback type
+   - pickup enabled
+   - delivery enabled
+   - delivery fee
+   - minimum order
+   - pay at pickup enabled
+   - order cutoff time
+
+Platform admin dashboard:
+Route prefix: /dashboard/admin
+
+Pages:
+1. Overview
+   - total businesses
+   - active businesses
+   - total orders
+   - total revenue
+   - recent orders
+
+2. Businesses
+   - create/edit/disable businesses
+   - assign owner user
+   - set business type
+   - set featured status
+
+3. Orders
+   - view all orders across platform
+   - filter by business/status/date
+
+4. Users
+   - view users
+   - assign roles
+
+Database models:
+Use Prisma models for:
+- User
+- Account/Session if needed for auth
+- Business
+- BusinessOwner mapping if needed
+- Category
+- Product
+- Cart or local cart handling
+- Order
+- OrderItem
+- Customer
+- BusinessSettings if not embedded in Business
+- Payment
+- Subscription placeholder for future SaaS billing
+
+Important database requirements:
+- Every Product belongs to a Business
+- Every Category belongs to a Business
+- Every Order belongs to one Business
+- Business owners can only access their own business data
+- Admin can access everything
+- Use enum for Role
+- Use enum for BusinessType
+- Use enum for OrderStatus
+- Use enum for FulfillmentType
+
+Payments:
+- Add Stripe test integration
+- Create checkout session for online payments
+- Store payment status
+- Make code modular so Stripe keys can be added in .env
+- Include fallback/mock checkout mode for local development if Stripe keys are missing
+
+Notifications:
+For MVP, create email notification functions but stub them if no email provider is configured.
+Prepare functions for:
+- customer order confirmation
+- business new order notification
+- order status update notification
+
+Design:
+- Modern, clean, trustworthy
+- Rural/small-town feel without being cheesy
+- Use cards, soft shadows, good spacing
+- Mobile-first
+- Simple dashboard UI
+- Use Tailwind components
+- Navigation should be intuitive
+
+Seed data:
+Create demo data:
+1. Hometown Floral
+   Type: FLORIST
+   Products:
+   - Birthday Bouquet
+   - Sympathy Arrangement
+   - Prom Corsage
+   - Rose Bouquet
+
+2. Main Street Diner
+   Type: DINER
+   Products:
+   - Daily Lunch Special
+   - Cheeseburger Basket
+   - Homemade Pie
+   - Family Meal Tray
+
+3. Clay Greenhouse
+   Type: GREENHOUSE
+   Products:
+   - Hanging Basket
+   - Tomato Plants
+   - Garden Starter Pack
+   - Fall Mums
+
+Seed users:
+- admin@example.com / password123 / ADMIN
+- florist@example.com / password123 / BUSINESS_OWNER
+- diner@example.com / password123 / BUSINESS_OWNER
+- greenhouse@example.com / password123 / BUSINESS_OWNER
+
+Security:
+- Protect dashboard routes
+- Role-based access control
+- Business owners cannot access other businesses
+- Validate forms with Zod
+- Sanitize inputs where needed
+
+README:
+Include:
+- project overview
+- setup steps
+- environment variables
+- Prisma migration/seed commands
+- Stripe test setup
+- demo login accounts
+- deployment notes for Replit/Vercel
+- future roadmap
+
+Future roadmap section:
+- marketplace search across products
+- business subscriptions
+- SMS notifications
+- delivery driver management
+- coupons
+- reviews
+- loyalty points
+- recurring holiday preorders
+- custom domains for businesses
+- Version B standalone storefront links
+
+Build the app with a clean file structure and comments where helpful. Prioritize a working MVP over unnecessary complexity.

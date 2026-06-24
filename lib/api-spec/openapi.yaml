@@ -3,20 +3,34 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: LocalOrderHub - Multi-tenant local marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: businesses
+    description: Business directory operations
+  - name: products
+    description: Product catalog operations
+  - name: categories
+    description: Category management
+  - name: orders
+    description: Order management
+  - name: cart
+    description: Cart operations
+  - name: auth
+    description: Authentication / user profile
+  - name: admin
+    description: Platform admin operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +38,1072 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Auth / User ───────────────────────────────────────────────
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+
+  /auth/me/business:
+    get:
+      operationId: getMyBusiness
+      tags: [auth]
+      summary: Get the business owned by the current user
+      responses:
+        "200":
+          description: My business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "404":
+          description: No business found
+
+  # ─── Businesses (public) ────────────────────────────────────────
+  /businesses:
+    get:
+      operationId: listBusinesses
+      tags: [businesses]
+      summary: List all active businesses
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Filter by business type
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by business name
+        - in: query
+          name: featured
+          schema:
+            type: boolean
+          description: Filter featured businesses only
+      responses:
+        "200":
+          description: List of businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+
+  /businesses/stats:
+    get:
+      operationId: getPlatformStats
+      tags: [businesses]
+      summary: Platform-level stats (admin)
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
+  /businesses/{slug}:
+    get:
+      operationId: getBusinessBySlug
+      tags: [businesses]
+      summary: Get a single business storefront by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Business storefront
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessStorefront"
+        "404":
+          description: Not found
+
+  # ─── Business Admin (owner/admin) ──────────────────────────────
+  /businesses/manage:
+    post:
+      operationId: createBusiness
+      tags: [businesses]
+      summary: Create a new business (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+  /businesses/manage/{id}:
+    get:
+      operationId: getBusiness
+      tags: [businesses]
+      summary: Get a business by id (owner or admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+    patch:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update business settings
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessUpdate"
+      responses:
+        "200":
+          description: Updated business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+    delete:
+      operationId: deleteBusiness
+      tags: [businesses]
+      summary: Delete/disable a business (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Categories ─────────────────────────────────────────────────
+  /businesses/{businessId}/categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List categories for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+      operationId: createCategory
+      tags: [categories]
+      summary: Create a category
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+
+  /businesses/{businessId}/categories/{id}:
+    patch:
+      operationId: updateCategory
+      tags: [categories]
+      summary: Update a category
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+    delete:
+      operationId: deleteCategory
+      tags: [categories]
+      summary: Delete a category
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Products ───────────────────────────────────────────────────
+  /businesses/{businessId}/products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a product
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /businesses/{businessId}/products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Orders ─────────────────────────────────────────────────────
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Place a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get order by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Not found
+
+  /orders/{id}/status:
+    patch:
+      operationId: updateOrderStatus
+      tags: [orders]
+      summary: Update order status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /businesses/{businessId}/orders:
+    get:
+      operationId: listBusinessOrders
+      tags: [orders]
+      summary: List orders for a specific business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /businesses/{businessId}/orders/summary:
+    get:
+      operationId: getBusinessOrderSummary
+      tags: [orders]
+      summary: Get today's order summary/stats for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessOrderSummary"
+
+  /admin/orders:
+    get:
+      operationId: listAllOrders
+      tags: [admin]
+      summary: List all orders (admin)
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: All orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  # ─── Checkout / Stripe ──────────────────────────────────────────
+  /checkout/session:
+    post:
+      operationId: createCheckoutSession
+      tags: [orders]
+      summary: Create a Stripe checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutSessionInput"
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSessionResult"
+
+  /checkout/webhook:
+    post:
+      operationId: stripeWebhook
+      tags: [orders]
+      summary: Stripe webhook handler
+      responses:
+        "200":
+          description: Received
+
+  # ─── Admin: Users ───────────────────────────────────────────────
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      summary: List all users (admin)
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserProfile"
+
+  /admin/users/{id}/role:
+    patch:
+      operationId: updateUserRole
+      tags: [admin]
+      summary: Update a user role (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRoleUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /admin/businesses/{id}/assign-owner:
+    patch:
+      operationId: assignBusinessOwner
+      tags: [admin]
+      summary: Assign a business owner (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessOwnerAssignment"
+      responses:
+        "200":
+          description: Updated business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    # ─── Enums (as strings, validated on server) ────────────────
+    BusinessType:
+      type: string
+      enum:
+        - FOOD_VENDOR
+        - FLORIST
+        - GARDEN_MARKET
+        - RETAIL_STORE
+        - BUILDING_SUPPLY
+        - SERVICE_PROVIDER
+        - FUNERAL_SERVICE
+        - GENERAL
+
+    OrderStatus:
+      type: string
+      enum:
+        - NEW
+        - CONFIRMED
+        - PREPARING
+        - READY_FOR_PICKUP
+        - OUT_FOR_DELIVERY
+        - COMPLETED
+        - CANCELED
+
+    FulfillmentType:
+      type: string
+      enum:
+        - PICKUP
+        - DELIVERY
+
+    UserRole:
+      type: string
+      enum:
+        - CUSTOMER
+        - BUSINESS_OWNER
+        - ADMIN
+
+    # ─── Core Entities ───────────────────────────────────────────
+    UserProfile:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        role:
+          $ref: "#/components/schemas/UserRole"
+        businessId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    Business:
+      type: object
+      required: [id, name, slug, type, active]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        type:
+          $ref: "#/components/schemas/BusinessType"
+        description:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        heroImageUrl:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        hours:
+          type: ["string", "null"]
+        active:
+          type: boolean
+        featured:
+          type: boolean
+        pickupEnabled:
+          type: boolean
+        deliveryEnabled:
+          type: boolean
+        deliveryFee:
+          type: ["number", "null"]
+        minimumOrder:
+          type: ["number", "null"]
+        payAtPickupEnabled:
+          type: boolean
+        orderCutoffTime:
+          type: ["string", "null"]
+        ownerId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    BusinessStorefront:
+      type: object
+      required: [business, categories, products]
+      properties:
+        business:
+          $ref: "#/components/schemas/Business"
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+
+    BusinessInput:
+      type: object
+      required: [name, slug, type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/BusinessType"
+        description:
+          type: string
+        logoUrl:
+          type: string
+        heroImageUrl:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        hours:
+          type: string
+        pickupEnabled:
+          type: boolean
+        deliveryEnabled:
+          type: boolean
+        deliveryFee:
+          type: number
+        minimumOrder:
+          type: number
+        payAtPickupEnabled:
+          type: boolean
+        orderCutoffTime:
+          type: string
+        ownerId:
+          type: string
+
+    BusinessUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        logoUrl:
+          type: string
+        heroImageUrl:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        hours:
+          type: string
+        active:
+          type: boolean
+        featured:
+          type: boolean
+        pickupEnabled:
+          type: boolean
+        deliveryEnabled:
+          type: boolean
+        deliveryFee:
+          type: number
+        minimumOrder:
+          type: number
+        payAtPickupEnabled:
+          type: boolean
+        orderCutoffTime:
+          type: string
+
+    Category:
+      type: object
+      required: [id, businessId, name]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        name:
+          type: string
+        sortOrder:
+          type: integer
+
+    CategoryInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        sortOrder:
+          type: integer
+
+    CategoryUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        sortOrder:
+          type: integer
+
+    Product:
+      type: object
+      required: [id, businessId, name, price, available]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        categoryId:
+          type: ["integer", "null"]
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: number
+        imageUrl:
+          type: ["string", "null"]
+        available:
+          type: boolean
+        featured:
+          type: boolean
+        prepTimeMinutes:
+          type: ["integer", "null"]
+
+    ProductInput:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        price:
+          type: number
+        categoryId:
+          type: integer
+        imageUrl:
+          type: string
+        available:
+          type: boolean
+        featured:
+          type: boolean
+        prepTimeMinutes:
+          type: integer
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        categoryId:
+          type: integer
+        imageUrl:
+          type: string
+        available:
+          type: boolean
+        featured:
+          type: boolean
+        prepTimeMinutes:
+          type: integer
+
+    OrderItem:
+      type: object
+      required: [productId, productName, quantity, unitPrice, subtotal]
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        subtotal:
+          type: number
+
+    Order:
+      type: object
+      required: [id, businessId, businessName, status, fulfillmentType, customerName, customerEmail, total]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        businessName:
+          type: string
+        orderNumber:
+          type: string
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        fulfillmentType:
+          $ref: "#/components/schemas/FulfillmentType"
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: ["string", "null"]
+        deliveryAddress:
+          type: ["string", "null"]
+        pickupTime:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        specialFields:
+          type: ["string", "null"]
+          description: JSON blob for business-type-specific fields
+        total:
+          type: number
+        deliveryFee:
+          type: ["number", "null"]
+        paymentStatus:
+          type: string
+        paymentMethod:
+          type: string
+        stripeSessionId:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        createdAt:
+          type: string
+          format: date-time
+
+    OrderInput:
+      type: object
+      required: [businessId, fulfillmentType, customerName, customerEmail, items]
+      properties:
+        businessId:
+          type: integer
+        fulfillmentType:
+          $ref: "#/components/schemas/FulfillmentType"
+        customerName:
+          type: string
+          minLength: 1
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        deliveryAddress:
+          type: string
+        pickupTime:
+          type: string
+        notes:
+          type: string
+        specialFields:
+          type: string
+          description: JSON blob for business-type-specific fields
+        paymentMethod:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItemInput"
+
+    OrderItemInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+
+    OrderStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+
+    CheckoutSessionInput:
+      type: object
+      required: [orderId]
+      properties:
+        orderId:
+          type: integer
+
+    CheckoutSessionResult:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: ["string", "null"]
+        sessionId:
+          type: ["string", "null"]
+        mockMode:
+          type: boolean
+
+    BusinessOrderSummary:
+      type: object
+      required: [todayCount, pendingCount, todayRevenue, recentOrders]
+      properties:
+        todayCount:
+          type: integer
+        pendingCount:
+          type: integer
+        todayRevenue:
+          type: number
+        upcomingCount:
+          type: integer
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+
+    PlatformStats:
+      type: object
+      required: [totalBusinesses, activeBusinesses, totalOrders, totalRevenue]
+      properties:
+        totalBusinesses:
+          type: integer
+        activeBusinesses:
+          type: integer
+        totalOrders:
+          type: integer
+        totalRevenue:
+          type: number
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+
+    UserRoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          $ref: "#/components/schemas/UserRole"
+
+    BusinessOwnerAssignment:
+      type: object
+      required: [ownerId]
+      properties:
+        ownerId:
+          type: string
