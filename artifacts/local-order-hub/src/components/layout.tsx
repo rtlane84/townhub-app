@@ -1,23 +1,24 @@
 import { Link, useLocation } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
-import { ShoppingBag, Menu, Store, LayoutDashboard } from "lucide-react";
+import { ShoppingBag, Store, LayoutDashboard, ShieldCheck } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
 import { Badge } from "./ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { isSignedIn, user, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const { itemCount } = useCart();
   const [location] = useLocation();
 
-  const isAdmin = user?.publicMetadata?.role === "ADMIN";
-  const isBusinessOwner = user?.publicMetadata?.role === "BUSINESS_OWNER";
+  const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
+
+  const isAdmin = me?.role === "ADMIN";
+  const isBusinessOwner = me?.role === "BUSINESS_OWNER";
+
+  const dashboardHref = isAdmin ? "/dashboard/admin" : "/dashboard/business";
+  const dashboardLabel = isAdmin ? "Admin" : "Business Hub";
+  const DashboardIcon = isAdmin ? ShieldCheck : LayoutDashboard;
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
@@ -32,13 +33,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
 
             <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-              <Link href="/businesses" className={`transition-colors hover:text-foreground ${location === '/businesses' ? 'text-foreground' : ''}`}>
+              <Link
+                href="/businesses"
+                className={`transition-colors hover:text-foreground ${location === "/businesses" ? "text-foreground" : ""}`}
+              >
                 All Businesses
               </Link>
+
+              {isLoaded && isSignedIn && (isAdmin || isBusinessOwner) && (
+                <Link
+                  href={dashboardHref}
+                  className={`flex items-center gap-1.5 transition-colors hover:text-foreground ${
+                    location.startsWith("/dashboard") ? "text-foreground" : ""
+                  }`}
+                >
+                  <DashboardIcon className="h-3.5 w-3.5" />
+                  {dashboardLabel}
+                </Link>
+              )}
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative text-foreground">
                 <ShoppingBag className="h-5 w-5" />
@@ -58,28 +74,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {isLoaded && isSignedIn && (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 {(isAdmin || isBusinessOwner) && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="hidden sm:flex gap-2">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Dashboard
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {isAdmin && (
-                        <DropdownMenuItem asChild>
-                          <Link href="/dashboard/admin" className="w-full cursor-pointer">Admin Dashboard</Link>
-                        </DropdownMenuItem>
-                      )}
-                      {isBusinessOwner && (
-                        <DropdownMenuItem asChild>
-                          <Link href="/dashboard/business" className="w-full cursor-pointer">Business Dashboard</Link>
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Link href={dashboardHref} className="sm:hidden">
+                    <Button variant="outline" size="icon">
+                      <DashboardIcon className="h-4 w-4" />
+                    </Button>
+                  </Link>
                 )}
                 <UserButton />
               </div>
