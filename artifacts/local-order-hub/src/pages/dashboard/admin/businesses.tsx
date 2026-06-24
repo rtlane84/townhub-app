@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "@clerk/react";
 import {
   useListBusinesses,
   useCreateBusiness,
@@ -6,6 +7,7 @@ import {
   useDeleteBusiness,
   useListUsers,
   useAssignBusinessOwner,
+  useListSubscriptionPlans,
   getListBusinessesQueryKey,
   BusinessType,
 } from "@workspace/api-client-react";
@@ -21,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, UserPlus, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, UserPlus, Star, Layers } from "lucide-react";
 
 const BUSINESS_TYPES = ["FOOD_VENDOR", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE", "BUILDING_SUPPLY", "SERVICE_PROVIDER", "FUNERAL_SERVICE", "GENERAL"] as const;
 
@@ -57,8 +59,13 @@ export default function AdminBusinesses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { getToken } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [subDialogOpen, setSubDialogOpen] = useState(false);
+  const [subBusinessId, setSubBusinessId] = useState<number | null>(null);
+  const [subPlanId, setSubPlanId] = useState<string>("");
+  const [subSaving, setSubSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [assignBusinessId, setAssignBusinessId] = useState<number | null>(null);
   const [assignOwnerId, setAssignOwnerId] = useState("");
@@ -66,6 +73,7 @@ export default function AdminBusinesses() {
 
   const { data: businesses, isLoading } = useListBusinesses();
   const { data: users } = useListUsers();
+  const { data: plans = [] } = useListSubscriptionPlans({});
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListBusinessesQueryKey() });
 
@@ -121,6 +129,40 @@ export default function AdminBusinesses() {
     setAssignBusinessId(businessId);
     setAssignOwnerId(currentOwnerId ?? "");
     setAssignDialogOpen(true);
+  }
+
+  function openChangePlan(businessId: number) {
+    setSubBusinessId(businessId);
+    setSubPlanId("");
+    setSubDialogOpen(true);
+  }
+
+  async function handleSavePlan() {
+    if (!subBusinessId || !subPlanId) return;
+    setSubSaving(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/businesses/${subBusinessId}/subscription`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ planId: parseInt(subPlanId, 10), status: "ACTIVE" }),
+      });
+      const ct = res.headers.get("content-type") ?? "";
+      const body = ct.includes("application/json") ? await res.json() : { error: `Server error (${res.status})` };
+      if (!res.ok) {
+        toast({ title: "Failed to assign plan", description: String(body.error ?? "Unknown error"), variant: "destructive" });
+        return;
+      }
+      toast({ title: "Plan assigned", description: "Subscription updated successfully." });
+      setSubDialogOpen(false);
+    } catch {
+      toast({ title: "Network error", description: "Could not reach server.", variant: "destructive" });
+    } finally {
+      setSubSaving(false);
+    }
   }
 
   function buildPayload() {
@@ -183,6 +225,9 @@ export default function AdminBusinesses() {
                       </p>
                     </div>
                     <div className="flex gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Change plan" onClick={() => openChangePlan(biz.id)}>
+                        <Layers className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Assign owner" onClick={() => openAssign(biz.id, biz.ownerId ?? null)} data-testid={`button-assign-owner-${biz.id}`}>
                         <UserPlus className="h-3.5 w-3.5" />
                       </Button>
@@ -274,6 +319,39 @@ export default function AdminBusinesses() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSubmit} disabled={isPending || !form.name.trim() || !form.slug.trim()} data-testid="button-save-business">
               {isPending ? "Saving..." : editingId ? "Save" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change plan dialog */}
+      <Dialog open={subDialogOpen} onOpenChange={setSubDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Change Subscription Plan</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            <p className="text-sm text-muted-foreground">Select a plan to assign to this business. The subscription status will be set to Active.</p>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Plan</label>
+              <Select value={subPlanId} onValueChange={setSubPlanId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a plan…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.filter((p) => p.isActive).map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.name} — {p.monthlyPrice === 0 ? "Free" : `$${p.monthlyPrice.toFixed(2)}/mo`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSubDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSavePlan} disabled={!subPlanId || subSaving}>
+              {subSaving ? "Saving…" : "Assign Plan"}
             </Button>
           </DialogFooter>
         </DialogContent>

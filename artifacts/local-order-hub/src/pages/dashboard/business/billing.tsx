@@ -76,7 +76,9 @@ export default function BusinessBilling() {
                 {subscription.plan && (
                   <div className="flex items-center justify-between py-2 border-b">
                     <span className="text-sm font-medium">Monthly Price</span>
-                    <span className="font-semibold text-primary">${subscription.plan.monthlyPrice.toFixed(2)}/mo</span>
+                    <span className="font-semibold text-primary">
+                      {subscription.plan.monthlyPrice === 0 ? "Free" : `$${subscription.plan.monthlyPrice.toFixed(2)}/mo`}
+                    </span>
                   </div>
                 )}
                 {status === "TRIALING" && subscription.trialEndsAt && (
@@ -87,7 +89,7 @@ export default function BusinessBilling() {
                     </span>
                   </div>
                 )}
-                {subscription.currentPeriodEnd && (
+                {subscription.currentPeriodEnd && subscription.plan?.monthlyPrice !== 0 && (
                   <div className="flex items-center justify-between py-2">
                     <span className="text-sm font-medium">Next Billing Date</span>
                     <span className="text-muted-foreground">
@@ -143,7 +145,9 @@ export default function BusinessBilling() {
                           </div>
                           {p.description && <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>}
                         </div>
-                        <span className="font-semibold text-sm">${p.monthlyPrice.toFixed(2)}/mo</span>
+                        <span className="font-semibold text-sm">
+                          {p.monthlyPrice === 0 ? "Free" : `$${p.monthlyPrice.toFixed(2)}/mo`}
+                        </span>
                       </div>
                     ))}
                   </div>

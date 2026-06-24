@@ -144,7 +144,10 @@ export default function AdminPlans() {
                     </div>
                   </div>
                   <div className="text-3xl font-bold text-primary mb-1">
-                    ${p.monthlyPrice.toFixed(2)}<span className="text-base font-normal text-muted-foreground">/mo</span>
+                    {p.monthlyPrice === 0
+                      ? <span>Free</span>
+                      : <>{`$${p.monthlyPrice.toFixed(2)}`}<span className="text-base font-normal text-muted-foreground">/mo</span></>
+                    }
                   </div>
                   {p.description && <p className="text-sm text-muted-foreground mb-3">{p.description}</p>}
                   <div className="text-xs text-muted-foreground space-y-0.5">
