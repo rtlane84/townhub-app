@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/components/cart-context";
 import { useGetBusiness, useCreateOrder, useCreateCheckoutSession } from "@workspace/api-client-react";
-import { FulfillmentType } from "@workspace/api-client-react/src/generated/api.schemas";
+import { FulfillmentType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

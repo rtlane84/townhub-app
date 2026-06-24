@@ -81,7 +81,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
               </div>
             )}
           </div>

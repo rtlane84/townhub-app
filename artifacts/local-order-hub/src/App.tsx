@@ -18,6 +18,18 @@ import Storefront from "@/pages/storefront";
 import Cart from "@/pages/cart";
 import OrderConfirmation from "@/pages/order-confirmation";
 
+import BusinessOverview from "@/pages/dashboard/business/overview";
+import BusinessOrders from "@/pages/dashboard/business/orders";
+import BusinessOrderDetail from "@/pages/dashboard/business/order-detail";
+import BusinessProducts from "@/pages/dashboard/business/products";
+import BusinessCategories from "@/pages/dashboard/business/categories";
+import BusinessSettings from "@/pages/dashboard/business/settings";
+
+import AdminOverview from "@/pages/dashboard/admin/overview";
+import AdminBusinesses from "@/pages/dashboard/admin/businesses";
+import AdminOrders from "@/pages/dashboard/admin/orders";
+import AdminUsers from "@/pages/dashboard/admin/users";
+
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
@@ -108,13 +120,13 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-function ProtectedRoute({ component: Component, ...rest }: any) {
+function ProtectedRoute({ component: Component, ...rest }: { component: React.ComponentType<{ params: Record<string, string> }>; path: string }) {
   return (
     <Route {...rest}>
       {(params) => (
         <>
           <Show when="signed-in">
-            <Component params={params} />
+            <Component params={params as Record<string, string>} />
           </Show>
           <Show when="signed-out">
             <Redirect to="/sign-in" />
@@ -123,14 +135,6 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
       )}
     </Route>
   );
-}
-
-function AdminDashboard() {
-  return <div className="p-8 text-center text-xl">Admin Dashboard Placeholder</div>;
-}
-
-function BusinessDashboard() {
-  return <div className="p-8 text-center text-xl">Business Dashboard Placeholder</div>;
 }
 
 function ClerkProviderWithRoutes() {
@@ -152,6 +156,7 @@ function ClerkProviderWithRoutes() {
           <TooltipProvider>
             <Layout>
               <Switch>
+                {/* Public routes */}
                 <Route path="/" component={Home} />
                 <Route path="/businesses" component={Businesses} />
                 <Route path="/businesses/:slug" component={Storefront} />
@@ -161,8 +166,19 @@ function ClerkProviderWithRoutes() {
                 <Route path="/sign-in/*?" component={SignInPage} />
                 <Route path="/sign-up/*?" component={SignUpPage} />
 
-                <ProtectedRoute path="/dashboard/admin/*" component={AdminDashboard} />
-                <ProtectedRoute path="/dashboard/business/*" component={BusinessDashboard} />
+                {/* Business owner dashboard */}
+                <ProtectedRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />
+                <ProtectedRoute path="/dashboard/business/orders" component={BusinessOrders} />
+                <ProtectedRoute path="/dashboard/business/products" component={BusinessProducts} />
+                <ProtectedRoute path="/dashboard/business/categories" component={BusinessCategories} />
+                <ProtectedRoute path="/dashboard/business/settings" component={BusinessSettings} />
+                <ProtectedRoute path="/dashboard/business" component={BusinessOverview} />
+
+                {/* Admin dashboard */}
+                <ProtectedRoute path="/dashboard/admin/businesses" component={AdminBusinesses} />
+                <ProtectedRoute path="/dashboard/admin/orders" component={AdminOrders} />
+                <ProtectedRoute path="/dashboard/admin/users" component={AdminUsers} />
+                <ProtectedRoute path="/dashboard/admin" component={AdminOverview} />
 
                 <Route component={NotFound} />
               </Switch>

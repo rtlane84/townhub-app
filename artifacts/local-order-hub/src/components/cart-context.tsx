@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { Product, OrderItemInput } from "@workspace/api-client-react/src/generated/api.schemas";
+import { Product, OrderItemInput } from "@workspace/api-client-react";
 
 interface CartItem extends Product {
   quantity: number;

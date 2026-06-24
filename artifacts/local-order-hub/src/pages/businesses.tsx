@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Search, MapPin, Store, Filter } from "lucide-react";
 import { useListBusinesses } from "@workspace/api-client-react";
-import { BusinessType } from "@workspace/api-client-react/src/generated/api.schemas";
+import { BusinessType } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
