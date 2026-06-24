@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
-import { ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle } from "lucide-react";
+import { ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle, Wrench } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
 import { Badge } from "./ui/badge";
@@ -61,6 +61,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <PlusCircle className="h-3.5 w-3.5" />
                   List Your Business
+                </Link>
+              )}
+
+              {/* Setup link — visible to anyone not yet signed in or without a role */}
+              {isLoaded && !isAdmin && !isBusinessOwner && (
+                <Link
+                  href="/setup"
+                  className={`flex items-center gap-1.5 transition-colors hover:text-foreground ${
+                    location === "/setup" ? "text-foreground" : ""
+                  }`}
+                >
+                  <Wrench className="h-3.5 w-3.5" />
+                  Setup
                 </Link>
               )}
             </nav>
