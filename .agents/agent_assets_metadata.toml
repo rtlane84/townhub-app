@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "bD8JjM2orJ2v2JIU2jgSK"
+uri = "file://README.md"
+type = "text"
+title = "LocalOrderHub — Handoff README"
