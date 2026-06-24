@@ -11,8 +11,17 @@ import subscriptionsRouter from "./subscriptions";
 import applicationsRouter from "./applications";
 import foodTruckRouter from "./food-truck";
 import platformRouter from "./platform";
+import { requireAdmin } from "../middlewares/requireRole";
 
 const router: IRouter = Router();
+
+// Role guard: all /admin/* routes require ADMIN role.
+// Exception: GET /admin/settings/theme is intentionally public (used to load brand
+// colors on every page, including unauthenticated public pages).
+router.use("/admin", (req, res, next) => {
+  if (req.method === "GET" && req.path === "/settings/theme") return next();
+  return requireAdmin(req, res, next);
+});
 
 router.use(healthRouter);
 router.use(authRouter);

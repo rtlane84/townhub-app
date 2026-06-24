@@ -12,6 +12,7 @@ import {
   CreateCheckoutSessionBody,
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession } from "../lib/stripe";
+import { requireAuth } from "../middlewares/requireRole";
 import {
   sendOrderNotification,
   buildOrderPlacedBusinessEmail,
@@ -245,8 +246,8 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
   res.json(result);
 });
 
-// PATCH /api/orders/:id/status
-router.patch("/orders/:id/status", async (req, res): Promise<void> => {
+// PATCH /api/orders/:id/status — requires auth (business owner or admin updates order status)
+router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> => {
   const params = UpdateOrderStatusParams.safeParse({
     id: parseId(req.params.id),
   });

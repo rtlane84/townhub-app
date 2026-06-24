@@ -17,6 +17,7 @@ import {
   DeleteBusinessParams,
   GetBusinessBySlugParams,
 } from "@workspace/api-zod";
+import { requireAuth, requireAdmin } from "../middlewares/requireRole";
 
 function slugify(name: string): string {
   return name
@@ -246,7 +247,7 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
 });
 
 // POST /api/businesses/manage
-router.post("/businesses/manage", async (req, res): Promise<void> => {
+router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
@@ -289,7 +290,7 @@ router.post("/businesses/manage", async (req, res): Promise<void> => {
 });
 
 // GET /api/businesses/manage/:id
-router.get("/businesses/manage/:id", async (req, res): Promise<void> => {
+router.get("/businesses/manage/:id", requireAuth, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetBusinessParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -311,7 +312,7 @@ router.get("/businesses/manage/:id", async (req, res): Promise<void> => {
 });
 
 // PATCH /api/businesses/manage/:id
-router.patch("/businesses/manage/:id", async (req, res): Promise<void> => {
+router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = UpdateBusinessParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -388,7 +389,7 @@ router.patch("/businesses/manage/:id", async (req, res): Promise<void> => {
 });
 
 // DELETE /api/businesses/manage/:id
-router.delete("/businesses/manage/:id", async (req, res): Promise<void> => {
+router.delete("/businesses/manage/:id", requireAdmin, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = DeleteBusinessParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {

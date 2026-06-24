@@ -3,6 +3,7 @@ import { db, highlightsTable } from "@workspace/db";
 import { eq, and, lte, gte } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
+import { requireAdmin } from "../middlewares/requireRole";
 
 const router: IRouter = Router();
 
@@ -77,7 +78,7 @@ router.get("/highlights/:id", async (req, res): Promise<void> => {
 });
 
 // POST /api/highlights (admin only)
-router.post("/highlights", async (req, res): Promise<void> => {
+router.post("/highlights", requireAdmin, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
@@ -89,11 +90,11 @@ router.post("/highlights", async (req, res): Promise<void> => {
 });
 
 // PUT /api/highlights/:id (admin only)
-router.put("/highlights/:id", async (req, res): Promise<void> => {
+router.put("/highlights/:id", requireAdmin, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   const parsed = highlightInputSchema.partial().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
@@ -103,11 +104,11 @@ router.put("/highlights/:id", async (req, res): Promise<void> => {
 });
 
 // DELETE /api/highlights/:id (admin only)
-router.delete("/highlights/:id", async (req, res): Promise<void> => {
+router.delete("/highlights/:id", requireAdmin, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   await db.delete(highlightsTable).where(eq(highlightsTable.id, id));
   res.status(204).send();
 });

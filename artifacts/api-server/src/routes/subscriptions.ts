@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, subscriptionPlansTable, businessSubscriptionsTable } from "@workspace/db";
+import { db, subscriptionPlansTable, businessSubscriptionsTable, businessesTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
@@ -160,12 +160,24 @@ router.put("/admin/businesses/:id/subscription", async (req, res): Promise<void>
   res.json(serializeSubscription(sub, plan));
 });
 
-// GET /api/businesses/:id/subscription (business owner)
+// GET /api/businesses/:id/subscription — caller must own the business or be an admin
 router.get("/businesses/:businessId/subscription", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const businessId = parseInt(req.params.businessId, 10);
+
+  const [user] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, userId));
+  if (!user) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  if (user.role !== "ADMIN") {
+    const [biz] = await db.select({ ownerId: businessesTable.ownerId }).from(businessesTable).where(eq(businessesTable.id, businessId));
+    if (!biz || biz.ownerId !== userId) {
+      res.status(403).json({ error: "Forbidden: you do not own this business" });
+      return;
+    }
+  }
+
   const [sub] = await db.select().from(businessSubscriptionsTable).where(eq(businessSubscriptionsTable.businessId, businessId));
   if (!sub) { res.status(404).json({ error: "No subscription" }); return; }
 
