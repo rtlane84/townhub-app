@@ -70,6 +70,14 @@ export default function AdminApplications() {
 
   const { data: applications, isLoading } = useApplications(getToken);
 
+  async function safeJson(res: Response): Promise<Record<string, unknown>> {
+    const ct = res.headers.get("content-type") ?? "";
+    if (ct.includes("application/json")) {
+      return res.json() as Promise<Record<string, unknown>>;
+    }
+    return { error: `Server error (${res.status})` };
+  }
+
   async function handleApprove(id: number) {
     setActionLoading(id);
     try {
@@ -78,13 +86,16 @@ export default function AdminApplications() {
         method: "POST",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      const body = await res.json();
+      const body = await safeJson(res);
       if (!res.ok) {
-        toast({ title: "Error", description: body.error ?? "Failed to approve", variant: "destructive" });
+        toast({ title: "Approval failed", description: String(body.error ?? "Failed to approve"), variant: "destructive" });
         return;
       }
-      toast({ title: "Approved", description: body.message });
+      toast({ title: "Application approved", description: String(body.message ?? "Business created successfully.") });
       await queryClient.invalidateQueries({ queryKey: ["admin", "applications"] });
+    } catch (err) {
+      toast({ title: "Network error", description: "Could not reach the server. Please try again.", variant: "destructive" });
+      console.error(err);
     } finally {
       setActionLoading(null);
     }
@@ -103,15 +114,18 @@ export default function AdminApplications() {
         },
         body: JSON.stringify({ note: rejectNote }),
       });
-      const body = await res.json();
+      const body = await safeJson(res);
       if (!res.ok) {
-        toast({ title: "Error", description: body.error ?? "Failed to reject", variant: "destructive" });
+        toast({ title: "Error", description: String(body.error ?? "Failed to reject"), variant: "destructive" });
         return;
       }
-      toast({ title: "Rejected", description: body.message });
+      toast({ title: "Application rejected", description: String(body.message ?? "") });
       setRejectDialog(null);
       setRejectNote("");
       await queryClient.invalidateQueries({ queryKey: ["admin", "applications"] });
+    } catch (err) {
+      toast({ title: "Network error", description: "Could not reach the server. Please try again.", variant: "destructive" });
+      console.error(err);
     } finally {
       setActionLoading(null);
     }

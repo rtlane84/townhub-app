@@ -206,97 +206,110 @@ router.post("/admin/applications/:id/approve", async (req, res): Promise<void> =
   }
 
   const id = parseInt(req.params.id, 10);
-  const [app] = await db
-    .select()
-    .from(businessApplicationsTable)
-    .where(eq(businessApplicationsTable.id, id));
 
-  if (!app) {
-    res.status(404).json({ error: "Application not found" });
-    return;
-  }
-  if (app.status !== "PENDING") {
-    res.status(409).json({ error: `Application is already ${app.status.toLowerCase()}.` });
-    return;
-  }
-
-  // Generate a unique slug
-  let baseSlug = slugify(app.name);
-  if (!baseSlug) baseSlug = "business";
-  let slug = baseSlug;
-  let suffix = 2;
-  while (true) {
-    const [conflict] = await db
-      .select({ id: businessesTable.id })
-      .from(businessesTable)
-      .where(eq(businessesTable.slug, slug));
-    if (!conflict) break;
-    slug = `${baseSlug}-${suffix}`;
-    suffix++;
-  }
-
-  // Create the business
-  const [business] = await db
-    .insert(businessesTable)
-    .values({
-      name: app.name,
-      slug,
-      type: app.type as never,
-      description: app.description,
-      address: app.address,
-      phone: app.phone,
-      hours: app.hours,
-      ownerId: app.userId,
-      pickupEnabled: true,
-      payAtPickupEnabled: true,
-      active: true,
-    })
-    .returning();
-
-  // Promote user to BUSINESS_OWNER
-  await db
-    .insert(usersTable)
-    .values({ id: app.userId, email: app.userEmail ?? `${app.userId}@user.local`, role: "BUSINESS_OWNER" })
-    .onConflictDoUpdate({ target: usersTable.id, set: { role: "BUSINESS_OWNER" } });
-
-  // Attach subscription if a plan was selected
-  if (app.planId) {
-    const [plan] = await db
+  try {
+    const [app] = await db
       .select()
-      .from(subscriptionPlansTable)
-      .where(eq(subscriptionPlansTable.id, app.planId));
+      .from(businessApplicationsTable)
+      .where(eq(businessApplicationsTable.id, id));
 
-    if (plan) {
-      const trialEndsAt =
-        plan.trialDays > 0
-          ? new Date(Date.now() + plan.trialDays * 24 * 60 * 60 * 1000)
-          : null;
-
-      await db.insert(businessSubscriptionsTable).values({
-        businessId: business.id,
-        planId: plan.id,
-        status: plan.trialDays > 0 ? "TRIALING" : "ACTIVE",
-        trialEndsAt,
-      });
+    if (!app) {
+      res.status(404).json({ error: "Application not found" });
+      return;
     }
+    if (app.status !== "PENDING") {
+      res.status(409).json({ error: `Application is already ${app.status.toLowerCase()}.` });
+      return;
+    }
+
+    // Validate that the type is a known enum value; fall back to GENERAL
+    const VALID_TYPES = [
+      "FOOD_VENDOR", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE",
+      "BUILDING_SUPPLY", "SERVICE_PROVIDER", "FUNERAL_SERVICE", "GENERAL",
+    ];
+    const safeType = VALID_TYPES.includes(app.type) ? app.type : "GENERAL";
+
+    // Generate a unique slug
+    let baseSlug = slugify(app.name);
+    if (!baseSlug) baseSlug = "business";
+    let slug = baseSlug;
+    let suffix = 2;
+    while (true) {
+      const [conflict] = await db
+        .select({ id: businessesTable.id })
+        .from(businessesTable)
+        .where(eq(businessesTable.slug, slug));
+      if (!conflict) break;
+      slug = `${baseSlug}-${suffix}`;
+      suffix++;
+    }
+
+    // Create the business
+    const [business] = await db
+      .insert(businessesTable)
+      .values({
+        name: app.name,
+        slug,
+        type: safeType as never,
+        description: app.description,
+        address: app.address,
+        phone: app.phone,
+        hours: app.hours,
+        ownerId: app.userId,
+        pickupEnabled: true,
+        payAtPickupEnabled: true,
+        active: true,
+      })
+      .returning();
+
+    // Promote user to BUSINESS_OWNER
+    await db
+      .insert(usersTable)
+      .values({ id: app.userId, email: app.userEmail ?? `${app.userId}@user.local`, role: "BUSINESS_OWNER" })
+      .onConflictDoUpdate({ target: usersTable.id, set: { role: "BUSINESS_OWNER" } });
+
+    // Attach subscription if a plan was selected
+    if (app.planId) {
+      const [plan] = await db
+        .select()
+        .from(subscriptionPlansTable)
+        .where(eq(subscriptionPlansTable.id, app.planId));
+
+      if (plan) {
+        const trialEndsAt =
+          plan.trialDays > 0
+            ? new Date(Date.now() + plan.trialDays * 24 * 60 * 60 * 1000)
+            : null;
+
+        await db.insert(businessSubscriptionsTable).values({
+          businessId: business.id,
+          planId: plan.id,
+          status: plan.trialDays > 0 ? "TRIALING" : "ACTIVE",
+          trialEndsAt,
+        });
+      }
+    }
+
+    // Mark application as approved
+    await db
+      .update(businessApplicationsTable)
+      .set({
+        status: "APPROVED",
+        reviewedAt: new Date(),
+        reviewedBy: userId,
+        businessId: business.id,
+      })
+      .where(eq(businessApplicationsTable.id, id));
+
+    req.log.info(
+      { adminId: userId, applicationId: id, businessId: business.id },
+      "Business application approved",
+    );
+    res.json({ message: "Application approved. Business created.", businessId: business.id });
+  } catch (err) {
+    req.log.error({ err, applicationId: id }, "Failed to approve application");
+    res.status(500).json({ error: "Failed to approve application. Please try again." });
   }
-
-  // Mark application as approved
-  await db
-    .update(businessApplicationsTable)
-    .set({
-      status: "APPROVED",
-      reviewedAt: new Date(),
-      reviewedBy: userId,
-      businessId: business.id,
-    })
-    .where(eq(businessApplicationsTable.id, id));
-
-  req.log.info(
-    { adminId: userId, applicationId: id, businessId: business.id },
-    "Business application approved",
-  );
-  res.json({ message: "Application approved. Business created.", businessId: business.id });
 });
 
 // POST /api/admin/applications/:id/reject — reject an application (admin)

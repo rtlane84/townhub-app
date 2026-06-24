@@ -12,13 +12,13 @@ import { Store, CheckCircle2, Loader2, ArrowRight, ArrowLeft, Building2, CreditC
 import { cn } from "@/lib/utils";
 
 const BUSINESS_TYPES = [
-  { value: "RESTAURANT", label: "Restaurant / Food Service" },
-  { value: "BAKERY", label: "Bakery" },
-  { value: "GROCERY", label: "Grocery / Market" },
+  { value: "FOOD_VENDOR", label: "Restaurant / Food Service" },
   { value: "FLORIST", label: "Florist" },
-  { value: "GARDEN", label: "Garden / Nursery" },
-  { value: "RETAIL", label: "Retail Shop" },
-  { value: "CAFE", label: "Café / Coffee Shop" },
+  { value: "GARDEN_MARKET", label: "Garden / Nursery" },
+  { value: "RETAIL_STORE", label: "Retail Shop" },
+  { value: "BUILDING_SUPPLY", label: "Building Supply" },
+  { value: "SERVICE_PROVIDER", label: "Service Provider" },
+  { value: "FUNERAL_SERVICE", label: "Funeral Service" },
   { value: "GENERAL", label: "Other / General" },
 ];
 
