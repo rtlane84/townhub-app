@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, ShoppingBag, Tags, Settings, Store } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function BusinessDashboardLayout({ children }: { children: React.ReactNode }) {
@@ -50,6 +50,7 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
     { href: "/dashboard/admin", label: "Overview", icon: LayoutDashboard },
     { href: "/dashboard/admin/businesses", label: "Businesses", icon: Store },
     { href: "/dashboard/admin/orders", label: "Orders", icon: ShoppingBag },
+    { href: "/dashboard/admin/users", label: "Users", icon: Users },
   ];
 
   return (

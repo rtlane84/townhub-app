@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { useUser } from "@clerk/react";
+import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -120,6 +122,48 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+const PUBLIC_PATHS = ["/", "/businesses", "/sign-in", "/sign-up"];
+
+function PostSignInRedirector() {
+  const { isSignedIn, isLoaded } = useUser();
+  const [, setLocation] = useLocation();
+  const [redirectPending, setRedirectPending] = useState(false);
+  const prevSignedIn = useRef<boolean | undefined>(undefined);
+
+  const { data: me } = useGetMe({
+    query: {
+      enabled: redirectPending,
+      queryKey: getGetMeQueryKey(),
+    },
+  });
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (prevSignedIn.current === false && isSignedIn === true) {
+      setRedirectPending(true);
+    }
+    prevSignedIn.current = isSignedIn ?? false;
+  }, [isLoaded, isSignedIn]);
+
+  useEffect(() => {
+    if (!redirectPending || !me?.role) return;
+    setRedirectPending(false);
+
+    const currentPath = window.location.pathname.replace(basePath, "") || "/";
+    const onPublicPage = PUBLIC_PATHS.some((p) => currentPath === p || currentPath.startsWith(p + "/"));
+
+    if (onPublicPage) {
+      if (me.role === "ADMIN") {
+        setLocation("/dashboard/admin");
+      } else if (me.role === "BUSINESS_OWNER") {
+        setLocation("/dashboard/business");
+      }
+    }
+  }, [redirectPending, me, setLocation]);
+
+  return null;
+}
+
 function ProtectedRoute({ component: Component, ...rest }: { component: React.ComponentType<{ params: Record<string, string> }>; path: string }) {
   return (
     <Route {...rest}>
@@ -152,6 +196,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <PostSignInRedirector />
         <CartProvider>
           <TooltipProvider>
             <Layout>
