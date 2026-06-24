@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useAuth } from "@clerk/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  useListHighlights,
   useCreateHighlight,
   useUpdateHighlight,
   useDeleteHighlight,
@@ -16,8 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Sparkles } from "lucide-react";
+
+const ADMIN_HIGHLIGHTS_KEY = ["admin", "highlights"];
 
 const BLANK: HighlightInput = {
   title: "",
@@ -31,19 +33,37 @@ const BLANK: HighlightInput = {
   sortOrder: 0,
 };
 
+function useAdminHighlights(getToken: () => Promise<string | null>) {
+  return useQuery<Highlight[]>({
+    queryKey: ADMIN_HIGHLIGHTS_KEY,
+    queryFn: async () => {
+      const token = await getToken();
+      const res = await fetch("/api/admin/highlights", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Failed to load highlights");
+      return res.json() as Promise<Highlight[]>;
+    },
+  });
+}
+
 export default function AdminHighlights() {
   const today = new Date().toISOString().slice(0, 10);
-  // Fetch all highlights including inactive — use the public route but show all in admin view
-  const { data: highlights = [], isLoading } = useListHighlights({});
+  const { getToken } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: highlights = [], isLoading } = useAdminHighlights(getToken);
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Highlight | null>(null);
   const [form, setForm] = useState<HighlightInput>({ ...BLANK, startDate: today, endDate: today });
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListHighlightsQueryKey() });
+  function invalidate() {
+    void queryClient.invalidateQueries({ queryKey: ADMIN_HIGHLIGHTS_KEY });
+    void queryClient.invalidateQueries({ queryKey: getListHighlightsQueryKey() });
+  }
 
   const createHighlight = useCreateHighlight({
     mutation: {
@@ -134,24 +154,33 @@ export default function AdminHighlights() {
               </div>
             ) : (
               <div className="divide-y">
-                {highlights.map((h) => (
-                  <div key={h.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/30">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-medium">{h.title}</span>
-                        {!h.active && <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>}
+                {highlights.map((h) => {
+                  const isLive = h.active && h.startDate <= today && h.endDate >= today;
+                  return (
+                    <div key={h.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/30">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span className="font-medium">{h.title}</span>
+                          {isLive && <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">Live</Badge>}
+                          {!h.active && <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>}
+                          {h.active && !isLive && (
+                            <Badge variant="outline" className="text-amber-700 border-amber-200">
+                              {h.endDate < today ? "Expired" : "Scheduled"}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {h.startDate} → {h.endDate}
+                          {h.buttonText ? ` · "${h.buttonText}"` : ""}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {h.startDate} → {h.endDate}
-                        {h.buttonText ? ` · "${h.buttonText}"` : ""}
-                      </p>
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(h)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteId(h.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(h)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(h.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

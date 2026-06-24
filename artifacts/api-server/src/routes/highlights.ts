@@ -36,6 +36,19 @@ function serializeHighlight(h: typeof highlightsTable.$inferSelect) {
   };
 }
 
+// GET /api/admin/highlights — all highlights for admin management (no date/active filter)
+router.get("/admin/highlights", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const rows = await db
+    .select()
+    .from(highlightsTable)
+    .orderBy(highlightsTable.sortOrder, highlightsTable.createdAt);
+
+  res.json(rows.map(serializeHighlight));
+});
+
 // GET /api/highlights — active highlights whose date range includes today
 router.get("/highlights", async (req, res): Promise<void> => {
   const today = new Date().toISOString().slice(0, 10);
