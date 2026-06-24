@@ -9,6 +9,7 @@ import eventsRouter from "./events";
 import highlightsRouter from "./highlights";
 import subscriptionsRouter from "./subscriptions";
 import foodTruckRouter from "./food-truck";
+import platformRouter from "./platform";
 
 const router: IRouter = Router();
 
@@ -18,6 +19,7 @@ router.use(eventsRouter);
 router.use(highlightsRouter);
 router.use(subscriptionsRouter);
 router.use(foodTruckRouter);
+router.use(platformRouter);
 router.use(businessesRouter);
 router.use(productsRouter);
 router.use(ordersRouter);

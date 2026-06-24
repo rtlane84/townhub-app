@@ -1350,3 +1350,61 @@ export const ListTodayFoodTrucksResponseItem = zod.object({
 export const ListTodayFoodTrucksResponse = zod.array(ListTodayFoodTrucksResponseItem)
 
 
+/**
+ * @summary Get platform-wide theme settings (public read)
+ */
+export const GetPlatformThemeResponse = zod.object({
+  "id": zod.number(),
+  "primaryColor": zod.string(),
+  "accentColor": zod.string(),
+  "backgroundColor": zod.string(),
+  "buttonColor": zod.string(),
+  "headingColor": zod.string().nullish(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Update platform-wide theme settings (admin only)
+ */
+export const UpdatePlatformThemeBody = zod.object({
+  "primaryColor": zod.string().optional(),
+  "accentColor": zod.string().optional(),
+  "backgroundColor": zod.string().optional(),
+  "buttonColor": zod.string().optional(),
+  "headingColor": zod.string().optional()
+})
+
+export const UpdatePlatformThemeResponse = zod.object({
+  "id": zod.number(),
+  "primaryColor": zod.string(),
+  "accentColor": zod.string(),
+  "backgroundColor": zod.string(),
+  "buttonColor": zod.string(),
+  "headingColor": zod.string().nullish(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary List notification logs for dev inspection (admin only)
+ */
+export const ListNotificationLogsQueryParams = zod.object({
+  "orderId": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const ListNotificationLogsResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "orderId": zod.number(),
+  "type": zod.string(),
+  "recipientEmail": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string().optional(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListNotificationLogsResponse = zod.array(ListNotificationLogsResponseItem)
+
+

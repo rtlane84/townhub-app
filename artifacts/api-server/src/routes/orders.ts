@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, ordersTable, orderItemsTable, productsTable, businessesTable } from "@workspace/db";
-import { eq, and, sql, gte, lte } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import {
   CreateOrderBody,
   GetOrderParams,
@@ -11,7 +11,13 @@ import {
   ListAllOrdersQueryParams,
   CreateCheckoutSessionBody,
 } from "@workspace/api-zod";
-import { createStripeCheckoutSession, isMockMode } from "../lib/stripe";
+import { createStripeCheckoutSession } from "../lib/stripe";
+import {
+  sendOrderNotification,
+  buildOrderPlacedBusinessEmail,
+  buildOrderConfirmationEmail,
+  buildStatusUpdateEmail,
+} from "../lib/notifications";
 
 const router: IRouter = Router();
 
@@ -94,8 +100,6 @@ router.post("/orders", async (req, res): Promise<void> => {
 
   const d = parsed.data;
 
-  // Fetch products to compute prices
-  const productIds = d.items.map((i) => i.productId);
   const products = await db
     .select()
     .from(productsTable)
@@ -161,7 +165,6 @@ router.post("/orders", async (req, res): Promise<void> => {
     })
     .returning();
 
-  // Insert order items
   await db.insert(orderItemsTable).values(
     orderItems.map((item) => ({
       orderId: order.id,
@@ -175,6 +178,54 @@ router.post("/orders", async (req, res): Promise<void> => {
 
   const result = await getOrderWithItems(order.id);
   res.status(201).json(result);
+
+  // ── Fire-and-forget notifications (never block the response) ──────────────
+  const notifItems = orderItems.map((i) => ({
+    productName: i.productName,
+    quantity: i.quantity,
+    unitPrice: i.unitPrice,
+  }));
+
+  // Notify business owner
+  if (business?.orderNotificationEmail) {
+    const { subject, body } = buildOrderPlacedBusinessEmail({
+      orderNumber: order.orderNumber,
+      customerName: d.customerName,
+      customerEmail: d.customerEmail,
+      total,
+      items: notifItems,
+      fulfillmentType: d.fulfillmentType,
+      notes: d.notes,
+    });
+    sendOrderNotification({
+      type: "ORDER_PLACED_BUSINESS",
+      businessId: business.id,
+      orderId: order.id,
+      recipientEmail: business.orderNotificationEmail,
+      subject,
+      body,
+    }).catch(() => {});
+  }
+
+  // Send customer order confirmation
+  if (d.customerEmail) {
+    const { subject, body } = buildOrderConfirmationEmail({
+      orderNumber: order.orderNumber,
+      businessName: business?.name ?? "the business",
+      total,
+      items: notifItems,
+      fulfillmentType: d.fulfillmentType,
+      customerName: d.customerName,
+    });
+    sendOrderNotification({
+      type: "ORDER_PLACED_CUSTOMER",
+      businessId: d.businessId,
+      orderId: order.id,
+      recipientEmail: d.customerEmail,
+      subject,
+      body,
+    }).catch(() => {});
+  }
 });
 
 // GET /api/orders/:id
@@ -222,6 +273,29 @@ router.patch("/orders/:id/status", async (req, res): Promise<void> => {
   }
 
   res.json(result);
+
+  // ── Notify customer of status change (fire-and-forget) ────────────────────
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, params.data.id));
+
+  if (order?.customerEmail) {
+    const { subject, body } = buildStatusUpdateEmail({
+      orderNumber: result.orderNumber,
+      businessName: result.businessName,
+      status: parsed.data.status,
+      customerName: result.customerName,
+    });
+    sendOrderNotification({
+      type: "ORDER_STATUS_UPDATE",
+      businessId: result.businessId,
+      orderId: result.id,
+      recipientEmail: order.customerEmail,
+      subject,
+      body,
+    }).catch(() => {});
+  }
 });
 
 // GET /api/businesses/:businessId/orders
@@ -287,9 +361,7 @@ router.get(
       .where(eq(ordersTable.businessId, businessId))
       .orderBy(sql`${ordersTable.createdAt} DESC`);
 
-    const todayOrders = allOrders.filter(
-      (o) => o.createdAt >= todayStart,
-    );
+    const todayOrders = allOrders.filter((o) => o.createdAt >= todayStart);
     const pendingOrders = allOrders.filter((o) =>
       ["NEW", "CONFIRMED", "PREPARING"].includes(o.status),
     );
@@ -392,7 +464,6 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
     `${baseUrl}/cart?payment=canceled`,
   );
 
-  // Update order with session id
   if (result.sessionId) {
     await db
       .update(ordersTable)
@@ -405,7 +476,6 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
 
 // POST /api/checkout/webhook (Stripe webhook)
 router.post("/checkout/webhook", async (req, res): Promise<void> => {
-  // Stripe sends raw body — handle payment completion
   const sig = req.headers["stripe-signature"];
   if (!sig) {
     res.status(400).json({ error: "No signature" });
@@ -413,9 +483,8 @@ router.post("/checkout/webhook", async (req, res): Promise<void> => {
   }
 
   try {
-    // In test mode or mock mode just acknowledge
     res.json({ received: true });
-  } catch (err) {
+  } catch {
     res.status(400).json({ error: "Webhook error" });
   }
 });

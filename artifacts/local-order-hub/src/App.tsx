@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { CartProvider } from "@/components/cart-context";
+import { PlatformThemeProvider } from "@/components/theme-provider";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -36,6 +37,7 @@ import AdminUsers from "@/pages/dashboard/admin/users";
 import AdminEvents from "@/pages/dashboard/admin/events";
 import AdminHighlights from "@/pages/dashboard/admin/highlights";
 import AdminPlans from "@/pages/dashboard/admin/plans";
+import AdminSettings from "@/pages/dashboard/admin/settings";
 
 import Setup from "@/pages/setup";
 import ListYourBusiness from "@/pages/list-your-business";
@@ -208,6 +210,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <PostSignInRedirector />
+        <PlatformThemeProvider>
         <CartProvider>
           <TooltipProvider>
             <Layout>
@@ -241,6 +244,7 @@ function ClerkProviderWithRoutes() {
                 <ProtectedRoute path="/dashboard/admin/events" component={AdminEvents} />
                 <ProtectedRoute path="/dashboard/admin/highlights" component={AdminHighlights} />
                 <ProtectedRoute path="/dashboard/admin/plans" component={AdminPlans} />
+                <ProtectedRoute path="/dashboard/admin/settings" component={AdminSettings} />
                 <ProtectedRoute path="/dashboard/admin" component={AdminOverview} />
 
                 <Route component={NotFound} />
@@ -249,6 +253,7 @@ function ClerkProviderWithRoutes() {
             <Toaster />
           </TooltipProvider>
         </CartProvider>
+        </PlatformThemeProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

@@ -1,0 +1,64 @@
+Yes — finish both partial items so the original prompt is fully completed. Do not rebuild the app. Extend the existing structure.
+
+1) Finish business order notifications
+
+The orderNotificationEmail field already exists in business settings, but the actual notification logic is still missing.
+
+Please complete the notification flow so that:
+
+On order placement
+
+* when a customer places an order, create a business notification event
+* if the business has orderNotificationEmail configured, send the notification there
+* if no email provider is configured, log the notification instead of failing
+* also send/log customer order confirmation
+
+On order status update
+
+* when the business owner changes an order status, send/log a customer status update notification
+
+Implementation notes
+
+* keep this modular so Resend or another provider can be plugged in later
+* do not block order creation if notification sending fails
+* add any missing helper/service layer needed for order notifications
+* if useful, add a simple notification log table or internal logging so I can inspect notifications in dev
+
+2) Finish platform-wide admin theme settings
+
+Business-level accent/button/banner fields are already partly implemented, but the platform-wide theme system is still missing.
+
+Please add admin-controlled marketplace theme settings so I can control the overall LocalOrderHub appearance from the admin dashboard.
+
+Requirements
+
+Add platform-wide theme settings for:
+
+* primaryColor
+* accentColor
+* backgroundColor
+* buttonColor
+* optional text/heading color if needed for consistency
+
+Admin UI
+
+* create an admin settings page or theme settings section where I can edit the marketplace theme
+* use Clay-inspired defaults:
+    * primary blue: #1E3A8A
+    * gold accent: #F59E0B
+    * dark navy: #0F172A
+    * light background: #F8FAFC
+
+Frontend behavior
+
+* apply platform theme across the public marketplace pages
+* if a business has no custom storefront colors, its storefront should inherit platform defaults
+* if a business has custom storefront accent/button colors, use those on the storefront while still keeping the overall marketplace theme consistent
+
+Deliverable
+
+When finished, give me a checklist of:
+
+* what files/routes/services were added or changed
+* how to test notifications
+* how to test the platform theme settings

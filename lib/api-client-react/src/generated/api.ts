@@ -45,10 +45,14 @@ import type {
   ListAllOrdersParams,
   ListBusinessesParams,
   ListEventsParams,
+  ListNotificationLogsParams,
+  NotificationLog,
   Order,
   OrderInput,
   OrderStatusUpdate,
   PlatformStats,
+  PlatformTheme,
+  PlatformThemeInput,
   Product,
   ProductInput,
   ProductUpdate,
@@ -3927,6 +3931,238 @@ export function useListTodayFoodTrucks<TData = Awaited<ReturnType<typeof listTod
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListTodayFoodTrucksQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetPlatformThemeUrl = () => {
+
+
+
+
+  return `/api/admin/settings/theme`
+}
+
+/**
+ * @summary Get platform-wide theme settings (public read)
+ */
+export const getPlatformTheme = async ( options?: RequestInit): Promise<PlatformTheme> => {
+
+  return customFetch<PlatformTheme>(getGetPlatformThemeUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPlatformThemeQueryKey = () => {
+    return [
+    `/api/admin/settings/theme`
+    ] as const;
+    }
+
+
+export const getGetPlatformThemeQueryOptions = <TData = Awaited<ReturnType<typeof getPlatformTheme>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlatformTheme>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPlatformThemeQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlatformTheme>>> = ({ signal }) => getPlatformTheme({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPlatformTheme>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPlatformThemeQueryResult = NonNullable<Awaited<ReturnType<typeof getPlatformTheme>>>
+export type GetPlatformThemeQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get platform-wide theme settings (public read)
+ */
+
+export function useGetPlatformTheme<TData = Awaited<ReturnType<typeof getPlatformTheme>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlatformTheme>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPlatformThemeQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdatePlatformThemeUrl = () => {
+
+
+
+
+  return `/api/admin/settings/theme`
+}
+
+/**
+ * @summary Update platform-wide theme settings (admin only)
+ */
+export const updatePlatformTheme = async (platformThemeInput: PlatformThemeInput, options?: RequestInit): Promise<PlatformTheme> => {
+
+  return customFetch<PlatformTheme>(getUpdatePlatformThemeUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      platformThemeInput,)
+  }
+);}
+
+
+
+
+export const getUpdatePlatformThemeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlatformTheme>>, TError,{data: BodyType<PlatformThemeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePlatformTheme>>, TError,{data: BodyType<PlatformThemeInput>}, TContext> => {
+
+const mutationKey = ['updatePlatformTheme'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePlatformTheme>>, {data: BodyType<PlatformThemeInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updatePlatformTheme(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePlatformThemeMutationResult = NonNullable<Awaited<ReturnType<typeof updatePlatformTheme>>>
+    export type UpdatePlatformThemeMutationBody = BodyType<PlatformThemeInput>
+    export type UpdatePlatformThemeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update platform-wide theme settings (admin only)
+ */
+export const useUpdatePlatformTheme = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlatformTheme>>, TError,{data: BodyType<PlatformThemeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePlatformTheme>>,
+        TError,
+        {data: BodyType<PlatformThemeInput>},
+        TContext
+      > => {
+      return useMutation(getUpdatePlatformThemeMutationOptions(options));
+    }
+
+export const getListNotificationLogsUrl = (params?: ListNotificationLogsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/notification-logs?${stringifiedParams}` : `/api/admin/notification-logs`
+}
+
+/**
+ * @summary List notification logs for dev inspection (admin only)
+ */
+export const listNotificationLogs = async (params?: ListNotificationLogsParams, options?: RequestInit): Promise<NotificationLog[]> => {
+
+  return customFetch<NotificationLog[]>(getListNotificationLogsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListNotificationLogsQueryKey = (params?: ListNotificationLogsParams,) => {
+    return [
+    `/api/admin/notification-logs`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListNotificationLogsQueryOptions = <TData = Awaited<ReturnType<typeof listNotificationLogs>>, TError = ErrorType<unknown>>(params?: ListNotificationLogsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNotificationLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListNotificationLogsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listNotificationLogs>>> = ({ signal }) => listNotificationLogs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listNotificationLogs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListNotificationLogsQueryResult = NonNullable<Awaited<ReturnType<typeof listNotificationLogs>>>
+export type ListNotificationLogsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List notification logs for dev inspection (admin only)
+ */
+
+export function useListNotificationLogs<TData = Awaited<ReturnType<typeof listNotificationLogs>>, TError = ErrorType<unknown>>(
+ params?: ListNotificationLogsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listNotificationLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListNotificationLogsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

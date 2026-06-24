@@ -540,6 +540,37 @@ export interface FoodTruckLocationWithBusiness {
   isActive: boolean;
 }
 
+export interface PlatformTheme {
+  id: number;
+  primaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  buttonColor: string;
+  /** @nullable */
+  headingColor?: string | null;
+  updatedAt?: string;
+}
+
+export interface PlatformThemeInput {
+  primaryColor?: string;
+  accentColor?: string;
+  backgroundColor?: string;
+  buttonColor?: string;
+  headingColor?: string;
+}
+
+export interface NotificationLog {
+  id: number;
+  businessId: number;
+  orderId: number;
+  type: string;
+  recipientEmail: string;
+  subject: string;
+  body?: string;
+  status: string;
+  createdAt: string;
+}
+
 export type ListBusinessesParams = {
 /**
  * Filter by business type
@@ -564,5 +595,10 @@ date?: string;
 export type ListEventsParams = {
 featured?: boolean;
 upcoming?: boolean;
+};
+
+export type ListNotificationLogsParams = {
+orderId?: number;
+limit?: number;
 };
 

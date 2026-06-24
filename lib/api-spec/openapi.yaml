@@ -1083,6 +1083,62 @@ paths:
                 items:
                   $ref: "#/components/schemas/FoodTruckLocationWithBusiness"
 
+  # ─── Platform Theme Settings ──────────────────────────────────────
+  /admin/settings/theme:
+    get:
+      operationId: getPlatformTheme
+      tags: [admin]
+      summary: Get platform-wide theme settings (public read)
+      responses:
+        "200":
+          description: Platform theme settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformTheme"
+    put:
+      operationId: updatePlatformTheme
+      tags: [admin]
+      summary: Update platform-wide theme settings (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlatformThemeInput"
+      responses:
+        "200":
+          description: Updated theme
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformTheme"
+
+  # ─── Notification Logs ────────────────────────────────────────────
+  /admin/notification-logs:
+    get:
+      operationId: listNotificationLogs
+      tags: [admin]
+      summary: List notification logs for dev inspection (admin only)
+      parameters:
+        - in: query
+          name: orderId
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notification log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationLog"
+
 components:
   schemas:
     HealthStatus:
@@ -1926,3 +1982,63 @@ components:
           type: ["string", "null"]
         isActive:
           type: boolean
+
+    # ─── Platform Theme ────────────────────────────────────────────
+    PlatformTheme:
+      type: object
+      required: [id, primaryColor, accentColor, backgroundColor, buttonColor]
+      properties:
+        id:
+          type: integer
+        primaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        buttonColor:
+          type: string
+        headingColor:
+          type: ["string", "null"]
+        updatedAt:
+          type: string
+          format: date-time
+
+    PlatformThemeInput:
+      type: object
+      properties:
+        primaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        buttonColor:
+          type: string
+        headingColor:
+          type: string
+
+    # ─── Notification Log ──────────────────────────────────────────
+    NotificationLog:
+      type: object
+      required: [id, businessId, orderId, type, recipientEmail, subject, status, createdAt]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        orderId:
+          type: integer
+        type:
+          type: string
+        recipientEmail:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
