@@ -136,6 +136,26 @@ paths:
         "404":
           description: Not found
 
+  # ─── Self-service business registration ────────────────────────
+  /businesses/register:
+    post:
+      operationId: registerBusiness
+      tags: [businesses]
+      summary: Self-service business registration (any authenticated user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessRegistrationInput"
+      responses:
+        "201":
+          description: Business created and user promoted to BUSINESS_OWNER
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
   # ─── Business Admin (owner/admin) ──────────────────────────────
   /businesses/manage:
     post:
@@ -752,6 +772,24 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Product"
+
+    BusinessRegistrationInput:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/BusinessType"
+        description:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        hours:
+          type: string
 
     BusinessInput:
       type: object

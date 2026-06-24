@@ -24,6 +24,7 @@ import type {
   BusinessInput,
   BusinessOrderSummary,
   BusinessOwnerAssignment,
+  BusinessRegistrationInput,
   BusinessStorefront,
   BusinessUpdate,
   Category,
@@ -525,6 +526,77 @@ export function useGetBusinessBySlug<TData = Awaited<ReturnType<typeof getBusine
 
 
 
+
+export const getRegisterBusinessUrl = () => {
+
+
+
+
+  return `/api/businesses/register`
+}
+
+/**
+ * @summary Self-service business registration (any authenticated user)
+ */
+export const registerBusiness = async (businessRegistrationInput: BusinessRegistrationInput, options?: RequestInit): Promise<Business> => {
+
+  return customFetch<Business>(getRegisterBusinessUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      businessRegistrationInput,)
+  }
+);}
+
+
+
+
+export const getRegisterBusinessMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerBusiness>>, TError,{data: BodyType<BusinessRegistrationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerBusiness>>, TError,{data: BodyType<BusinessRegistrationInput>}, TContext> => {
+
+const mutationKey = ['registerBusiness'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerBusiness>>, {data: BodyType<BusinessRegistrationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerBusiness(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterBusinessMutationResult = NonNullable<Awaited<ReturnType<typeof registerBusiness>>>
+    export type RegisterBusinessMutationBody = BodyType<BusinessRegistrationInput>
+    export type RegisterBusinessMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Self-service business registration (any authenticated user)
+ */
+export const useRegisterBusiness = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerBusiness>>, TError,{data: BodyType<BusinessRegistrationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerBusiness>>,
+        TError,
+        {data: BodyType<BusinessRegistrationInput>},
+        TContext
+      > => {
+      return useMutation(getRegisterBusinessMutationOptions(options));
+    }
 
 export const getCreateBusinessUrl = () => {
 

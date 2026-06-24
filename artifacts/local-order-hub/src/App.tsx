@@ -32,6 +32,7 @@ import AdminBusinesses from "@/pages/dashboard/admin/businesses";
 import AdminOrders from "@/pages/dashboard/admin/orders";
 import AdminUsers from "@/pages/dashboard/admin/users";
 import Setup from "@/pages/setup";
+import ListYourBusiness from "@/pages/list-your-business";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -123,7 +124,7 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
-const PUBLIC_PATHS = ["/", "/businesses", "/sign-in", "/sign-up", "/setup"];
+const PUBLIC_PATHS = ["/", "/businesses", "/sign-in", "/sign-up", "/setup", "/list-your-business"];
 
 function PostSignInRedirector() {
   const { isSignedIn, isLoaded } = useUser();
@@ -212,6 +213,7 @@ function ClerkProviderWithRoutes() {
                 <Route path="/sign-in/*?" component={SignInPage} />
                 <Route path="/sign-up/*?" component={SignUpPage} />
                 <Route path="/setup" component={Setup} />
+                <Route path="/list-your-business" component={ListYourBusiness} />
 
                 {/* Business owner dashboard */}
                 <ProtectedRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />

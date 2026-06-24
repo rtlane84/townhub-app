@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
-import { ShoppingBag, Store, LayoutDashboard, ShieldCheck } from "lucide-react";
+import { ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
 import { Badge } from "./ui/badge";
@@ -49,6 +49,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 >
                   <DashboardIcon className="h-3.5 w-3.5" />
                   {dashboardLabel}
+                </Link>
+              )}
+
+              {isLoaded && !isAdmin && !isBusinessOwner && (
+                <Link
+                  href="/list-your-business"
+                  className={`flex items-center gap-1.5 transition-colors hover:text-foreground ${
+                    location === "/list-your-business" ? "text-foreground" : ""
+                  }`}
+                >
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  List Your Business
                 </Link>
               )}
             </nav>

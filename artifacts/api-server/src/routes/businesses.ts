@@ -5,6 +5,7 @@ import {
   categoriesTable,
   productsTable,
   ordersTable,
+  usersTable,
 } from "@workspace/db";
 import { eq, and, ilike } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
@@ -16,6 +17,14 @@ import {
   DeleteBusinessParams,
   GetBusinessBySlugParams,
 } from "@workspace/api-zod";
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 const router: IRouter = Router();
 
@@ -77,6 +86,84 @@ router.get("/businesses", async (req, res): Promise<void> => {
     .orderBy(businessesTable.featured, businessesTable.name);
 
   res.json(businesses.map(serializeBusiness));
+});
+
+// POST /api/businesses/register — self-service listing
+router.post("/businesses/register", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  // Check user doesn't already own a business
+  const [existing] = await db
+    .select()
+    .from(businessesTable)
+    .where(eq(businessesTable.ownerId, userId));
+  if (existing) {
+    res.status(409).json({ error: "You already have a business listed." });
+    return;
+  }
+
+  const { name, type, description, address, phone, hours } = req.body as {
+    name?: string;
+    type?: string;
+    description?: string;
+    address?: string;
+    phone?: string;
+    hours?: string;
+  };
+
+  if (!name?.trim() || !type?.trim()) {
+    res.status(400).json({ error: "name and type are required." });
+    return;
+  }
+
+  // Generate a unique slug
+  let baseSlug = slugify(name);
+  if (!baseSlug) baseSlug = "business";
+  let slug = baseSlug;
+  let suffix = 2;
+  while (true) {
+    const [conflict] = await db
+      .select({ id: businessesTable.id })
+      .from(businessesTable)
+      .where(eq(businessesTable.slug, slug));
+    if (!conflict) break;
+    slug = `${baseSlug}-${suffix}`;
+    suffix++;
+  }
+
+  // Create the business
+  const [business] = await db
+    .insert(businessesTable)
+    .values({
+      name: name.trim(),
+      slug,
+      type: type as never,
+      description: description?.trim() || null,
+      address: address?.trim() || null,
+      phone: phone?.trim() || null,
+      hours: hours?.trim() || null,
+      ownerId: userId,
+      pickupEnabled: true,
+      payAtPickupEnabled: true,
+    })
+    .returning();
+
+  // Promote user to BUSINESS_OWNER (upsert in case row doesn't exist yet)
+  const claims = (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth?.sessionClaims;
+  const email = (claims?.email as string) ?? `${userId}@user.local`;
+  const userName = (claims?.name as string) ?? null;
+
+  await db
+    .insert(usersTable)
+    .values({ id: userId, email, name: userName, role: "BUSINESS_OWNER" })
+    .onConflictDoUpdate({ target: usersTable.id, set: { role: "BUSINESS_OWNER" } });
+
+  req.log.info({ userId, businessId: business.id, slug }, "Business registered via self-service");
+  res.status(201).json(serializeBusiness(business));
 });
 
 // GET /api/businesses/stats — platform stats

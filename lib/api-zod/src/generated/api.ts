@@ -183,6 +183,22 @@ export const GetBusinessBySlugResponse = zod.object({
 
 
 /**
+ * @summary Self-service business registration (any authenticated user)
+ */
+
+
+
+export const RegisterBusinessBody = zod.object({
+  "name": zod.string().min(1),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "description": zod.string().optional(),
+  "address": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "hours": zod.string().optional()
+})
+
+
+/**
  * @summary Create a new business (admin)
  */
 

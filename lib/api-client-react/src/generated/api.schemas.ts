@@ -127,6 +127,16 @@ export interface BusinessStorefront {
   products: Product[];
 }
 
+export interface BusinessRegistrationInput {
+  /** @minLength 1 */
+  name: string;
+  type: BusinessType;
+  description?: string;
+  address?: string;
+  phone?: string;
+  hours?: string;
+}
+
 export interface BusinessInput {
   /** @minLength 1 */
   name: string;

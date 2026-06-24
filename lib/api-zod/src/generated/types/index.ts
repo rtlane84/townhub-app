@@ -10,6 +10,7 @@ export * from './business';
 export * from './businessInput';
 export * from './businessOrderSummary';
 export * from './businessOwnerAssignment';
+export * from './businessRegistrationInput';
 export * from './businessStorefront';
 export * from './businessType';
 export * from './businessUpdate';
