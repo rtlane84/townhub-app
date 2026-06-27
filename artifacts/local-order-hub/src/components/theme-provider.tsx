@@ -17,6 +17,7 @@ export type PlatformBranding = {
   platformName: string;
   heroHeadline: { line1: string; line2: string };
   heroTagline: string;
+  heroImageUrl: string | null;
   footerTagline: string;
   shopCtaLabel: string;
   logoUrl: string | null;
@@ -29,6 +30,7 @@ const PlatformBrandingContext = createContext<PlatformBranding>({
   platformName: DEFAULT_PLATFORM_NAME,
   heroHeadline: resolveHeroHeadline(null),
   heroTagline: resolveTagline(null),
+  heroImageUrl: null,
   footerTagline: resolveFooterTagline(null),
   shopCtaLabel: resolveShopCtaLabel(null),
   logoUrl: null,
@@ -51,6 +53,7 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
       platformName: resolvePlatformName(theme),
       heroHeadline: resolveHeroHeadline(theme),
       heroTagline: resolveTagline(theme),
+      heroImageUrl: theme?.heroImageUrl?.trim() || null,
       footerTagline: resolveFooterTagline(theme),
       shopCtaLabel: resolveShopCtaLabel(theme),
       logoUrl: theme?.logoUrl?.trim() || null,

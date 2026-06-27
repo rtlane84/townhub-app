@@ -2,6 +2,7 @@ export type ImageSurface =
   | "product"
   | "business-logo"
   | "business-hero"
+  | "homepage-hero"
   | "event"
   | "highlight"
   | "platform-logo";
@@ -27,10 +28,16 @@ export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> 
     hint: "Appears on your storefront and business listings.",
   },
   "business-hero": {
-    label: "Hero image",
+    label: "Storefront hero image",
     recommendedSize: "1600 × 900 px (16:9)",
     aspectClass: "aspect-[16/9]",
-    hint: "Wide banner at the top of your storefront.",
+    hint: "Wide banner at the top of your public storefront page.",
+  },
+  "homepage-hero": {
+    label: "Homepage hero image",
+    recommendedSize: "1920 × 800 px (wide banner)",
+    aspectClass: "aspect-[21/9]",
+    hint: "Background image for the main homepage hero section.",
   },
   event: {
     label: "Event image",

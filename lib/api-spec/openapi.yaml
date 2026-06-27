@@ -2206,6 +2206,8 @@ components:
           type: ["string", "null"]
         logoUrl:
           type: ["string", "null"]
+        heroImageUrl:
+          type: ["string", "null"]
         logoSizePx:
           type: integer
           minimum: 16
@@ -2234,6 +2236,8 @@ components:
         tagline:
           type: string
         logoUrl:
+          type: string
+        heroImageUrl:
           type: string
         logoSizePx:
           type: integer

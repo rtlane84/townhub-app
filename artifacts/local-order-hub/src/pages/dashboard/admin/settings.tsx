@@ -45,6 +45,7 @@ type BrandingFields = {
   townName: string;
   tagline: string;
   logoUrl: string;
+  heroImageUrl: string;
   logoSizePx: number;
 };
 
@@ -53,6 +54,7 @@ const BRANDING_DEFAULTS: BrandingFields = {
   townName: "",
   tagline: "",
   logoUrl: "",
+  heroImageUrl: "",
   logoSizePx: DEFAULT_LOGO_SIZE_PX,
 };
 
@@ -236,7 +238,7 @@ export default function AdminSettings() {
               <CardTitle className="font-serif">Platform Branding</CardTitle>
             </div>
             <CardDescription>
-              Customize how the marketplace appears to visitors — site name, tagline, and optional logo.
+              Customize how the marketplace appears to visitors — homepage hero, site name, tagline, and logo.
               Leave fields blank to use defaults.
             </CardDescription>
           </CardHeader>
@@ -245,6 +247,13 @@ export default function AdminSettings() {
               <div className="h-40 animate-pulse bg-muted rounded-lg" />
             ) : (
               <div className="space-y-6">
+                <ImageField
+                  surface="homepage-hero"
+                  value={branding.heroImageUrl}
+                  onChange={(heroImageUrl) => handleBrandingChange("heroImageUrl", heroImageUrl)}
+                  testId="homepage-hero"
+                />
+                <Separator />
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="platformName">Platform Name</Label>

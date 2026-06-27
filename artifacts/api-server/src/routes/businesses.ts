@@ -355,8 +355,8 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
   if (d.slug !== undefined) updateData.slug = d.slug;
   if (d.type !== undefined) updateData.type = d.type;
   if (d.description !== undefined) updateData.description = d.description;
-  if (d.logoUrl !== undefined) updateData.logoUrl = d.logoUrl;
-  if (d.heroImageUrl !== undefined) updateData.heroImageUrl = d.heroImageUrl;
+  if (d.logoUrl !== undefined) updateData.logoUrl = d.logoUrl || null;
+  if (d.heroImageUrl !== undefined) updateData.heroImageUrl = d.heroImageUrl || null;
   if (d.address !== undefined) updateData.address = d.address;
   if (d.phone !== undefined) updateData.phone = d.phone;
   if (d.hours !== undefined) updateData.hours = d.hours;

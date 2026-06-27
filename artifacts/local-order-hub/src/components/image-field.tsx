@@ -126,7 +126,7 @@ export function ImageField({
 
       <div
         className={cn(
-          "relative rounded-lg border bg-muted/30 overflow-hidden",
+          "relative w-full rounded-lg border bg-muted/30 overflow-hidden",
           guidance.aspectClass,
           previewSrc ? "" : "flex items-center justify-center min-h-[120px]",
         )}

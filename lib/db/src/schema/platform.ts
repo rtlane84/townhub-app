@@ -12,6 +12,7 @@ export const platformSettingsTable = pgTable("platform_settings", {
   townName: text("town_name"),
   tagline: text("tagline"),
   logoUrl: text("logo_url"),
+  heroImageUrl: text("hero_image_url"),
   logoSizePx: integer("logo_size_px").notNull().default(24),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

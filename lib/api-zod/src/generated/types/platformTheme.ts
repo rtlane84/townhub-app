@@ -22,6 +22,8 @@ export interface PlatformTheme {
   tagline?: string | null;
   /** @nullable */
   logoUrl?: string | null;
+  /** @nullable */
+  heroImageUrl?: string | null;
   /**
      * @minimum 16
      * @maximum 64

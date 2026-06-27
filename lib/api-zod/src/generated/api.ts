@@ -1564,6 +1564,7 @@ export const GetPlatformThemeResponse = zod.object({
   "townName": zod.string().nullish(),
   "tagline": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
+  "heroImageUrl": zod.string().nullish(),
   "logoSizePx": zod.number().min(getPlatformThemeResponseLogoSizePxMin).max(getPlatformThemeResponseLogoSizePxMax).optional(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -1587,6 +1588,7 @@ export const UpdatePlatformThemeBody = zod.object({
   "townName": zod.string().optional(),
   "tagline": zod.string().optional(),
   "logoUrl": zod.string().optional(),
+  "heroImageUrl": zod.string().optional(),
   "logoSizePx": zod.number().min(updatePlatformThemeBodyLogoSizePxMin).max(updatePlatformThemeBodyLogoSizePxMax).optional()
 })
 
@@ -1606,6 +1608,7 @@ export const UpdatePlatformThemeResponse = zod.object({
   "townName": zod.string().nullish(),
   "tagline": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
+  "heroImageUrl": zod.string().nullish(),
   "logoSizePx": zod.number().min(updatePlatformThemeResponseLogoSizePxMin).max(updatePlatformThemeResponseLogoSizePxMax).optional(),
   "updatedAt": zod.coerce.date().optional()
 })

@@ -16,6 +16,7 @@ export interface PlatformThemeInput {
   townName?: string;
   tagline?: string;
   logoUrl?: string;
+  heroImageUrl?: string;
   /**
      * @minimum 16
      * @maximum 64

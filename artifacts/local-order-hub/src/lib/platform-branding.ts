@@ -69,6 +69,7 @@ export function themeToBrandingFields(theme: PlatformTheme): {
   townName: string;
   tagline: string;
   logoUrl: string;
+  heroImageUrl: string;
   logoSizePx: number;
 } {
   return {
@@ -76,6 +77,7 @@ export function themeToBrandingFields(theme: PlatformTheme): {
     townName: theme.townName?.trim() || "",
     tagline: theme.tagline?.trim() || "",
     logoUrl: theme.logoUrl?.trim() || "",
+    heroImageUrl: theme.heroImageUrl?.trim() || "",
     logoSizePx: resolveLogoSizePx(theme),
   };
 }
@@ -86,6 +88,7 @@ export function buildBrandingPayload(fields: {
   townName: string;
   tagline: string;
   logoUrl: string;
+  heroImageUrl: string;
   logoSizePx: number;
 }) {
   return {
@@ -93,6 +96,7 @@ export function buildBrandingPayload(fields: {
     townName: fields.townName.trim(),
     tagline: fields.tagline.trim(),
     logoUrl: fields.logoUrl.trim(),
+    heroImageUrl: fields.heroImageUrl.trim(),
     logoSizePx: fields.logoSizePx,
   };
 }

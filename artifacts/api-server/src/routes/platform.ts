@@ -16,6 +16,7 @@ const THEME_DEFAULTS = {
   townName: null as string | null,
   tagline: null as string | null,
   logoUrl: null as string | null,
+  heroImageUrl: null as string | null,
   logoSizePx: 24,
 };
 
@@ -37,6 +38,7 @@ function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelec
     townName: row.townName,
     tagline: row.tagline,
     logoUrl: row.logoUrl,
+    heroImageUrl: row.heroImageUrl,
     logoSizePx: row.logoSizePx ?? THEME_DEFAULTS.logoSizePx,
     updatedAt: row.updatedAt,
   };
@@ -76,6 +78,7 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     "townName",
     "tagline",
     "logoUrl",
+    "heroImageUrl",
     "logoSizePx",
   ] as const;
 

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { EventCard } from "@/components/event-card";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { formatBusinessTypeLabel } from "@workspace/api-zod";
+import { cn } from "@/lib/utils";
 import {
   businessHeroPlaceholderStyle,
   businessIconAccentStyle,
@@ -34,7 +35,7 @@ const CATEGORIES = [
 ];
 
 export default function Home() {
-  const { heroTagline, heroHeadline, shopCtaLabel } = usePlatformBranding();
+  const { heroTagline, heroHeadline, shopCtaLabel, heroImageUrl } = usePlatformBranding();
   const { data: businesses, isLoading } = useListBusinesses({ featured: true });
   const { data: featuredEventsRaw = [], isLoading: featuredEventsLoading } = useListEvents({
     upcoming: true,
@@ -57,13 +58,46 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero */}
-      <section className="relative py-24 overflow-hidden bg-primary/5">
-        <div className="container px-4 mx-auto relative z-10 text-center max-w-3xl">
-          <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-6 leading-tight">
+      <section
+        className={cn(
+          "relative py-24 overflow-hidden",
+          heroImageUrl ? "min-h-[420px] flex items-center" : "bg-primary/5",
+        )}
+      >
+        {heroImageUrl ? (
+          <>
+            <img
+              src={heroImageUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+              aria-hidden
+            />
+            <div className="absolute inset-0 bg-black/45" aria-hidden />
+          </>
+        ) : null}
+        <div
+          className={cn(
+            "container px-4 mx-auto relative z-10 text-center max-w-3xl",
+            heroImageUrl && "text-white",
+          )}
+        >
+          <h1
+            className={cn(
+              "text-5xl md:text-6xl font-serif font-bold mb-6 leading-tight",
+              heroImageUrl ? "text-white" : "text-foreground",
+            )}
+          >
             {heroHeadline.line1} <br />
-            <span className="text-primary">{heroHeadline.line2}</span>
+            <span className={heroImageUrl ? "text-primary-foreground" : "text-primary"}>
+              {heroHeadline.line2}
+            </span>
           </h1>
-          <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
+          <p
+            className={cn(
+              "text-xl mb-10 leading-relaxed",
+              heroImageUrl ? "text-white/90" : "text-muted-foreground",
+            )}
+          >
             {heroTagline}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -73,7 +107,14 @@ export default function Home() {
               </Button>
             </Link>
             <Link href="/list-your-business">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg h-14 px-8 rounded-full bg-white">
+              <Button
+                variant="outline"
+                size="lg"
+                className={cn(
+                  "w-full sm:w-auto text-lg h-14 px-8 rounded-full",
+                  heroImageUrl ? "bg-white/95 hover:bg-white border-white/30" : "bg-white",
+                )}
+              >
                 List Your Business
               </Button>
             </Link>

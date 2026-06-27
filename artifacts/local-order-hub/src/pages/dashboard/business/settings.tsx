@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useGetMyBusiness, useUpdateBusiness, getGetMyBusinessQueryKey, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -133,8 +133,8 @@ export default function BusinessSettings() {
         address: opt(form.address),
         phone: opt(form.phone),
         structuredHours: normalizeWeeklyHours(form.structuredHours),
-        logoUrl: opt(form.logoUrl),
-        heroImageUrl: opt(form.heroImageUrl),
+        logoUrl: form.logoUrl.trim(),
+        heroImageUrl: form.heroImageUrl.trim(),
         pickupEnabled: form.pickupEnabled,
         deliveryEnabled: form.deliveryEnabled,
         deliveryFee: optNum(form.deliveryFee),
@@ -256,20 +256,27 @@ export default function BusinessSettings() {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="text-base">Branding</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
+              <CardHeader>
+                <CardTitle className="text-base">Branding</CardTitle>
+                <CardDescription>
+                  Logo and storefront hero banner shown on your public business page and in the directory.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <ImageField
                   surface="business-logo"
                   value={form.logoUrl}
                   onChange={(logoUrl) => setForm((f) => ({ ...f, logoUrl }))}
                   testId="business-logo"
                 />
+                <Separator />
                 <ImageField
                   surface="business-hero"
                   value={form.heroImageUrl}
                   onChange={(heroImageUrl) => setForm((f) => ({ ...f, heroImageUrl }))}
                   testId="business-hero"
                 />
+                <Separator />
                 {field("Homepage Banner Text", "bannerText", { placeholder: "🌸 Spring hours now in effect!" })}
                 <div className="grid md:grid-cols-2 gap-6">
                   <ColorPickerField
