@@ -2,12 +2,11 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Search, MapPin, Store, Filter } from "lucide-react";
 import { useListBusinesses } from "@workspace/api-client-react";
-import { PUBLIC_BUSINESS_FILTERS, formatBusinessTypeLabel } from "@workspace/api-zod";
+import { PUBLIC_BUSINESS_FILTERS } from "@workspace/api-zod";
 import {
   businessHeroPlaceholderStyle,
   businessIconAccentStyle,
   businessListingCardVars,
-  businessTypeBadgeStyle,
 } from "@/lib/theme-colors";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BusinessListingCardMedia } from "@/components/business-logo-badge";
+import { BusinessTags } from "@/components/business-tags";
 
 const LISTING_CARD_CLASS =
   "h-full hover-elevate cursor-pointer border-border/60 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
@@ -120,25 +120,11 @@ export default function Businesses() {
                     {business.description || "A local favorite in our community."}
                   </p>
                   
-                  <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-border/40">
-                    <Badge
-                      variant="outline"
-                      className="font-medium border-border bg-muted/50 text-foreground"
-                      style={businessTypeBadgeStyle(business.accentColor)}
-                    >
-                      {formatBusinessTypeLabel(business.type)}
-                    </Badge>
-                    {business.pickupEnabled && (
-                      <Badge
-                        variant="outline"
-                        className={business.accentColor ? undefined : "border-primary/20 text-primary bg-primary/5"}
-                        style={business.accentColor ? businessTypeBadgeStyle(business.accentColor) : undefined}
-                      >
-                        Pickup
-                      </Badge>
-                    )}
-                    {business.deliveryEnabled && <Badge variant="outline" className="border-blue-200 text-blue-600">Delivery</Badge>}
-                  </div>
+                  <BusinessTags
+                    business={business}
+                    accentColor={business.accentColor}
+                    variant="listing"
+                  />
                 </CardContent>
               </Card>
             </Link>

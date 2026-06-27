@@ -188,14 +188,19 @@ export function businessIconAccentStyle(accentColor?: string | null): CSSPropert
   return { color: hexWithAlpha(hex, 0.85) };
 }
 
-export function businessTypeBadgeStyle(accentColor?: string | null): CSSProperties | undefined {
+export function businessServiceBadgeStyle(accentColor?: string | null): CSSProperties | undefined {
   const hex = normalizeHex(accentColor);
   if (!hex) return undefined;
   return {
     backgroundColor: hexWithAlpha(hex, 0.12),
-    borderColor: hexWithAlpha(hex, 0.35),
+    borderColor: hex,
     color: hex,
   };
+}
+
+/** @deprecated Use businessServiceBadgeStyle for capability tags; type tags use neutral styling. */
+export function businessTypeBadgeStyle(accentColor?: string | null): CSSProperties | undefined {
+  return businessServiceBadgeStyle(accentColor);
 }
 
 export function accentTintStyle(hex: string, alpha = 0.1): CSSProperties {

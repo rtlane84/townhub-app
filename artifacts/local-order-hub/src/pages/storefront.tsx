@@ -7,7 +7,6 @@ import {
 } from "@workspace/api-client-react";
 import { MapPin, Clock, Phone, Store, ShoppingBag, Plus, ArrowLeft, Info, Truck, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/components/cart-context";
 import { useToast } from "@/hooks/use-toast";
@@ -16,12 +15,19 @@ import { Link } from "wouter";
 import { useState } from "react";
 import { BusinessHoursDisplay } from "@/components/business-hours-display";
 import { resolveBusinessHours } from "@/lib/business-hours";
-import { resolvePaymentMode, paymentModeStorefrontNote, isSalonBusiness, formatBusinessTypeLabel, salonStorefrontCopy } from "@workspace/api-zod";
+import { resolvePaymentMode, paymentModeStorefrontNote, isSalonBusiness, salonStorefrontCopy } from "@workspace/api-zod";
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog";
 import { BusinessThemeScope } from "@/components/business-theme-scope";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
+import { BusinessTags } from "@/components/business-tags";
 import { accentTintStyle, mergePlatformTheme, normalizeHex } from "@/lib/theme-colors";
 import { usePlatformBranding } from "@/components/theme-provider";
+
+const categoryPillActiveClass =
+  "rounded-full whitespace-nowrap bg-platform-button text-white border border-platform-button !shadow-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-platform-button hover:text-white hover:!shadow-none active:!shadow-none";
+
+const categoryPillInactiveClass =
+  "rounded-full whitespace-nowrap border border-border bg-white text-foreground shadow-sm hover:bg-muted outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 active:shadow-sm";
 
 export default function Storefront() {
   const [, params] = useRoute("/businesses/:slug");
@@ -52,18 +58,20 @@ export default function Storefront() {
   if (isLoading) {
     return (
       <div className="animate-pulse">
-        <div className="h-64 bg-muted w-full" />
-        <div className="container mx-auto px-4 -mt-16 relative z-10 max-w-6xl">
-          <div className="flex gap-8">
-            <div className="w-1/3">
-              <Skeleton className="h-96 w-full rounded-xl" />
-            </div>
-            <div className="w-2/3 mt-20">
-              <Skeleton className="h-10 w-1/2 mb-4" />
-              <div className="grid grid-cols-2 gap-4 mt-8">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-32 w-full rounded-xl" />
-                ))}
+        <div className="container mx-auto max-w-[1400px] px-4 pt-4 sm:pt-5 md:pt-6">
+          <Skeleton className="mx-auto aspect-video w-[84%] rounded-xl sm:w-[86%] md:rounded-2xl" />
+          <div className="relative z-10 -mt-[6.125rem] md:-mt-[7.125rem]">
+            <div className="flex flex-col gap-8 md:flex-row">
+              <div className="md:w-1/3 lg:w-1/4 flex-shrink-0">
+                <Skeleton className="h-96 w-full rounded-xl" />
+              </div>
+              <div className="md:mt-[3.25rem] md:w-2/3 lg:w-3/4">
+                <Skeleton className="h-10 w-1/2 mb-4" />
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-32 w-full rounded-xl" />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -131,22 +139,27 @@ export default function Storefront() {
         </div>
       )}
 
-      <div className="h-64 md:h-80 w-full bg-muted relative">
-        {b.heroImageUrl ? (
-          <img src={b.heroImageUrl} alt={b.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-            <Store className="h-20 w-20 text-primary/30" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-black/30" />
-      </div>
+      <div className="container mx-auto max-w-[1400px] px-4 pt-4 sm:pt-5 md:pt-6">
+        <div className="relative mx-auto w-[84%] overflow-hidden rounded-xl bg-muted shadow-lg shadow-black/[0.08] ring-1 ring-black/[0.05] sm:w-[86%] md:rounded-2xl">
+          {b.heroImageUrl ? (
+            <img
+              src={b.heroImageUrl}
+              alt=""
+              aria-hidden
+              className="block w-full h-auto"
+            />
+          ) : (
+            <div className="flex aspect-video size-full items-center justify-center bg-primary/10">
+              <Store className="h-16 w-16 text-primary/30 md:h-20 md:w-20" />
+            </div>
+          )}
+        </div>
 
-      <div className="container mx-auto px-4 -mt-20 md:-mt-24 relative z-10 max-w-6xl">
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="relative z-10 -mt-[6.125rem] md:-mt-[7.125rem]">
+          <div className="flex flex-col gap-8 md:flex-row">
           {/* Sidebar */}
           <div className="md:w-1/3 lg:w-1/4 flex-shrink-0">
-            <Card className="sticky top-24 shadow-xl border-border/40 overflow-visible">
+            <Card className="sticky top-24 overflow-visible border-border/40 shadow-xl">
               <div className="flex flex-col items-center rounded-t-xl border-b bg-white p-6 pt-12 text-center">
                 <BusinessLogoBadge
                   src={b.logoUrl}
@@ -156,21 +169,7 @@ export default function Storefront() {
                   className="-mt-[4.5rem] relative z-20 mb-4 shadow-md"
                 />
                 <h1 className="text-2xl font-serif font-bold text-foreground mb-1">{b.name}</h1>
-                <p className="text-sm text-muted-foreground mb-4">{formatBusinessTypeLabel(b.type)}</p>
-                <div className="flex flex-wrap justify-center gap-2 mb-2">
-                  {!b.active && <Badge variant="secondary">Closed</Badge>}
-                  {b.pickupEnabled && (
-                    <Badge variant="outline" className="border-primary text-primary">Pickup</Badge>
-                  )}
-                  {b.deliveryEnabled && (
-                    <Badge variant="outline" className="border-blue-500 text-blue-600">Delivery</Badge>
-                  )}
-                  {eventLocationEnabled && (
-                    <Badge variant="outline" className="border-primary/40 text-primary">
-                      <Truck className="h-3 w-3 mr-1" /> Food Truck
-                    </Badge>
-                  )}
-                </div>
+                <BusinessTags business={b} accentColor={b.accentColor} variant="storefront" />
                 <p className="text-xs text-muted-foreground mb-2">{paymentNote}</p>
                 {isSalon && (
                   <Button
@@ -288,7 +287,7 @@ export default function Storefront() {
           </div>
 
           {/* Catalog grid */}
-          <div className="md:w-2/3 lg:w-3/4 md:mt-24">
+          <div className="md:mt-[3.25rem] md:w-2/3 lg:w-3/4">
             {isSalon && (
               <div className="mb-4">
                 <h2 className="text-2xl font-serif font-bold text-foreground">Our Services</h2>
@@ -298,11 +297,11 @@ export default function Storefront() {
               </div>
             )}
             {categories.length > 0 && (
-              <div className="flex overflow-x-auto pb-4 mb-4 gap-2 hide-scrollbar sticky top-16 z-30 bg-muted/10 py-2 -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="mb-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar md:pt-20">
                 <Button
-                  variant={activeCategory === null ? "default" : "outline"}
+                  variant="ghost"
                   onClick={() => setActiveCategory(null)}
-                  className="rounded-full whitespace-nowrap"
+                  className={activeCategory === null ? categoryPillActiveClass : categoryPillInactiveClass}
                   size="sm"
                 >
                   {copy.allItemsLabel}
@@ -310,9 +309,9 @@ export default function Storefront() {
                 {categories.map((cat) => (
                   <Button
                     key={cat.id}
-                    variant={activeCategory === cat.id ? "default" : "outline"}
+                    variant="ghost"
                     onClick={() => setActiveCategory(cat.id)}
-                    className="rounded-full whitespace-nowrap bg-white hover:bg-muted"
+                    className={activeCategory === cat.id ? categoryPillActiveClass : categoryPillInactiveClass}
                     size="sm"
                   >
                     {cat.name}
@@ -374,6 +373,7 @@ export default function Storefront() {
               </div>
             )}
           </div>
+        </div>
         </div>
       </div>
 

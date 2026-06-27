@@ -14,14 +14,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EventCard } from "@/components/event-card";
 import { usePlatformBranding } from "@/components/theme-provider";
-import { formatBusinessTypeLabel } from "@workspace/api-zod";
 import { BusinessListingCardMedia, BusinessLogoBadge } from "@/components/business-logo-badge";
+import { BusinessTags } from "@/components/business-tags";
 import { cn } from "@/lib/utils";
 import {
   businessHeroPlaceholderStyle,
   businessIconAccentStyle,
   businessListingCardVars,
-  businessTypeBadgeStyle,
 } from "@/lib/theme-colors";
 
 const LISTING_CARD_CLASS =
@@ -284,27 +283,12 @@ export default function Home() {
                       <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
                         {business.description || "A local favorite."}
                       </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge
-                          variant="outline"
-                          className="font-medium border-border bg-muted/50 text-foreground"
-                          style={businessTypeBadgeStyle(business.accentColor)}
-                        >
-                          {formatBusinessTypeLabel(business.type)}
-                        </Badge>
-                        {business.pickupEnabled && (
-                          <Badge
-                            variant="outline"
-                            className={business.accentColor ? undefined : "bg-primary/5 text-primary border-primary/20"}
-                            style={business.accentColor ? businessTypeBadgeStyle(business.accentColor) : undefined}
-                          >
-                            Pickup
-                          </Badge>
-                        )}
-                        {business.deliveryEnabled && (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Delivery</Badge>
-                        )}
-                      </div>
+                      <BusinessTags
+                        business={business}
+                        accentColor={business.accentColor}
+                        variant="listing"
+                        listingLayout="inline"
+                      />
                     </CardContent>
                   </Card>
                 </Link>
