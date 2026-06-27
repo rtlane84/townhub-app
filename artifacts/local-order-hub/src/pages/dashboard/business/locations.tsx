@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useGetMyBusiness,
   useUpdateBusiness,
@@ -9,7 +9,7 @@ import {
   getListFoodTruckLocationsQueryKey,
   getGetMyBusinessQueryKey,
 } from "@workspace/api-client-react";
-import type { FoodTruckLocation, FoodTruckLocationInput } from "@workspace/api-client-react";
+import type { FoodTruckLocation } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, MapPin, Truck } from "lucide-react";
-
-const BLANK: FoodTruckLocationInput = {
-  locationName: "",
-  address: "",
-  locationDate: "",
-  startTime: "",
-  endTime: "",
-  locationNotes: "",
-  isActive: true,
-};
+import {
+  BLANK_FOOD_TRUCK_LOCATION_FORM,
+  buildFoodTruckLocationPayload,
+  canSaveFoodTruckLocationForm,
+  foodTruckLocationToFormValues,
+  validateFoodTruckCoordinates,
+  type FoodTruckLocationFormValues,
+} from "@/lib/food-truck-location-form";
 
 export default function BusinessLocations() {
   const { data: business, isLoading: bizLoading } = useGetMyBusiness();
@@ -43,7 +41,8 @@ export default function BusinessLocations() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<FoodTruckLocation | null>(null);
-  const [form, setForm] = useState<FoodTruckLocationInput>({ ...BLANK });
+  const [initialForm, setInitialForm] = useState<FoodTruckLocationFormValues | null>(null);
+  const [form, setForm] = useState<FoodTruckLocationFormValues>({ ...BLANK_FOOD_TRUCK_LOCATION_FORM });
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const invalidateLocs = () => {
@@ -82,34 +81,26 @@ export default function BusinessLocations() {
 
   function openCreate() {
     setEditing(null);
+    setInitialForm(null);
     const today = new Date().toISOString().slice(0, 10);
-    setForm({ ...BLANK, locationDate: today });
+    setForm({ ...BLANK_FOOD_TRUCK_LOCATION_FORM, locationDate: today });
     setOpen(true);
   }
 
   function openEdit(loc: FoodTruckLocation) {
+    const values = foodTruckLocationToFormValues(loc);
     setEditing(loc);
-    setForm({
-      locationName: loc.locationName,
-      address: loc.address ?? "",
-      locationDate: loc.locationDate,
-      startTime: loc.startTime ?? "",
-      endTime: loc.endTime ?? "",
-      locationNotes: loc.locationNotes ?? "",
-      isActive: loc.isActive,
-    });
+    setInitialForm(values);
+    setForm(values);
     setOpen(true);
   }
 
   function handleSave() {
     if (!business) return;
-    const data: FoodTruckLocationInput = {
-      ...form,
-      address: form.address || undefined,
-      startTime: form.startTime || undefined,
-      endTime: form.endTime || undefined,
-      locationNotes: form.locationNotes || undefined,
-    };
+    const coordinateError = validateFoodTruckCoordinates(form.latitude, form.longitude);
+    if (coordinateError) return;
+
+    const data = buildFoodTruckLocationPayload(form, editing ? "update" : "create");
     if (editing) {
       updateLoc.mutate({ id: business.id, locationId: editing.id, data });
     } else {
@@ -117,12 +108,20 @@ export default function BusinessLocations() {
     }
   }
 
-  function f(key: keyof FoodTruckLocationInput) {
+  function f(key: keyof FoodTruckLocationFormValues) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
   const pending = createLoc.isPending || updateLoc.isPending;
+  const coordinateError = useMemo(
+    () => validateFoodTruckCoordinates(form.latitude, form.longitude),
+    [form.latitude, form.longitude],
+  );
+  const saveEnabled = useMemo(
+    () => canSaveFoodTruckLocationForm(form, { editing: !!editing, initial: initialForm }),
+    [form, editing, initialForm],
+  );
 
   const today = new Date().toISOString().slice(0, 10);
   const upcomingLocs = locations.filter((l) => l.locationDate >= today && l.isActive);
@@ -265,6 +264,33 @@ export default function BusinessLocations() {
               <label className="text-sm font-medium mb-1.5 block">Address</label>
               <Input value={form.address} onChange={f("address")} placeholder="123 Main St" />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Latitude</label>
+                <Input
+                  value={form.latitude}
+                  onChange={f("latitude")}
+                  placeholder="40.7128"
+                  inputMode="decimal"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Longitude</label>
+                <Input
+                  value={form.longitude}
+                  onChange={f("longitude")}
+                  placeholder="-74.0060"
+                  inputMode="decimal"
+                />
+              </div>
+            </div>
+            {coordinateError ? (
+              <p className="text-xs text-destructive -mt-2">{coordinateError}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground -mt-2">
+                Optional map coordinates. Addresses are geocoded automatically when coordinates are blank.
+              </p>
+            )}
             <div>
               <label className="text-sm font-medium mb-1.5 block">Notes</label>
               <Input value={form.locationNotes} onChange={f("locationNotes")} placeholder="Look for the red tent!" />
@@ -276,7 +302,7 @@ export default function BusinessLocations() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={pending || !form.locationName || !form.locationDate}>
+            <Button onClick={handleSave} disabled={pending || !saveEnabled}>
               {pending ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>

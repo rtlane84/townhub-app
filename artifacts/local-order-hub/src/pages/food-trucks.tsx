@@ -5,9 +5,10 @@ import {
   getListTodayFoodTrucksQueryKey,
   getListUpcomingFoodTrucksQueryKey,
 } from "@workspace/api-client-react";
-import { Loader2, Map, Truck } from "lucide-react";
+import { Loader2, Truck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FoodTruckScheduleItem, FoodTruckTodayCard } from "@/components/food-truck-card";
+import { FoodTruckMapSection } from "@/components/food-truck-map";
 import { formatFoodTruckDateHeading, groupFoodTrucksByDate } from "@/lib/food-truck-utils";
 
 export default function FoodTrucks() {
@@ -37,14 +38,6 @@ export default function FoodTrucks() {
         </p>
       </div>
 
-      <div className="mb-10 rounded-2xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
-        <Map className="mx-auto mb-3 h-8 w-8 text-muted-foreground opacity-50" />
-        <p className="font-medium text-foreground">Map Coming Soon</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          An interactive map of food truck locations will appear here in a future update.
-        </p>
-      </div>
-
       {isLoading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -66,6 +59,8 @@ export default function FoodTrucks() {
               </div>
             )}
           </section>
+
+          <FoodTruckMapSection todayTrucks={todayTrucks} />
 
           <section>
             <h2 className="mb-6 font-serif text-2xl font-bold text-foreground">Upcoming Schedule</h2>

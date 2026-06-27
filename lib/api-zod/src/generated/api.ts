@@ -1479,13 +1479,13 @@ export const CreateFoodTruckLocationParams = zod.object({
 
 export const CreateFoodTruckLocationBody = zod.object({
   "locationName": zod.string(),
-  "address": zod.string().optional(),
-  "latitude": zod.string().optional(),
-  "longitude": zod.string().optional(),
+  "address": zod.string().nullish(),
+  "latitude": zod.string().nullish(),
+  "longitude": zod.string().nullish(),
   "locationDate": zod.string(),
-  "startTime": zod.string().optional(),
-  "endTime": zod.string().optional(),
-  "locationNotes": zod.string().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "locationNotes": zod.string().nullish(),
   "isActive": zod.boolean().optional()
 })
 
@@ -1500,13 +1500,13 @@ export const UpdateFoodTruckLocationParams = zod.object({
 
 export const UpdateFoodTruckLocationBody = zod.object({
   "locationName": zod.string(),
-  "address": zod.string().optional(),
-  "latitude": zod.string().optional(),
-  "longitude": zod.string().optional(),
+  "address": zod.string().nullish(),
+  "latitude": zod.string().nullish(),
+  "longitude": zod.string().nullish(),
   "locationDate": zod.string(),
-  "startTime": zod.string().optional(),
-  "endTime": zod.string().optional(),
-  "locationNotes": zod.string().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "locationNotes": zod.string().nullish(),
   "isActive": zod.boolean().optional()
 })
 

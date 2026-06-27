@@ -27,6 +27,30 @@ export function foodTruckDirectionsUrl(truck: FoodTruckLocationWithBusiness): st
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
+export type FoodTruckMapPoint = FoodTruckLocationWithBusiness & {
+  lat: number;
+  lng: number;
+};
+
+export function parseFoodTruckCoordinates(
+  truck: FoodTruckLocationWithBusiness,
+): { lat: number; lng: number } | null {
+  const lat = Number.parseFloat(truck.latitude?.trim() ?? "");
+  const lng = Number.parseFloat(truck.longitude?.trim() ?? "");
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+  return { lat, lng };
+}
+
+export function getMappableFoodTrucks(
+  trucks: FoodTruckLocationWithBusiness[],
+): FoodTruckMapPoint[] {
+  return trucks.flatMap((truck) => {
+    const coords = parseFoodTruckCoordinates(truck);
+    return coords ? [{ ...truck, ...coords }] : [];
+  });
+}
+
 export function foodTruckOrderingEnabled(truck: FoodTruckLocationWithBusiness): boolean {
   return truck.pickupEnabled === true;
 }

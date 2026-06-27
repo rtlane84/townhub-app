@@ -2189,19 +2189,19 @@ components:
         locationName:
           type: string
         address:
-          type: string
+          type: ["string", "null"]
         latitude:
-          type: string
+          type: ["string", "null"]
         longitude:
-          type: string
+          type: ["string", "null"]
         locationDate:
           type: string
         startTime:
-          type: string
+          type: ["string", "null"]
         endTime:
-          type: string
+          type: ["string", "null"]
         locationNotes:
-          type: string
+          type: ["string", "null"]
         isActive:
           type: boolean
 

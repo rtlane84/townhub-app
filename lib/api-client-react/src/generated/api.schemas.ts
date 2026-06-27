@@ -585,13 +585,19 @@ export interface FoodTruckLocation {
 
 export interface FoodTruckLocationInput {
   locationName: string;
-  address?: string;
-  latitude?: string;
-  longitude?: string;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  latitude?: string | null;
+  /** @nullable */
+  longitude?: string | null;
   locationDate: string;
-  startTime?: string;
-  endTime?: string;
-  locationNotes?: string;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
+  /** @nullable */
+  locationNotes?: string | null;
   isActive?: boolean;
 }
 

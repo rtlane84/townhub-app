@@ -74,7 +74,7 @@ export function FoodTruckScheduleItem({ truck }: { truck: FoodTruckLocationWithB
   const slug = truck.businessSlug ?? String(truck.businessId);
 
   return (
-    <div className="flex flex-col gap-1 border-b border-border/40 py-3 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex flex-col gap-2 border-b border-border/40 py-3 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <Link href={`/businesses/${slug}`}>
           <span className="font-medium text-foreground hover:text-primary hover:underline">
@@ -84,9 +84,15 @@ export function FoodTruckScheduleItem({ truck }: { truck: FoodTruckLocationWithB
         <p className="text-sm text-muted-foreground">{truck.locationName}</p>
         {truck.address && <p className="text-xs text-muted-foreground">{truck.address}</p>}
       </div>
-      {timeWindow && (
-        <p className="shrink-0 text-sm text-muted-foreground sm:text-right">{timeWindow}</p>
-      )}
+      <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+        {timeWindow && <p className="text-sm text-muted-foreground">{timeWindow}</p>}
+        <a href={foodTruckDirectionsUrl(truck)} target="_blank" rel="noopener noreferrer">
+          <Button size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
+            <Navigation className="mr-1 h-3 w-3" />
+            Directions
+          </Button>
+        </a>
+      </div>
     </div>
   );
 }

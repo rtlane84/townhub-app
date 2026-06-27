@@ -207,3 +207,33 @@
     @apply font-serif tracking-tight;
   }
 }
+
+.food-truck-map .leaflet-container {
+  z-index: 0;
+  font-family: inherit;
+}
+
+.food-truck-map-marker {
+  background: transparent;
+  border: none;
+}
+
+.food-truck-map-marker-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px 9999px 9999px 0;
+  transform: rotate(-45deg);
+  background: hsl(var(--primary));
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+}
+
+.food-truck-map-popup .leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+}
+
+.food-truck-map-popup .leaflet-popup-content {
+  margin: 0.75rem 1rem;
+}

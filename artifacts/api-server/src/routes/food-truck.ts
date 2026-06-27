@@ -2,21 +2,15 @@ import { Router, type IRouter } from "express";
 import { db, foodTruckLocationsTable, businessesTable } from "@workspace/db";
 import { eq, and, lte, gt } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { z } from "zod";
+import { parseLocationCreateInput, parseLocationUpdateInput } from "../lib/food-truck-location";
+import {
+  enrichLocationInputWithGeocode,
+  enrichLocationUpdateWithGeocode,
+  getPlatformTownHint,
+  resolvePublicLocationCoordinates,
+} from "../lib/food-truck-geocode";
 
 const router: IRouter = Router();
-
-const locationInputSchema = z.object({
-  locationName: z.string().min(1),
-  address: z.string().optional(),
-  latitude: z.string().optional(),
-  longitude: z.string().optional(),
-  locationDate: z.string().min(1),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  locationNotes: z.string().optional(),
-  isActive: z.boolean().optional().default(true),
-});
 
 function serializeLocation(loc: typeof foodTruckLocationsTable.$inferSelect) {
   return {
@@ -51,10 +45,16 @@ router.post("/businesses/:id/food-truck-locations", async (req, res): Promise<vo
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const businessId = parseInt(req.params.id, 10);
-  const parsed = locationInputSchema.safeParse(req.body);
+  const parsed = parseLocationCreateInput(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const [loc] = await db.insert(foodTruckLocationsTable).values({ ...parsed.data, businessId }).returning();
+  const townHint = await getPlatformTownHint();
+  const data = await enrichLocationInputWithGeocode(parsed.data, townHint);
+
+  const [loc] = await db
+    .insert(foodTruckLocationsTable)
+    .values({ ...data, businessId })
+    .returning();
   res.status(201).json(serializeLocation(loc));
 });
 
@@ -64,10 +64,19 @@ router.put("/businesses/:id/food-truck-locations/:locationId", async (req, res):
   if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
   const locationId = parseInt(req.params.locationId, 10);
-  const parsed = locationInputSchema.partial().safeParse(req.body);
+  const parsed = parseLocationUpdateInput(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const [updated] = await db.update(foodTruckLocationsTable).set(parsed.data).where(eq(foodTruckLocationsTable.id, locationId)).returning();
+  const [existing] = await db
+    .select()
+    .from(foodTruckLocationsTable)
+    .where(eq(foodTruckLocationsTable.id, locationId));
+  if (!existing) { res.status(404).json({ error: "Location not found" }); return; }
+
+  const townHint = await getPlatformTownHint();
+  const data = await enrichLocationUpdateWithGeocode(parsed.data, existing, townHint);
+
+  const [updated] = await db.update(foodTruckLocationsTable).set(data).where(eq(foodTruckLocationsTable.id, locationId)).returning();
   if (!updated) { res.status(404).json({ error: "Location not found" }); return; }
   res.json(serializeLocation(updated));
 });
@@ -159,7 +168,13 @@ router.get("/food-truck-locations/today", async (req, res): Promise<void> => {
     )
     .orderBy(foodTruckLocationsTable.startTime);
 
-  res.json(rows.map(serializePublicLocation));
+  const townHint = await getPlatformTownHint();
+  const enriched: typeof rows = [];
+  for (const row of rows) {
+    enriched.push(await resolvePublicLocationCoordinates(row, townHint));
+  }
+
+  res.json(enriched.map(serializePublicLocation));
 });
 
 // GET /api/food-truck-locations/upcoming (public)
