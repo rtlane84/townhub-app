@@ -17,6 +17,12 @@ const THEME_DEFAULTS = {
   tagline: null as string | null,
   logoUrl: null as string | null,
   heroImageUrl: null as string | null,
+  heroOverlayColor: "#000000",
+  heroOverlayOpacity: 45,
+  heroButtonColor: "#ffffff",
+  heroHeadlineAccentColor: null as string | null,
+  heroHeadlineLine1: null as string | null,
+  heroHeadlineLine2: null as string | null,
   logoSizePx: 24,
 };
 
@@ -24,6 +30,12 @@ function clampLogoSize(value: unknown): number {
   const n = typeof value === "number" ? value : parseInt(String(value), 10);
   if (Number.isNaN(n)) return THEME_DEFAULTS.logoSizePx;
   return Math.min(64, Math.max(16, Math.round(n)));
+}
+
+function clampHeroOverlayOpacity(value: unknown): number {
+  const n = typeof value === "number" ? value : parseInt(String(value), 10);
+  if (Number.isNaN(n)) return THEME_DEFAULTS.heroOverlayOpacity;
+  return Math.min(100, Math.max(0, Math.round(n)));
 }
 
 function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelect) {
@@ -39,6 +51,12 @@ function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelec
     tagline: row.tagline,
     logoUrl: row.logoUrl,
     heroImageUrl: row.heroImageUrl,
+    heroOverlayColor: row.heroOverlayColor,
+    heroOverlayOpacity: row.heroOverlayOpacity ?? THEME_DEFAULTS.heroOverlayOpacity,
+    heroButtonColor: row.heroButtonColor,
+    heroHeadlineAccentColor: row.heroHeadlineAccentColor,
+    heroHeadlineLine1: row.heroHeadlineLine1,
+    heroHeadlineLine2: row.heroHeadlineLine2,
     logoSizePx: row.logoSizePx ?? THEME_DEFAULTS.logoSizePx,
     updatedAt: row.updatedAt,
   };
@@ -79,6 +97,12 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     "tagline",
     "logoUrl",
     "heroImageUrl",
+    "heroOverlayColor",
+    "heroOverlayOpacity",
+    "heroButtonColor",
+    "heroHeadlineAccentColor",
+    "heroHeadlineLine1",
+    "heroHeadlineLine2",
     "logoSizePx",
   ] as const;
 
@@ -91,6 +115,14 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
           updates[key] = THEME_DEFAULTS.logoSizePx;
         } else {
           updates[key] = clampLogoSize(value);
+        }
+        continue;
+      }
+      if (key === "heroOverlayOpacity") {
+        if (value === "" || value === undefined || value === null) {
+          updates[key] = THEME_DEFAULTS.heroOverlayOpacity;
+        } else {
+          updates[key] = clampHeroOverlayOpacity(value);
         }
         continue;
       }

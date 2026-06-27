@@ -35,7 +35,8 @@ const CATEGORIES = [
 ];
 
 export default function Home() {
-  const { heroTagline, heroHeadline, shopCtaLabel, heroImageUrl } = usePlatformBranding();
+  const { heroTagline, heroHeadline, heroHeadlineAccentColor, shopCtaLabel, heroImageUrl, heroOverlayStyle, heroPrimaryButtonStyle } =
+    usePlatformBranding();
   const { data: businesses, isLoading } = useListBusinesses({ featured: true });
   const { data: featuredEventsRaw = [], isLoading: featuredEventsLoading } = useListEvents({
     upcoming: true,
@@ -72,7 +73,7 @@ export default function Home() {
               className="absolute inset-0 w-full h-full object-cover"
               aria-hidden
             />
-            <div className="absolute inset-0 bg-black/45" aria-hidden />
+            <div className="absolute inset-0" style={heroOverlayStyle ?? undefined} aria-hidden />
           </>
         ) : null}
         <div
@@ -88,21 +89,34 @@ export default function Home() {
             )}
           >
             {heroHeadline.line1} <br />
-            <span className={heroImageUrl ? "text-primary-foreground" : "text-primary"}>
+            <span
+              className={heroImageUrl ? "drop-shadow-sm" : undefined}
+              style={{ color: heroHeadlineAccentColor }}
+            >
               {heroHeadline.line2}
             </span>
           </h1>
           <p
             className={cn(
-              "text-xl mb-10 leading-relaxed",
-              heroImageUrl ? "text-white/90" : "text-muted-foreground",
+              "text-xl mb-10 leading-relaxed max-w-2xl mx-auto",
+              heroImageUrl
+                ? "font-medium text-white drop-shadow-sm"
+                : "text-muted-foreground",
             )}
           >
             {heroTagline}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/businesses">
-              <Button size="lg" className="w-full sm:w-auto text-lg h-14 px-8 rounded-full shadow-lg">
+              <Button
+                variant={heroImageUrl ? "outline" : "default"}
+                size="lg"
+                style={heroPrimaryButtonStyle ?? undefined}
+                className={cn(
+                  "w-full sm:w-auto text-lg h-14 px-8 rounded-full font-semibold shadow-lg",
+                  heroImageUrl && "shadow-xl hover:opacity-90",
+                )}
+              >
                 {shopCtaLabel}
               </Button>
             </Link>
@@ -111,8 +125,10 @@ export default function Home() {
                 variant="outline"
                 size="lg"
                 className={cn(
-                  "w-full sm:w-auto text-lg h-14 px-8 rounded-full",
-                  heroImageUrl ? "bg-white/95 hover:bg-white border-white/30" : "bg-white",
+                  "w-full sm:w-auto text-lg h-14 px-8 rounded-full font-medium",
+                  heroImageUrl
+                    ? "border-2 border-white bg-white/10 text-white hover:bg-white/20 hover:border-white shadow-sm"
+                    : "bg-white text-foreground",
                 )}
               >
                 List Your Business

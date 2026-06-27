@@ -16,11 +16,29 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Palette, Save, RotateCcw, Bell, CheckCircle, AlertCircle, Clock, Type } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { ImageField } from "@/components/image-field";
 import { PLATFORM_THEME_DEFAULTS } from "@/lib/theme-colors";
 
-import { DEFAULT_PLATFORM_NAME, buildBrandingPayload, DEFAULT_LOGO_SIZE_PX, LOGO_SIZE_OPTIONS, resolveFooterTagline, resolveHeroHeadline, resolveTagline, themeToBrandingFields } from "@/lib/platform-branding";
+import {
+  DEFAULT_HERO_BUTTON_COLOR,
+  DEFAULT_HERO_HEADLINE_LINE1,
+  DEFAULT_HERO_HEADLINE_LINE2,
+  DEFAULT_HERO_OVERLAY_COLOR,
+  DEFAULT_HERO_OVERLAY_OPACITY,
+  DEFAULT_PLATFORM_NAME,
+  buildBrandingPayload,
+  DEFAULT_LOGO_SIZE_PX,
+  heroOverlayBackgroundStyle,
+  heroPrimaryButtonStyle,
+  LOGO_SIZE_OPTIONS,
+  resolveFooterTagline,
+  resolveHeroHeadline,
+  resolveShopCtaLabel,
+  resolveTagline,
+  themeToBrandingFields,
+} from "@/lib/platform-branding";
 
 const DEFAULTS: Record<ColorKey, string> = {
   primaryColor: PLATFORM_THEME_DEFAULTS.primaryColor,
@@ -46,6 +64,12 @@ type BrandingFields = {
   tagline: string;
   logoUrl: string;
   heroImageUrl: string;
+  heroOverlayColor: string;
+  heroOverlayOpacity: number;
+  heroButtonColor: string;
+  heroHeadlineAccentColor: string;
+  heroHeadlineLine1: string;
+  heroHeadlineLine2: string;
   logoSizePx: number;
 };
 
@@ -55,8 +79,21 @@ const BRANDING_DEFAULTS: BrandingFields = {
   tagline: "",
   logoUrl: "",
   heroImageUrl: "",
+  heroOverlayColor: DEFAULT_HERO_OVERLAY_COLOR,
+  heroOverlayOpacity: DEFAULT_HERO_OVERLAY_OPACITY,
+  heroButtonColor: DEFAULT_HERO_BUTTON_COLOR,
+  heroHeadlineAccentColor: PLATFORM_THEME_DEFAULTS.primaryColor,
+  heroHeadlineLine1: "",
+  heroHeadlineLine2: "",
   logoSizePx: DEFAULT_LOGO_SIZE_PX,
 };
+
+function brandingHeadlinePreview(branding: BrandingFields) {
+  return resolveHeroHeadline({
+    heroHeadlineLine1: branding.heroHeadlineLine1 || null,
+    heroHeadlineLine2: branding.heroHeadlineLine2 || null,
+  });
+}
 
 export default function AdminSettings() {
   const { data: theme, isLoading } = useGetPlatformTheme();
@@ -119,7 +156,7 @@ export default function AdminSettings() {
     setIsDirty(true);
   };
 
-  const handleBrandingChange = (key: keyof BrandingFields, value: string) => {
+  const handleBrandingChange = (key: keyof BrandingFields, value: string | number) => {
     setBranding((prev) => ({ ...prev, [key]: value }));
     setIsBrandingDirty(true);
   };
@@ -253,6 +290,84 @@ export default function AdminSettings() {
                   onChange={(heroImageUrl) => handleBrandingChange("heroImageUrl", heroImageUrl)}
                   testId="homepage-hero"
                 />
+                <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
+                  <div>
+                    <p className="text-sm font-medium">Hero overlay</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tint over the homepage hero image so headline text and buttons stay readable.
+                      Applies when a hero image is set.
+                    </p>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <ColorPickerField
+                      id="heroOverlayColor"
+                      label="Overlay color"
+                      description="Usually black or a dark brand color."
+                      value={branding.heroOverlayColor}
+                      onChange={(value) => handleBrandingChange("heroOverlayColor", value)}
+                    />
+                    <div className="space-y-3">
+                      <Label htmlFor="heroOverlayOpacity">Overlay opacity</Label>
+                      <Slider
+                        id="heroOverlayOpacity"
+                        value={[branding.heroOverlayOpacity]}
+                        min={0}
+                        max={100}
+                        step={5}
+                        onValueChange={([value]) =>
+                          handleBrandingChange("heroOverlayOpacity", value ?? DEFAULT_HERO_OVERLAY_OPACITY)
+                        }
+                      />
+                      <p className="text-xs text-muted-foreground">{branding.heroOverlayOpacity}%</p>
+                    </div>
+                    <ColorPickerField
+                      id="heroButtonColor"
+                      label="Primary button color"
+                      description="Shop button on the homepage hero. Text color adjusts automatically."
+                      value={branding.heroButtonColor}
+                      onChange={(value) => handleBrandingChange("heroButtonColor", value)}
+                    />
+                    <ColorPickerField
+                      id="heroHeadlineAccentColor"
+                      label="Headline accent (line 2)"
+                      description="Accent color for the second headline line. Works with or without a hero image."
+                      value={branding.heroHeadlineAccentColor}
+                      onChange={(value) => handleBrandingChange("heroHeadlineAccentColor", value)}
+                    />
+                  </div>
+                  {branding.heroImageUrl ? (
+                    <div className="relative aspect-[21/9] overflow-hidden rounded-lg border">
+                      <img
+                        src={branding.heroImageUrl}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover"
+                        aria-hidden
+                      />
+                      <div
+                        className="absolute inset-0"
+                        style={heroOverlayBackgroundStyle(
+                          branding.heroOverlayColor,
+                          branding.heroOverlayOpacity,
+                        )}
+                        aria-hidden
+                      />
+                      <div className="relative z-10 flex h-full flex-col items-center justify-center gap-4 p-6">
+                        <p className="text-center font-serif text-lg font-semibold text-white drop-shadow-sm">
+                          {brandingHeadlinePreview(branding).line1}{" "}
+                          <span style={{ color: branding.heroHeadlineAccentColor }}>
+                            {brandingHeadlinePreview(branding).line2}
+                          </span>
+                        </p>
+                        <span
+                          className="inline-flex items-center rounded-full px-8 py-3 text-sm font-semibold shadow-lg"
+                          style={heroPrimaryButtonStyle(branding.heroButtonColor)}
+                        >
+                          {resolveShopCtaLabel({ townName: branding.townName || null })}
+                        </span>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
                 <Separator />
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2 md:col-span-2">
@@ -276,7 +391,28 @@ export default function AdminSettings() {
                       placeholder="Clay"
                     />
                     <p className="text-xs text-muted-foreground">
-                      Personalizes the homepage hero headline, tagline, footer, and shop button.
+                      Personalizes the shop button, tagline, and footer defaults.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="heroHeadlineLine1">Hero headline — line 1</Label>
+                    <Input
+                      id="heroHeadlineLine1"
+                      value={branding.heroHeadlineLine1}
+                      onChange={(e) => handleBrandingChange("heroHeadlineLine1", e.target.value)}
+                      placeholder={DEFAULT_HERO_HEADLINE_LINE1}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="heroHeadlineLine2">Hero headline — line 2</Label>
+                    <Input
+                      id="heroHeadlineLine2"
+                      value={branding.heroHeadlineLine2}
+                      onChange={(e) => handleBrandingChange("heroHeadlineLine2", e.target.value)}
+                      placeholder={DEFAULT_HERO_HEADLINE_LINE2}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Shown in the accent color. Leave blank for the default headline.
                     </p>
                   </div>
                   <ImageField
@@ -349,9 +485,9 @@ export default function AdminSettings() {
                       </span>
                     </div>
                     <p className="text-sm font-serif font-semibold mt-4">
-                      {resolveHeroHeadline({ townName: branding.townName || null }).line1}{" "}
-                      <span className="text-primary">
-                        {resolveHeroHeadline({ townName: branding.townName || null }).line2}
+                      {brandingHeadlinePreview(branding).line1}{" "}
+                      <span style={{ color: branding.heroHeadlineAccentColor }}>
+                        {brandingHeadlinePreview(branding).line2}
                       </span>
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">

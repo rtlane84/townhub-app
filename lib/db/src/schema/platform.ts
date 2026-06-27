@@ -13,6 +13,12 @@ export const platformSettingsTable = pgTable("platform_settings", {
   tagline: text("tagline"),
   logoUrl: text("logo_url"),
   heroImageUrl: text("hero_image_url"),
+  heroOverlayColor: text("hero_overlay_color").default("#000000"),
+  heroOverlayOpacity: integer("hero_overlay_opacity").notNull().default(45),
+  heroButtonColor: text("hero_button_color").default("#ffffff"),
+  heroHeadlineAccentColor: text("hero_headline_accent_color"),
+  heroHeadlineLine1: text("hero_headline_line1"),
+  heroHeadlineLine2: text("hero_headline_line2"),
   logoSizePx: integer("logo_size_px").notNull().default(24),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

@@ -2208,6 +2208,20 @@ components:
           type: ["string", "null"]
         heroImageUrl:
           type: ["string", "null"]
+        heroOverlayColor:
+          type: ["string", "null"]
+        heroOverlayOpacity:
+          type: integer
+          minimum: 0
+          maximum: 100
+        heroButtonColor:
+          type: ["string", "null"]
+        heroHeadlineAccentColor:
+          type: ["string", "null"]
+        heroHeadlineLine1:
+          type: ["string", "null"]
+        heroHeadlineLine2:
+          type: ["string", "null"]
         logoSizePx:
           type: integer
           minimum: 16
@@ -2239,6 +2253,20 @@ components:
           type: string
         heroImageUrl:
           type: string
+        heroOverlayColor:
+          type: string
+        heroOverlayOpacity:
+          type: integer
+          minimum: 0
+          maximum: 100
+        heroButtonColor:
+          type: ["string", "null"]
+        heroHeadlineAccentColor:
+          type: ["string", "null"]
+        heroHeadlineLine1:
+          type: ["string", "null"]
+        heroHeadlineLine2:
+          type: ["string", "null"]
         logoSizePx:
           type: integer
           minimum: 16

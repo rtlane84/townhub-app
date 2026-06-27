@@ -626,6 +626,21 @@ export interface PlatformTheme {
   logoUrl?: string | null;
   /** @nullable */
   heroImageUrl?: string | null;
+  /** @nullable */
+  heroOverlayColor?: string | null;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  heroOverlayOpacity?: number;
+  /** @nullable */
+  heroButtonColor?: string | null;
+  /** @nullable */
+  heroHeadlineAccentColor?: string | null;
+  /** @nullable */
+  heroHeadlineLine1?: string | null;
+  /** @nullable */
+  heroHeadlineLine2?: string | null;
   /**
      * @minimum 16
      * @maximum 64
@@ -645,6 +660,20 @@ export interface PlatformThemeInput {
   tagline?: string;
   logoUrl?: string;
   heroImageUrl?: string;
+  heroOverlayColor?: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  heroOverlayOpacity?: number;
+  /** @nullable */
+  heroButtonColor?: string | null;
+  /** @nullable */
+  heroHeadlineAccentColor?: string | null;
+  /** @nullable */
+  heroHeadlineLine1?: string | null;
+  /** @nullable */
+  heroHeadlineLine2?: string | null;
   /**
      * @minimum 16
      * @maximum 64

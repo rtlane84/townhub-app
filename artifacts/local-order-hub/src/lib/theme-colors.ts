@@ -60,6 +60,17 @@ export function hexWithAlpha(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** Pick dark or light text for readable contrast on a solid background */
+export function contrastingTextColor(hex: string): string {
+  const normalized = normalizeHex(hex);
+  if (!normalized) return "#0f172a";
+  const r = parseInt(normalized.slice(1, 3), 16);
+  const g = parseInt(normalized.slice(3, 5), 16);
+  const b = parseInt(normalized.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.55 ? "#0f172a" : "#ffffff";
+}
+
 export function mergePlatformTheme(theme?: PlatformTheme | null) {
   return {
     primaryColor: normalizeHex(theme?.primaryColor) ?? PLATFORM_THEME_DEFAULTS.primaryColor,
