@@ -14,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BusinessListingCardMedia } from "@/components/business-logo-badge";
 
 const LISTING_CARD_CLASS =
-  "h-full overflow-hidden hover-elevate cursor-pointer border-border/60 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
+  "h-full hover-elevate cursor-pointer border-border/60 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
 
 export default function Businesses() {
   const [search, setSearch] = useState("");
@@ -90,27 +91,20 @@ export default function Businesses() {
           {businesses?.map((business) => (
             <Link key={business.id} href={`/businesses/${business.slug}`}>
               <Card className={LISTING_CARD_CLASS} style={businessListingCardVars(business.accentColor)}>
-                <div className="aspect-[16/9] w-full bg-muted relative overflow-hidden">
-                  {business.heroImageUrl ? (
-                    <img 
-                      src={business.heroImageUrl} 
-                      alt={business.name} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
+                <BusinessListingCardMedia
+                  heroImageUrl={business.heroImageUrl}
+                  heroAlt={business.name}
+                  logoUrl={business.logoUrl}
+                  businessName={business.name}
+                  placeholder={
                     <div
-                      className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40"
+                      className="flex h-full w-full items-center justify-center bg-primary/5 text-primary/40"
                       style={businessHeroPlaceholderStyle(business.accentColor)}
                     >
                       <Store className="h-12 w-12" style={businessIconAccentStyle(business.accentColor)} />
                     </div>
-                  )}
-                  {business.logoUrl && (
-                    <div className="absolute -bottom-6 left-6 p-1 bg-white rounded-full shadow-md">
-                      <img src={business.logoUrl} alt="Logo" className="w-12 h-12 rounded-full object-cover" />
-                    </div>
-                  )}
-                </div>
+                  }
+                />
                 <CardContent className="pt-10 pb-6 px-6 flex flex-col h-[calc(100%-56.25%)]">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-xl font-serif font-bold text-foreground line-clamp-1">{business.name}</h3>

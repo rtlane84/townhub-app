@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Loader2, Info } from "lucide-react";
+import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/react";
 import {
@@ -258,13 +259,12 @@ export default function Cart() {
           <Card className="sticky top-24">
             <CardHeader className="bg-muted/30 border-b border-border/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-                  {business?.logoUrl ? (
-                    <img src={business.logoUrl} alt="logo" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <Store className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
+                <BusinessLogoBadge
+                  src={business?.logoUrl}
+                  alt={business?.name ? `${business.name} logo` : "Business logo"}
+                  size="xs"
+                  className="shadow-sm"
+                />
                 <div>
                   <CardTitle className="text-lg">{business?.name || "Loading..."}</CardTitle>
                   <p className="text-xs text-muted-foreground">Order Summary</p>

@@ -19,6 +19,7 @@ import { resolveBusinessHours } from "@/lib/business-hours";
 import { resolvePaymentMode, paymentModeStorefrontNote, isSalonBusiness, formatBusinessTypeLabel, salonStorefrontCopy } from "@workspace/api-zod";
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog";
 import { BusinessThemeScope } from "@/components/business-theme-scope";
+import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { accentTintStyle, mergePlatformTheme, normalizeHex } from "@/lib/theme-colors";
 import { usePlatformBranding } from "@/components/theme-provider";
 
@@ -146,16 +147,14 @@ export default function Storefront() {
           {/* Sidebar */}
           <div className="md:w-1/3 lg:w-1/4 flex-shrink-0">
             <Card className="sticky top-24 shadow-xl border-border/40 overflow-visible">
-              <div className="p-6 pt-12 bg-white flex flex-col items-center text-center border-b rounded-t-xl">
-                <div className="w-24 h-24 bg-white rounded-full p-1 shadow-md -mt-[4.5rem] mb-4 relative z-20 ring-4 ring-white">
-                  {b.logoUrl ? (
-                    <img src={b.logoUrl} alt="Logo" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full rounded-full bg-muted flex items-center justify-center">
-                      <Store className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
+              <div className="flex flex-col items-center rounded-t-xl border-b bg-white p-6 pt-12 text-center">
+                <BusinessLogoBadge
+                  src={b.logoUrl}
+                  alt={`${b.name} logo`}
+                  size="lg"
+                  ringClassName="ring-4"
+                  className="-mt-[4.5rem] relative z-20 mb-4 shadow-md"
+                />
                 <h1 className="text-2xl font-serif font-bold text-foreground mb-1">{b.name}</h1>
                 <p className="text-sm text-muted-foreground mb-4">{formatBusinessTypeLabel(b.type)}</p>
                 <div className="flex flex-wrap justify-center gap-2 mb-2">

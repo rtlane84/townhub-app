@@ -56,7 +56,12 @@ export function usePlatformBranding(): PlatformBranding {
 
 export function PlatformThemeProvider({ children }: { children: React.ReactNode }) {
   const { data: theme } = useGetPlatformTheme({
-    query: { queryKey: getGetPlatformThemeQueryKey(), staleTime: 30 * 1000 },
+    query: {
+      queryKey: getGetPlatformThemeQueryKey(),
+      staleTime: 30 * 1000,
+      refetchOnWindowFocus: true,
+      refetchOnMount: "always",
+    },
   });
 
   const branding = useMemo<PlatformBranding>(() => {

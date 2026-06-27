@@ -167,6 +167,7 @@ export default function AdminSettings() {
         data: buildBrandingPayload(branding),
       });
       queryClient.setQueryData(getGetPlatformThemeQueryKey(), updated);
+      await queryClient.invalidateQueries({ queryKey: getGetPlatformThemeQueryKey() });
       lastBrandingSyncAt.current = updated.updatedAt ?? null;
       setBranding(themeToBrandingFields(updated));
       setIsBrandingDirty(false);

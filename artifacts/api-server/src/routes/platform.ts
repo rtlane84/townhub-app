@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { db, platformSettingsTable, notificationLogsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
@@ -74,7 +74,11 @@ async function getOrCreateSettings() {
 }
 
 // GET /api/admin/settings/theme — public read (theme + branding)
-router.get("/admin/settings/theme", async (req, res): Promise<void> => {
+router.get("/admin/settings/theme", getPlatformThemeHandler);
+// Alias for public clients; same handler as admin path above.
+router.get("/platform/theme", getPlatformThemeHandler);
+
+async function getPlatformThemeHandler(req: Request, res: Response): Promise<void> {
   try {
     const settings = await getOrCreateSettings();
     res.json(serializePlatformSettings(settings));
@@ -82,7 +86,7 @@ router.get("/admin/settings/theme", async (req, res): Promise<void> => {
     req.log?.error({ err }, "Failed to fetch platform settings");
     res.status(500).json({ error: "Failed to fetch platform settings" });
   }
-});
+}
 
 // PUT /api/admin/settings/theme — admin only (global requireAdmin middleware)
 router.put("/admin/settings/theme", async (req, res): Promise<void> => {

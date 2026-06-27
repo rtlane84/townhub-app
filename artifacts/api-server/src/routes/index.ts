@@ -27,6 +27,10 @@ router.use("/admin", (req, res, next) => {
   return requireAdmin(req, res, next);
 });
 
+// Platform theme (includes public GET) — mount early, before routers that attach
+// requireAdmin to all /admin/* paths (e.g. subscriptions).
+router.use(platformRouter);
+
 router.use(healthRouter);
 router.use(authRouter);
 router.use(eventsRouter);
@@ -34,7 +38,6 @@ router.use(highlightsRouter);
 router.use(subscriptionsRouter);
 router.use(applicationsRouter);
 router.use(foodTruckRouter);
-router.use(platformRouter);
 router.use(appointmentRequestsRouter);
 router.use(mediaRouter);
 router.use(businessesRouter);
