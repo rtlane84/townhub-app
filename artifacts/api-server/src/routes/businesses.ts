@@ -18,6 +18,10 @@ import {
   GetBusinessBySlugParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../middlewares/requireRole";
+import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
+import { nullsToUndefinedTopLevel } from "../lib/request-body";
+import { parseStructuredHours } from "@workspace/api-zod";
+import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
 
 function slugify(name: string): string {
   return name
@@ -41,6 +45,7 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     address: b.address,
     phone: b.phone,
     hours: b.hours,
+    structuredHours: parseStructuredHours(b.structuredHours),
     active: b.active,
     featured: b.featured,
     pickupEnabled: b.pickupEnabled,
@@ -53,8 +58,15 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     pickupInstructions: b.pickupInstructions,
     deliveryInstructions: b.deliveryInstructions,
     payAtPickupEnabled: b.payAtPickupEnabled,
+    paymentMode: b.paymentMode,
     orderCutoffTime: b.orderCutoffTime,
     orderNotificationEmail: b.orderNotificationEmail,
+    notificationEmail: b.notificationEmail ?? b.orderNotificationEmail,
+    notificationPhone: b.notificationPhone,
+    notifyNewOrdersByEmail: b.notifyNewOrdersByEmail,
+    notifyNewOrdersBySms: b.notifyNewOrdersBySms,
+    notifyAppointmentRequestsByEmail: b.notifyAppointmentRequestsByEmail,
+    notifyAppointmentRequestsBySms: b.notifyAppointmentRequestsBySms,
     eventLocationEnabled: b.eventLocationEnabled,
     accentColor: b.accentColor,
     buttonColor: b.buttonColor,
@@ -117,13 +129,14 @@ router.post("/businesses/register", async (req, res): Promise<void> => {
     return;
   }
 
-  const { name, type, description, address, phone, hours } = req.body as {
+  const { name, type, description, address, phone, hours, structuredHours } = req.body as {
     name?: string;
     type?: string;
     description?: string;
     address?: string;
     phone?: string;
     hours?: string;
+    structuredHours?: unknown;
   };
 
   if (!name?.trim() || !type?.trim()) {
@@ -156,10 +169,12 @@ router.post("/businesses/register", async (req, res): Promise<void> => {
       description: description?.trim() || null,
       address: address?.trim() || null,
       phone: phone?.trim() || null,
-      hours: hours?.trim() || null,
+      structuredHours: resolveStructuredHoursInput(structuredHours) ?? null,
+      hours: legacyHoursFromStructured(structuredHours) ?? (hours?.trim() || null),
       ownerId: userId,
       pickupEnabled: true,
       payAtPickupEnabled: true,
+      paymentMode: "BOTH",
     })
     .returning();
 
@@ -260,6 +275,11 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
     return;
   }
 
+  const paymentFields = paymentModeForInsert({
+    paymentMode: parsed.data.paymentMode,
+    payAtPickupEnabled: parsed.data.payAtPickupEnabled,
+  });
+
   const [business] = await db
     .insert(businessesTable)
     .values({
@@ -271,7 +291,8 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
       heroImageUrl: parsed.data.heroImageUrl,
       address: parsed.data.address,
       phone: parsed.data.phone,
-      hours: parsed.data.hours,
+      structuredHours: resolveStructuredHoursInput(parsed.data.structuredHours) ?? null,
+      hours: legacyHoursFromStructured(parsed.data.structuredHours) ?? parsed.data.hours ?? null,
       pickupEnabled: parsed.data.pickupEnabled ?? true,
       deliveryEnabled: parsed.data.deliveryEnabled ?? false,
       deliveryFee: parsed.data.deliveryFee
@@ -280,7 +301,8 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
       minimumOrder: parsed.data.minimumOrder
         ? String(parsed.data.minimumOrder)
         : null,
-      payAtPickupEnabled: parsed.data.payAtPickupEnabled ?? false,
+      payAtPickupEnabled: paymentFields.payAtPickupEnabled,
+      paymentMode: paymentFields.paymentMode,
       orderCutoffTime: parsed.data.orderCutoffTime,
       ownerId: parsed.data.ownerId,
     })
@@ -320,8 +342,9 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     return;
   }
 
-  const parsed = UpdateBusinessBody.safeParse(req.body);
+  const parsed = UpdateBusinessBody.safeParse(nullsToUndefinedTopLevel(req.body));
   if (!parsed.success) {
+    req.log?.warn({ err: parsed.error.flatten() }, "Invalid business update body");
     res.status(400).json({ error: parsed.error.message });
     return;
   }
@@ -330,12 +353,17 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
   const d = parsed.data;
   if (d.name !== undefined) updateData.name = d.name;
   if (d.slug !== undefined) updateData.slug = d.slug;
+  if (d.type !== undefined) updateData.type = d.type;
   if (d.description !== undefined) updateData.description = d.description;
   if (d.logoUrl !== undefined) updateData.logoUrl = d.logoUrl;
   if (d.heroImageUrl !== undefined) updateData.heroImageUrl = d.heroImageUrl;
   if (d.address !== undefined) updateData.address = d.address;
   if (d.phone !== undefined) updateData.phone = d.phone;
   if (d.hours !== undefined) updateData.hours = d.hours;
+  if (d.structuredHours !== undefined) {
+    updateData.structuredHours = resolveStructuredHoursInput(d.structuredHours);
+    updateData.hours = legacyHoursFromStructured(d.structuredHours);
+  }
   if (d.active !== undefined) updateData.active = d.active;
   if (d.featured !== undefined) updateData.featured = d.featured;
   if (d.pickupEnabled !== undefined) updateData.pickupEnabled = d.pickupEnabled;
@@ -345,8 +373,15 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.deliveryFee = d.deliveryFee ? String(d.deliveryFee) : null;
   if (d.minimumOrder !== undefined)
     updateData.minimumOrder = d.minimumOrder ? String(d.minimumOrder) : null;
-  if (d.payAtPickupEnabled !== undefined)
-    updateData.payAtPickupEnabled = d.payAtPickupEnabled;
+  try {
+    applyPaymentModeToUpdate(updateData, {
+      paymentMode: d.paymentMode,
+      payAtPickupEnabled: d.payAtPickupEnabled,
+    });
+  } catch {
+    res.status(400).json({ error: "Invalid payment mode" });
+    return;
+  }
   if (d.orderCutoffTime !== undefined)
     updateData.orderCutoffTime = d.orderCutoffTime;
   if ((d as Record<string, unknown>).minimumOrderForDelivery !== undefined)
@@ -363,8 +398,26 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.pickupInstructions = (d as Record<string, unknown>).pickupInstructions;
   if ((d as Record<string, unknown>).deliveryInstructions !== undefined)
     updateData.deliveryInstructions = (d as Record<string, unknown>).deliveryInstructions;
-  if ((d as Record<string, unknown>).orderNotificationEmail !== undefined)
+  if ((d as Record<string, unknown>).orderNotificationEmail !== undefined) {
     updateData.orderNotificationEmail = (d as Record<string, unknown>).orderNotificationEmail;
+    if ((d as Record<string, unknown>).notificationEmail === undefined) {
+      updateData.notificationEmail = (d as Record<string, unknown>).orderNotificationEmail;
+    }
+  }
+  if ((d as Record<string, unknown>).notificationEmail !== undefined) {
+    updateData.notificationEmail = (d as Record<string, unknown>).notificationEmail;
+    updateData.orderNotificationEmail = (d as Record<string, unknown>).notificationEmail;
+  }
+  if ((d as Record<string, unknown>).notificationPhone !== undefined)
+    updateData.notificationPhone = (d as Record<string, unknown>).notificationPhone;
+  if ((d as Record<string, unknown>).notifyNewOrdersByEmail !== undefined)
+    updateData.notifyNewOrdersByEmail = (d as Record<string, unknown>).notifyNewOrdersByEmail;
+  if ((d as Record<string, unknown>).notifyNewOrdersBySms !== undefined)
+    updateData.notifyNewOrdersBySms = (d as Record<string, unknown>).notifyNewOrdersBySms;
+  if ((d as Record<string, unknown>).notifyAppointmentRequestsByEmail !== undefined)
+    updateData.notifyAppointmentRequestsByEmail = (d as Record<string, unknown>).notifyAppointmentRequestsByEmail;
+  if ((d as Record<string, unknown>).notifyAppointmentRequestsBySms !== undefined)
+    updateData.notifyAppointmentRequestsBySms = (d as Record<string, unknown>).notifyAppointmentRequestsBySms;
   if ((d as Record<string, unknown>).eventLocationEnabled !== undefined)
     updateData.eventLocationEnabled = (d as Record<string, unknown>).eventLocationEnabled;
   if ((d as Record<string, unknown>).accentColor !== undefined)
@@ -374,18 +427,36 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
   if ((d as Record<string, unknown>).bannerText !== undefined)
     updateData.bannerText = (d as Record<string, unknown>).bannerText;
 
-  const [business] = await db
-    .update(businessesTable)
-    .set(updateData as never)
-    .where(eq(businessesTable.id, params.data.id))
-    .returning();
+  try {
+    const [business] = await db
+      .update(businessesTable)
+      .set(updateData as never)
+      .where(eq(businessesTable.id, params.data.id))
+      .returning();
 
-  if (!business) {
-    res.status(404).json({ error: "Business not found" });
-    return;
+    if (!business) {
+      res.status(404).json({ error: "Business not found" });
+      return;
+    }
+
+    res.json(serializeBusiness(business));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    req.log?.error({ err, businessId: params.data.id }, "Failed to update business");
+    if (message.includes("structured_hours")) {
+      res.status(500).json({
+        error: "Database is missing the structured_hours column. Run: pnpm --filter @workspace/db run push",
+      });
+      return;
+    }
+    if (message.includes("payment_mode")) {
+      res.status(500).json({
+        error: "Database is missing the payment_mode column. Run: pnpm --filter @workspace/db run push",
+      });
+      return;
+    }
+    res.status(500).json({ error: "Failed to update business settings" });
   }
-
-  res.json(serializeBusiness(business));
 });
 
 // DELETE /api/businesses/manage/:id

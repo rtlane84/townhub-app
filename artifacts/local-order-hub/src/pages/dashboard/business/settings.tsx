@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useGetMyBusiness, useUpdateBusiness, getGetMyBusinessQueryKey } from "@workspace/api-client-react";
+import { useGetMyBusiness, useUpdateBusiness, getGetMyBusinessQueryKey, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,29 +8,51 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { WeeklyHoursPicker } from "@/components/weekly-hours-picker";
+import {
+  defaultWeeklyHours,
+  normalizeWeeklyHours,
+  parseStructuredHours,
+  resolvePaymentMode,
+  BUSINESS_TYPE_OPTIONS,
+} from "@workspace/api-zod";
+import type { BusinessDayHours, PaymentMode, BusinessType } from "@workspace/api-client-react";
+import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
+import { PaymentModeSelector } from "@/components/payment-mode-selector";
+import { ImageField } from "@/components/image-field";
 
 type FormState = {
-  name: string; description: string; address: string; phone: string; hours: string;
+  name: string; type: BusinessType; description: string; address: string; phone: string;
+  structuredHours: BusinessDayHours[];
   logoUrl: string; heroImageUrl: string;
-  pickupEnabled: boolean; deliveryEnabled: boolean; payAtPickupEnabled: boolean;
+  pickupEnabled: boolean; deliveryEnabled: boolean; paymentMode: PaymentMode;
   deliveryFee: string; minimumOrder: string; minimumOrderForDelivery: string;
   deliveryRadiusMiles: string; deliveryNotes: string;
   pickupInstructions: string; deliveryInstructions: string;
   orderCutoffTime: string;
-  orderNotificationEmail: string;
+  notificationEmail: string;
+  notificationPhone: string;
+  notifyNewOrdersByEmail: boolean;
+  notifyNewOrdersBySms: boolean;
+  notifyAppointmentRequestsByEmail: boolean;
+  notifyAppointmentRequestsBySms: boolean;
   accentColor: string; buttonColor: string; bannerText: string;
 };
 
 const EMPTY: FormState = {
-  name: "", description: "", address: "", phone: "", hours: "",
+  name: "", type: "GENERAL", description: "", address: "", phone: "",
+  structuredHours: defaultWeeklyHours(),
   logoUrl: "", heroImageUrl: "",
-  pickupEnabled: true, deliveryEnabled: false, payAtPickupEnabled: false,
+  pickupEnabled: true, deliveryEnabled: false, paymentMode: "ONLINE_ONLY",
   deliveryFee: "", minimumOrder: "", minimumOrderForDelivery: "",
   deliveryRadiusMiles: "", deliveryNotes: "",
   pickupInstructions: "", deliveryInstructions: "",
-  orderCutoffTime: "", orderNotificationEmail: "",
+  orderCutoffTime: "", notificationEmail: "", notificationPhone: "",
+  notifyNewOrdersByEmail: true, notifyNewOrdersBySms: false,
+  notifyAppointmentRequestsByEmail: true, notifyAppointmentRequestsBySms: false,
   accentColor: "", buttonColor: "", bannerText: "",
 };
 
@@ -45,10 +67,11 @@ export default function BusinessSettings() {
       const b = business as unknown as Record<string, unknown>;
       setForm({
         name: business.name ?? "",
+        type: business.type ?? "GENERAL",
         description: business.description ?? "",
         address: business.address ?? "",
         phone: business.phone ?? "",
-        hours: business.hours ?? "",
+        structuredHours: parseStructuredHours(business.structuredHours) ?? defaultWeeklyHours(),
         logoUrl: business.logoUrl ?? "",
         heroImageUrl: business.heroImageUrl ?? "",
         pickupEnabled: business.pickupEnabled ?? true,
@@ -60,9 +83,14 @@ export default function BusinessSettings() {
         deliveryNotes: String(b.deliveryNotes ?? ""),
         pickupInstructions: String(b.pickupInstructions ?? ""),
         deliveryInstructions: String(b.deliveryInstructions ?? ""),
-        payAtPickupEnabled: business.payAtPickupEnabled ?? false,
+        paymentMode: resolvePaymentMode(business),
         orderCutoffTime: business.orderCutoffTime ?? "",
-        orderNotificationEmail: String(b.orderNotificationEmail ?? ""),
+        notificationEmail: String(b.notificationEmail ?? b.orderNotificationEmail ?? ""),
+        notificationPhone: String(b.notificationPhone ?? ""),
+        notifyNewOrdersByEmail: b.notifyNewOrdersByEmail !== false,
+        notifyNewOrdersBySms: b.notifyNewOrdersBySms === true,
+        notifyAppointmentRequestsByEmail: b.notifyAppointmentRequestsByEmail !== false,
+        notifyAppointmentRequestsBySms: b.notifyAppointmentRequestsBySms === true,
         accentColor: String(b.accentColor ?? ""),
         buttonColor: String(b.buttonColor ?? ""),
         bannerText: String(b.bannerText ?? ""),
@@ -72,42 +100,62 @@ export default function BusinessSettings() {
 
   const updateBusiness = useUpdateBusiness({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (updated) => {
         queryClient.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
+        if (updated?.slug) {
+          queryClient.invalidateQueries({ queryKey: getGetBusinessBySlugQueryKey(updated.slug) });
+        }
         toast({ title: "Settings saved" });
       },
-      onError: () => toast({ title: "Failed to save settings", variant: "destructive" }),
+      onError: (err: unknown) => {
+        const message = err instanceof Error ? err.message : "Please try again.";
+        toast({ title: "Failed to save settings", description: message, variant: "destructive" });
+      },
     },
   });
 
   function handleSave() {
     if (!business) return;
+    const opt = (value: string) => value.trim() || undefined;
+    const optNum = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return undefined;
+      const n = parseFloat(trimmed);
+      return Number.isNaN(n) ? undefined : n;
+    };
+
     updateBusiness.mutate({
       id: business.id,
       data: {
-        name: form.name,
-        description: form.description || undefined,
-        address: form.address || undefined,
-        phone: form.phone || undefined,
-        hours: form.hours || undefined,
-        logoUrl: form.logoUrl || undefined,
-        heroImageUrl: form.heroImageUrl || undefined,
+        name: form.name.trim() || business.name,
+        type: form.type,
+        description: opt(form.description),
+        address: opt(form.address),
+        phone: opt(form.phone),
+        structuredHours: normalizeWeeklyHours(form.structuredHours),
+        logoUrl: opt(form.logoUrl),
+        heroImageUrl: opt(form.heroImageUrl),
         pickupEnabled: form.pickupEnabled,
         deliveryEnabled: form.deliveryEnabled,
-        deliveryFee: form.deliveryFee ? parseFloat(form.deliveryFee) : undefined,
-        minimumOrder: form.minimumOrder ? parseFloat(form.minimumOrder) : undefined,
-        payAtPickupEnabled: form.payAtPickupEnabled,
-        orderCutoffTime: form.orderCutoffTime || undefined,
-        minimumOrderForDelivery: form.minimumOrderForDelivery ? parseFloat(form.minimumOrderForDelivery) : null,
-        deliveryRadiusMiles: form.deliveryRadiusMiles ? parseFloat(form.deliveryRadiusMiles) : null,
-        deliveryNotes: form.deliveryNotes || null,
-        pickupInstructions: form.pickupInstructions || null,
-        deliveryInstructions: form.deliveryInstructions || null,
-        orderNotificationEmail: form.orderNotificationEmail || null,
-        accentColor: form.accentColor || null,
-        buttonColor: form.buttonColor || null,
-        bannerText: form.bannerText || null,
-      } as never,
+        deliveryFee: optNum(form.deliveryFee),
+        minimumOrder: optNum(form.minimumOrder),
+        paymentMode: form.paymentMode,
+        orderCutoffTime: opt(form.orderCutoffTime),
+        minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
+        deliveryRadiusMiles: optNum(form.deliveryRadiusMiles),
+        deliveryNotes: opt(form.deliveryNotes),
+        pickupInstructions: opt(form.pickupInstructions),
+        deliveryInstructions: opt(form.deliveryInstructions),
+        notificationEmail: opt(form.notificationEmail),
+        notificationPhone: opt(form.notificationPhone),
+        notifyNewOrdersByEmail: form.notifyNewOrdersByEmail,
+        notifyNewOrdersBySms: form.notifyNewOrdersBySms,
+        notifyAppointmentRequestsByEmail: form.notifyAppointmentRequestsByEmail,
+        notifyAppointmentRequestsBySms: form.notifyAppointmentRequestsBySms,
+        accentColor: opt(form.accentColor),
+        buttonColor: opt(form.buttonColor),
+        bannerText: opt(form.bannerText),
+      },
     });
   }
 
@@ -125,7 +173,25 @@ export default function BusinessSettings() {
     );
   }
 
-  function toggle(label: string, desc: string, key: "pickupEnabled" | "deliveryEnabled" | "payAtPickupEnabled") {
+  function notifyToggle(
+    label: string,
+    desc: string,
+    key: "notifyNewOrdersByEmail" | "notifyNewOrdersBySms" | "notifyAppointmentRequestsByEmail" | "notifyAppointmentRequestsBySms",
+  ) {
+    return (
+      <div className="flex items-center justify-between py-2">
+        <div>
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-xs text-muted-foreground">{desc}</p>
+        </div>
+        <Switch checked={!!form[key]} onCheckedChange={(val) => setForm((f) => ({ ...f, [key]: val }))} data-testid={`switch-${key}`} />
+      </div>
+    );
+  }
+
+  const isSalon = form.type === "SALON";
+
+  function toggle(label: string, desc: string, key: "pickupEnabled" | "deliveryEnabled") {
     return (
       <div className="flex items-center justify-between py-2">
         <div>
@@ -158,23 +224,77 @@ export default function BusinessSettings() {
               <CardHeader><CardTitle className="text-base">Business Info</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {field("Business Name", "name")}
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Business Type</label>
+                  <Select value={form.type} onValueChange={(type) => setForm((f) => ({ ...f, type: type as BusinessType }))}>
+                    <SelectTrigger data-testid="select-business-type">
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BUSINESS_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {field("Description", "description", { multiline: true, placeholder: "Tell customers what makes your business special" })}
                 {field("Address", "address", { placeholder: "123 Main St, Anytown, MN 55101" })}
                 {field("Phone", "phone", { placeholder: "(555) 555-0100" })}
-                {field("Hours", "hours", { placeholder: "Mon-Fri 9am-5pm, Sat 10am-4pm" })}
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Business Hours</label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Set open/closed and times for each day of the week.
+                  </p>
+                  <WeeklyHoursPicker
+                    value={form.structuredHours}
+                    onChange={(structuredHours) => setForm((f) => ({ ...f, structuredHours }))}
+                  />
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader><CardTitle className="text-base">Branding</CardTitle></CardHeader>
               <CardContent className="space-y-4">
-                {field("Logo URL", "logoUrl", { placeholder: "https://..." })}
-                {field("Hero Image URL", "heroImageUrl", { placeholder: "https://..." })}
+                <ImageField
+                  surface="business-logo"
+                  value={form.logoUrl}
+                  onChange={(logoUrl) => setForm((f) => ({ ...f, logoUrl }))}
+                  testId="business-logo"
+                />
+                <ImageField
+                  surface="business-hero"
+                  value={form.heroImageUrl}
+                  onChange={(heroImageUrl) => setForm((f) => ({ ...f, heroImageUrl }))}
+                  testId="business-hero"
+                />
                 {field("Homepage Banner Text", "bannerText", { placeholder: "🌸 Spring hours now in effect!" })}
-                <div className="grid grid-cols-2 gap-4">
-                  {field("Accent Color", "accentColor", { placeholder: "#e57a44" })}
-                  {field("Button Color", "buttonColor", { placeholder: "#b35b1d" })}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <ColorPickerField
+                    id="accentColor"
+                    label="Accent Color"
+                    description="Highlights on your public storefront — badges, prices, and accents."
+                    value={form.accentColor}
+                    onChange={(accentColor) => setForm((f) => ({ ...f, accentColor }))}
+                    placeholder="#e57a44"
+                  />
+                  <ColorPickerField
+                    id="buttonColor"
+                    label="Button Color"
+                    description="Primary buttons on your storefront, including Book Appointment."
+                    value={form.buttonColor}
+                    onChange={(buttonColor) => setForm((f) => ({ ...f, buttonColor }))}
+                    placeholder="#b35b1d"
+                  />
                 </div>
+                <ColorPreviewSwatches
+                  items={[
+                    { key: "accent", label: "Accent", value: form.accentColor },
+                    { key: "button", label: "Button", value: form.buttonColor },
+                  ]}
+                />
               </CardContent>
             </Card>
 
@@ -184,7 +304,18 @@ export default function BusinessSettings() {
                 <div className="space-y-1 divide-y divide-border">
                   {toggle("Pickup enabled", "Customers can pick up their orders", "pickupEnabled")}
                   {toggle("Delivery enabled", "You offer delivery to customers", "deliveryEnabled")}
-                  {toggle("Pay at pickup", "Customers can pay when they arrive", "payAtPickupEnabled")}
+                </div>
+                <Separator className="my-4" />
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Payment options</label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Choose how customers can pay for orders from your business.
+                  </p>
+                  <PaymentModeSelector
+                    value={form.paymentMode}
+                    onChange={(paymentMode) => setForm((f) => ({ ...f, paymentMode }))}
+                    idPrefix="business-settings-payment"
+                  />
                 </div>
                 <Separator className="my-4" />
                 <div className="grid grid-cols-2 gap-4">
@@ -203,10 +334,23 @@ export default function BusinessSettings() {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="text-base">Order Notifications</CardTitle></CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground mb-3">Get an email whenever a new order arrives.</p>
-                {field("Notification email", "orderNotificationEmail", { type: "email", placeholder: "orders@yourbusiness.com" })}
+              <CardHeader><CardTitle className="text-base">Owner Notifications</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Alerts are sent by the platform when you receive new orders or appointment requests.
+                  Configure where you want email and SMS notifications delivered.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {field("Notification email", "notificationEmail", { type: "email", placeholder: "owner@yourbusiness.com" })}
+                  {field("Notification phone (SMS)", "notificationPhone", { type: "tel", placeholder: "+15555550100" })}
+                </div>
+                <Separator />
+                <div className="space-y-1 divide-y divide-border">
+                  {notifyToggle("Email me for new orders", "Receive an email when a customer places an order", "notifyNewOrdersByEmail")}
+                  {notifyToggle("Text me for new orders", "Urgent SMS alert for new orders", "notifyNewOrdersBySms")}
+                  {isSalon && notifyToggle("Email me for appointment requests", "Receive an email when a customer requests an appointment", "notifyAppointmentRequestsByEmail")}
+                  {isSalon && notifyToggle("Text me for appointment requests", "Urgent SMS alert for new appointment requests", "notifyAppointmentRequestsBySms")}
+                </div>
               </CardContent>
             </Card>
           </>

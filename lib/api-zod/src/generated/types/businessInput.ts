@@ -5,7 +5,9 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
+import type { PaymentMode } from './paymentMode';
 
 export interface BusinessInput {
   /** @minLength 1 */
@@ -19,11 +21,13 @@ export interface BusinessInput {
   address?: string;
   phone?: string;
   hours?: string;
+  structuredHours?: BusinessDayHours[];
   pickupEnabled?: boolean;
   deliveryEnabled?: boolean;
   deliveryFee?: number;
   minimumOrder?: number;
   payAtPickupEnabled?: boolean;
+  paymentMode?: PaymentMode;
   orderCutoffTime?: string;
   ownerId?: string;
 }

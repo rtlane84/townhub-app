@@ -22,6 +22,7 @@ export const eventsTable = pgTable("events", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   date: text("date").notNull(),
+  endDate: text("end_date"),
   startTime: text("start_time"),
   endTime: text("end_time"),
   location: text("location"),

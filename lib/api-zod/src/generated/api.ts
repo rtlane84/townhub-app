@@ -32,17 +32,28 @@ export const GetMeResponse = zod.object({
 /**
  * @summary Get the business owned by the current user
  */
+export const getMyBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
+export const getMyBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
+
 export const GetMyBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
   "address": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "hours": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(getMyBusinessResponseStructuredHoursItemDayOfWeekMin).max(getMyBusinessResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -50,6 +61,7 @@ export const GetMyBusinessResponse = zod.object({
   "deliveryFee": zod.number().nullish(),
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -57,6 +69,12 @@ export const GetMyBusinessResponse = zod.object({
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
   "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
   "eventLocationEnabled": zod.boolean().optional(),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
@@ -75,17 +93,28 @@ export const ListBusinessesQueryParams = zod.object({
   "featured": zod.coerce.boolean().optional().describe('Filter featured businesses only')
 })
 
+export const listBusinessesResponseStructuredHoursItemDayOfWeekMin = 0;
+export const listBusinessesResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
+
 export const ListBusinessesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
   "address": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "hours": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(listBusinessesResponseStructuredHoursItemDayOfWeekMin).max(listBusinessesResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -93,6 +122,7 @@ export const ListBusinessesResponseItem = zod.object({
   "deliveryFee": zod.number().nullish(),
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -100,6 +130,12 @@ export const ListBusinessesResponseItem = zod.object({
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
   "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
   "eventLocationEnabled": zod.boolean().optional(),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
@@ -158,18 +194,29 @@ export const GetBusinessBySlugParams = zod.object({
   "slug": zod.coerce.string()
 })
 
+export const getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMin = 0;
+export const getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMax = 6;
+
+
+
 export const GetBusinessBySlugResponse = zod.object({
   "business": zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
   "address": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "hours": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMin).max(getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -177,6 +224,7 @@ export const GetBusinessBySlugResponse = zod.object({
   "deliveryFee": zod.number().nullish(),
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -184,6 +232,12 @@ export const GetBusinessBySlugResponse = zod.object({
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
   "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
   "eventLocationEnabled": zod.boolean().optional(),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
@@ -216,15 +270,24 @@ export const GetBusinessBySlugResponse = zod.object({
  * @summary Self-service business registration (any authenticated user)
  */
 
+export const registerBusinessBodyStructuredHoursItemDayOfWeekMin = 0;
+export const registerBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
+
 
 
 export const RegisterBusinessBody = zod.object({
   "name": zod.string().min(1),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().optional(),
   "address": zod.string().optional(),
   "phone": zod.string().optional(),
-  "hours": zod.string().optional()
+  "hours": zod.string().optional(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(registerBusinessBodyStructuredHoursItemDayOfWeekMin).max(registerBusinessBodyStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).optional()
 })
 
 
@@ -233,23 +296,33 @@ export const RegisterBusinessBody = zod.object({
  */
 
 
+export const createBusinessBodyStructuredHoursItemDayOfWeekMin = 0;
+export const createBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
+
 
 
 export const CreateBusinessBody = zod.object({
   "name": zod.string().min(1),
   "slug": zod.string().min(1),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().optional(),
   "logoUrl": zod.string().optional(),
   "heroImageUrl": zod.string().optional(),
   "address": zod.string().optional(),
   "phone": zod.string().optional(),
   "hours": zod.string().optional(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(createBusinessBodyStructuredHoursItemDayOfWeekMin).max(createBusinessBodyStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).optional(),
   "pickupEnabled": zod.boolean().optional(),
   "deliveryEnabled": zod.boolean().optional(),
   "deliveryFee": zod.number().optional(),
   "minimumOrder": zod.number().optional(),
   "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).optional(),
   "orderCutoffTime": zod.string().optional(),
   "ownerId": zod.string().optional()
 })
@@ -262,17 +335,28 @@ export const GetBusinessParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
+export const getBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
+
 export const GetBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
   "address": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "hours": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(getBusinessResponseStructuredHoursItemDayOfWeekMin).max(getBusinessResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -280,6 +364,7 @@ export const GetBusinessResponse = zod.object({
   "deliveryFee": zod.number().nullish(),
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -287,6 +372,12 @@ export const GetBusinessResponse = zod.object({
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
   "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
   "eventLocationEnabled": zod.boolean().optional(),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
@@ -303,6 +394,11 @@ export const UpdateBusinessParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updateBusinessBodyStructuredHoursItemDayOfWeekMin = 0;
+export const updateBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
+
+
+
 export const UpdateBusinessBody = zod.object({
   "name": zod.string().optional(),
   "slug": zod.string().optional(),
@@ -312,6 +408,12 @@ export const UpdateBusinessBody = zod.object({
   "address": zod.string().optional(),
   "phone": zod.string().optional(),
   "hours": zod.string().optional(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(updateBusinessBodyStructuredHoursItemDayOfWeekMin).max(updateBusinessBodyStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).optional(),
   "active": zod.boolean().optional(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -319,30 +421,49 @@ export const UpdateBusinessBody = zod.object({
   "deliveryFee": zod.number().optional(),
   "minimumOrder": zod.number().optional(),
   "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).optional(),
   "orderCutoffTime": zod.string().optional(),
-  "minimumOrderForDelivery": zod.number().optional(),
-  "deliveryRadiusMiles": zod.number().optional(),
-  "deliveryNotes": zod.string().optional(),
-  "pickupInstructions": zod.string().optional(),
-  "deliveryInstructions": zod.string().optional(),
-  "orderNotificationEmail": zod.string().optional(),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
   "eventLocationEnabled": zod.boolean().optional(),
-  "accentColor": zod.string().optional(),
-  "buttonColor": zod.string().optional(),
-  "bannerText": zod.string().optional()
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']).optional()
 })
+
+export const updateBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
+export const updateBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
 
 export const UpdateBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
   "address": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "hours": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(updateBusinessResponseStructuredHoursItemDayOfWeekMin).max(updateBusinessResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -350,6 +471,7 @@ export const UpdateBusinessResponse = zod.object({
   "deliveryFee": zod.number().nullish(),
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -357,6 +479,12 @@ export const UpdateBusinessResponse = zod.object({
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
   "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
   "eventLocationEnabled": zod.boolean().optional(),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
@@ -771,6 +899,50 @@ export const CreateCheckoutSessionResponse = zod.object({
 
 
 /**
+ * @summary Submit a salon appointment request
+ */
+
+
+
+
+export const CreateAppointmentRequestBody = zod.object({
+  "businessId": zod.number(),
+  "customerName": zod.string().min(1),
+  "customerEmail": zod.string().optional(),
+  "customerPhone": zod.string().optional(),
+  "serviceName": zod.string().optional(),
+  "productId": zod.number().optional(),
+  "requestedDate": zod.string(),
+  "requestedTime": zod.string().min(1),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary List appointment requests for a business (owner)
+ */
+export const ListBusinessAppointmentRequestsParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const ListBusinessAppointmentRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "customerName": zod.string(),
+  "customerEmail": zod.string().nullish(),
+  "customerPhone": zod.string().nullish(),
+  "serviceName": zod.string().nullish(),
+  "productId": zod.number().nullish(),
+  "requestedDate": zod.string(),
+  "requestedTime": zod.string(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListBusinessAppointmentRequestsResponse = zod.array(ListBusinessAppointmentRequestsResponseItem)
+
+
+/**
  * @summary List all users (admin)
  */
 export const ListUsersResponseItem = zod.object({
@@ -816,17 +988,28 @@ export const AssignBusinessOwnerBody = zod.object({
   "ownerId": zod.string()
 })
 
+export const assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMin = 0;
+export const assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
+
 export const AssignBusinessOwnerResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL']),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
   "address": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "hours": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMin).max(assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -834,6 +1017,7 @@ export const AssignBusinessOwnerResponse = zod.object({
   "deliveryFee": zod.number().nullish(),
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -841,6 +1025,12 @@ export const AssignBusinessOwnerResponse = zod.object({
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
   "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
   "eventLocationEnabled": zod.boolean().optional(),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
@@ -862,6 +1052,7 @@ export const ListEventsResponseItem = zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "date": zod.string(),
+  "endDate": zod.string().nullish(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
   "location": zod.string().nullish(),
@@ -882,6 +1073,7 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
 export const CreateEventBody = zod.object({
   "title": zod.string(),
   "date": zod.string(),
+  "endDate": zod.string().nullish(),
   "startTime": zod.string().optional(),
   "endTime": zod.string().optional(),
   "location": zod.string().optional(),
@@ -905,6 +1097,7 @@ export const GetEventResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "date": zod.string(),
+  "endDate": zod.string().nullish(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
   "location": zod.string().nullish(),
@@ -928,6 +1121,7 @@ export const UpdateEventParams = zod.object({
 export const UpdateEventBody = zod.object({
   "title": zod.string(),
   "date": zod.string(),
+  "endDate": zod.string().nullish(),
   "startTime": zod.string().optional(),
   "endTime": zod.string().optional(),
   "location": zod.string().optional(),
@@ -943,6 +1137,7 @@ export const UpdateEventResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "date": zod.string(),
+  "endDate": zod.string().nullish(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
   "location": zod.string().nullish(),
@@ -1353,6 +1548,11 @@ export const ListTodayFoodTrucksResponse = zod.array(ListTodayFoodTrucksResponse
 /**
  * @summary Get platform-wide theme settings (public read)
  */
+export const getPlatformThemeResponseLogoSizePxMin = 16;
+export const getPlatformThemeResponseLogoSizePxMax = 64;
+
+
+
 export const GetPlatformThemeResponse = zod.object({
   "id": zod.number(),
   "primaryColor": zod.string(),
@@ -1360,6 +1560,11 @@ export const GetPlatformThemeResponse = zod.object({
   "backgroundColor": zod.string(),
   "buttonColor": zod.string(),
   "headingColor": zod.string().nullish(),
+  "platformName": zod.string().nullish(),
+  "townName": zod.string().nullish(),
+  "tagline": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "logoSizePx": zod.number().min(getPlatformThemeResponseLogoSizePxMin).max(getPlatformThemeResponseLogoSizePxMax).optional(),
   "updatedAt": zod.coerce.date().optional()
 })
 
@@ -1367,13 +1572,28 @@ export const GetPlatformThemeResponse = zod.object({
 /**
  * @summary Update platform-wide theme settings (admin only)
  */
+export const updatePlatformThemeBodyLogoSizePxMin = 16;
+export const updatePlatformThemeBodyLogoSizePxMax = 64;
+
+
+
 export const UpdatePlatformThemeBody = zod.object({
   "primaryColor": zod.string().optional(),
   "accentColor": zod.string().optional(),
   "backgroundColor": zod.string().optional(),
   "buttonColor": zod.string().optional(),
-  "headingColor": zod.string().optional()
+  "headingColor": zod.string().optional(),
+  "platformName": zod.string().optional(),
+  "townName": zod.string().optional(),
+  "tagline": zod.string().optional(),
+  "logoUrl": zod.string().optional(),
+  "logoSizePx": zod.number().min(updatePlatformThemeBodyLogoSizePxMin).max(updatePlatformThemeBodyLogoSizePxMax).optional()
 })
+
+export const updatePlatformThemeResponseLogoSizePxMin = 16;
+export const updatePlatformThemeResponseLogoSizePxMax = 64;
+
+
 
 export const UpdatePlatformThemeResponse = zod.object({
   "id": zod.number(),
@@ -1382,6 +1602,11 @@ export const UpdatePlatformThemeResponse = zod.object({
   "backgroundColor": zod.string(),
   "buttonColor": zod.string(),
   "headingColor": zod.string().nullish(),
+  "platformName": zod.string().nullish(),
+  "townName": zod.string().nullish(),
+  "tagline": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "logoSizePx": zod.number().min(updatePlatformThemeResponseLogoSizePxMin).max(updatePlatformThemeResponseLogoSizePxMax).optional(),
   "updatedAt": zod.coerce.date().optional()
 })
 
@@ -1397,14 +1622,59 @@ export const ListNotificationLogsQueryParams = zod.object({
 export const ListNotificationLogsResponseItem = zod.object({
   "id": zod.number(),
   "businessId": zod.number(),
-  "orderId": zod.number(),
-  "type": zod.string(),
-  "recipientEmail": zod.string(),
-  "subject": zod.string(),
-  "body": zod.string().optional(),
+  "orderId": zod.number().nullish(),
+  "appointmentRequestId": zod.number().nullish(),
+  "channel": zod.enum(['EMAIL', 'SMS']),
+  "eventType": zod.string().nullish(),
+  "type": zod.string().optional(),
+  "recipientEmail": zod.string().nullish(),
+  "recipientPhone": zod.string().nullish(),
+  "subject": zod.string().nullish(),
+  "body": zod.string(),
   "status": zod.string(),
+  "errorMessage": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 export const ListNotificationLogsResponse = zod.array(ListNotificationLogsResponseItem)
+
+
+/**
+ * @summary List uploaded media for the current user scope
+ */
+export const listMediaAssetsQueryLimitMax = 200;
+
+
+
+export const ListMediaAssetsQueryParams = zod.object({
+  "limit": zod.coerce.number().min(1).max(listMediaAssetsQueryLimitMax).optional()
+})
+
+export const ListMediaAssetsResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number().nullish(),
+  "uploadedByUserId": zod.string(),
+  "originalFilename": zod.string(),
+  "mimeType": zod.string(),
+  "byteSize": zod.number(),
+  "url": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const ListMediaAssetsResponse = zod.array(ListMediaAssetsResponseItem)
+
+
+/**
+ * @summary Upload an image to the media library
+ */
+export const UploadMediaAssetBody = zod.object({
+  "file": zod.instanceof(File).describe('Image file (JPEG, PNG, WebP, or GIF; max 5 MB)')
+})
+
+
+/**
+ * @summary Delete a media asset from the library
+ */
+export const DeleteMediaAssetParams = zod.object({
+  "id": zod.coerce.number()
+})
 
 

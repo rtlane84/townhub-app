@@ -10,17 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Store, CheckCircle2, Loader2, ArrowRight, ArrowLeft, Building2, CreditCard, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePlatformBranding } from "@/components/theme-provider";
+import { WeeklyHoursPicker } from "@/components/weekly-hours-picker";
+import {
+  defaultWeeklyHours,
+  normalizeWeeklyHours,
+  BUSINESS_TYPE_OPTIONS,
+} from "@workspace/api-zod";
+import type { BusinessDayHours } from "@workspace/api-client-react";
 
-const BUSINESS_TYPES = [
-  { value: "FOOD_VENDOR", label: "Restaurant / Food Service" },
-  { value: "FLORIST", label: "Florist" },
-  { value: "GARDEN_MARKET", label: "Garden / Nursery" },
-  { value: "RETAIL_STORE", label: "Retail Shop" },
-  { value: "BUILDING_SUPPLY", label: "Building Supply" },
-  { value: "SERVICE_PROVIDER", label: "Service Provider" },
-  { value: "FUNERAL_SERVICE", label: "Funeral Service" },
-  { value: "GENERAL", label: "Other / General" },
-];
+const BUSINESS_TYPES = BUSINESS_TYPE_OPTIONS;
 
 interface Plan {
   id: number;
@@ -39,7 +38,7 @@ interface FormState {
   description: string;
   address: string;
   phone: string;
-  hours: string;
+  structuredHours: BusinessDayHours[];
 }
 
 const EMPTY: FormState = {
@@ -48,7 +47,7 @@ const EMPTY: FormState = {
   description: "",
   address: "",
   phone: "",
-  hours: "",
+  structuredHours: defaultWeeklyHours(),
 };
 
 function slugPreview(name: string) {
@@ -60,6 +59,7 @@ function formatPrice(price: number) {
 }
 
 export default function ListYourBusiness() {
+  const { platformName } = usePlatformBranding();
   const { isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
   const [, setLocation] = useLocation();
@@ -73,7 +73,7 @@ export default function ListYourBusiness() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
 
-  function set(key: keyof FormState, value: string) {
+  function set(key: keyof Omit<FormState, "structuredHours">, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
@@ -114,7 +114,7 @@ export default function ListYourBusiness() {
           description: form.description.trim() || undefined,
           address: form.address.trim() || undefined,
           phone: form.phone.trim() || undefined,
-          hours: form.hours.trim() || undefined,
+          structuredHours: normalizeWeeklyHours(form.structuredHours),
           planId: selectedPlanId ?? undefined,
         }),
       });
@@ -145,7 +145,7 @@ export default function ListYourBusiness() {
         <div className="max-w-md w-full text-center space-y-6">
           <div className="flex items-center justify-center gap-2">
             <Store className="h-8 w-8 text-primary" />
-            <span className="font-serif text-2xl font-bold text-primary">LocalOrderHub</span>
+            <span className="font-serif text-2xl font-bold text-primary">{platformName}</span>
           </div>
           <h1 className="font-serif text-3xl font-bold">List Your Business</h1>
           <p className="text-muted-foreground">
@@ -302,12 +302,13 @@ export default function ListYourBusiness() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="hours">Hours</Label>
-                <Input
-                  id="hours"
-                  placeholder="e.g. Mon–Sat 8am–6pm, Sun 10am–4pm"
-                  value={form.hours}
-                  onChange={(e) => set("hours", e.target.value)}
+                <Label>Business Hours</Label>
+                <p className="text-xs text-muted-foreground">
+                  Set open/closed and times for each day. All fields optional.
+                </p>
+                <WeeklyHoursPicker
+                  value={form.structuredHours}
+                  onChange={(structuredHours) => setForm((f) => ({ ...f, structuredHours }))}
                 />
               </div>
 

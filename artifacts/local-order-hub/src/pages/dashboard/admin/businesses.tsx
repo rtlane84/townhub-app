@@ -11,6 +11,7 @@ import {
   getListBusinessesQueryKey,
   BusinessType,
 } from "@workspace/api-client-react";
+import { planAssignmentLabel } from "@/lib/subscription-plans";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, UserPlus, Star, Layers } from "lucide-react";
+import { WeeklyHoursPicker } from "@/components/weekly-hours-picker";
+import {
+  defaultWeeklyHours,
+  normalizeWeeklyHours,
+  parseStructuredHours,
+  resolvePaymentMode,
+  BUSINESS_TYPE_OPTIONS,
+  formatBusinessTypeLabel,
+} from "@workspace/api-zod";
+import type { BusinessDayHours, PaymentMode } from "@workspace/api-client-react";
+import { PaymentModeSelector } from "@/components/payment-mode-selector";
 
-const BUSINESS_TYPES = ["FOOD_VENDOR", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE", "BUILDING_SUPPLY", "SERVICE_PROVIDER", "FUNERAL_SERVICE", "GENERAL"] as const;
+const BUSINESS_TYPES = BUSINESS_TYPE_OPTIONS;
 
 interface BizForm {
   name: string;
@@ -34,20 +46,21 @@ interface BizForm {
   description: string;
   address: string;
   phone: string;
-  hours: string;
+  structuredHours: BusinessDayHours[];
   active: boolean;
   featured: boolean;
   pickupEnabled: boolean;
   deliveryEnabled: boolean;
-  payAtPickupEnabled: boolean;
+  paymentMode: PaymentMode;
   deliveryFee: string;
   minimumOrder: string;
   ownerId: string;
 }
 
 const EMPTY_FORM: BizForm = {
-  name: "", slug: "", type: "GENERAL", description: "", address: "", phone: "", hours: "",
-  active: true, featured: false, pickupEnabled: true, deliveryEnabled: false, payAtPickupEnabled: false,
+  name: "", slug: "", type: "GENERAL", description: "", address: "", phone: "",
+  structuredHours: defaultWeeklyHours(),
+  active: true, featured: false, pickupEnabled: true, deliveryEnabled: false, paymentMode: "ONLINE_ONLY",
   deliveryFee: "", minimumOrder: "", ownerId: "",
 };
 
@@ -115,9 +128,10 @@ export default function AdminBusinesses() {
     setEditingId(b.id);
     setForm({
       name: b.name, slug: b.slug, type: b.type, description: b.description ?? "",
-      address: b.address ?? "", phone: b.phone ?? "", hours: b.hours ?? "",
+      address: b.address ?? "", phone: b.phone ?? "",
+      structuredHours: parseStructuredHours(b.structuredHours) ?? defaultWeeklyHours(),
       active: b.active ?? true, featured: b.featured ?? false, pickupEnabled: b.pickupEnabled ?? true,
-      deliveryEnabled: b.deliveryEnabled ?? false, payAtPickupEnabled: b.payAtPickupEnabled ?? false,
+      deliveryEnabled: b.deliveryEnabled ?? false, paymentMode: resolvePaymentMode(b),
       deliveryFee: b.deliveryFee != null ? String(b.deliveryFee) : "",
       minimumOrder: b.minimumOrder != null ? String(b.minimumOrder) : "",
       ownerId: b.ownerId ?? "",
@@ -169,6 +183,7 @@ export default function AdminBusinesses() {
     return {
       ...form,
       type: form.type as BusinessType,
+      structuredHours: normalizeWeeklyHours(form.structuredHours),
       deliveryFee: form.deliveryFee ? parseFloat(form.deliveryFee) : undefined,
       minimumOrder: form.minimumOrder ? parseFloat(form.minimumOrder) : undefined,
       ownerId: form.ownerId || undefined,
@@ -254,7 +269,7 @@ export default function AdminBusinesses() {
 
       {/* Create/Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-serif">{editingId ? "Edit Business" : "Add Business"}</DialogTitle>
           </DialogHeader>
@@ -278,7 +293,9 @@ export default function AdminBusinesses() {
               <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {BUSINESS_TYPES.map((t) => <SelectItem key={t} value={t}>{t.replace(/_/g, " ")}</SelectItem>)}
+                  {BUSINESS_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -297,8 +314,11 @@ export default function AdminBusinesses() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Hours</label>
-              <Input value={form.hours} onChange={(e) => setForm((f) => ({ ...f, hours: e.target.value }))} placeholder="Mon-Fri 9am-5pm" />
+              <label className="text-sm font-medium mb-1.5 block">Business Hours</label>
+              <WeeklyHoursPicker
+                value={form.structuredHours}
+                onChange={(structuredHours) => setForm((f) => ({ ...f, structuredHours }))}
+              />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center gap-2">
@@ -313,6 +333,14 @@ export default function AdminBusinesses() {
                 <Switch checked={form.pickupEnabled} onCheckedChange={(v) => setForm((f) => ({ ...f, pickupEnabled: v }))} />
                 <label className="text-sm">Pickup</label>
               </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Payment options</label>
+              <PaymentModeSelector
+                value={form.paymentMode}
+                onChange={(paymentMode) => setForm((f) => ({ ...f, paymentMode }))}
+                idPrefix="admin-business-payment"
+              />
             </div>
           </div>
           <DialogFooter>
@@ -339,9 +367,9 @@ export default function AdminBusinesses() {
                   <SelectValue placeholder="Choose a plan…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {plans.filter((p) => p.isActive).map((p) => (
+                  {plans.map((p) => (
                     <SelectItem key={p.id} value={String(p.id)}>
-                      {p.name} — {p.monthlyPrice === 0 ? "Free" : `$${p.monthlyPrice.toFixed(2)}/mo`}
+                      {planAssignmentLabel(p)}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -5,6 +5,9 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessDayHours } from './businessDayHours';
+import type { BusinessType } from './businessType';
+import type { PaymentMode } from './paymentMode';
 
 export interface BusinessUpdate {
   name?: string;
@@ -15,6 +18,7 @@ export interface BusinessUpdate {
   address?: string;
   phone?: string;
   hours?: string;
+  structuredHours?: BusinessDayHours[];
   active?: boolean;
   featured?: boolean;
   pickupEnabled?: boolean;
@@ -22,15 +26,34 @@ export interface BusinessUpdate {
   deliveryFee?: number;
   minimumOrder?: number;
   payAtPickupEnabled?: boolean;
+  paymentMode?: PaymentMode;
   orderCutoffTime?: string;
-  minimumOrderForDelivery?: number;
-  deliveryRadiusMiles?: number;
-  deliveryNotes?: string;
-  pickupInstructions?: string;
-  deliveryInstructions?: string;
-  orderNotificationEmail?: string;
+  /** @nullable */
+  minimumOrderForDelivery?: number | null;
+  /** @nullable */
+  deliveryRadiusMiles?: number | null;
+  /** @nullable */
+  deliveryNotes?: string | null;
+  /** @nullable */
+  pickupInstructions?: string | null;
+  /** @nullable */
+  deliveryInstructions?: string | null;
+  /** @nullable */
+  orderNotificationEmail?: string | null;
+  /** @nullable */
+  notificationEmail?: string | null;
+  /** @nullable */
+  notificationPhone?: string | null;
+  notifyNewOrdersByEmail?: boolean;
+  notifyNewOrdersBySms?: boolean;
+  notifyAppointmentRequestsByEmail?: boolean;
+  notifyAppointmentRequestsBySms?: boolean;
   eventLocationEnabled?: boolean;
-  accentColor?: string;
-  buttonColor?: string;
-  bannerText?: string;
+  /** @nullable */
+  accentColor?: string | null;
+  /** @nullable */
+  buttonColor?: string | null;
+  /** @nullable */
+  bannerText?: string | null;
+  type?: BusinessType;
 }

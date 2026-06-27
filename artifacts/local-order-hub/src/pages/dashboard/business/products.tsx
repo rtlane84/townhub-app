@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Star } from "lucide-react";
+import { ImageField } from "@/components/image-field";
 
 interface ProductForm {
   name: string;
@@ -237,10 +238,12 @@ export default function BusinessProducts() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Image URL</label>
-              <Input value={form.imageUrl} onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))} placeholder="https://…" data-testid="input-product-image-url" />
-            </div>
+            <ImageField
+              surface="product"
+              value={form.imageUrl}
+              onChange={(imageUrl) => setForm((f) => ({ ...f, imageUrl }))}
+              testId="product-image"
+            />
             <div className="flex gap-6">
               <div className="flex items-center gap-2">
                 <Switch checked={form.available} onCheckedChange={(v) => setForm((f) => ({ ...f, available: v }))} data-testid="switch-product-available" />

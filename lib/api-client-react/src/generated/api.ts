@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AppointmentRequest,
+  AppointmentRequestInput,
   Business,
   BusinessInput,
   BusinessOrderSummary,
@@ -45,7 +47,10 @@ import type {
   ListAllOrdersParams,
   ListBusinessesParams,
   ListEventsParams,
+  ListMediaAssetsParams,
   ListNotificationLogsParams,
+  MediaAsset,
+  MediaUploadForm,
   NotificationLog,
   Order,
   OrderInput,
@@ -2092,6 +2097,154 @@ export const useStripeWebhook = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getStripeWebhookMutationOptions(options));
     }
+
+export const getCreateAppointmentRequestUrl = () => {
+
+
+
+
+  return `/api/appointment-requests`
+}
+
+/**
+ * @summary Submit a salon appointment request
+ */
+export const createAppointmentRequest = async (appointmentRequestInput: AppointmentRequestInput, options?: RequestInit): Promise<AppointmentRequest> => {
+
+  return customFetch<AppointmentRequest>(getCreateAppointmentRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      appointmentRequestInput,)
+  }
+);}
+
+
+
+
+export const getCreateAppointmentRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAppointmentRequest>>, TError,{data: BodyType<AppointmentRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAppointmentRequest>>, TError,{data: BodyType<AppointmentRequestInput>}, TContext> => {
+
+const mutationKey = ['createAppointmentRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAppointmentRequest>>, {data: BodyType<AppointmentRequestInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAppointmentRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAppointmentRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createAppointmentRequest>>>
+    export type CreateAppointmentRequestMutationBody = BodyType<AppointmentRequestInput>
+    export type CreateAppointmentRequestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Submit a salon appointment request
+ */
+export const useCreateAppointmentRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAppointmentRequest>>, TError,{data: BodyType<AppointmentRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAppointmentRequest>>,
+        TError,
+        {data: BodyType<AppointmentRequestInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAppointmentRequestMutationOptions(options));
+    }
+
+export const getListBusinessAppointmentRequestsUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/appointment-requests`
+}
+
+/**
+ * @summary List appointment requests for a business (owner)
+ */
+export const listBusinessAppointmentRequests = async (businessId: number, options?: RequestInit): Promise<AppointmentRequest[]> => {
+
+  return customFetch<AppointmentRequest[]>(getListBusinessAppointmentRequestsUrl(businessId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListBusinessAppointmentRequestsQueryKey = (businessId: number,) => {
+    return [
+    `/api/businesses/${businessId}/appointment-requests`
+    ] as const;
+    }
+
+
+export const getListBusinessAppointmentRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError = ErrorType<unknown>>(businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBusinessAppointmentRequestsQueryKey(businessId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>> = ({ signal }) => listBusinessAppointmentRequests(businessId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(businessId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListBusinessAppointmentRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>>
+export type ListBusinessAppointmentRequestsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List appointment requests for a business (owner)
+ */
+
+export function useListBusinessAppointmentRequests<TData = Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError = ErrorType<unknown>>(
+ businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListBusinessAppointmentRequestsQueryOptions(businessId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListUsersUrl = () => {
 
@@ -4174,4 +4327,231 @@ export function useListNotificationLogs<TData = Awaited<ReturnType<typeof listNo
 
 
 
+
+export const getListMediaAssetsUrl = (params?: ListMediaAssetsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/media?${stringifiedParams}` : `/api/media`
+}
+
+/**
+ * @summary List uploaded media for the current user scope
+ */
+export const listMediaAssets = async (params?: ListMediaAssetsParams, options?: RequestInit): Promise<MediaAsset[]> => {
+
+  return customFetch<MediaAsset[]>(getListMediaAssetsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMediaAssetsQueryKey = (params?: ListMediaAssetsParams,) => {
+    return [
+    `/api/media`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListMediaAssetsQueryOptions = <TData = Awaited<ReturnType<typeof listMediaAssets>>, TError = ErrorType<void>>(params?: ListMediaAssetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMediaAssetsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMediaAssets>>> = ({ signal }) => listMediaAssets(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMediaAssetsQueryResult = NonNullable<Awaited<ReturnType<typeof listMediaAssets>>>
+export type ListMediaAssetsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List uploaded media for the current user scope
+ */
+
+export function useListMediaAssets<TData = Awaited<ReturnType<typeof listMediaAssets>>, TError = ErrorType<void>>(
+ params?: ListMediaAssetsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMediaAssets>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMediaAssetsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUploadMediaAssetUrl = () => {
+
+
+
+
+  return `/api/media/upload`
+}
+
+/**
+ * @summary Upload an image to the media library
+ */
+export const uploadMediaAsset = async (mediaUploadForm: MediaUploadForm, options?: RequestInit): Promise<MediaAsset> => {
+    const formData = new FormData();
+formData.append(`file`, mediaUploadForm.file);
+
+  return customFetch<MediaAsset>(getUploadMediaAssetUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body:
+      formData,
+  }
+);}
+
+
+
+
+export const getUploadMediaAssetMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>}, TContext> => {
+
+const mutationKey = ['uploadMediaAsset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadMediaAsset>>, {data: BodyType<MediaUploadForm>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadMediaAsset(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadMediaAssetMutationResult = NonNullable<Awaited<ReturnType<typeof uploadMediaAsset>>>
+    export type UploadMediaAssetMutationBody = BodyType<MediaUploadForm>
+    export type UploadMediaAssetMutationError = ErrorType<void>
+
+    /**
+ * @summary Upload an image to the media library
+ */
+export const useUploadMediaAsset = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadMediaAsset>>,
+        TError,
+        {data: BodyType<MediaUploadForm>},
+        TContext
+      > => {
+      return useMutation(getUploadMediaAssetMutationOptions(options));
+    }
+
+export const getDeleteMediaAssetUrl = (id: number,) => {
+
+
+
+
+  return `/api/media/${id}`
+}
+
+/**
+ * @summary Delete a media asset from the library
+ */
+export const deleteMediaAsset = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteMediaAssetUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteMediaAssetMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteMediaAsset'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMediaAsset>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteMediaAsset(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMediaAssetMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMediaAsset>>>
+
+    export type DeleteMediaAssetMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete a media asset from the library
+ */
+export const useDeleteMediaAsset = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMediaAsset>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMediaAsset>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteMediaAssetMutationOptions(options));
+    }
 

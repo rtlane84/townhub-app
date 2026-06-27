@@ -1,10 +1,12 @@
 import { useGetPlatformStats } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
+import { usePlatformBranding } from "@/components/theme-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Store, ShoppingBag, DollarSign, Activity } from "lucide-react";
 
 export default function AdminOverview() {
+  const { platformName } = usePlatformBranding();
   const { data: stats, isLoading } = useGetPlatformStats();
 
   const metrics = stats
@@ -21,7 +23,7 @@ export default function AdminOverview() {
       <div className="max-w-5xl mx-auto space-y-8">
         <div>
           <h1 className="font-serif text-3xl font-bold">Platform Overview</h1>
-          <p className="text-muted-foreground mt-1">All activity across LocalOrderHub</p>
+          <p className="text-muted-foreground mt-1">All activity across {platformName}</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

@@ -18,4 +18,5 @@ export const BusinessType = {
   SERVICE_PROVIDER: 'SERVICE_PROVIDER',
   FUNERAL_SERVICE: 'FUNERAL_SERVICE',
   GENERAL: 'GENERAL',
+  SALON: 'SALON',
 } as const;

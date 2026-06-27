@@ -5,15 +5,28 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { NotificationLogChannel } from './notificationLogChannel';
 
 export interface NotificationLog {
   id: number;
   businessId: number;
-  orderId: number;
-  type: string;
-  recipientEmail: string;
-  subject: string;
-  body?: string;
+  /** @nullable */
+  orderId?: number | null;
+  /** @nullable */
+  appointmentRequestId?: number | null;
+  channel: NotificationLogChannel;
+  /** @nullable */
+  eventType?: string | null;
+  type?: string;
+  /** @nullable */
+  recipientEmail?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  subject?: string | null;
+  body: string;
   status: string;
+  /** @nullable */
+  errorMessage?: string | null;
   createdAt: Date;
 }

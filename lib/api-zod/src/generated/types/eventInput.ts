@@ -10,6 +10,8 @@ import type { EventType } from './eventType';
 export interface EventInput {
   title: string;
   date: string;
+  /** @nullable */
+  endDate?: string | null;
   startTime?: string;
   endTime?: string;
   location?: string;

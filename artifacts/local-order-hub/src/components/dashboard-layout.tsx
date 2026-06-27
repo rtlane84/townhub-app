@@ -1,9 +1,13 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal, ClipboardList } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal, ClipboardList, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { useGetMe, useGetMyBusiness } from "@workspace/api-client-react";
+import { isSalonBusiness } from "@workspace/api-zod";
+import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
+import { OrderAlertControls } from "@/components/order-alert-controls";
 
 interface NavItem {
   href: string;
@@ -44,16 +48,29 @@ function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location:
 export function BusinessDashboardLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
+  const { data: me } = useGetMe();
+  const { data: business } = useGetMyBusiness();
+  const businessId = me?.businessId ?? undefined;
 
-  const navItems: NavItem[] = [
-    { href: "/dashboard/business", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/business/orders", label: "Orders", icon: ShoppingBag },
-    { href: "/dashboard/business/products", label: "Products", icon: Store },
-    { href: "/dashboard/business/categories", label: "Categories", icon: Tags },
-    { href: "/dashboard/business/locations", label: "Locations", icon: MapPin },
-    { href: "/dashboard/business/billing", label: "Billing", icon: CreditCard },
-    { href: "/dashboard/business/settings", label: "Settings", icon: Settings },
-  ];
+  useLiveOrderAlerts(businessId);
+
+  const navItems: NavItem[] = useMemo(() => {
+    const items: NavItem[] = [
+      { href: "/dashboard/business", label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/business/orders", label: "Orders", icon: ShoppingBag },
+    ];
+    if (isSalonBusiness(business?.type)) {
+      items.push({ href: "/dashboard/business/appointments", label: "Appointments", icon: CalendarDays });
+    }
+    items.push(
+      { href: "/dashboard/business/products", label: "Products", icon: Store },
+      { href: "/dashboard/business/categories", label: "Categories", icon: Tags },
+      { href: "/dashboard/business/locations", label: "Locations", icon: MapPin },
+      { href: "/dashboard/business/billing", label: "Billing", icon: CreditCard },
+      { href: "/dashboard/business/settings", label: "Settings", icon: Settings },
+    );
+    return items;
+  }, [business?.type]);
 
   const activeLabel =
     navItems.find(
@@ -71,6 +88,9 @@ export function BusinessDashboardLayout({ children }: { children: React.ReactNod
           <nav className="space-y-1">
             <NavLinks items={navItems} location={location} />
           </nav>
+          <div className="mt-8">
+            <OrderAlertControls />
+          </div>
         </div>
       </aside>
 
@@ -89,6 +109,9 @@ export function BusinessDashboardLayout({ children }: { children: React.ReactNod
             <nav className="px-3 space-y-1">
               <NavLinks items={navItems} location={location} onNavigate={() => setOpen(false)} />
             </nav>
+            <div className="px-3 mt-6 pb-6">
+              <OrderAlertControls compact />
+            </div>
           </SheetContent>
         </Sheet>
         <span className="text-sm font-semibold">{activeLabel}</span>

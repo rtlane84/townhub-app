@@ -2,12 +2,21 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { Search, MapPin, Store, Filter } from "lucide-react";
 import { useListBusinesses } from "@workspace/api-client-react";
-import { BusinessType } from "@workspace/api-client-react";
+import { PUBLIC_BUSINESS_FILTERS, formatBusinessTypeLabel } from "@workspace/api-zod";
+import {
+  businessHeroPlaceholderStyle,
+  businessIconAccentStyle,
+  businessListingCardVars,
+  businessTypeBadgeStyle,
+} from "@/lib/theme-colors";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const LISTING_CARD_CLASS =
+  "h-full overflow-hidden hover-elevate cursor-pointer border-border/60 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
 
 export default function Businesses() {
   const [search, setSearch] = useState("");
@@ -18,14 +27,7 @@ export default function Businesses() {
     type: selectedType === "ALL" ? undefined : selectedType,
   });
 
-  const categories = [
-    { label: "All", value: "ALL" },
-    { label: "Food & Drink", value: "FOOD_VENDOR" },
-    { label: "Florist", value: "FLORIST" },
-    { label: "Garden Market", value: "GARDEN_MARKET" },
-    { label: "Retail", value: "RETAIL_STORE" },
-    { label: "Service", value: "SERVICE_PROVIDER" },
-  ];
+  const categories = PUBLIC_BUSINESS_FILTERS;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -87,7 +89,7 @@ export default function Businesses() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {businesses?.map((business) => (
             <Link key={business.id} href={`/businesses/${business.slug}`}>
-              <Card className="h-full overflow-hidden hover-elevate cursor-pointer border-border/60 group transition-all">
+              <Card className={LISTING_CARD_CLASS} style={businessListingCardVars(business.accentColor)}>
                 <div className="aspect-[16/9] w-full bg-muted relative overflow-hidden">
                   {business.heroImageUrl ? (
                     <img 
@@ -96,8 +98,11 @@ export default function Businesses() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
-                      <Store className="h-12 w-12" />
+                    <div
+                      className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40"
+                      style={businessHeroPlaceholderStyle(business.accentColor)}
+                    >
+                      <Store className="h-12 w-12" style={businessIconAccentStyle(business.accentColor)} />
                     </div>
                   )}
                   {business.logoUrl && (
@@ -113,7 +118,7 @@ export default function Businesses() {
                   </div>
                   
                   <div className="flex items-center text-sm text-muted-foreground mb-3 gap-1">
-                    <MapPin className="h-3.5 w-3.5" />
+                    <MapPin className="h-3.5 w-3.5 shrink-0" style={businessIconAccentStyle(business.accentColor)} />
                     <span className="line-clamp-1">{business.address || "Online"}</span>
                   </div>
 
@@ -122,10 +127,22 @@ export default function Businesses() {
                   </p>
                   
                   <div className="flex flex-wrap gap-2 mt-auto pt-4 border-t border-border/40">
-                    <Badge variant="secondary" className="bg-secondary/10 text-secondary-foreground hover:bg-secondary/20">
-                      {business.type.replace('_', ' ')}
+                    <Badge
+                      variant="outline"
+                      className="font-medium border-border bg-muted/50 text-foreground"
+                      style={businessTypeBadgeStyle(business.accentColor)}
+                    >
+                      {formatBusinessTypeLabel(business.type)}
                     </Badge>
-                    {business.pickupEnabled && <Badge variant="outline" className="border-primary/20 text-primary">Pickup</Badge>}
+                    {business.pickupEnabled && (
+                      <Badge
+                        variant="outline"
+                        className={business.accentColor ? undefined : "border-primary/20 text-primary bg-primary/5"}
+                        style={business.accentColor ? businessTypeBadgeStyle(business.accentColor) : undefined}
+                      >
+                        Pickup
+                      </Badge>
+                    )}
                     {business.deliveryEnabled && <Badge variant="outline" className="border-blue-200 text-blue-600">Delivery</Badge>}
                   </div>
                 </CardContent>

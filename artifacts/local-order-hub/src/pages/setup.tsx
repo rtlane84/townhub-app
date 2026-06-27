@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ShieldCheck, Store, CheckCircle2, Loader2 } from "lucide-react";
 import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePlatformBranding } from "@/components/theme-provider";
 
 export default function Setup() {
+  const { platformName } = usePlatformBranding();
   const { isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
   const [, setLocation] = useLocation();
@@ -51,7 +53,7 @@ export default function Setup() {
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Store className="h-8 w-8 text-primary" />
-            <span className="font-serif text-2xl font-bold text-primary">LocalOrderHub</span>
+            <span className="font-serif text-2xl font-bold text-primary">{platformName}</span>
           </div>
           <h1 className="font-serif text-3xl font-bold">Platform Setup</h1>
           <p className="text-muted-foreground mt-2">

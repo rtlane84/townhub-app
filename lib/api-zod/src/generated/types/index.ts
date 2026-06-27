@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './appointmentRequest';
+export * from './appointmentRequestInput';
 export * from './business';
+export * from './businessDayHours';
 export * from './businessInput';
 export * from './businessOrderSummary';
 export * from './businessOwnerAssignment';
@@ -35,14 +38,19 @@ export * from './highlightInput';
 export * from './listAllOrdersParams';
 export * from './listBusinessesParams';
 export * from './listEventsParams';
+export * from './listMediaAssetsParams';
 export * from './listNotificationLogsParams';
+export * from './mediaAsset';
+export * from './mediaUploadForm';
 export * from './notificationLog';
+export * from './notificationLogChannel';
 export * from './order';
 export * from './orderInput';
 export * from './orderItem';
 export * from './orderItemInput';
 export * from './orderStatus';
 export * from './orderStatusUpdate';
+export * from './paymentMode';
 export * from './platformStats';
 export * from './platformTheme';
 export * from './platformThemeInput';

@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
+import { formatEventSchedule } from "@/lib/event-dates";
+import { ImageField } from "@/components/image-field";
 
 const EVENT_TYPES = [
   { value: "COMMUNITY", label: "Community" },
@@ -35,6 +37,7 @@ type EventTypeValue = (typeof EVENT_TYPES)[number]["value"];
 const BLANK: EventInput = {
   title: "",
   date: "",
+  endDate: "",
   startTime: "",
   endTime: "",
   location: "",
@@ -89,6 +92,7 @@ export default function AdminEvents() {
     setForm({
       title: e.title,
       date: e.date,
+      endDate: e.endDate ?? "",
       startTime: e.startTime ?? "",
       endTime: e.endTime ?? "",
       location: e.location ?? "",
@@ -102,8 +106,17 @@ export default function AdminEvents() {
   }
 
   function handleSave() {
+    if (form.endDate && form.endDate < form.date) {
+      toast({
+        title: "End date must be on or after the start date",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const data = {
       ...form,
+      endDate: form.endDate || undefined,
       startTime: form.startTime || undefined,
       endTime: form.endTime || undefined,
       location: form.location || undefined,
@@ -157,7 +170,8 @@ export default function AdminEvents() {
                         {!ev.active && <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {ev.date} {ev.startTime ? `· ${ev.startTime}` : ""} {ev.location ? `· ${ev.location}` : ""}
+                        {formatEventSchedule(ev)}
+                        {ev.location ? ` · ${ev.location}` : ""}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
@@ -185,20 +199,25 @@ export default function AdminEvents() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Date *</label>
+                <label className="text-sm font-medium mb-1.5 block">Start Date *</label>
                 <Input type="date" value={form.date} onChange={f("date")} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Type</label>
-                <Select value={form.eventType} onValueChange={(v) => setForm((p) => ({ ...p, eventType: v as EventTypeValue }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {EVENT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-medium mb-1.5 block">End Date</label>
+                <Input type="date" value={form.endDate ?? ""} onChange={f("endDate")} min={form.date || undefined} />
+                <p className="text-xs text-muted-foreground mt-1">Optional — leave blank for single-day events</p>
               </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Type</label>
+              <Select value={form.eventType} onValueChange={(v) => setForm((p) => ({ ...p, eventType: v as EventTypeValue }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -218,10 +237,12 @@ export default function AdminEvents() {
               <label className="text-sm font-medium mb-1.5 block">Description</label>
               <Textarea value={form.description} onChange={f("description")} rows={3} />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Image URL</label>
-              <Input value={form.imageUrl} onChange={f("imageUrl")} placeholder="https://…" />
-            </div>
+            <ImageField
+              surface="event"
+              value={form.imageUrl ?? ""}
+              onChange={(imageUrl) => setForm((p) => ({ ...p, imageUrl }))}
+              testId="event-image"
+            />
             <div className="flex items-center justify-between py-1">
               <label className="text-sm font-medium">Featured on homepage</label>
               <Switch checked={!!form.featured} onCheckedChange={(v) => setForm((p) => ({ ...p, featured: v }))} />

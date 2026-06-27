@@ -5,7 +5,15 @@ import {
   integer,
   pgEnum,
   timestamp,
+  jsonb,
 } from "drizzle-orm/pg-core";
+
+type StructuredHoursJson = Array<{
+  dayOfWeek: number;
+  isClosed: boolean;
+  openTime: string | null;
+  closeTime: string | null;
+}>;
 
 export const businessApplicationStatusEnum = pgEnum("business_application_status", [
   "PENDING",
@@ -23,6 +31,7 @@ export const businessApplicationsTable = pgTable("business_applications", {
   address: text("address"),
   phone: text("phone"),
   hours: text("hours"),
+  structuredHours: jsonb("structured_hours").$type<StructuredHoursJson | null>(),
   planId: integer("plan_id"),
   status: businessApplicationStatusEnum("status").notNull().default("PENDING"),
   reviewNote: text("review_note"),

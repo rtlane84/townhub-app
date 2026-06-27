@@ -12,10 +12,11 @@ import {
   CreateCheckoutSessionBody,
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession } from "../lib/stripe";
+import { validatePaymentMethodForBusiness } from "../lib/payment-mode";
 import { requireAuth } from "../middlewares/requireRole";
 import {
-  sendOrderNotification,
-  buildOrderPlacedBusinessEmail,
+  notifyOwnerNewOrder,
+  sendCustomerEmailNotification,
   buildOrderConfirmationEmail,
   buildStatusUpdateEmail,
 } from "../lib/notifications";
@@ -140,6 +141,18 @@ router.post("/orders", async (req, res): Promise<void> => {
     .from(businessesTable)
     .where(eq(businessesTable.id, d.businessId));
 
+  if (!business) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  const paymentMethod = d.paymentMethod ?? "STRIPE";
+  const paymentError = validatePaymentMethodForBusiness(business, paymentMethod);
+  if (paymentError) {
+    res.status(400).json({ error: paymentError });
+    return;
+  }
+
   const deliveryFee =
     d.fulfillmentType === "DELIVERY" && business?.deliveryFee
       ? parseFloat(business.deliveryFee)
@@ -162,7 +175,7 @@ router.post("/orders", async (req, res): Promise<void> => {
       specialFields: d.specialFields,
       total: String(total),
       deliveryFee: deliveryFee ? String(deliveryFee) : null,
-      paymentMethod: d.paymentMethod ?? "STRIPE",
+      paymentMethod,
     })
     .returning();
 
@@ -187,28 +200,20 @@ router.post("/orders", async (req, res): Promise<void> => {
     unitPrice: i.unitPrice,
   }));
 
-  // Notify business owner
-  if (business?.orderNotificationEmail) {
-    const { subject, body } = buildOrderPlacedBusinessEmail({
-      orderNumber: order.orderNumber,
-      customerName: d.customerName,
-      customerEmail: d.customerEmail,
-      total,
-      items: notifItems,
-      fulfillmentType: d.fulfillmentType,
-      notes: d.notes,
-    });
-    sendOrderNotification({
-      type: "ORDER_PLACED_BUSINESS",
-      businessId: business.id,
-      orderId: order.id,
-      recipientEmail: business.orderNotificationEmail,
-      subject,
-      body,
-    }).catch(() => {});
-  }
+  // Notify business owner (email + SMS per business settings)
+  notifyOwnerNewOrder({
+    business,
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    customerName: d.customerName,
+    customerEmail: d.customerEmail,
+    total,
+    paymentMethod,
+    fulfillmentType: d.fulfillmentType,
+    items: notifItems,
+  }).catch(() => {});
 
-  // Send customer order confirmation
+  // Send customer order confirmation (email only)
   if (d.customerEmail) {
     const { subject, body } = buildOrderConfirmationEmail({
       orderNumber: order.orderNumber,
@@ -218,8 +223,8 @@ router.post("/orders", async (req, res): Promise<void> => {
       fulfillmentType: d.fulfillmentType,
       customerName: d.customerName,
     });
-    sendOrderNotification({
-      type: "ORDER_PLACED_CUSTOMER",
+    sendCustomerEmailNotification({
+      eventType: "ORDER_PLACED_CUSTOMER",
       businessId: d.businessId,
       orderId: order.id,
       recipientEmail: d.customerEmail,
@@ -288,8 +293,8 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
       status: parsed.data.status,
       customerName: result.customerName,
     });
-    sendOrderNotification({
-      type: "ORDER_STATUS_UPDATE",
+    sendCustomerEmailNotification({
+      eventType: "ORDER_STATUS_UPDATE",
       businessId: result.businessId,
       orderId: result.id,
       recipientEmail: order.customerEmail,
@@ -443,6 +448,27 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
   const order = await getOrderWithItems(parsed.data.orderId);
   if (!order) {
     res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  const [business] = await db
+    .select()
+    .from(businessesTable)
+    .where(eq(businessesTable.id, order.businessId));
+
+  if (!business) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  const paymentError = validatePaymentMethodForBusiness(business, order.paymentMethod ?? "STRIPE");
+  if (paymentError) {
+    res.status(400).json({ error: paymentError });
+    return;
+  }
+
+  if (order.paymentMethod === "IN_PERSON") {
+    res.status(400).json({ error: "Online checkout is not available for pay-at-pickup orders." });
     return;
   }
 

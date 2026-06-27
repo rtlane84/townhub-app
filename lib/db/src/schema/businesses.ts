@@ -7,7 +7,15 @@ import {
   timestamp,
   pgEnum,
   integer,
+  jsonb,
 } from "drizzle-orm/pg-core";
+
+export type StructuredHoursJson = Array<{
+  dayOfWeek: number;
+  isClosed: boolean;
+  openTime: string | null;
+  closeTime: string | null;
+}>;
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -20,6 +28,13 @@ export const businessTypeEnum = pgEnum("business_type", [
   "SERVICE_PROVIDER",
   "FUNERAL_SERVICE",
   "GENERAL",
+  "SALON",
+]);
+
+export const paymentModeEnum = pgEnum("payment_mode", [
+  "ONLINE_ONLY",
+  "PAY_AT_PICKUP_ONLY",
+  "BOTH",
 ]);
 
 export const businessesTable = pgTable("businesses", {
@@ -33,6 +48,7 @@ export const businessesTable = pgTable("businesses", {
   address: text("address"),
   phone: text("phone"),
   hours: text("hours"),
+  structuredHours: jsonb("structured_hours").$type<StructuredHoursJson | null>(),
   active: boolean("active").notNull().default(true),
   featured: boolean("featured").notNull().default(false),
 
@@ -47,10 +63,17 @@ export const businessesTable = pgTable("businesses", {
   pickupInstructions: text("pickup_instructions"),
   deliveryInstructions: text("delivery_instructions"),
   payAtPickupEnabled: boolean("pay_at_pickup_enabled").notNull().default(false),
+  paymentMode: paymentModeEnum("payment_mode"),
   orderCutoffTime: text("order_cutoff_time"),
 
-  // Order notifications
+  // Owner notifications
   orderNotificationEmail: text("order_notification_email"),
+  notificationEmail: text("notification_email"),
+  notificationPhone: text("notification_phone"),
+  notifyNewOrdersByEmail: boolean("notify_new_orders_by_email").notNull().default(true),
+  notifyNewOrdersBySms: boolean("notify_new_orders_by_sms").notNull().default(false),
+  notifyAppointmentRequestsByEmail: boolean("notify_appointment_requests_by_email").notNull().default(true),
+  notifyAppointmentRequestsBySms: boolean("notify_appointment_requests_by_sms").notNull().default(false),
 
   // Food truck mode
   eventLocationEnabled: boolean("event_location_enabled").notNull().default(false),

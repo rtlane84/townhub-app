@@ -5,6 +5,7 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
 
 export interface BusinessRegistrationInput {
@@ -15,4 +16,5 @@ export interface BusinessRegistrationInput {
   address?: string;
   phone?: string;
   hours?: string;
+  structuredHours?: BusinessDayHours[];
 }

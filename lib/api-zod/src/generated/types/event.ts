@@ -12,6 +12,8 @@ export interface Event {
   title: string;
   date: string;
   /** @nullable */
+  endDate?: string | null;
+  /** @nullable */
   startTime?: string | null;
   /** @nullable */
   endTime?: string | null;

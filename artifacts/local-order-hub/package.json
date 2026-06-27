@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "vite build --config vite.config.ts",
-    "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
+    "dev": "PORT=23032 BASE_PATH=/ vite --config vite.config.ts --host 0.0.0.0",
+    "build": "PORT=23032 BASE_PATH=/ vite build --config vite.config.ts",
+    "serve": "PORT=23032 BASE_PATH=/ vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
@@ -76,6 +76,7 @@
   },
   "dependencies": {
     "@clerk/react": "^6.10.4",
-    "@clerk/themes": "^2.4.57"
+    "@clerk/themes": "^2.4.57",
+    "@workspace/api-zod": "workspace:*"
   }
 }

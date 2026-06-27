@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
 import {
   ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
-  Wrench, Menu, ExternalLink,
+  Wrench, Menu, ExternalLink, Calendar,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
@@ -11,8 +11,31 @@ import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
+import { usePlatformBranding } from "@/components/theme-provider";
+
+function PlatformLogo({ className }: { className?: string }) {
+  const { logoUrl, platformName, logoSizePx } = usePlatformBranding();
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt={platformName}
+        className={cn("object-contain shrink-0", className)}
+        style={{ width: logoSizePx, height: logoSizePx }}
+      />
+    );
+  }
+  return (
+    <Store
+      className={cn("text-primary shrink-0", className)}
+      style={{ width: logoSizePx, height: logoSizePx }}
+    />
+  );
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { platformName, footerTagline } = usePlatformBranding();
   const { isSignedIn, isLoaded } = useUser();
   const { itemCount } = useCart();
   const [location] = useLocation();
@@ -45,9 +68,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Left: logo + desktop nav */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-              <Store className="h-6 w-6 text-primary" />
+              <PlatformLogo />
               <span className="font-serif text-xl font-semibold tracking-tight text-primary">
-                LocalOrderHub
+                {platformName}
               </span>
             </Link>
 
@@ -55,6 +78,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-muted-foreground">
               <Link href="/businesses" className={navLinkClass("/businesses")}>
                 All Businesses
+              </Link>
+              <Link href="/events" className={navLinkClass("/events")}>
+                Events
               </Link>
 
               {isLoaded && (isAdmin || isBusinessOwner) && (
@@ -100,7 +126,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </SignInButton>
             )}
 
-            {isLoaded && isSignedIn && <UserButton />}
+            {isLoaded && isSignedIn && (
+              <UserButton appearance={clerkUserButtonAppearance} />
+            )}
 
             {/* Mobile hamburger — shows nav on small screens */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -113,8 +141,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <SheetContent side="left" className="w-72 p-0">
                 <SheetHeader className="p-6 pb-4 border-b">
                   <SheetTitle className="font-serif text-left flex items-center gap-2">
-                    <Store className="h-5 w-5 text-primary" />
-                    LocalOrderHub
+                    <PlatformLogo className="h-5 w-5" />
+                    {platformName}
                   </SheetTitle>
                 </SheetHeader>
 
@@ -122,6 +150,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/businesses" onClick={close}>
                     <span className={navLinkClass("/businesses")}>
                       <Store className="h-4 w-4" /> All Businesses
+                    </span>
+                  </Link>
+                  <Link href="/events" onClick={close}>
+                    <span className={navLinkClass("/events")}>
+                      <Calendar className="h-4 w-4" /> Events
                     </span>
                   </Link>
 
@@ -194,11 +227,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <footer className="border-t py-12 bg-muted/30 mt-auto">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Store className="h-5 w-5 text-muted-foreground" />
-            <span className="font-serif text-lg font-medium text-muted-foreground">LocalOrderHub</span>
+            <PlatformLogo className="h-5 w-5 text-muted-foreground" />
+            <span className="font-serif text-lg font-medium text-muted-foreground">{platformName}</span>
           </div>
           <p className="text-muted-foreground text-sm">
-            Order Local. Support Local. The digital heart of your small town.
+            {footerTagline}
           </p>
         </div>
       </footer>

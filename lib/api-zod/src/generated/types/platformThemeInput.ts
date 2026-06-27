@@ -12,4 +12,13 @@ export interface PlatformThemeInput {
   backgroundColor?: string;
   buttonColor?: string;
   headingColor?: string;
+  platformName?: string;
+  townName?: string;
+  tagline?: string;
+  logoUrl?: string;
+  /**
+     * @minimum 16
+     * @maximum 64
+     */
+  logoSizePx?: number;
 }

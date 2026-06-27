@@ -3,8 +3,9 @@ import {
   useGetBusinessBySlug,
   useListFoodTruckLocations,
   getListFoodTruckLocationsQueryKey,
+  getGetBusinessBySlugQueryKey,
 } from "@workspace/api-client-react";
-import { MapPin, Clock, Phone, Store, ShoppingBag, Plus, ArrowLeft, Info, Truck } from "lucide-react";
+import { MapPin, Clock, Phone, Store, ShoppingBag, Plus, ArrowLeft, Info, Truck, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,12 +14,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { useState } from "react";
+import { BusinessHoursDisplay } from "@/components/business-hours-display";
+import { resolveBusinessHours } from "@/lib/business-hours";
+import { resolvePaymentMode, paymentModeStorefrontNote, isSalonBusiness, formatBusinessTypeLabel, salonStorefrontCopy } from "@workspace/api-zod";
+import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog";
+import { BusinessThemeScope } from "@/components/business-theme-scope";
+import { accentTintStyle, mergePlatformTheme, normalizeHex } from "@/lib/theme-colors";
+import { usePlatformBranding } from "@/components/theme-provider";
 
 export default function Storefront() {
   const [, params] = useRoute("/businesses/:slug");
   const slug = params?.slug || "";
   const { data: storefront, isLoading, error } = useGetBusinessBySlug(slug, {
-    query: { enabled: !!slug, queryKey: ["/api/businesses", slug] },
+    query: { enabled: !!slug, queryKey: getGetBusinessBySlugQueryKey(slug) },
   });
 
   const business = storefront?.business;
@@ -36,7 +44,9 @@ export default function Storefront() {
 
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { theme } = usePlatformBranding();
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const [appointmentOpen, setAppointmentOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -79,6 +89,7 @@ export default function Storefront() {
   const { categories, products } = storefront;
   const b = business!;
   const bx = b as unknown as Record<string, unknown>;
+  const businessHours = resolveBusinessHours(b);
 
   const bannerText = bx.bannerText as string | undefined;
   const pickupInstructions = bx.pickupInstructions as string | undefined;
@@ -96,13 +107,22 @@ export default function Storefront() {
     ? products.filter((p) => p.categoryId === activeCategory)
     : products;
 
+  const paymentNote = paymentModeStorefrontNote(resolvePaymentMode(b));
+  const isSalon = isSalonBusiness(b.type);
+  const copy = salonStorefrontCopy(isSalon);
+  const accentHex = normalizeHex(b.accentColor) ?? mergePlatformTheme(theme).accentColor;
+
+  const handleBookAppointment = () => {
+    setAppointmentOpen(true);
+  };
+
   const handleAddToCart = (product: { id: number; name: string; price: number; imageUrl?: string | null; available?: boolean | null }) => {
     addToCart(product as never, b.id, 1);
-    toast({ title: "Added to cart", description: `${product.name} added to your cart.` });
+    toast({ title: copy.addToastTitle, description: copy.addToastDescription(product.name) });
   };
 
   return (
-    <div className="min-h-screen bg-muted/10 pb-20">
+    <BusinessThemeScope business={b} className="min-h-screen bg-muted/10 pb-20">
       {/* Banner text */}
       {bannerText && (
         <div className="bg-primary text-primary-foreground text-sm font-medium text-center py-2.5 px-4">
@@ -125,9 +145,9 @@ export default function Storefront() {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Sidebar */}
           <div className="md:w-1/3 lg:w-1/4 flex-shrink-0">
-            <Card className="sticky top-24 shadow-xl border-border/40 overflow-hidden">
-              <div className="p-6 bg-white flex flex-col items-center text-center border-b">
-                <div className="w-24 h-24 bg-white rounded-full p-1 shadow-md -mt-16 mb-4 relative z-20">
+            <Card className="sticky top-24 shadow-xl border-border/40 overflow-visible">
+              <div className="p-6 pt-12 bg-white flex flex-col items-center text-center border-b rounded-t-xl">
+                <div className="w-24 h-24 bg-white rounded-full p-1 shadow-md -mt-[4.5rem] mb-4 relative z-20 ring-4 ring-white">
                   {b.logoUrl ? (
                     <img src={b.logoUrl} alt="Logo" className="w-full h-full rounded-full object-cover" />
                   ) : (
@@ -137,7 +157,7 @@ export default function Storefront() {
                   )}
                 </div>
                 <h1 className="text-2xl font-serif font-bold text-foreground mb-1">{b.name}</h1>
-                <p className="text-sm text-muted-foreground mb-4">{b.type.replace("_", " ")}</p>
+                <p className="text-sm text-muted-foreground mb-4">{formatBusinessTypeLabel(b.type)}</p>
                 <div className="flex flex-wrap justify-center gap-2 mb-2">
                   {!b.active && <Badge variant="secondary">Closed</Badge>}
                   {b.pickupEnabled && (
@@ -147,14 +167,25 @@ export default function Storefront() {
                     <Badge variant="outline" className="border-blue-500 text-blue-600">Delivery</Badge>
                   )}
                   {eventLocationEnabled && (
-                    <Badge variant="outline" className="border-orange-400 text-orange-600">
+                    <Badge variant="outline" className="border-primary/40 text-primary">
                       <Truck className="h-3 w-3 mr-1" /> Food Truck
                     </Badge>
                   )}
                 </div>
+                <p className="text-xs text-muted-foreground mb-2">{paymentNote}</p>
+                {isSalon && (
+                  <Button
+                    className="w-full rounded-full mt-2"
+                    onClick={handleBookAppointment}
+                    data-testid="button-book-appointment"
+                  >
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    Book Appointment
+                  </Button>
+                )}
               </div>
 
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-hidden rounded-b-xl">
                 <div className="divide-y divide-border/50">
                   {b.description && (
                     <div className="p-5 text-sm text-foreground/90 leading-relaxed">
@@ -175,16 +206,22 @@ export default function Storefront() {
                         <span className="text-foreground/80">{b.phone}</span>
                       </div>
                     )}
-                    {b.hours && (
+                    {businessHours.hasHours && (
                       <div className="flex items-start gap-3 text-sm">
                         <Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <span className="text-foreground/80 whitespace-pre-line">{b.hours}</span>
+                        <div className="min-w-0 flex-1">
+                          <BusinessHoursDisplay
+                            structuredHours={businessHours.structuredHours}
+                            fallbackHours={businessHours.fallbackHours}
+                            showOpenNow
+                          />
+                        </div>
                       </div>
                     )}
                     {b.orderCutoffTime && (
                       <div className="flex items-start gap-3 text-sm">
                         <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                        <span className="text-foreground/80">Order by {b.orderCutoffTime}</span>
+                        <span className="text-foreground/80">{copy.cutoffLabel(b.orderCutoffTime)}</span>
                       </div>
                     )}
                   </div>
@@ -224,16 +261,16 @@ export default function Storefront() {
                   {eventLocationEnabled && upcomingLocations.length > 0 && (
                     <div className="p-5">
                       <div className="flex items-center gap-2 mb-3">
-                        <Truck className="h-4 w-4 text-orange-500" />
+                        <Truck className="h-4 w-4 text-primary" />
                         <span className="text-sm font-medium">Upcoming Locations</span>
                       </div>
                       <div className="space-y-2">
                         {upcomingLocations.map((loc) => (
-                          <div key={loc.id} className="text-xs bg-orange-50 rounded-lg p-3 border border-orange-100">
+                          <div key={loc.id} className="text-xs rounded-lg p-3 border border-primary/15" style={accentTintStyle(accentHex, 0.08)}>
                             <div className="font-medium text-foreground">{loc.locationName}</div>
                             <div className="text-muted-foreground mt-0.5">
                               {loc.locationDate === today ? (
-                                <span className="text-orange-600 font-medium">Today</span>
+                                <span className="text-primary font-medium">Today</span>
                               ) : (
                                 loc.locationDate
                               )}
@@ -251,8 +288,16 @@ export default function Storefront() {
             </Card>
           </div>
 
-          {/* Products grid */}
+          {/* Catalog grid */}
           <div className="md:w-2/3 lg:w-3/4 md:mt-24">
+            {isSalon && (
+              <div className="mb-4">
+                <h2 className="text-2xl font-serif font-bold text-foreground">Our Services</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Browse available services and select what you need. Full online booking is coming soon.
+                </p>
+              </div>
+            )}
             {categories.length > 0 && (
               <div className="flex overflow-x-auto pb-4 mb-4 gap-2 hide-scrollbar sticky top-16 z-30 bg-muted/10 py-2 -mx-4 px-4 md:mx-0 md:px-0">
                 <Button
@@ -261,7 +306,7 @@ export default function Storefront() {
                   className="rounded-full whitespace-nowrap"
                   size="sm"
                 >
-                  All Items
+                  {copy.allItemsLabel}
                 </Button>
                 {categories.map((cat) => (
                   <Button
@@ -280,8 +325,8 @@ export default function Storefront() {
             {displayedProducts.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-xl border border-dashed border-border">
                 <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-30" />
-                <h3 className="text-lg font-medium text-foreground">No products found</h3>
-                <p className="text-muted-foreground text-sm mt-1">This category is empty.</p>
+                <h3 className="text-lg font-medium text-foreground">{copy.emptyTitle}</h3>
+                <p className="text-muted-foreground text-sm mt-1">{copy.emptyDescription}</p>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -309,7 +354,7 @@ export default function Storefront() {
                       <div className="mt-auto pt-4 flex items-center justify-between">
                         {product.prepTimeMinutes ? (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {product.prepTimeMinutes}m
+                            <Clock className="h-3 w-3" /> {copy.prepTimeLabel(product.prepTimeMinutes)}
                           </span>
                         ) : (
                           <span />
@@ -321,7 +366,7 @@ export default function Storefront() {
                           onClick={() => handleAddToCart(product)}
                           disabled={!product.available || !b.active}
                         >
-                          <Plus className="h-4 w-4 mr-1" /> Add
+                          <Plus className="h-4 w-4 mr-1" /> {copy.addButtonLabel}
                         </Button>
                       </div>
                     </CardContent>
@@ -332,6 +377,16 @@ export default function Storefront() {
           </div>
         </div>
       </div>
-    </div>
+
+      {isSalon && (
+        <AppointmentBookingDialog
+          open={appointmentOpen}
+          onOpenChange={setAppointmentOpen}
+          businessId={b.id}
+          businessName={b.name}
+          services={products.map((p) => ({ id: p.id, name: p.name }))}
+        />
+      )}
+    </BusinessThemeScope>
   );
 }

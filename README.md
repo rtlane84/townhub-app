@@ -157,6 +157,10 @@ pnpm --filter @workspace/api-spec run codegen  # Regenerate hooks + Zod schemas
 | `STRIPE_WEBHOOK_SECRET` | Optional | For real Stripe webhooks |
 | `RESEND_API_KEY` | Optional | Email notifications via Resend |
 | `SMTP_HOST` / `SMTP_PORT` | Optional | Alternative email transport |
+| `SUPABASE_URL` | ✅ Yes (media) | Supabase project URL for image storage |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ Yes (media) | Server-side only — uploads via API |
+| `SUPABASE_STORAGE_BUCKET` | ✅ Yes (media) | Public Supabase Storage bucket name |
+| `MEDIA_STORAGE` | Optional | Set to `local` for dev-only filesystem fallback (default: Supabase) |
 | `PORT` | Auto | Set by Replit/workflow; defaults to 8080 |
 | `NODE_ENV` | Auto | `development` or `production` |
 
@@ -198,10 +202,26 @@ pnpm --filter @workspace/db run studio
 | `events` | Community events |
 | `highlights` | Homepage highlight banners |
 | `food_truck_locations` | Daily location entries per business |
+| `media_assets` | Uploaded image metadata (Supabase Storage paths + public URLs) |
 | `platform_settings` | Key/value store for theme color and global config |
 | `notification_logs` | Log of sent email/SMS notifications |
 
 > **Price precision:** All prices stored as `numeric(10,2)` and returned as dollar floats. Never divide by 100 in the frontend.
+
+### Supabase Storage (media uploads)
+
+Image uploads use **Supabase Storage** by default. The API uploads server-side with the service role key; the frontend never talks to Supabase directly.
+
+1. In Supabase → **Storage**, create a bucket (e.g. `media`) and mark it **Public** so product/storefront images load without signed URLs.
+2. Add to `.env`:
+   - `SUPABASE_URL` — project URL (`https://xxxx.supabase.co`)
+   - `SUPABASE_SERVICE_ROLE_KEY` — **server only** (Settings → API)
+   - `SUPABASE_STORAGE_BUCKET` — bucket name (e.g. `media`)
+3. Restart the API server after changing env vars.
+
+Uploaded files are stored at paths like `platform/{uuid}.jpg` (admin) or `business-{id}/{uuid}.jpg` (owners). The `media_assets` table stores the storage path and public URL. External image URLs pasted in forms continue to work unchanged.
+
+**Local dev without Supabase:** set `MEDIA_STORAGE=local` to write files to `./uploads` and serve them at `/api/media/files/…`. This is for offline dev only — production should always use Supabase.
 
 ---
 
@@ -396,7 +416,7 @@ Access `/dashboard/admin` for:
 2. **Business owner can access admin subscription plans endpoint.** `/api/admin/subscription-plans` checks for Clerk auth but not the ADMIN role. A role-guard middleware should be added.
 3. **No email on application approval/rejection.** The notification infrastructure exists but approval/rejection emails are not sent.
 4. **Cart only lives in localStorage.** No server-side cart persistence — refreshing on a different device clears it.
-5. **No product image upload.** Product image fields exist in the schema but there is no file upload flow; images are entered as URLs.
+5. **Cart only lives in localStorage.** No server-side cart persistence — refreshing on a different device clears it.
 6. **No pagination.** All list endpoints return full result sets — this will degrade at scale.
 7. **No order search / filtering on the business dashboard.** Orders page shows all orders with no filter.
 8. **`DialogContent` aria-describedby warnings.** Multiple dialogs are missing a `Description` for screen-reader accessibility.
@@ -412,11 +432,10 @@ Access `/dashboard/admin` for:
 4. Add pagination to `/api/businesses`, `/api/admin/orders`, `/api/admin/users`
 
 **Medium priority:**
-5. Product image upload via object storage (Replit App Storage or S3)
-6. Server-side cart (useful for multi-device and abandoned cart recovery)
-7. Order search + date filtering on the business dashboard
-8. Stripe webhook signature verification (`stripe.webhooks.constructEvent`) for production security
-9. Rate limiting on public endpoints
+5. Server-side cart (useful for multi-device and abandoned cart recovery)
+6. Order search + date filtering on the business dashboard
+7. Stripe webhook signature verification (`stripe.webhooks.constructEvent`) for production security
+8. Rate limiting on public endpoints
 
 **Nice to have:**
 10. Business analytics charts (revenue over time, best-selling products)

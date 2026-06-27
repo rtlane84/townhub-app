@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Sparkles } from "lucide-react";
+import { ImageField } from "@/components/image-field";
 
 const ADMIN_HIGHLIGHTS_KEY = ["admin", "highlights"];
 
@@ -201,10 +202,12 @@ export default function AdminHighlights() {
               <label className="text-sm font-medium mb-1.5 block">Description</label>
               <Textarea value={form.description} onChange={f("description")} rows={2} />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Image URL</label>
-              <Input value={form.imageUrl} onChange={f("imageUrl")} placeholder="https://…" />
-            </div>
+            <ImageField
+              surface="highlight"
+              value={form.imageUrl ?? ""}
+              onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))}
+              testId="highlight-image"
+            />
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Start Date *</label>

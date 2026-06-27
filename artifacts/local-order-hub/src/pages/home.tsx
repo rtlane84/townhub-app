@@ -8,34 +8,50 @@ import { Link } from "wouter";
 import {
   Store, ArrowRight, Loader2, Leaf, Coffee, Utensils, Calendar, Sparkles, MapPin, Clock, Truck,
 } from "lucide-react";
+import { BusinessType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EventCard } from "@/components/event-card";
+import { usePlatformBranding } from "@/components/theme-provider";
+import { formatBusinessTypeLabel } from "@workspace/api-zod";
+import {
+  businessHeroPlaceholderStyle,
+  businessIconAccentStyle,
+  businessListingCardVars,
+  businessTypeBadgeStyle,
+} from "@/lib/theme-colors";
+
+const LISTING_CARD_CLASS =
+  "h-full overflow-hidden hover-elevate cursor-pointer border-border/50 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
 
 const CATEGORIES = [
-  { name: "Food & Drink", type: "FOOD_VENDOR", icon: <Utensils className="h-5 w-5" /> },
-  { name: "Flowers", type: "FLORIST", icon: <Leaf className="h-5 w-5 text-green-500" /> },
-  { name: "Plants & Market", type: "GARDEN_MARKET", icon: <Store className="h-5 w-5 text-orange-500" /> },
-  { name: "Retail & General", type: "RETAIL_STORE", icon: <Coffee className="h-5 w-5 text-blue-500" /> },
+  { name: "Food & Drink", type: BusinessType.FOOD_VENDOR, icon: <Utensils className="h-5 w-5" /> },
+  { name: "Flowers", type: BusinessType.FLORIST, icon: <Leaf className="h-5 w-5 text-green-500" /> },
+  { name: "Plants & Market", type: BusinessType.GARDEN_MARKET, icon: <Store className="h-5 w-5 text-primary" /> },
+  { name: "Salon / Beauty", type: BusinessType.SALON, icon: <Sparkles className="h-5 w-5 text-pink-500" /> },
+  { name: "Retail & General", type: BusinessType.RETAIL_STORE, icon: <Coffee className="h-5 w-5 text-blue-500" /> },
 ];
 
-const EVENT_TYPE_COLORS: Record<string, string> = {
-  COMMUNITY: "bg-blue-100 text-blue-700",
-  FOOD_TRUCK: "bg-orange-100 text-orange-700",
-  SEASONAL: "bg-green-100 text-green-700",
-  SALE: "bg-red-100 text-red-700",
-  HOLIDAY: "bg-purple-100 text-purple-700",
-  MARKET: "bg-amber-100 text-amber-700",
-  OTHER: "bg-gray-100 text-gray-700",
-};
-
 export default function Home() {
+  const { heroTagline, heroHeadline, shopCtaLabel } = usePlatformBranding();
   const { data: businesses, isLoading } = useListBusinesses({ featured: true });
-  const { data: events = [] } = useListEvents({ upcoming: true });
+  const { data: featuredEventsRaw = [], isLoading: featuredEventsLoading } = useListEvents({
+    upcoming: true,
+    featured: true,
+  });
+  const { data: allUpcomingEvents = [], isLoading: upcomingEventsLoading } = useListEvents({
+    upcoming: true,
+  });
   const { data: highlights = [] } = useListHighlights({});
   const { data: todayTrucks = [] } = useListTodayFoodTrucks({});
 
-  const upcomingEvents = events.slice(0, 4);
+  const eventsLoading = featuredEventsLoading || upcomingEventsLoading;
+  const featuredEvents = featuredEventsRaw.slice(0, 3);
+  const featuredEventIds = new Set(featuredEvents.map((event) => event.id));
+  const upcomingEvents = allUpcomingEvents
+    .filter((event) => !featuredEventIds.has(event.id))
+    .slice(0, 6);
   const featuredHighlights = highlights.slice(0, 3);
 
   return (
@@ -44,16 +60,16 @@ export default function Home() {
       <section className="relative py-24 overflow-hidden bg-primary/5">
         <div className="container px-4 mx-auto relative z-10 text-center max-w-3xl">
           <h1 className="text-5xl md:text-6xl font-serif font-bold text-foreground mb-6 leading-tight">
-            Order Local. <br />
-            <span className="text-primary">Support Local.</span>
+            {heroHeadline.line1} <br />
+            <span className="text-primary">{heroHeadline.line2}</span>
           </h1>
           <p className="text-xl text-muted-foreground mb-10 leading-relaxed">
-            Your town's best bakeries, florists, markets, and shops—all in one place. Fresh, local, and community-driven.
+            {heroTagline}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/businesses">
               <Button size="lg" className="w-full sm:w-auto text-lg h-14 px-8 rounded-full shadow-lg">
-                Shop the Neighborhood
+                {shopCtaLabel}
               </Button>
             </Link>
             <Link href="/list-your-business">
@@ -122,24 +138,24 @@ export default function Home() {
 
       {/* Today's Food Trucks */}
       {todayTrucks.length > 0 && (
-        <section className="py-12 bg-orange-50 border-y border-orange-100">
+        <section className="py-12 bg-accent/10 border-y border-accent/20">
           <div className="container px-4 mx-auto">
             <div className="flex items-center gap-2 mb-6">
-              <Truck className="h-5 w-5 text-orange-600" />
+              <Truck className="h-5 w-5 text-primary" />
               <h2 className="text-2xl font-serif font-bold text-foreground">Food Trucks Today</h2>
-              <Badge className="bg-orange-100 text-orange-700 border-0 ml-1">Live</Badge>
+              <Badge className="bg-primary/10 text-primary border-0 ml-1">Live</Badge>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {todayTrucks.map((truck) => (
                 <Link key={truck.id} href={`/businesses/${truck.businessSlug}`}>
-                  <Card className="hover-elevate cursor-pointer border-orange-200 group">
+                  <Card className="hover-elevate cursor-pointer border-primary/20 group">
                     <CardContent className="p-5">
                       <div className="flex items-start gap-3">
                         {truck.businessLogoUrl ? (
                           <img src={truck.businessLogoUrl} alt={truck.businessName} className="w-12 h-12 rounded-full object-cover shrink-0" />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                            <Truck className="h-5 w-5 text-orange-500" />
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Truck className="h-5 w-5 text-primary" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -183,13 +199,16 @@ export default function Home() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {businesses?.slice(0, 6).map((business) => (
                 <Link key={business.id} href={`/businesses/${business.slug}`}>
-                  <Card className="h-full overflow-hidden hover-elevate cursor-pointer border-border/50 group transition-all">
+                  <Card className={LISTING_CARD_CLASS} style={businessListingCardVars(business.accentColor)}>
                     <div className="aspect-[16/9] w-full bg-muted relative overflow-hidden">
                       {business.heroImageUrl ? (
                         <img src={business.heroImageUrl} alt={business.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40">
-                          <Store className="h-12 w-12" />
+                        <div
+                          className="w-full h-full flex items-center justify-center bg-primary/5 text-primary/40"
+                          style={businessHeroPlaceholderStyle(business.accentColor)}
+                        >
+                          <Store className="h-12 w-12" style={businessIconAccentStyle(business.accentColor)} />
                         </div>
                       )}
                       {business.logoUrl && (
@@ -207,8 +226,21 @@ export default function Home() {
                         {business.description || "A local favorite."}
                       </p>
                       <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant="outline"
+                          className="font-medium border-border bg-muted/50 text-foreground"
+                          style={businessTypeBadgeStyle(business.accentColor)}
+                        >
+                          {formatBusinessTypeLabel(business.type)}
+                        </Badge>
                         {business.pickupEnabled && (
-                          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">Pickup</Badge>
+                          <Badge
+                            variant="outline"
+                            className={business.accentColor ? undefined : "bg-primary/5 text-primary border-primary/20"}
+                            style={business.accentColor ? businessTypeBadgeStyle(business.accentColor) : undefined}
+                          >
+                            Pickup
+                          </Badge>
                         )}
                         {business.deliveryEnabled && (
                           <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Delivery</Badge>
@@ -229,48 +261,69 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Upcoming Events */}
-      {upcomingEvents.length > 0 && (
+      {/* Featured & Upcoming Events */}
+      {!eventsLoading && (
         <section className="py-16 bg-white border-t">
-          <div className="container px-4 mx-auto">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <h2 className="text-2xl font-serif font-bold text-foreground">Upcoming Events</h2>
+          <div className="container px-4 mx-auto space-y-12">
+            {featuredEvents.length > 0 && (
+              <div className="rounded-2xl bg-primary/5 border border-primary/10 p-6 md:p-8">
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <h2 className="text-2xl font-serif font-bold text-foreground">Featured Events</h2>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Promoted highlights picked by the platform — don&apos;t miss these.
+                  </p>
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {featuredEvents.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))}
+                </div>
               </div>
+            )}
+
+            <div>
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  <h2 className="text-2xl font-serif font-bold text-foreground">Upcoming Events</h2>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  More local events happening soon in the community.
+                </p>
+              </div>
+              {upcomingEvents.length > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {upcomingEvents.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-muted/30 rounded-2xl border border-border border-dashed">
+                  <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+                  <p className="font-medium text-foreground">No other upcoming events right now</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Check back soon or browse the full events calendar.
+                  </p>
+                </div>
+              )}
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {upcomingEvents.map((ev) => (
-                <Card key={ev.id} className="border-border/50 overflow-hidden">
-                  {ev.imageUrl && (
-                    <div className="aspect-[16/9] overflow-hidden">
-                      <img src={ev.imageUrl} alt={ev.title} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${EVENT_TYPE_COLORS[ev.eventType] ?? EVENT_TYPE_COLORS.OTHER}`}>
-                        {ev.eventType.replace("_", " ")}
-                      </span>
-                      {ev.featured && <Badge variant="secondary" className="text-xs">Featured</Badge>}
-                    </div>
-                    <h3 className="font-semibold text-sm text-foreground mb-1 line-clamp-2">{ev.title}</h3>
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        <span>{ev.date}{ev.startTime ? ` · ${ev.startTime}` : ""}</span>
-                      </div>
-                      {ev.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span className="truncate">{ev.location}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+
+            <div className="text-center">
+              <Link href="/events">
+                <Button variant="outline">View All Events</Button>
+              </Link>
             </div>
+          </div>
+        </section>
+      )}
+
+      {eventsLoading && (
+        <section className="py-16 bg-white border-t">
+          <div className="container px-4 mx-auto flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         </section>
       )}

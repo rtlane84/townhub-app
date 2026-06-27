@@ -66,6 +66,14 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // Local dev: frontend (23032) proxies /api to the Express server (8080).
+    // On Replit, routing is handled by the platform instead.
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,

@@ -14,5 +14,18 @@ export interface PlatformTheme {
   buttonColor: string;
   /** @nullable */
   headingColor?: string | null;
+  /** @nullable */
+  platformName?: string | null;
+  /** @nullable */
+  townName?: string | null;
+  /** @nullable */
+  tagline?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
+  /**
+     * @minimum 16
+     * @maximum 64
+     */
+  logoSizePx?: number;
   updatedAt?: Date;
 }

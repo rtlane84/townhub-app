@@ -11,15 +11,19 @@ import subscriptionsRouter from "./subscriptions";
 import applicationsRouter from "./applications";
 import foodTruckRouter from "./food-truck";
 import platformRouter from "./platform";
+import appointmentRequestsRouter from "./appointment-requests";
+import mediaRouter from "./media";
 import { requireAdmin } from "../middlewares/requireRole";
 
 const router: IRouter = Router();
 
 // Role guard: all /admin/* routes require ADMIN role.
-// Exception: GET /admin/settings/theme is intentionally public (used to load brand
-// colors on every page, including unauthenticated public pages).
+// Exceptions:
+// - GET /admin/settings/theme — public brand colors on unauthenticated pages
+// - POST /admin/bootstrap — first-run setup when no ADMIN exists yet (handler enforces)
 router.use("/admin", (req, res, next) => {
   if (req.method === "GET" && req.path === "/settings/theme") return next();
+  if (req.method === "POST" && req.path === "/bootstrap") return next();
   return requireAdmin(req, res, next);
 });
 
@@ -31,6 +35,8 @@ router.use(subscriptionsRouter);
 router.use(applicationsRouter);
 router.use(foodTruckRouter);
 router.use(platformRouter);
+router.use(appointmentRequestsRouter);
+router.use(mediaRouter);
 router.use(businessesRouter);
 router.use(productsRouter);
 router.use(ordersRouter);

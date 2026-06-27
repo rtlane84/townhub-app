@@ -5,7 +5,9 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
+import type { PaymentMode } from './paymentMode';
 
 export interface Business {
   id: number;
@@ -24,6 +26,8 @@ export interface Business {
   phone?: string | null;
   /** @nullable */
   hours?: string | null;
+  /** @nullable */
+  structuredHours?: BusinessDayHours[] | null;
   active: boolean;
   featured?: boolean;
   pickupEnabled?: boolean;
@@ -33,6 +37,7 @@ export interface Business {
   /** @nullable */
   minimumOrder?: number | null;
   payAtPickupEnabled?: boolean;
+  paymentMode?: PaymentMode | null;
   /** @nullable */
   orderCutoffTime?: string | null;
   /** @nullable */
@@ -47,6 +52,14 @@ export interface Business {
   deliveryInstructions?: string | null;
   /** @nullable */
   orderNotificationEmail?: string | null;
+  /** @nullable */
+  notificationEmail?: string | null;
+  /** @nullable */
+  notificationPhone?: string | null;
+  notifyNewOrdersByEmail?: boolean;
+  notifyNewOrdersBySms?: boolean;
+  notifyAppointmentRequestsByEmail?: boolean;
+  notifyAppointmentRequestsBySms?: boolean;
   eventLocationEnabled?: boolean;
   /** @nullable */
   accentColor?: string | null;

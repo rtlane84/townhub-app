@@ -32,6 +32,8 @@ tags:
     description: Subscription plans and billing
   - name: food-truck
     description: Food truck location management
+  - name: media
+    description: Media library and image uploads
 
 paths:
   /healthz:
@@ -589,6 +591,47 @@ paths:
         "200":
           description: Received
 
+  # ─── Appointment Requests (Salon) ───────────────────────────────
+  /appointment-requests:
+    post:
+      operationId: createAppointmentRequest
+      tags: [appointments]
+      summary: Submit a salon appointment request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentRequestInput"
+      responses:
+        "201":
+          description: Appointment request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentRequest"
+
+  /businesses/{businessId}/appointment-requests:
+    get:
+      operationId: listBusinessAppointmentRequests
+      tags: [appointments]
+      summary: List appointment requests for a business (owner)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Appointment requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppointmentRequest"
+
   # ─── Admin: Users ───────────────────────────────────────────────
   /admin/users:
     get:
@@ -1139,6 +1182,81 @@ paths:
                 items:
                   $ref: "#/components/schemas/NotificationLog"
 
+  # ─── Media Library ────────────────────────────────────────────────
+  /media:
+    get:
+      operationId: listMediaAssets
+      tags: [media]
+      summary: List uploaded media for the current user scope
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: Media assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaAsset"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /media/upload:
+    post:
+      operationId: uploadMediaAsset
+      tags: [media]
+      summary: Upload an image to the media library
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MediaUploadForm"
+      responses:
+        "201":
+          description: Uploaded media asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaAsset"
+        "400":
+          description: Invalid upload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "413":
+          description: File too large
+
+  /media/{id}:
+    delete:
+      operationId: deleteMediaAsset
+      tags: [media]
+      summary: Delete a media asset from the library
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -1160,6 +1278,7 @@ components:
         - SERVICE_PROVIDER
         - FUNERAL_SERVICE
         - GENERAL
+        - SALON
 
     OrderStatus:
       type: string
@@ -1185,6 +1304,13 @@ components:
         - BUSINESS_OWNER
         - ADMIN
 
+    PaymentMode:
+      type: string
+      enum:
+        - ONLINE_ONLY
+        - PAY_AT_PICKUP_ONLY
+        - BOTH
+
     # ─── Core Entities ───────────────────────────────────────────
     UserProfile:
       type: object
@@ -1203,6 +1329,24 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    BusinessDayHours:
+      type: object
+      required: [dayOfWeek, isClosed]
+      properties:
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: "0=Sunday through 6=Saturday"
+        isClosed:
+          type: boolean
+        openTime:
+          type: ["string", "null"]
+          description: "24-hour time HH:mm"
+        closeTime:
+          type: ["string", "null"]
+          description: "24-hour time HH:mm"
 
     Business:
       type: object
@@ -1228,6 +1372,10 @@ components:
           type: ["string", "null"]
         hours:
           type: ["string", "null"]
+        structuredHours:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
         active:
           type: boolean
         featured:
@@ -1242,6 +1390,10 @@ components:
           type: ["number", "null"]
         payAtPickupEnabled:
           type: boolean
+        paymentMode:
+          allOf:
+            - $ref: "#/components/schemas/PaymentMode"
+          nullable: true
         orderCutoffTime:
           type: ["string", "null"]
         minimumOrderForDelivery:
@@ -1256,6 +1408,18 @@ components:
           type: ["string", "null"]
         orderNotificationEmail:
           type: ["string", "null"]
+        notificationEmail:
+          type: ["string", "null"]
+        notificationPhone:
+          type: ["string", "null"]
+        notifyNewOrdersByEmail:
+          type: boolean
+        notifyNewOrdersBySms:
+          type: boolean
+        notifyAppointmentRequestsByEmail:
+          type: boolean
+        notifyAppointmentRequestsBySms:
+          type: boolean
         eventLocationEnabled:
           type: boolean
         accentColor:
@@ -1302,6 +1466,10 @@ components:
           type: string
         hours:
           type: string
+        structuredHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
 
     BusinessInput:
       type: object
@@ -1327,6 +1495,10 @@ components:
           type: string
         hours:
           type: string
+        structuredHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
         pickupEnabled:
           type: boolean
         deliveryEnabled:
@@ -1337,6 +1509,8 @@ components:
           type: number
         payAtPickupEnabled:
           type: boolean
+        paymentMode:
+          $ref: "#/components/schemas/PaymentMode"
         orderCutoffTime:
           type: string
         ownerId:
@@ -1361,6 +1535,10 @@ components:
           type: string
         hours:
           type: string
+        structuredHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
         active:
           type: boolean
         featured:
@@ -1375,28 +1553,44 @@ components:
           type: number
         payAtPickupEnabled:
           type: boolean
+        paymentMode:
+          $ref: "#/components/schemas/PaymentMode"
         orderCutoffTime:
           type: string
         minimumOrderForDelivery:
-          type: number
+          type: ["number", "null"]
         deliveryRadiusMiles:
-          type: number
+          type: ["number", "null"]
         deliveryNotes:
-          type: string
+          type: ["string", "null"]
         pickupInstructions:
-          type: string
+          type: ["string", "null"]
         deliveryInstructions:
-          type: string
+          type: ["string", "null"]
         orderNotificationEmail:
-          type: string
+          type: ["string", "null"]
+        notificationEmail:
+          type: ["string", "null"]
+        notificationPhone:
+          type: ["string", "null"]
+        notifyNewOrdersByEmail:
+          type: boolean
+        notifyNewOrdersBySms:
+          type: boolean
+        notifyAppointmentRequestsByEmail:
+          type: boolean
+        notifyAppointmentRequestsBySms:
+          type: boolean
         eventLocationEnabled:
           type: boolean
         accentColor:
-          type: string
+          type: ["string", "null"]
         buttonColor:
-          type: string
+          type: ["string", "null"]
         bannerText:
-          type: string
+          type: ["string", "null"]
+        type:
+          $ref: "#/components/schemas/BusinessType"
 
     Category:
       type: object
@@ -1700,6 +1894,8 @@ components:
           type: string
         date:
           type: string
+        endDate:
+          type: ["string", "null"]
         startTime:
           type: ["string", "null"]
         endTime:
@@ -1730,6 +1926,8 @@ components:
           type: string
         date:
           type: string
+        endDate:
+          type: ["string", "null"]
         startTime:
           type: string
         endTime:
@@ -2000,6 +2198,18 @@ components:
           type: string
         headingColor:
           type: ["string", "null"]
+        platformName:
+          type: ["string", "null"]
+        townName:
+          type: ["string", "null"]
+        tagline:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        logoSizePx:
+          type: integer
+          minimum: 16
+          maximum: 64
         updatedAt:
           type: string
           format: date-time
@@ -2017,28 +2227,138 @@ components:
           type: string
         headingColor:
           type: string
+        platformName:
+          type: string
+        townName:
+          type: string
+        tagline:
+          type: string
+        logoUrl:
+          type: string
+        logoSizePx:
+          type: integer
+          minimum: 16
+          maximum: 64
+
+    # ─── Media Library ─────────────────────────────────────────────
+    MediaAsset:
+      type: object
+      required: [id, uploadedByUserId, originalFilename, mimeType, byteSize, url, createdAt]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: ["integer", "null"]
+        uploadedByUserId:
+          type: string
+        originalFilename:
+          type: string
+        mimeType:
+          type: string
+        byteSize:
+          type: integer
+        url:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    MediaUploadForm:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Image file (JPEG, PNG, WebP, or GIF; max 5 MB)
 
     # ─── Notification Log ──────────────────────────────────────────
     NotificationLog:
       type: object
-      required: [id, businessId, orderId, type, recipientEmail, subject, status, createdAt]
+      required: [id, businessId, channel, body, status, createdAt]
       properties:
         id:
           type: integer
         businessId:
           type: integer
         orderId:
-          type: integer
+          type: ["integer", "null"]
+        appointmentRequestId:
+          type: ["integer", "null"]
+        channel:
+          type: string
+          enum: [EMAIL, SMS]
+        eventType:
+          type: ["string", "null"]
         type:
           type: string
         recipientEmail:
-          type: string
+          type: ["string", "null"]
+        recipientPhone:
+          type: ["string", "null"]
         subject:
-          type: string
+          type: ["string", "null"]
         body:
           type: string
+        status:
+          type: string
+        errorMessage:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    AppointmentRequest:
+      type: object
+      required: [id, businessId, customerName, requestedDate, requestedTime, status, createdAt]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        customerName:
+          type: string
+        customerEmail:
+          type: ["string", "null"]
+        customerPhone:
+          type: ["string", "null"]
+        serviceName:
+          type: ["string", "null"]
+        productId:
+          type: ["integer", "null"]
+        requestedDate:
+          type: string
+        requestedTime:
+          type: string
+        notes:
+          type: ["string", "null"]
         status:
           type: string
         createdAt:
           type: string
           format: date-time
+
+    AppointmentRequestInput:
+      type: object
+      required: [businessId, customerName, requestedDate, requestedTime]
+      properties:
+        businessId:
+          type: integer
+        customerName:
+          type: string
+          minLength: 1
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        serviceName:
+          type: string
+        productId:
+          type: integer
+        requestedDate:
+          type: string
+        requestedTime:
+          type: string
+          minLength: 1
+        notes:
+          type: string

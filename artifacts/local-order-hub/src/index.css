@@ -45,6 +45,8 @@
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
 
+  --color-platform-button: hsl(var(--platform-button, var(--primary)));
+
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
@@ -112,39 +114,41 @@
   --sidebar: 30 20% 96%;
   --sidebar-foreground: 20 20% 15%;
   --sidebar-border: 30 15% 85%;
-  --sidebar-primary: 25 80% 45%;
+  --sidebar-primary: 221 83% 32%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 30 25% 90%;
-  --sidebar-accent-foreground: 20 20% 15%;
-  --sidebar-ring: 25 80% 45%;
+  --sidebar-accent: 210 20% 94%;
+  --sidebar-accent-foreground: 215 25% 20%;
+  --sidebar-ring: 221 83% 32%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 20 20% 15%;
   --popover-border: 30 15% 85%;
 
-  /* Primary: Terracotta / Burnt Orange */
-  --primary: 25 80% 45%;
+  /* Platform defaults — overridden at runtime by PlatformThemeProvider */
+  --primary: 221 83% 32%;
   --primary-foreground: 0 0% 100%;
 
   /* Secondary: Sage Green */
   --secondary: 130 25% 45%;
   --secondary-foreground: 0 0% 100%;
 
-  --muted: 30 20% 94%;
-  --muted-foreground: 20 10% 45%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 215 16% 40%;
 
-  --accent: 40 40% 90%;
-  --accent-foreground: 25 80% 30%;
+  --accent: 38 92% 50%;
+  --accent-foreground: 221 83% 22%;
 
   --destructive: 0 70% 50%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 30 15% 85%;
-  --ring: 25 80% 45%;
+  --input: 214 20% 85%;
+  --ring: 221 83% 32%;
+
+  --platform-button: 221 83% 32%;
   
-  --chart-1: 25 80% 45%;
+  --chart-1: 221 83% 32%;
   --chart-2: 130 25% 45%;
-  --chart-3: 45 90% 50%;
+  --chart-3: 38 92% 50%;
   --chart-4: 340 50% 50%;
   --chart-5: 200 40% 45%;
 

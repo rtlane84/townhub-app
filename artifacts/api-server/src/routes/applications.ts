@@ -6,10 +6,16 @@ import {
   businessesTable,
   usersTable,
   subscriptionPlansTable,
-  businessSubscriptionsTable,
 } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
+import { requireAdmin } from "../middlewares/requireRole";
+import {
+  attachPlanToBusiness,
+  resolveApprovalPlan,
+} from "../lib/subscription-plans";
+import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
+import { parseStructuredHours } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -35,6 +41,7 @@ function serializeApplication(
     address: a.address,
     phone: a.phone,
     hours: a.hours,
+    structuredHours: parseStructuredHours(a.structuredHours),
     planId: a.planId,
     planName: plan?.name ?? null,
     status: a.status,
@@ -52,6 +59,16 @@ const applySchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   hours: z.string().optional(),
+  structuredHours: z.array(z.object({
+    dayOfWeek: z.number().int().min(0).max(6),
+    isClosed: z.boolean(),
+    openTime: z.string().nullable(),
+    closeTime: z.string().nullable(),
+  })).optional(),
+  planId: z.number().int().positive().optional(),
+});
+
+const approveSchema = z.object({
   planId: z.number().int().positive().optional(),
 });
 
@@ -119,7 +136,18 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
   const claims = (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth?.sessionClaims;
   const email = (claims?.email as string) ?? `${userId}@user.local`;
 
-  const { name, type, description, address, phone, hours, planId } = parsed.data;
+  const { name, type, description, address, phone, hours, structuredHours, planId } = parsed.data;
+
+  if (planId) {
+    const [plan] = await db
+      .select()
+      .from(subscriptionPlansTable)
+      .where(and(eq(subscriptionPlansTable.id, planId), eq(subscriptionPlansTable.isActive, true)));
+    if (!plan) {
+      res.status(400).json({ error: "Selected plan is not available." });
+      return;
+    }
+  }
 
   // Insert or update (if previously rejected, allow reapplication)
   let application;
@@ -132,7 +160,8 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
         description: description?.trim() || null,
         address: address?.trim() || null,
         phone: phone?.trim() || null,
-        hours: hours?.trim() || null,
+        structuredHours: resolveStructuredHoursInput(structuredHours) ?? null,
+        hours: legacyHoursFromStructured(structuredHours) ?? (hours?.trim() || null),
         planId: planId ?? null,
         status: "PENDING",
         reviewNote: null,
@@ -154,7 +183,8 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
         description: description?.trim() || null,
         address: address?.trim() || null,
         phone: phone?.trim() || null,
-        hours: hours?.trim() || null,
+        structuredHours: resolveStructuredHoursInput(structuredHours) ?? null,
+        hours: legacyHoursFromStructured(structuredHours) ?? (hours?.trim() || null),
         planId: planId ?? null,
         status: "PENDING",
       })
@@ -167,45 +197,33 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
 });
 
 // GET /api/admin/applications — list all applications (admin)
-router.get("/admin/applications", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-
+router.get("/admin/applications", requireAdmin, async (req, res): Promise<void> => {
   const apps = await db
     .select()
     .from(businessApplicationsTable)
     .orderBy(desc(businessApplicationsTable.createdAt));
 
-  const planIds = [...new Set(apps.map((a) => a.planId).filter(Boolean))] as number[];
-  const plans = planIds.length
-    ? await db
-        .select()
-        .from(subscriptionPlansTable)
-        .where(eq(subscriptionPlansTable.id, planIds[0]))
-    : [];
-
-  const planMap = new Map(plans.map((p) => [p.id, p]));
-
-  // Also fetch all plans for lookup
   const allPlans = await db.select().from(subscriptionPlansTable);
   const allPlanMap = new Map(allPlans.map((p) => [p.id, p]));
 
   res.json(apps.map((a) => serializeApplication(a, a.planId ? allPlanMap.get(a.planId) : null)));
-  void planMap;
 });
 
 // POST /api/admin/applications/:id/approve — approve and create the business (admin)
-router.post("/admin/applications/:id/approve", async (req, res): Promise<void> => {
+router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  const id = parseInt(req.params.id, 10);
+  const parsedBody = approveSchema.safeParse(req.body ?? {});
+  if (!parsedBody.success) {
+    res.status(400).json({ error: parsedBody.error.message });
+    return;
+  }
+
+  const id = parseInt(String(req.params.id), 10);
 
   try {
     const [app] = await db
@@ -225,7 +243,7 @@ router.post("/admin/applications/:id/approve", async (req, res): Promise<void> =
     // Validate that the type is a known enum value; fall back to GENERAL
     const VALID_TYPES = [
       "FOOD_VENDOR", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE",
-      "BUILDING_SUPPLY", "SERVICE_PROVIDER", "FUNERAL_SERVICE", "GENERAL",
+      "BUILDING_SUPPLY", "SERVICE_PROVIDER", "FUNERAL_SERVICE", "GENERAL", "SALON",
     ];
     const safeType = VALID_TYPES.includes(app.type) ? app.type : "GENERAL";
 
@@ -255,9 +273,11 @@ router.post("/admin/applications/:id/approve", async (req, res): Promise<void> =
         address: app.address,
         phone: app.phone,
         hours: app.hours,
+        structuredHours: app.structuredHours,
         ownerId: app.userId,
         pickupEnabled: true,
         payAtPickupEnabled: true,
+        paymentMode: "BOTH",
         active: true,
       })
       .returning();
@@ -268,26 +288,10 @@ router.post("/admin/applications/:id/approve", async (req, res): Promise<void> =
       .values({ id: app.userId, email: app.userEmail ?? `${app.userId}@user.local`, role: "BUSINESS_OWNER" })
       .onConflictDoUpdate({ target: usersTable.id, set: { role: "BUSINESS_OWNER" } });
 
-    // Attach subscription if a plan was selected
-    if (app.planId) {
-      const [plan] = await db
-        .select()
-        .from(subscriptionPlansTable)
-        .where(eq(subscriptionPlansTable.id, app.planId));
-
-      if (plan) {
-        const trialEndsAt =
-          plan.trialDays > 0
-            ? new Date(Date.now() + plan.trialDays * 24 * 60 * 60 * 1000)
-            : null;
-
-        await db.insert(businessSubscriptionsTable).values({
-          businessId: business.id,
-          planId: plan.id,
-          status: plan.trialDays > 0 ? "TRIALING" : "ACTIVE",
-          trialEndsAt,
-        });
-      }
+    // Attach subscription: admin override > application plan > default active plan
+    const plan = await resolveApprovalPlan(app.planId, parsedBody.data.planId);
+    if (plan) {
+      await attachPlanToBusiness(business.id, plan);
     }
 
     // Mark application as approved
@@ -313,14 +317,14 @@ router.post("/admin/applications/:id/approve", async (req, res): Promise<void> =
 });
 
 // POST /api/admin/applications/:id/reject — reject an application (admin)
-router.post("/admin/applications/:id/reject", async (req, res): Promise<void> => {
+router.post("/admin/applications/:id/reject", requireAdmin, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   const { note } = req.body as { note?: string };
 
   const [app] = await db

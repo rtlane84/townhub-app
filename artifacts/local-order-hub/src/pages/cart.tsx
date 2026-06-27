@@ -13,6 +13,11 @@ import { Separator } from "@/components/ui/separator";
 import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Loader2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/react";
+import {
+  resolvePaymentMode,
+  allowsOnlinePayment,
+  allowsPayAtPickup,
+} from "@workspace/api-zod";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
@@ -117,6 +122,9 @@ export default function Cart() {
 
   const showPickup = business?.pickupEnabled !== false;
   const showDelivery = business?.deliveryEnabled === true;
+  const paymentMode = business ? resolvePaymentMode(business) : "ONLINE_ONLY";
+  const showOnlinePayment = allowsOnlinePayment(paymentMode);
+  const showPayAtPickup = allowsPayAtPickup(paymentMode);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -318,18 +326,20 @@ export default function Cart() {
               </div>
 
               <div className="w-full space-y-3 pt-4">
-                <Button
-                  className="w-full h-12 text-lg rounded-full"
-                  onClick={() => handleCheckout(false)}
-                  disabled={isSubmitting || (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum)}
-                >
-                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CreditCard className="h-5 w-5 mr-2" />}
-                  Pay with Card
-                </Button>
-
-                {business?.payAtPickupEnabled && (
+                {showOnlinePayment && (
                   <Button
-                    variant="outline"
+                    className="w-full h-12 text-lg rounded-full"
+                    onClick={() => handleCheckout(false)}
+                    disabled={isSubmitting || (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum)}
+                  >
+                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CreditCard className="h-5 w-5 mr-2" />}
+                    Pay with Card
+                  </Button>
+                )}
+
+                {showPayAtPickup && (
+                  <Button
+                    variant={showOnlinePayment ? "outline" : "default"}
                     className="w-full h-12 text-lg rounded-full"
                     onClick={() => handleCheckout(true)}
                     disabled={isSubmitting || (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum)}

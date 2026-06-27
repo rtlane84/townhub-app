@@ -8,3 +8,5 @@ export * from "./subscriptions";
 export * from "./notifications";
 export * from "./platform";
 export * from "./applications";
+export * from "./appointment-requests";
+export * from "./media";

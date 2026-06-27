@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
-import { shadcn } from "@clerk/themes";
+import { clerkAuthAppearance } from "@/lib/clerk-appearance";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -16,6 +16,7 @@ import { PlatformThemeProvider } from "@/components/theme-provider";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import Events from "@/pages/events";
 import Businesses from "@/pages/businesses";
 import Storefront from "@/pages/storefront";
 import Cart from "@/pages/cart";
@@ -27,6 +28,7 @@ import BusinessOrderDetail from "@/pages/dashboard/business/order-detail";
 import BusinessProducts from "@/pages/dashboard/business/products";
 import BusinessCategories from "@/pages/dashboard/business/categories";
 import BusinessSettings from "@/pages/dashboard/business/settings";
+import BusinessAppointments from "@/pages/dashboard/business/appointments";
 import BusinessBilling from "@/pages/dashboard/business/billing";
 import BusinessLocations from "@/pages/dashboard/business/locations";
 
@@ -64,36 +66,10 @@ if (!clerkPubKey) {
 }
 
 const clerkAppearance = {
-  theme: shadcn,
-  cssLayerName: "clerk",
+  ...clerkAuthAppearance,
   options: {
     logoPlacement: "inside" as const,
     logoLinkUrl: basePath || "/",
-  },
-  variables: {
-    colorPrimary: "hsl(25, 80%, 45%)",
-    colorForeground: "hsl(20, 20%, 15%)",
-    colorMutedForeground: "hsl(20, 10%, 45%)",
-    colorDanger: "hsl(0, 70%, 50%)",
-    colorBackground: "hsl(0, 0%, 100%)",
-    colorInput: "hsl(30, 15%, 85%)",
-    colorInputForeground: "hsl(20, 20%, 15%)",
-    colorNeutral: "hsl(30, 15%, 85%)",
-    fontFamily: "'Outfit', sans-serif",
-    borderRadius: "0.75rem",
-  },
-  elements: {
-    rootBox: "w-full flex justify-center",
-    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "text-2xl font-serif text-foreground font-semibold tracking-tight",
-    headerSubtitle: "text-muted-foreground",
-    socialButtonsBlockButtonText: "font-medium text-foreground",
-    formFieldLabel: "text-foreground font-medium",
-    footerActionLink: "text-primary font-medium hover:underline",
-    footerActionText: "text-muted-foreground",
-    dividerText: "text-muted-foreground bg-white",
   },
 };
 
@@ -155,7 +131,7 @@ function ClerkApiTokenBridge() {
   return null;
 }
 
-const PUBLIC_PATHS = ["/", "/businesses", "/sign-in", "/sign-up", "/setup", "/list-your-business"];
+const PUBLIC_PATHS = ["/", "/businesses", "/events", "/sign-in", "/sign-up", "/setup", "/list-your-business"];
 
 function PostSignInRedirector() {
   const { isSignedIn, isLoaded } = useUser();
@@ -244,6 +220,7 @@ function ClerkProviderWithRoutes() {
               <Switch>
                 {/* Public routes */}
                 <Route path="/" component={Home} />
+                <Route path="/events" component={Events} />
                 <Route path="/businesses" component={Businesses} />
                 <Route path="/businesses/:slug" component={Storefront} />
                 <Route path="/cart" component={Cart} />
@@ -261,6 +238,7 @@ function ClerkProviderWithRoutes() {
                 <ProtectedRoute path="/dashboard/business/categories" component={BusinessCategories} />
                 <ProtectedRoute path="/dashboard/business/locations" component={BusinessLocations} />
                 <ProtectedRoute path="/dashboard/business/billing" component={BusinessBilling} />
+                <ProtectedRoute path="/dashboard/business/appointments" component={BusinessAppointments} />
                 <ProtectedRoute path="/dashboard/business/settings" component={BusinessSettings} />
                 <ProtectedRoute path="/dashboard/business" component={BusinessOverview} />
 

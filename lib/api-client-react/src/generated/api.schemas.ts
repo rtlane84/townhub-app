@@ -21,6 +21,7 @@ export const BusinessType = {
   SERVICE_PROVIDER: 'SERVICE_PROVIDER',
   FUNERAL_SERVICE: 'FUNERAL_SERVICE',
   GENERAL: 'GENERAL',
+  SALON: 'SALON',
 } as const;
 
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
@@ -53,6 +54,15 @@ export const UserRole = {
   ADMIN: 'ADMIN',
 } as const;
 
+export type PaymentMode = typeof PaymentMode[keyof typeof PaymentMode];
+
+
+export const PaymentMode = {
+  ONLINE_ONLY: 'ONLINE_ONLY',
+  PAY_AT_PICKUP_ONLY: 'PAY_AT_PICKUP_ONLY',
+  BOTH: 'BOTH',
+} as const;
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -62,6 +72,26 @@ export interface UserProfile {
   /** @nullable */
   businessId?: number | null;
   createdAt?: string;
+}
+
+export interface BusinessDayHours {
+  /**
+     * 0=Sunday through 6=Saturday
+     * @minimum 0
+     * @maximum 6
+     */
+  dayOfWeek: number;
+  isClosed: boolean;
+  /**
+     * 24-hour time HH:mm
+     * @nullable
+     */
+  openTime?: string | null;
+  /**
+     * 24-hour time HH:mm
+     * @nullable
+     */
+  closeTime?: string | null;
 }
 
 export interface Business {
@@ -81,6 +111,8 @@ export interface Business {
   phone?: string | null;
   /** @nullable */
   hours?: string | null;
+  /** @nullable */
+  structuredHours?: BusinessDayHours[] | null;
   active: boolean;
   featured?: boolean;
   pickupEnabled?: boolean;
@@ -90,6 +122,7 @@ export interface Business {
   /** @nullable */
   minimumOrder?: number | null;
   payAtPickupEnabled?: boolean;
+  paymentMode?: PaymentMode | null;
   /** @nullable */
   orderCutoffTime?: string | null;
   /** @nullable */
@@ -104,6 +137,14 @@ export interface Business {
   deliveryInstructions?: string | null;
   /** @nullable */
   orderNotificationEmail?: string | null;
+  /** @nullable */
+  notificationEmail?: string | null;
+  /** @nullable */
+  notificationPhone?: string | null;
+  notifyNewOrdersByEmail?: boolean;
+  notifyNewOrdersBySms?: boolean;
+  notifyAppointmentRequestsByEmail?: boolean;
+  notifyAppointmentRequestsBySms?: boolean;
   eventLocationEnabled?: boolean;
   /** @nullable */
   accentColor?: string | null;
@@ -154,6 +195,7 @@ export interface BusinessRegistrationInput {
   address?: string;
   phone?: string;
   hours?: string;
+  structuredHours?: BusinessDayHours[];
 }
 
 export interface BusinessInput {
@@ -168,11 +210,13 @@ export interface BusinessInput {
   address?: string;
   phone?: string;
   hours?: string;
+  structuredHours?: BusinessDayHours[];
   pickupEnabled?: boolean;
   deliveryEnabled?: boolean;
   deliveryFee?: number;
   minimumOrder?: number;
   payAtPickupEnabled?: boolean;
+  paymentMode?: PaymentMode;
   orderCutoffTime?: string;
   ownerId?: string;
 }
@@ -186,6 +230,7 @@ export interface BusinessUpdate {
   address?: string;
   phone?: string;
   hours?: string;
+  structuredHours?: BusinessDayHours[];
   active?: boolean;
   featured?: boolean;
   pickupEnabled?: boolean;
@@ -193,17 +238,36 @@ export interface BusinessUpdate {
   deliveryFee?: number;
   minimumOrder?: number;
   payAtPickupEnabled?: boolean;
+  paymentMode?: PaymentMode;
   orderCutoffTime?: string;
-  minimumOrderForDelivery?: number;
-  deliveryRadiusMiles?: number;
-  deliveryNotes?: string;
-  pickupInstructions?: string;
-  deliveryInstructions?: string;
-  orderNotificationEmail?: string;
+  /** @nullable */
+  minimumOrderForDelivery?: number | null;
+  /** @nullable */
+  deliveryRadiusMiles?: number | null;
+  /** @nullable */
+  deliveryNotes?: string | null;
+  /** @nullable */
+  pickupInstructions?: string | null;
+  /** @nullable */
+  deliveryInstructions?: string | null;
+  /** @nullable */
+  orderNotificationEmail?: string | null;
+  /** @nullable */
+  notificationEmail?: string | null;
+  /** @nullable */
+  notificationPhone?: string | null;
+  notifyNewOrdersByEmail?: boolean;
+  notifyNewOrdersBySms?: boolean;
+  notifyAppointmentRequestsByEmail?: boolean;
+  notifyAppointmentRequestsBySms?: boolean;
   eventLocationEnabled?: boolean;
-  accentColor?: string;
-  buttonColor?: string;
-  bannerText?: string;
+  /** @nullable */
+  accentColor?: string | null;
+  /** @nullable */
+  buttonColor?: string | null;
+  /** @nullable */
+  bannerText?: string | null;
+  type?: BusinessType;
 }
 
 export interface CategoryInput {
@@ -363,6 +427,8 @@ export interface Event {
   title: string;
   date: string;
   /** @nullable */
+  endDate?: string | null;
+  /** @nullable */
   startTime?: string | null;
   /** @nullable */
   endTime?: string | null;
@@ -383,6 +449,8 @@ export interface Event {
 export interface EventInput {
   title: string;
   date: string;
+  /** @nullable */
+  endDate?: string | null;
   startTime?: string;
   endTime?: string;
   location?: string;
@@ -548,6 +616,19 @@ export interface PlatformTheme {
   buttonColor: string;
   /** @nullable */
   headingColor?: string | null;
+  /** @nullable */
+  platformName?: string | null;
+  /** @nullable */
+  townName?: string | null;
+  /** @nullable */
+  tagline?: string | null;
+  /** @nullable */
+  logoUrl?: string | null;
+  /**
+     * @minimum 16
+     * @maximum 64
+     */
+  logoSizePx?: number;
   updatedAt?: string;
 }
 
@@ -557,18 +638,98 @@ export interface PlatformThemeInput {
   backgroundColor?: string;
   buttonColor?: string;
   headingColor?: string;
+  platformName?: string;
+  townName?: string;
+  tagline?: string;
+  logoUrl?: string;
+  /**
+     * @minimum 16
+     * @maximum 64
+     */
+  logoSizePx?: number;
 }
+
+export interface MediaAsset {
+  id: number;
+  /** @nullable */
+  businessId?: number | null;
+  uploadedByUserId: string;
+  originalFilename: string;
+  mimeType: string;
+  byteSize: number;
+  url: string;
+  createdAt: string;
+}
+
+export interface MediaUploadForm {
+  /** Image file (JPEG, PNG, WebP, or GIF; max 5 MB) */
+  file: Blob;
+}
+
+export type NotificationLogChannel = typeof NotificationLogChannel[keyof typeof NotificationLogChannel];
+
+
+export const NotificationLogChannel = {
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+} as const;
 
 export interface NotificationLog {
   id: number;
   businessId: number;
-  orderId: number;
-  type: string;
-  recipientEmail: string;
-  subject: string;
-  body?: string;
+  /** @nullable */
+  orderId?: number | null;
+  /** @nullable */
+  appointmentRequestId?: number | null;
+  channel: NotificationLogChannel;
+  /** @nullable */
+  eventType?: string | null;
+  type?: string;
+  /** @nullable */
+  recipientEmail?: string | null;
+  /** @nullable */
+  recipientPhone?: string | null;
+  /** @nullable */
+  subject?: string | null;
+  body: string;
+  status: string;
+  /** @nullable */
+  errorMessage?: string | null;
+  createdAt: string;
+}
+
+export interface AppointmentRequest {
+  id: number;
+  businessId: number;
+  customerName: string;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  customerPhone?: string | null;
+  /** @nullable */
+  serviceName?: string | null;
+  /** @nullable */
+  productId?: number | null;
+  requestedDate: string;
+  requestedTime: string;
+  /** @nullable */
+  notes?: string | null;
   status: string;
   createdAt: string;
+}
+
+export interface AppointmentRequestInput {
+  businessId: number;
+  /** @minLength 1 */
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  serviceName?: string;
+  productId?: number;
+  requestedDate: string;
+  /** @minLength 1 */
+  requestedTime: string;
+  notes?: string;
 }
 
 export type ListBusinessesParams = {
@@ -599,6 +760,14 @@ upcoming?: boolean;
 
 export type ListNotificationLogsParams = {
 orderId?: number;
+limit?: number;
+};
+
+export type ListMediaAssetsParams = {
+/**
+ * @minimum 1
+ * @maximum 200
+ */
 limit?: number;
 };
 

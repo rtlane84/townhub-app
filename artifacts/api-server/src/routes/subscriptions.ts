@@ -3,6 +3,8 @@ import { db, subscriptionPlansTable, businessSubscriptionsTable, businessesTable
 import { eq } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
+import { requireAdmin } from "../middlewares/requireRole";
+import { enforceSingleDefaultPlan } from "../lib/subscription-plans";
 
 const router: IRouter = Router();
 
@@ -56,20 +58,17 @@ function serializeSubscription(
   };
 }
 
-// GET /api/admin/subscription-plans
-router.get("/admin/subscription-plans", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+const adminRouter: IRouter = Router();
+adminRouter.use(requireAdmin);
 
+// GET /api/admin/subscription-plans
+adminRouter.get("/subscription-plans", async (_req, res): Promise<void> => {
   const plans = await db.select().from(subscriptionPlansTable).orderBy(subscriptionPlansTable.monthlyPrice);
   res.json(plans.map(serializePlan));
 });
 
 // POST /api/admin/subscription-plans
-router.post("/admin/subscription-plans", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
+adminRouter.post("/subscription-plans", async (req, res): Promise<void> => {
   const parsed = planInputSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
@@ -84,14 +83,16 @@ router.post("/admin/subscription-plans", async (req, res): Promise<void> => {
     isActive: d.isActive,
     isDefault: d.isDefault,
   }).returning();
+
+  if (plan.isDefault) {
+    await enforceSingleDefaultPlan(plan.id);
+  }
+
   res.status(201).json(serializePlan(plan));
 });
 
 // PUT /api/admin/subscription-plans/:id
-router.put("/admin/subscription-plans/:id", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
+adminRouter.put("/subscription-plans/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   const parsed = planInputSchema.partial().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
@@ -106,26 +107,29 @@ router.put("/admin/subscription-plans/:id", async (req, res): Promise<void> => {
   if (d2.trialDays !== undefined) updateSet.trialDays = d2.trialDays;
   if (d2.isActive !== undefined) updateSet.isActive = d2.isActive;
   if (d2.isDefault !== undefined) updateSet.isDefault = d2.isDefault;
+
   const [updated] = await db.update(subscriptionPlansTable).set(updateSet as never).where(eq(subscriptionPlansTable.id, id)).returning();
   if (!updated) { res.status(404).json({ error: "Plan not found" }); return; }
+
+  if (updated.isDefault) {
+    await enforceSingleDefaultPlan(updated.id);
+    const [refreshed] = await db.select().from(subscriptionPlansTable).where(eq(subscriptionPlansTable.id, id));
+    res.json(serializePlan(refreshed ?? updated));
+    return;
+  }
+
   res.json(serializePlan(updated));
 });
 
 // DELETE /api/admin/subscription-plans/:id
-router.delete("/admin/subscription-plans/:id", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
+adminRouter.delete("/subscription-plans/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   await db.delete(subscriptionPlansTable).where(eq(subscriptionPlansTable.id, id));
   res.status(204).send();
 });
 
 // GET /api/admin/businesses/:id/subscription
-router.get("/admin/businesses/:id/subscription", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
+adminRouter.get("/businesses/:id/subscription", async (req, res): Promise<void> => {
   const businessId = parseInt(req.params.id, 10);
   const [sub] = await db.select().from(businessSubscriptionsTable).where(eq(businessSubscriptionsTable.businessId, businessId));
   if (!sub) { res.status(404).json({ error: "No subscription" }); return; }
@@ -135,13 +139,16 @@ router.get("/admin/businesses/:id/subscription", async (req, res): Promise<void>
 });
 
 // PUT /api/admin/businesses/:id/subscription
-router.put("/admin/businesses/:id/subscription", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
+adminRouter.put("/businesses/:id/subscription", async (req, res): Promise<void> => {
   const businessId = parseInt(req.params.id, 10);
   const parsed = subscriptionInputSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [plan] = await db.select().from(subscriptionPlansTable).where(eq(subscriptionPlansTable.id, parsed.data.planId));
+  if (!plan) {
+    res.status(404).json({ error: "Plan not found" });
+    return;
+  }
 
   const existing = await db.select().from(businessSubscriptionsTable).where(eq(businessSubscriptionsTable.businessId, businessId));
 
@@ -156,9 +163,10 @@ router.put("/admin/businesses/:id/subscription", async (req, res): Promise<void>
     [sub] = await db.insert(businessSubscriptionsTable).values(values as never).returning();
   }
 
-  const [plan] = await db.select().from(subscriptionPlansTable).where(eq(subscriptionPlansTable.id, sub.planId));
   res.json(serializeSubscription(sub, plan));
 });
+
+router.use("/admin", adminRouter);
 
 // GET /api/businesses/:id/subscription — caller must own the business or be an admin
 router.get("/businesses/:businessId/subscription", async (req, res): Promise<void> => {

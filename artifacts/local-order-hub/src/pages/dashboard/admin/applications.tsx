@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/react";
+import { useListSubscriptionPlans } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,10 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, Building2, User, Calendar, Layers, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { planAssignmentLabel } from "@/lib/subscription-plans";
+import { BusinessHoursDisplay } from "@/components/business-hours-display";
+import type { BusinessDayHours } from "@workspace/api-client-react";
 
 interface Application {
   id: number;
@@ -23,6 +28,7 @@ interface Application {
   address: string | null;
   phone: string | null;
   hours: string | null;
+  structuredHours: BusinessDayHours[] | null;
   planId: number | null;
   planName: string | null;
   status: "PENDING" | "APPROVED" | "REJECTED";
@@ -65,10 +71,13 @@ export default function AdminApplications() {
 
   const [filter, setFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
   const [rejectDialog, setRejectDialog] = useState<{ id: number; name: string } | null>(null);
+  const [approveDialog, setApproveDialog] = useState<Application | null>(null);
+  const [approvePlanId, setApprovePlanId] = useState<string>("");
   const [rejectNote, setRejectNote] = useState("");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   const { data: applications, isLoading } = useApplications(getToken);
+  const { data: plans = [] } = useListSubscriptionPlans({});
 
   async function safeJson(res: Response): Promise<Record<string, unknown>> {
     const ct = res.headers.get("content-type") ?? "";
@@ -78,20 +87,43 @@ export default function AdminApplications() {
     return { error: `Server error (${res.status})` };
   }
 
-  async function handleApprove(id: number) {
+  function openApproveDialog(app: Application) {
+    const defaultPlan =
+      app.planId != null
+        ? String(app.planId)
+        : plans.find((p) => p.isDefault && p.isActive)?.id != null
+          ? String(plans.find((p) => p.isDefault && p.isActive)!.id)
+          : "";
+    setApprovePlanId(defaultPlan);
+    setApproveDialog(app);
+  }
+
+  async function handleApprove() {
+    if (!approveDialog) return;
+    const id = approveDialog.id;
     setActionLoading(id);
     try {
       const token = await getToken();
+      const body: { planId?: number } = {};
+      if (approvePlanId) {
+        body.planId = parseInt(approvePlanId, 10);
+      }
       const res = await fetch(`/api/admin/applications/${id}/approve`, {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
       });
-      const body = await safeJson(res);
+      const resBody = await safeJson(res);
       if (!res.ok) {
-        toast({ title: "Approval failed", description: String(body.error ?? "Failed to approve"), variant: "destructive" });
+        toast({ title: "Approval failed", description: String(resBody.error ?? "Failed to approve"), variant: "destructive" });
         return;
       }
-      toast({ title: "Application approved", description: String(body.message ?? "Business created successfully.") });
+      toast({ title: "Application approved", description: String(resBody.message ?? "Business created successfully.") });
+      setApproveDialog(null);
+      setApprovePlanId("");
       await queryClient.invalidateQueries({ queryKey: ["admin", "applications"] });
     } catch (err) {
       toast({ title: "Network error", description: "Could not reach the server. Please try again.", variant: "destructive" });
@@ -228,10 +260,15 @@ export default function AdminApplications() {
                         <Calendar className="h-3.5 w-3.5 shrink-0" />
                         <span>Applied {formatDate(app.createdAt)}</span>
                       </div>
-                      {app.planName && (
+                      {app.planName ? (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Layers className="h-3.5 w-3.5 shrink-0" />
                           <span>Plan: <strong className="text-foreground">{app.planName}</strong></span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Layers className="h-3.5 w-3.5 shrink-0" />
+                          <span>No plan selected — default will apply if set</span>
                         </div>
                       )}
                       {app.address && (
@@ -244,6 +281,17 @@ export default function AdminApplications() {
 
                     {app.description && (
                       <p className="text-sm text-muted-foreground line-clamp-2">{app.description}</p>
+                    )}
+
+                    {(app.structuredHours?.length || app.hours) && (
+                      <div className="rounded-lg bg-muted/40 px-3 py-2">
+                        <p className="text-xs font-medium text-muted-foreground mb-1.5">Hours</p>
+                        <BusinessHoursDisplay
+                          structuredHours={app.structuredHours}
+                          fallbackHours={app.hours}
+                          compact
+                        />
+                      </div>
                     )}
 
                     {app.reviewNote && (
@@ -265,7 +313,7 @@ export default function AdminApplications() {
                     <div className="flex sm:flex-col gap-2 shrink-0">
                       <Button
                         size="sm"
-                        onClick={() => handleApprove(app.id)}
+                        onClick={() => openApproveDialog(app)}
                         disabled={actionLoading === app.id}
                         className="flex-1 sm:flex-none"
                       >
@@ -292,6 +340,50 @@ export default function AdminApplications() {
           ))}
         </div>
       </div>
+
+      {/* Approve dialog */}
+      <Dialog open={!!approveDialog} onOpenChange={(o) => { if (!o) { setApproveDialog(null); setApprovePlanId(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve Application</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Approve <strong>{approveDialog?.name}</strong> and create their business listing.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="approve-plan">Subscription plan</Label>
+            <Select value={approvePlanId || "__default__"} onValueChange={(v) => setApprovePlanId(v === "__default__" ? "" : v)}>
+              <SelectTrigger id="approve-plan">
+                <SelectValue placeholder="Use applicant or default plan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__default__">
+                  {approveDialog?.planName
+                    ? `Applicant choice: ${approveDialog.planName}`
+                    : "Default active plan (if configured)"}
+                </SelectItem>
+                {plans.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>
+                    {planAssignmentLabel(p)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Override with any plan, including inactive or internal plans. Leave on the first option to use the applicant&apos;s selection or platform default.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setApproveDialog(null); setApprovePlanId(""); }}>Cancel</Button>
+            <Button
+              onClick={handleApprove}
+              disabled={actionLoading === approveDialog?.id}
+            >
+              {actionLoading === approveDialog?.id ? "Approving…" : "Approve & Create Business"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reject dialog */}
       <Dialog open={!!rejectDialog} onOpenChange={(o) => { if (!o) setRejectDialog(null); }}>
