@@ -36,4 +36,6 @@ export interface PlatformThemeInput {
      * @maximum 64
      */
   logoSizePx?: number;
+  weatherEnabled?: boolean;
+  weatherLocation?: string;
 }

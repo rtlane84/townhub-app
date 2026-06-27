@@ -188,6 +188,15 @@ export const GetPlatformStatsResponse = zod.object({
 
 
 /**
+ * @summary Public marketplace stats for homepage
+ */
+export const GetMarketplaceStatsResponse = zod.object({
+  "localShopsCount": zod.number().describe('Number of active local businesses'),
+  "uniqueItemsCount": zod.number().describe('Number of available products across active businesses')
+})
+
+
+/**
  * @summary Get a single business storefront by slug
  */
 export const GetBusinessBySlugParams = zod.object({
@@ -1534,6 +1543,11 @@ export const ListTodayFoodTrucksResponseItem = zod.object({
   "businessName": zod.string().optional(),
   "businessSlug": zod.string().optional(),
   "businessLogoUrl": zod.string().nullish(),
+  "businessHeroImageUrl": zod.string().nullish(),
+  "businessDescription": zod.string().nullish(),
+  "pickupEnabled": zod.boolean().optional(),
+  "latitude": zod.string().nullish(),
+  "longitude": zod.string().nullish(),
   "locationName": zod.string(),
   "address": zod.string().nullish(),
   "locationDate": zod.string(),
@@ -1543,6 +1557,31 @@ export const ListTodayFoodTrucksResponseItem = zod.object({
   "isActive": zod.boolean()
 })
 export const ListTodayFoodTrucksResponse = zod.array(ListTodayFoodTrucksResponseItem)
+
+
+/**
+ * @summary List upcoming food truck locations for the next 30 days (public)
+ */
+export const ListUpcomingFoodTrucksResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "businessName": zod.string().optional(),
+  "businessSlug": zod.string().optional(),
+  "businessLogoUrl": zod.string().nullish(),
+  "businessHeroImageUrl": zod.string().nullish(),
+  "businessDescription": zod.string().nullish(),
+  "pickupEnabled": zod.boolean().optional(),
+  "latitude": zod.string().nullish(),
+  "longitude": zod.string().nullish(),
+  "locationName": zod.string(),
+  "address": zod.string().nullish(),
+  "locationDate": zod.string(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "locationNotes": zod.string().nullish(),
+  "isActive": zod.boolean()
+})
+export const ListUpcomingFoodTrucksResponse = zod.array(ListUpcomingFoodTrucksResponseItem)
 
 
 /**
@@ -1575,6 +1614,8 @@ export const GetPlatformThemeResponse = zod.object({
   "heroHeadlineLine1": zod.string().nullish(),
   "heroHeadlineLine2": zod.string().nullish(),
   "logoSizePx": zod.number().min(getPlatformThemeResponseLogoSizePxMin).max(getPlatformThemeResponseLogoSizePxMax).optional(),
+  "weatherEnabled": zod.boolean().optional(),
+  "weatherLocation": zod.string().nullish(),
   "updatedAt": zod.coerce.date().optional()
 })
 
@@ -1607,7 +1648,9 @@ export const UpdatePlatformThemeBody = zod.object({
   "heroHeadlineAccentColor": zod.string().nullish(),
   "heroHeadlineLine1": zod.string().nullish(),
   "heroHeadlineLine2": zod.string().nullish(),
-  "logoSizePx": zod.number().min(updatePlatformThemeBodyLogoSizePxMin).max(updatePlatformThemeBodyLogoSizePxMax).optional()
+  "logoSizePx": zod.number().min(updatePlatformThemeBodyLogoSizePxMin).max(updatePlatformThemeBodyLogoSizePxMax).optional(),
+  "weatherEnabled": zod.boolean().optional(),
+  "weatherLocation": zod.string().optional()
 })
 
 export const updatePlatformThemeResponseHeroOverlayOpacityMin = 0;
@@ -1637,7 +1680,35 @@ export const UpdatePlatformThemeResponse = zod.object({
   "heroHeadlineLine1": zod.string().nullish(),
   "heroHeadlineLine2": zod.string().nullish(),
   "logoSizePx": zod.number().min(updatePlatformThemeResponseLogoSizePxMin).max(updatePlatformThemeResponseLogoSizePxMax).optional(),
+  "weatherEnabled": zod.boolean().optional(),
+  "weatherLocation": zod.string().nullish(),
   "updatedAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Get homepage weather forecast (when enabled by admin)
+ */
+export const GetWeatherResponse = zod.object({
+  "enabled": zod.boolean(),
+  "unavailable": zod.boolean().optional(),
+  "reason": zod.enum(['missing_location', 'geocoding_failed', 'forecast_failed', 'malformed_response']).optional(),
+  "message": zod.string().optional(),
+  "locationQuery": zod.string().optional(),
+  "demo": zod.boolean().optional(),
+  "locationLabel": zod.string().optional(),
+  "current": zod.object({
+  "temperatureF": zod.number(),
+  "weatherCode": zod.number(),
+  "summary": zod.string()
+}).optional(),
+  "daily": zod.array(zod.object({
+  "date": zod.coerce.date(),
+  "highF": zod.number(),
+  "lowF": zod.number(),
+  "weatherCode": zod.number(),
+  "summary": zod.string()
+})).optional()
 })
 
 

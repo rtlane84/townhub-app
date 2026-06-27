@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, foodTruckLocationsTable, businessesTable } from "@workspace/db";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, lte, gt } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
 
@@ -82,27 +82,72 @@ router.delete("/businesses/:id/food-truck-locations/:locationId", async (req, re
   res.status(204).send();
 });
 
+function serializePublicLocation(row: {
+  id: number;
+  businessId: number;
+  locationName: string;
+  address: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  locationDate: string;
+  startTime: string | null;
+  endTime: string | null;
+  locationNotes: string | null;
+  isActive: boolean;
+  businessName: string;
+  businessSlug: string;
+  businessLogoUrl: string | null;
+  businessHeroImageUrl: string | null;
+  businessDescription: string | null;
+  pickupEnabled: boolean;
+}) {
+  return {
+    id: row.id,
+    businessId: row.businessId,
+    locationName: row.locationName,
+    address: row.address,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    locationDate: row.locationDate,
+    startTime: row.startTime,
+    endTime: row.endTime,
+    locationNotes: row.locationNotes,
+    isActive: row.isActive,
+    businessName: row.businessName,
+    businessSlug: row.businessSlug,
+    businessLogoUrl: row.businessLogoUrl,
+    businessHeroImageUrl: row.businessHeroImageUrl,
+    businessDescription: row.businessDescription,
+    pickupEnabled: row.pickupEnabled,
+  };
+}
+
+const publicLocationSelect = {
+  id: foodTruckLocationsTable.id,
+  businessId: foodTruckLocationsTable.businessId,
+  locationName: foodTruckLocationsTable.locationName,
+  address: foodTruckLocationsTable.address,
+  latitude: foodTruckLocationsTable.latitude,
+  longitude: foodTruckLocationsTable.longitude,
+  locationDate: foodTruckLocationsTable.locationDate,
+  startTime: foodTruckLocationsTable.startTime,
+  endTime: foodTruckLocationsTable.endTime,
+  locationNotes: foodTruckLocationsTable.locationNotes,
+  isActive: foodTruckLocationsTable.isActive,
+  businessName: businessesTable.name,
+  businessSlug: businessesTable.slug,
+  businessLogoUrl: businessesTable.logoUrl,
+  businessHeroImageUrl: businessesTable.heroImageUrl,
+  businessDescription: businessesTable.description,
+  pickupEnabled: businessesTable.pickupEnabled,
+};
+
 // GET /api/food-truck-locations/today (public)
 router.get("/food-truck-locations/today", async (req, res): Promise<void> => {
   const today = new Date().toISOString().slice(0, 10);
 
   const rows = await db
-    .select({
-      id: foodTruckLocationsTable.id,
-      businessId: foodTruckLocationsTable.businessId,
-      locationName: foodTruckLocationsTable.locationName,
-      address: foodTruckLocationsTable.address,
-      latitude: foodTruckLocationsTable.latitude,
-      longitude: foodTruckLocationsTable.longitude,
-      locationDate: foodTruckLocationsTable.locationDate,
-      startTime: foodTruckLocationsTable.startTime,
-      endTime: foodTruckLocationsTable.endTime,
-      locationNotes: foodTruckLocationsTable.locationNotes,
-      isActive: foodTruckLocationsTable.isActive,
-      businessName: businessesTable.name,
-      businessSlug: businessesTable.slug,
-      businessLogoUrl: businessesTable.logoUrl,
-    })
+    .select(publicLocationSelect)
     .from(foodTruckLocationsTable)
     .innerJoin(businessesTable, eq(foodTruckLocationsTable.businessId, businessesTable.id))
     .where(
@@ -114,7 +159,31 @@ router.get("/food-truck-locations/today", async (req, res): Promise<void> => {
     )
     .orderBy(foodTruckLocationsTable.startTime);
 
-  res.json(rows);
+  res.json(rows.map(serializePublicLocation));
+});
+
+// GET /api/food-truck-locations/upcoming (public)
+router.get("/food-truck-locations/upcoming", async (req, res): Promise<void> => {
+  const today = new Date().toISOString().slice(0, 10);
+  const horizon = new Date();
+  horizon.setDate(horizon.getDate() + 30);
+  const horizonDate = horizon.toISOString().slice(0, 10);
+
+  const rows = await db
+    .select(publicLocationSelect)
+    .from(foodTruckLocationsTable)
+    .innerJoin(businessesTable, eq(foodTruckLocationsTable.businessId, businessesTable.id))
+    .where(
+      and(
+        gt(foodTruckLocationsTable.locationDate, today),
+        lte(foodTruckLocationsTable.locationDate, horizonDate),
+        eq(foodTruckLocationsTable.isActive, true),
+        eq(businessesTable.active, true),
+      ),
+    )
+    .orderBy(foodTruckLocationsTable.locationDate, foodTruckLocationsTable.startTime);
+
+  res.json(rows.map(serializePublicLocation));
 });
 
 export default router;

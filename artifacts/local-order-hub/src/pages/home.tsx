@@ -3,6 +3,9 @@ import {
   useListEvents,
   useListHighlights,
   useListTodayFoodTrucks,
+  useGetWeather,
+  getGetWeatherQueryKey,
+  useGetMarketplaceStats,
 } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import {
@@ -13,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EventCard } from "@/components/event-card";
+import { QuickTownInfoSection } from "@/components/quick-town-info-section";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { BusinessListingCardMedia, BusinessLogoBadge } from "@/components/business-logo-badge";
 import { BusinessTags } from "@/components/business-tags";
@@ -35,8 +39,16 @@ const CATEGORIES = [
 ];
 
 export default function Home() {
-  const { heroTagline, heroHeadline, heroHeadlineAccentColor, shopCtaLabel, heroImageUrl, heroOverlayStyle, heroPrimaryButtonStyle } =
+  const { heroTagline, heroHeadline, heroHeadlineAccentColor, shopCtaLabel, heroImageUrl, heroOverlayStyle, heroPrimaryButtonStyle, weatherEnabled } =
     usePlatformBranding();
+  const { data: weather, isError } = useGetWeather({
+    query: {
+      queryKey: getGetWeatherQueryKey(),
+      enabled: weatherEnabled,
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+    },
+  });
   const { data: businesses, isLoading } = useListBusinesses({ featured: true });
   const { data: featuredEventsRaw = [], isLoading: featuredEventsLoading } = useListEvents({
     upcoming: true,
@@ -47,6 +59,7 @@ export default function Home() {
   });
   const { data: highlights = [] } = useListHighlights({});
   const { data: todayTrucks = [] } = useListTodayFoodTrucks({});
+  const { data: marketplaceStats, isLoading: marketplaceStatsLoading } = useGetMarketplaceStats({});
 
   const eventsLoading = featuredEventsLoading || upcomingEventsLoading;
   const featuredEvents = featuredEventsRaw.slice(0, 3);
@@ -138,6 +151,16 @@ export default function Home() {
         </div>
       </section>
 
+      <QuickTownInfoSection
+        weatherEnabled={weatherEnabled}
+        weather={weather}
+        weatherError={isError}
+        todayTrucks={todayTrucks}
+        upcomingEvents={allUpcomingEvents}
+        marketplaceStats={marketplaceStats}
+        marketplaceStatsLoading={marketplaceStatsLoading}
+      />
+
       {/* Highlights banner */}
       {featuredHighlights.length > 0 && (
         <section className="py-8 bg-primary/10 border-y border-primary/20">
@@ -195,7 +218,7 @@ export default function Home() {
 
       {/* Today's Food Trucks */}
       {todayTrucks.length > 0 && (
-        <section className="py-12 bg-accent/10 border-y border-accent/20">
+        <section id="food-trucks-today" className="py-12 bg-accent/10 border-y border-accent/20">
           <div className="container px-4 mx-auto">
             <div className="flex items-center gap-2 mb-6">
               <Truck className="h-5 w-5 text-primary" />

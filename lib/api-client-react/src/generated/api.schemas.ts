@@ -393,6 +393,13 @@ export interface BusinessOrderSummary {
   recentOrders: Order[];
 }
 
+export interface MarketplaceStats {
+  /** Number of active local businesses */
+  localShopsCount: number;
+  /** Number of available products across active businesses */
+  uniqueItemsCount: number;
+}
+
 export interface PlatformStats {
   totalBusinesses: number;
   activeBusinesses: number;
@@ -595,6 +602,15 @@ export interface FoodTruckLocationWithBusiness {
   businessSlug?: string;
   /** @nullable */
   businessLogoUrl?: string | null;
+  /** @nullable */
+  businessHeroImageUrl?: string | null;
+  /** @nullable */
+  businessDescription?: string | null;
+  pickupEnabled?: boolean;
+  /** @nullable */
+  latitude?: string | null;
+  /** @nullable */
+  longitude?: string | null;
   locationName: string;
   /** @nullable */
   address?: string | null;
@@ -646,6 +662,9 @@ export interface PlatformTheme {
      * @maximum 64
      */
   logoSizePx?: number;
+  weatherEnabled?: boolean;
+  /** @nullable */
+  weatherLocation?: string | null;
   updatedAt?: string;
 }
 
@@ -679,6 +698,44 @@ export interface PlatformThemeInput {
      * @maximum 64
      */
   logoSizePx?: number;
+  weatherEnabled?: boolean;
+  weatherLocation?: string;
+}
+
+export interface WeatherCurrent {
+  temperatureF: number;
+  weatherCode: number;
+  summary: string;
+}
+
+export interface WeatherDaily {
+  date: string;
+  highF: number;
+  lowF: number;
+  weatherCode: number;
+  summary: string;
+}
+
+export type WeatherForecastReason = typeof WeatherForecastReason[keyof typeof WeatherForecastReason];
+
+
+export const WeatherForecastReason = {
+  missing_location: 'missing_location',
+  geocoding_failed: 'geocoding_failed',
+  forecast_failed: 'forecast_failed',
+  malformed_response: 'malformed_response',
+} as const;
+
+export interface WeatherForecast {
+  enabled: boolean;
+  unavailable?: boolean;
+  reason?: WeatherForecastReason;
+  message?: string;
+  locationQuery?: string;
+  demo?: boolean;
+  locationLabel?: string;
+  current?: WeatherCurrent;
+  daily?: WeatherDaily[];
 }
 
 export interface MediaAsset {

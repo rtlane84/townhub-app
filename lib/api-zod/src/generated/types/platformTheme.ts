@@ -44,5 +44,8 @@ export interface PlatformTheme {
      * @maximum 64
      */
   logoSizePx?: number;
+  weatherEnabled?: boolean;
+  /** @nullable */
+  weatherLocation?: string | null;
   updatedAt?: Date;
 }

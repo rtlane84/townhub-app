@@ -15,6 +15,8 @@ import {
   resolvePlatformName,
   resolveShopCtaLabel,
   resolveTagline,
+  resolveWeatherEnabled,
+  resolveWeatherLocation,
 } from "@/lib/platform-branding";
 import { applyPlatformThemeToRoot } from "@/lib/theme-colors";
 
@@ -32,6 +34,8 @@ export type PlatformBranding = {
   logoUrl: string | null;
   logoSizePx: number;
   townName: string | null;
+  weatherEnabled: boolean;
+  weatherLocation: string;
 };
 
 const PlatformBrandingContext = createContext<PlatformBranding>({
@@ -48,6 +52,8 @@ const PlatformBrandingContext = createContext<PlatformBranding>({
   logoUrl: null,
   logoSizePx: 24,
   townName: null,
+  weatherEnabled: false,
+  weatherLocation: "",
 });
 
 export function usePlatformBranding(): PlatformBranding {
@@ -85,6 +91,8 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
       logoUrl: theme?.logoUrl?.trim() || null,
       logoSizePx: resolveLogoSizePx(theme),
       townName: theme?.townName?.trim() || null,
+      weatherEnabled: resolveWeatherEnabled(theme),
+      weatherLocation: resolveWeatherLocation(theme),
     };
   }, [theme]);
 

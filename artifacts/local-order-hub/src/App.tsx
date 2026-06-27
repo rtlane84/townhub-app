@@ -17,6 +17,7 @@ import { PlatformThemeProvider } from "@/components/theme-provider";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Events from "@/pages/events";
+import FoodTrucks from "@/pages/food-trucks";
 import Businesses from "@/pages/businesses";
 import Storefront from "@/pages/storefront";
 import Cart from "@/pages/cart";
@@ -131,7 +132,7 @@ function ClerkApiTokenBridge() {
   return null;
 }
 
-const PUBLIC_PATHS = ["/", "/businesses", "/events", "/sign-in", "/sign-up", "/setup", "/list-your-business"];
+const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/sign-in", "/sign-up", "/setup", "/list-your-business"];
 
 function PostSignInRedirector() {
   const { isSignedIn, isLoaded } = useUser();
@@ -221,6 +222,7 @@ function ClerkProviderWithRoutes() {
                 {/* Public routes */}
                 <Route path="/" component={Home} />
                 <Route path="/events" component={Events} />
+                <Route path="/food-trucks" component={FoodTrucks} />
                 <Route path="/businesses" component={Businesses} />
                 <Route path="/businesses/:slug" component={Storefront} />
                 <Route path="/cart" component={Cart} />

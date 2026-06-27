@@ -4,6 +4,7 @@ import {
   useUpdatePlatformTheme,
   useListNotificationLogs,
   getGetPlatformThemeQueryKey,
+  getGetWeatherQueryKey,
 } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,9 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Palette, Save, RotateCcw, Bell, CheckCircle, AlertCircle, Clock, Type } from "lucide-react";
+import { Palette, Save, RotateCcw, Bell, CheckCircle, AlertCircle, Clock, Type, CloudSun } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { ImageField } from "@/components/image-field";
 import { PLATFORM_THEME_DEFAULTS } from "@/lib/theme-colors";
@@ -37,6 +39,7 @@ import {
   resolveHeroHeadline,
   resolveShopCtaLabel,
   resolveTagline,
+  resolveWeatherLocation,
   themeToBrandingFields,
 } from "@/lib/platform-branding";
 
@@ -88,6 +91,16 @@ const BRANDING_DEFAULTS: BrandingFields = {
   logoSizePx: DEFAULT_LOGO_SIZE_PX,
 };
 
+type WeatherFields = {
+  weatherEnabled: boolean;
+  weatherLocation: string;
+};
+
+const WEATHER_DEFAULTS: WeatherFields = {
+  weatherEnabled: false,
+  weatherLocation: "",
+};
+
 function brandingHeadlinePreview(branding: BrandingFields) {
   return resolveHeroHeadline({
     heroHeadlineLine1: branding.heroHeadlineLine1 || null,
@@ -105,6 +118,8 @@ export default function AdminSettings() {
   const [isDirty, setIsDirty] = useState(false);
   const [branding, setBranding] = useState<BrandingFields>(BRANDING_DEFAULTS);
   const [isBrandingDirty, setIsBrandingDirty] = useState(false);
+  const [weatherSettings, setWeatherSettings] = useState<WeatherFields>(WEATHER_DEFAULTS);
+  const [isWeatherDirty, setIsWeatherDirty] = useState(false);
   const lastBrandingSyncAt = useRef<string | null>(null);
 
   const { data: notifLogs = [] } = useListNotificationLogs({}, {
@@ -124,7 +139,13 @@ export default function AdminSettings() {
       lastBrandingSyncAt.current = theme.updatedAt;
       setBranding(themeToBrandingFields(theme));
     }
-  }, [theme, isBrandingDirty]);
+    if (!isWeatherDirty) {
+      setWeatherSettings({
+        weatherEnabled: theme.weatherEnabled ?? false,
+        weatherLocation: theme.weatherLocation?.trim() || "",
+      });
+    }
+  }, [theme, isBrandingDirty, isWeatherDirty]);
 
   const handleChange = (key: ColorKey, value: string) => {
     setColors((prev) => ({ ...prev, [key]: value }));
@@ -180,6 +201,38 @@ export default function AdminSettings() {
   const handleBrandingReset = () => {
     setBranding(BRANDING_DEFAULTS);
     setIsBrandingDirty(true);
+  };
+
+  const handleWeatherChange = (key: keyof WeatherFields, value: boolean | string) => {
+    setWeatherSettings((prev) => ({ ...prev, [key]: value }));
+    setIsWeatherDirty(true);
+  };
+
+  const handleWeatherSave = async () => {
+    try {
+      const updated = await updateTheme.mutateAsync({
+        data: {
+          weatherEnabled: weatherSettings.weatherEnabled,
+          weatherLocation: weatherSettings.weatherLocation.trim(),
+        },
+      });
+      queryClient.setQueryData(getGetPlatformThemeQueryKey(), updated);
+      await queryClient.invalidateQueries({ queryKey: getGetPlatformThemeQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: getGetWeatherQueryKey() });
+      setWeatherSettings({
+        weatherEnabled: updated.weatherEnabled ?? false,
+        weatherLocation: updated.weatherLocation?.trim() || "",
+      });
+      setIsWeatherDirty(false);
+      toast({ title: "Weather settings saved", description: "Homepage weather widget updated." });
+    } catch {
+      toast({ title: "Error", description: "Failed to save weather settings.", variant: "destructive" });
+    }
+  };
+
+  const handleWeatherReset = () => {
+    setWeatherSettings(WEATHER_DEFAULTS);
+    setIsWeatherDirty(true);
   };
 
   return (
@@ -516,6 +569,84 @@ export default function AdminSettings() {
                     Reset to Defaults
                   </Button>
                   {!isBrandingDirty && (
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <CheckCircle className="h-3.5 w-3.5 text-green-500" /> Saved
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Weather Widget */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CloudSun className="h-5 w-5 text-primary" />
+              <CardTitle className="font-serif">Homepage Weather</CardTitle>
+            </div>
+            <CardDescription>
+              Show a compact current-conditions and 5-day forecast on the homepage. Uses Open-Meteo (no API key required).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+                  <div>
+                    <p className="font-medium text-foreground">Enable weather widget</p>
+                    <p className="text-sm text-muted-foreground">
+                      When off, the homepage hides weather entirely.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={weatherSettings.weatherEnabled}
+                    onCheckedChange={(value) => handleWeatherChange("weatherEnabled", value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weatherLocation">Location</Label>
+                  <Input
+                    id="weatherLocation"
+                    value={weatherSettings.weatherLocation}
+                    onChange={(e) => handleWeatherChange("weatherLocation", e.target.value)}
+                    placeholder={theme?.townName?.trim() || "Clay, Alabama"}
+                    disabled={!weatherSettings.weatherEnabled}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    City name, optionally with state (e.g. &quot;Sandpoint&quot; or &quot;Charleston, WV&quot;).
+                    Falls back to the platform town name when blank.
+                    {theme?.townName ? ` Current town: ${theme.townName}.` : ""}
+                  </p>
+                </div>
+                {weatherSettings.weatherEnabled && (
+                  <p className="text-sm text-muted-foreground rounded-lg bg-muted/40 border border-border/60 px-3 py-2">
+                    Preview location:{" "}
+                    <span className="font-medium text-foreground">
+                      {resolveWeatherLocation({
+                        weatherLocation: weatherSettings.weatherLocation || null,
+                        townName: theme?.townName ?? null,
+                      }) || "Set a location to show weather"}
+                    </span>
+                  </p>
+                )}
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={handleWeatherSave}
+                    disabled={!isWeatherDirty || updateTheme.isPending}
+                    className="rounded-full"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {updateTheme.isPending ? "Saving…" : "Save Weather Settings"}
+                  </Button>
+                  <Button variant="outline" onClick={handleWeatherReset} className="rounded-full">
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset
+                  </Button>
+                  {!isWeatherDirty && (
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
                       <CheckCircle className="h-3.5 w-3.5 text-green-500" /> Saved
                     </span>

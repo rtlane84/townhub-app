@@ -24,6 +24,8 @@ const THEME_DEFAULTS = {
   heroHeadlineLine1: null as string | null,
   heroHeadlineLine2: null as string | null,
   logoSizePx: 24,
+  weatherEnabled: false,
+  weatherLocation: null as string | null,
 };
 
 function clampLogoSize(value: unknown): number {
@@ -58,6 +60,8 @@ function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelec
     heroHeadlineLine1: row.heroHeadlineLine1,
     heroHeadlineLine2: row.heroHeadlineLine2,
     logoSizePx: row.logoSizePx ?? THEME_DEFAULTS.logoSizePx,
+    weatherEnabled: row.weatherEnabled ?? THEME_DEFAULTS.weatherEnabled,
+    weatherLocation: row.weatherLocation,
     updatedAt: row.updatedAt,
   };
 }
@@ -108,9 +112,11 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     "heroHeadlineLine1",
     "heroHeadlineLine2",
     "logoSizePx",
+    "weatherEnabled",
+    "weatherLocation",
   ] as const;
 
-  const updates: Record<string, string | null | number> = {};
+  const updates: Record<string, string | null | number | boolean> = {};
   for (const key of allowed) {
     if (key in req.body) {
       const value = req.body[key];
@@ -128,6 +134,10 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
         } else {
           updates[key] = clampHeroOverlayOpacity(value);
         }
+        continue;
+      }
+      if (key === "weatherEnabled") {
+        updates[key] = Boolean(value);
         continue;
       }
       if (value === "" || value === undefined) {

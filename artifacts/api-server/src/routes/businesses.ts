@@ -7,7 +7,7 @@ import {
   ordersTable,
   usersTable,
 } from "@workspace/db";
-import { eq, and, ilike } from "drizzle-orm";
+import { eq, and, ilike, count } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import {
   CreateBusinessBody,
@@ -190,6 +190,25 @@ router.post("/businesses/register", async (req, res): Promise<void> => {
 
   req.log.info({ userId, businessId: business.id, slug }, "Business registered via self-service");
   res.status(201).json(serializeBusiness(business));
+});
+
+// GET /api/marketplace/stats — public homepage stats
+router.get("/marketplace/stats", async (_req, res): Promise<void> => {
+  const [shopRow] = await db
+    .select({ value: count() })
+    .from(businessesTable)
+    .where(eq(businessesTable.active, true));
+
+  const [itemRow] = await db
+    .select({ value: count() })
+    .from(productsTable)
+    .innerJoin(businessesTable, eq(productsTable.businessId, businessesTable.id))
+    .where(and(eq(businessesTable.active, true), eq(productsTable.available, true)));
+
+  res.json({
+    localShopsCount: shopRow?.value ?? 0,
+    uniqueItemsCount: itemRow?.value ?? 0,
+  });
 });
 
 // GET /api/businesses/stats — platform stats

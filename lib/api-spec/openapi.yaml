@@ -125,6 +125,19 @@ paths:
               schema:
                 $ref: "#/components/schemas/PlatformStats"
 
+  /marketplace/stats:
+    get:
+      operationId: getMarketplaceStats
+      tags: [businesses]
+      summary: Public marketplace stats for homepage
+      responses:
+        "200":
+          description: Marketplace stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceStats"
+
   /businesses/{slug}:
     get:
       operationId: getBusinessBySlug
@@ -1126,6 +1139,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/FoodTruckLocationWithBusiness"
 
+  /food-truck-locations/upcoming:
+    get:
+      operationId: listUpcomingFoodTrucks
+      tags: [food-truck]
+      summary: List upcoming food truck locations for the next 30 days (public)
+      responses:
+        "200":
+          description: Upcoming food truck locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodTruckLocationWithBusiness"
+
   # ─── Platform Theme Settings ──────────────────────────────────────
   /admin/settings/theme:
     get:
@@ -1156,6 +1184,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PlatformTheme"
+
+  # ─── Weather ──────────────────────────────────────────────────────
+  /weather:
+    get:
+      operationId: getWeather
+      tags: [platform]
+      summary: Get homepage weather forecast (when enabled by admin)
+      responses:
+        "200":
+          description: Weather forecast or disabled state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeatherForecast"
 
   # ─── Notification Logs ────────────────────────────────────────────
   /admin/notification-logs:
@@ -1841,6 +1883,17 @@ components:
           items:
             $ref: "#/components/schemas/Order"
 
+    MarketplaceStats:
+      type: object
+      required: [localShopsCount, uniqueItemsCount]
+      properties:
+        localShopsCount:
+          type: integer
+          description: Number of active local businesses
+        uniqueItemsCount:
+          type: integer
+          description: Number of available products across active businesses
+
     PlatformStats:
       type: object
       required: [totalBusinesses, activeBusinesses, totalOrders, totalRevenue]
@@ -2166,6 +2219,16 @@ components:
           type: string
         businessLogoUrl:
           type: ["string", "null"]
+        businessHeroImageUrl:
+          type: ["string", "null"]
+        businessDescription:
+          type: ["string", "null"]
+        pickupEnabled:
+          type: boolean
+        latitude:
+          type: ["string", "null"]
+        longitude:
+          type: ["string", "null"]
         locationName:
           type: string
         address:
@@ -2226,6 +2289,10 @@ components:
           type: integer
           minimum: 16
           maximum: 64
+        weatherEnabled:
+          type: boolean
+        weatherLocation:
+          type: ["string", "null"]
         updatedAt:
           type: string
           format: date-time
@@ -2271,6 +2338,63 @@ components:
           type: integer
           minimum: 16
           maximum: 64
+        weatherEnabled:
+          type: boolean
+        weatherLocation:
+          type: string
+
+    WeatherCurrent:
+      type: object
+      required: [temperatureF, weatherCode, summary]
+      properties:
+        temperatureF:
+          type: number
+        weatherCode:
+          type: integer
+        summary:
+          type: string
+
+    WeatherDaily:
+      type: object
+      required: [date, highF, lowF, weatherCode, summary]
+      properties:
+        date:
+          type: string
+          format: date
+        highF:
+          type: number
+        lowF:
+          type: number
+        weatherCode:
+          type: integer
+        summary:
+          type: string
+
+    WeatherForecast:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+        unavailable:
+          type: boolean
+        reason:
+          type: string
+          enum: [missing_location, geocoding_failed, forecast_failed, malformed_response]
+        message:
+          type: string
+        locationQuery:
+          type: string
+        demo:
+          type: boolean
+        locationLabel:
+          type: string
+        current:
+          $ref: "#/components/schemas/WeatherCurrent"
+        daily:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherDaily"
 
     # ─── Media Library ─────────────────────────────────────────────
     MediaAsset:

@@ -13,6 +13,15 @@ export interface FoodTruckLocationWithBusiness {
   businessSlug?: string;
   /** @nullable */
   businessLogoUrl?: string | null;
+  /** @nullable */
+  businessHeroImageUrl?: string | null;
+  /** @nullable */
+  businessDescription?: string | null;
+  pickupEnabled?: boolean;
+  /** @nullable */
+  latitude?: string | null;
+  /** @nullable */
+  longitude?: string | null;
   locationName: string;
   /** @nullable */
   address?: string | null;

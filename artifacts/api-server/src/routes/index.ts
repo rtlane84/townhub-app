@@ -11,6 +11,7 @@ import subscriptionsRouter from "./subscriptions";
 import applicationsRouter from "./applications";
 import foodTruckRouter from "./food-truck";
 import platformRouter from "./platform";
+import weatherRouter from "./weather";
 import appointmentRequestsRouter from "./appointment-requests";
 import mediaRouter from "./media";
 import { requireAdmin } from "../middlewares/requireRole";
@@ -30,6 +31,7 @@ router.use("/admin", (req, res, next) => {
 // Platform theme (includes public GET) — mount early, before routers that attach
 // requireAdmin to all /admin/* paths (e.g. subscriptions).
 router.use(platformRouter);
+router.use(weatherRouter);
 
 router.use(healthRouter);
 router.use(authRouter);

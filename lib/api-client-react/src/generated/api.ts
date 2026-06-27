@@ -49,6 +49,7 @@ import type {
   ListEventsParams,
   ListMediaAssetsParams,
   ListNotificationLogsParams,
+  MarketplaceStats,
   MediaAsset,
   MediaUploadForm,
   NotificationLog,
@@ -64,7 +65,8 @@ import type {
   SubscriptionPlan,
   SubscriptionPlanInput,
   UserProfile,
-  UserRoleUpdate
+  UserRoleUpdate,
+  WeatherForecast
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -459,6 +461,83 @@ export function useGetPlatformStats<TData = Awaited<ReturnType<typeof getPlatfor
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPlatformStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetMarketplaceStatsUrl = () => {
+
+
+
+
+  return `/api/marketplace/stats`
+}
+
+/**
+ * @summary Public marketplace stats for homepage
+ */
+export const getMarketplaceStats = async ( options?: RequestInit): Promise<MarketplaceStats> => {
+
+  return customFetch<MarketplaceStats>(getGetMarketplaceStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMarketplaceStatsQueryKey = () => {
+    return [
+    `/api/marketplace/stats`
+    ] as const;
+    }
+
+
+export const getGetMarketplaceStatsQueryOptions = <TData = Awaited<ReturnType<typeof getMarketplaceStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketplaceStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMarketplaceStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMarketplaceStats>>> = ({ signal }) => getMarketplaceStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMarketplaceStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMarketplaceStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getMarketplaceStats>>>
+export type GetMarketplaceStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Public marketplace stats for homepage
+ */
+
+export function useGetMarketplaceStats<TData = Awaited<ReturnType<typeof getMarketplaceStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMarketplaceStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMarketplaceStatsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -4096,6 +4175,83 @@ export function useListTodayFoodTrucks<TData = Awaited<ReturnType<typeof listTod
 
 
 
+export const getListUpcomingFoodTrucksUrl = () => {
+
+
+
+
+  return `/api/food-truck-locations/upcoming`
+}
+
+/**
+ * @summary List upcoming food truck locations for the next 30 days (public)
+ */
+export const listUpcomingFoodTrucks = async ( options?: RequestInit): Promise<FoodTruckLocationWithBusiness[]> => {
+
+  return customFetch<FoodTruckLocationWithBusiness[]>(getListUpcomingFoodTrucksUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUpcomingFoodTrucksQueryKey = () => {
+    return [
+    `/api/food-truck-locations/upcoming`
+    ] as const;
+    }
+
+
+export const getListUpcomingFoodTrucksQueryOptions = <TData = Awaited<ReturnType<typeof listUpcomingFoodTrucks>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUpcomingFoodTrucks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUpcomingFoodTrucksQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUpcomingFoodTrucks>>> = ({ signal }) => listUpcomingFoodTrucks({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUpcomingFoodTrucks>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUpcomingFoodTrucksQueryResult = NonNullable<Awaited<ReturnType<typeof listUpcomingFoodTrucks>>>
+export type ListUpcomingFoodTrucksQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List upcoming food truck locations for the next 30 days (public)
+ */
+
+export function useListUpcomingFoodTrucks<TData = Awaited<ReturnType<typeof listUpcomingFoodTrucks>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUpcomingFoodTrucks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUpcomingFoodTrucksQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getGetPlatformThemeUrl = () => {
 
 
@@ -4243,6 +4399,83 @@ export const useUpdatePlatformTheme = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getUpdatePlatformThemeMutationOptions(options));
     }
+
+export const getGetWeatherUrl = () => {
+
+
+
+
+  return `/api/weather`
+}
+
+/**
+ * @summary Get homepage weather forecast (when enabled by admin)
+ */
+export const getWeather = async ( options?: RequestInit): Promise<WeatherForecast> => {
+
+  return customFetch<WeatherForecast>(getGetWeatherUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWeatherQueryKey = () => {
+    return [
+    `/api/weather`
+    ] as const;
+    }
+
+
+export const getGetWeatherQueryOptions = <TData = Awaited<ReturnType<typeof getWeather>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWeather>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWeatherQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWeather>>> = ({ signal }) => getWeather({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWeather>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWeatherQueryResult = NonNullable<Awaited<ReturnType<typeof getWeather>>>
+export type GetWeatherQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get homepage weather forecast (when enabled by admin)
+ */
+
+export function useGetWeather<TData = Awaited<ReturnType<typeof getWeather>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWeather>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWeatherQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getListNotificationLogsUrl = (params?: ListNotificationLogsParams,) => {
   const normalizedParams = new URLSearchParams();

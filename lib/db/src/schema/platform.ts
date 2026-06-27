@@ -1,4 +1,4 @@
-import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 // Single-row platform-wide settings table. Always upsert with id = 1.
 export const platformSettingsTable = pgTable("platform_settings", {
@@ -20,6 +20,8 @@ export const platformSettingsTable = pgTable("platform_settings", {
   heroHeadlineLine1: text("hero_headline_line1"),
   heroHeadlineLine2: text("hero_headline_line2"),
   logoSizePx: integer("logo_size_px").notNull().default(24),
+  weatherEnabled: boolean("weather_enabled").notNull().default(false),
+  weatherLocation: text("weather_location"),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow()

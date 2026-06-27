@@ -68,6 +68,20 @@ export function resolveShopCtaLabel(theme?: Pick<PlatformTheme, "townName"> | nu
   return town ? `Shop ${town}` : "Shop the Neighborhood";
 }
 
+export function resolveWeatherEnabled(
+  theme?: Pick<PlatformTheme, "weatherEnabled"> | null,
+): boolean {
+  return theme?.weatherEnabled === true;
+}
+
+export function resolveWeatherLocation(
+  theme?: Pick<PlatformTheme, "weatherLocation" | "townName"> | null,
+): string {
+  const configured = theme?.weatherLocation?.trim();
+  if (configured) return configured;
+  return theme?.townName?.trim() || "";
+}
+
 export function resolveLogoSizePx(theme?: Pick<PlatformTheme, "logoSizePx"> | null): number {
   const raw = theme?.logoSizePx;
   const n = typeof raw === "number" ? raw : typeof raw === "string" ? parseInt(raw, 10) : NaN;
