@@ -8,6 +8,7 @@
 import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
 import type { PaymentMode } from './paymentMode';
+import type { StorefrontMode } from './storefrontMode';
 
 export interface BusinessUpdate {
   name?: string;
@@ -49,6 +50,7 @@ export interface BusinessUpdate {
   notifyAppointmentRequestsByEmail?: boolean;
   notifyAppointmentRequestsBySms?: boolean;
   eventLocationEnabled?: boolean;
+  storefrontMode?: StorefrontMode | null;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */

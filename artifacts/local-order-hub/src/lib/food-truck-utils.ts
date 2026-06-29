@@ -1,16 +1,12 @@
 import type { FoodTruckLocationWithBusiness } from "@workspace/api-client-react";
+import { formatTimeRange12h } from "@workspace/api-zod";
 import { format, parseISO } from "date-fns";
 
 export function formatFoodTruckTimeWindow(
   startTime?: string | null,
   endTime?: string | null,
 ): string | null {
-  const start = startTime?.trim();
-  const end = endTime?.trim();
-  if (start && end) return `${start} – ${end}`;
-  if (start) return start;
-  if (end) return `Until ${end}`;
-  return null;
+  return formatTimeRange12h(startTime, endTime);
 }
 
 export function formatFoodTruckDateHeading(date: string): string {

@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { parseTimeToHHmm, formatTime12h, TIME_HHMM_PATTERN } from "./time";
+
+export { formatTime12h } from "./time";
 
 export const DAY_LABELS = [
   "Sunday",
@@ -12,16 +15,10 @@ export const DAY_LABELS = [
 
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+const timePattern = TIME_HHMM_PATTERN;
 
 function coerceTime(value: unknown): string | null {
-  if (typeof value !== "string" || !value.trim()) return null;
-  const match = value.trim().match(/^(\d{1,2}):(\d{2})/);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return null;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  return parseTimeToHHmm(value);
 }
 
 function coerceDayEntry(raw: unknown): DayHoursInput | null {
@@ -112,13 +109,6 @@ export function hasStructuredHours(hours: DayHoursInput[] | null | undefined): b
 export function hasOpenHours(hours: DayHoursInput[] | null | undefined): boolean {
   if (!hours?.length) return false;
   return hours.some((day) => !day.isClosed && day.openTime && day.closeTime);
-}
-
-export function formatTime12h(time: string): string {
-  const [h, m] = time.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 || 12;
-  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
 export function formatBusinessHoursLines(hours: DayHoursInput[]): string[] {

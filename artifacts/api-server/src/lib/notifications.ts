@@ -2,6 +2,7 @@ import { db, notificationLogsTable } from "@workspace/db";
 import { sendEmail } from "./email";
 import { sendSms } from "./sms";
 import { logger } from "./logger";
+import { formatTime12h } from "@workspace/api-zod";
 import {
   dashboardAppointmentsUrl,
   dashboardOrderUrl,
@@ -356,7 +357,7 @@ export function buildOwnerNewAppointmentEmail(request: {
     ``,
     `Customer: ${request.customerName}`,
     request.serviceName ? `Service: ${request.serviceName}` : "",
-    `Requested: ${request.requestedDate} at ${request.requestedTime}`,
+    `Requested: ${request.requestedDate} at ${formatTime12h(request.requestedTime)}`,
     request.customerEmail ? `Email: ${request.customerEmail}` : "",
     request.customerPhone ? `Phone: ${request.customerPhone}` : "",
     request.notes ? `\nNotes: ${request.notes}` : "",
@@ -378,7 +379,7 @@ export function buildOwnerNewAppointmentSms(request: {
   const service = request.serviceName ? ` · ${request.serviceName}` : "";
   return [
     `${request.businessName}: New appointment request`,
-    `${request.customerName}${service} · ${request.requestedDate} ${request.requestedTime}`,
+    `${request.customerName}${service} · ${request.requestedDate} ${formatTime12h(request.requestedTime)}`,
     dashboardAppointmentsUrl(),
   ].join("\n");
 }

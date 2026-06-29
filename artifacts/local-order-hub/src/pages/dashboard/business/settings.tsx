@@ -17,11 +17,16 @@ import {
   normalizeWeeklyHours,
   parseStructuredHours,
   resolvePaymentMode,
+  resolveStorefrontMode,
+  acceptsAppointmentRequests,
+  normalizeOptionalTime,
   BUSINESS_TYPE_OPTIONS,
 } from "@workspace/api-zod";
-import type { BusinessDayHours, PaymentMode, BusinessType } from "@workspace/api-client-react";
+import type { BusinessDayHours, PaymentMode, BusinessType, StorefrontMode } from "@workspace/api-client-react";
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { PaymentModeSelector } from "@/components/payment-mode-selector";
+import { StorefrontModeSelector } from "@/components/storefront-mode-selector";
+import { TimePicker, coerceFormTime } from "@/components/time-picker";
 import { ImageField } from "@/components/image-field";
 
 type FormState = {
@@ -29,6 +34,7 @@ type FormState = {
   structuredHours: BusinessDayHours[];
   logoUrl: string; heroImageUrl: string;
   pickupEnabled: boolean; deliveryEnabled: boolean; paymentMode: PaymentMode;
+  storefrontMode: StorefrontMode;
   deliveryFee: string; minimumOrder: string; minimumOrderForDelivery: string;
   deliveryRadiusMiles: string; deliveryNotes: string;
   pickupInstructions: string; deliveryInstructions: string;
@@ -47,6 +53,7 @@ const EMPTY: FormState = {
   structuredHours: defaultWeeklyHours(),
   logoUrl: "", heroImageUrl: "",
   pickupEnabled: true, deliveryEnabled: false, paymentMode: "ONLINE_ONLY",
+  storefrontMode: "ORDERING",
   deliveryFee: "", minimumOrder: "", minimumOrderForDelivery: "",
   deliveryRadiusMiles: "", deliveryNotes: "",
   pickupInstructions: "", deliveryInstructions: "",
@@ -84,7 +91,8 @@ export default function BusinessSettings() {
         pickupInstructions: String(b.pickupInstructions ?? ""),
         deliveryInstructions: String(b.deliveryInstructions ?? ""),
         paymentMode: resolvePaymentMode(business),
-        orderCutoffTime: business.orderCutoffTime ?? "",
+        storefrontMode: resolveStorefrontMode(business),
+        orderCutoffTime: coerceFormTime(business.orderCutoffTime),
         notificationEmail: String(b.notificationEmail ?? b.orderNotificationEmail ?? ""),
         notificationPhone: String(b.notificationPhone ?? ""),
         notifyNewOrdersByEmail: b.notifyNewOrdersByEmail !== false,
@@ -140,7 +148,8 @@ export default function BusinessSettings() {
         deliveryFee: optNum(form.deliveryFee),
         minimumOrder: optNum(form.minimumOrder),
         paymentMode: form.paymentMode,
-        orderCutoffTime: opt(form.orderCutoffTime),
+        storefrontMode: form.storefrontMode,
+        orderCutoffTime: normalizeOptionalTime(form.orderCutoffTime) || undefined,
         minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
         deliveryRadiusMiles: optNum(form.deliveryRadiusMiles),
         deliveryNotes: opt(form.deliveryNotes),
@@ -189,7 +198,7 @@ export default function BusinessSettings() {
     );
   }
 
-  const isSalon = form.type === "SALON";
+  const acceptsAppointments = acceptsAppointmentRequests({ type: form.type, storefrontMode: form.storefrontMode });
 
   function toggle(label: string, desc: string, key: "pickupEnabled" | "deliveryEnabled") {
     return (
@@ -290,7 +299,7 @@ export default function BusinessSettings() {
                   <ColorPickerField
                     id="buttonColor"
                     label="Button Color"
-                    description="Primary buttons on your storefront, including Book Appointment."
+                    description="Primary buttons on your storefront, including Request Appointment."
                     value={form.buttonColor}
                     onChange={(buttonColor) => setForm((f) => ({ ...f, buttonColor }))}
                     placeholder="#b35b1d"
@@ -301,6 +310,22 @@ export default function BusinessSettings() {
                     { key: "accent", label: "Accent", value: form.accentColor },
                     { key: "button", label: "Button", value: form.buttonColor },
                   ]}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Storefront</CardTitle>
+                <CardDescription>
+                  Choose how customers interact with your public business page.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <StorefrontModeSelector
+                  value={form.storefrontMode}
+                  onChange={(storefrontMode) => setForm((f) => ({ ...f, storefrontMode }))}
+                  idPrefix="business-settings-storefront"
                 />
               </CardContent>
             </Card>
@@ -332,7 +357,18 @@ export default function BusinessSettings() {
                   {field("Delivery radius (mi)", "deliveryRadiusMiles", { type: "number", placeholder: "5" })}
                 </div>
                 <div className="mt-4 space-y-4">
-                  {field("Order cutoff time", "orderCutoffTime", { placeholder: "3pm same day" })}
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Order cutoff time</label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Optional — last time customers can place orders for same-day pickup or delivery.
+                    </p>
+                    <TimePicker
+                      value={form.orderCutoffTime}
+                      onChange={(orderCutoffTime) => setForm((f) => ({ ...f, orderCutoffTime }))}
+                      optional
+                      data-testid="input-orderCutoffTime"
+                    />
+                  </div>
                   {field("Pickup instructions", "pickupInstructions", { multiline: true, placeholder: "Come to the side entrance on Oak St." })}
                   {field("Delivery instructions", "deliveryInstructions", { multiline: true, placeholder: "We deliver within 5 miles. Call when en route." })}
                   {field("Delivery notes", "deliveryNotes", { multiline: true, placeholder: "Free delivery on orders over $30!" })}
@@ -355,8 +391,8 @@ export default function BusinessSettings() {
                 <div className="space-y-1 divide-y divide-border">
                   {notifyToggle("Email me for new orders", "Receive an email when a customer places an order", "notifyNewOrdersByEmail")}
                   {notifyToggle("Text me for new orders", "Urgent SMS alert for new orders", "notifyNewOrdersBySms")}
-                  {isSalon && notifyToggle("Email me for appointment requests", "Receive an email when a customer requests an appointment", "notifyAppointmentRequestsByEmail")}
-                  {isSalon && notifyToggle("Text me for appointment requests", "Urgent SMS alert for new appointment requests", "notifyAppointmentRequestsBySms")}
+                  {acceptsAppointments && notifyToggle("Email me for appointment requests", "Receive an email when a customer requests an appointment", "notifyAppointmentRequestsByEmail")}
+                  {acceptsAppointments && notifyToggle("Text me for appointment requests", "Urgent SMS alert for new appointment requests", "notifyAppointmentRequestsBySms")}
                 </div>
               </CardContent>
             </Card>

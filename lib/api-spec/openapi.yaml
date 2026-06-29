@@ -1322,6 +1322,13 @@ components:
         - GENERAL
         - SALON
 
+    StorefrontMode:
+      type: string
+      enum:
+        - ORDERING
+        - APPOINTMENT
+      description: ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests.
+
     OrderStatus:
       type: string
       enum:
@@ -1464,6 +1471,10 @@ components:
           type: boolean
         eventLocationEnabled:
           type: boolean
+        storefrontMode:
+          allOf:
+            - $ref: "#/components/schemas/StorefrontMode"
+          nullable: true
         accentColor:
           type: ["string", "null"]
         buttonColor:
@@ -1625,6 +1636,10 @@ components:
           type: boolean
         eventLocationEnabled:
           type: boolean
+        storefrontMode:
+          allOf:
+            - $ref: "#/components/schemas/StorefrontMode"
+          nullable: true
         accentColor:
           type: ["string", "null"]
         buttonColor:

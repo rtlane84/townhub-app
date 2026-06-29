@@ -26,6 +26,7 @@ import {
   businessIconAccentStyle,
   businessListingCardVars,
 } from "@/lib/theme-colors";
+import { formatFoodTruckTimeWindow } from "@/lib/food-truck-utils";
 
 const LISTING_CARD_CLASS =
   "h-full hover-elevate cursor-pointer border-border/50 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
@@ -310,10 +311,10 @@ export default function Home() {
                             <MapPin className="h-3 w-3" />
                             <span className="truncate">{truck.locationName}</span>
                           </div>
-                          {(truck.startTime || truck.endTime) && (
+                          {formatFoodTruckTimeWindow(truck.startTime, truck.endTime) && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
                               <Clock className="h-3 w-3" />
-                              <span>{truck.startTime}{truck.endTime ? `–${truck.endTime}` : ""}</span>
+                              <span>{formatFoodTruckTimeWindow(truck.startTime, truck.endTime)}</span>
                             </div>
                           )}
                         </div>

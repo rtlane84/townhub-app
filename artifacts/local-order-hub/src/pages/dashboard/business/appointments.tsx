@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CalendarDays, Phone, Mail } from "lucide-react";
+import { formatTime12h } from "@workspace/api-zod";
 
 export default function BusinessAppointments() {
   const { data: business, isLoading: businessLoading } = useGetMyBusiness();
@@ -49,7 +50,7 @@ export default function BusinessAppointments() {
                       <div>
                         <p className="font-medium">{request.customerName}</p>
                         <p className="text-sm text-muted-foreground">
-                          {request.requestedDate} at {request.requestedTime}
+                          {request.requestedDate} at {formatTime12h(request.requestedTime)}
                           {request.serviceName ? ` · ${request.serviceName}` : ""}
                         </p>
                       </div>

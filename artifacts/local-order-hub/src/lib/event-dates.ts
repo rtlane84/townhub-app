@@ -1,16 +1,8 @@
 import { format, parseISO } from "date-fns";
 import type { Event } from "@workspace/api-client-react";
+import { formatTimeRange12h } from "@workspace/api-zod";
 
 type EventDates = Pick<Event, "date" | "endDate" | "startTime" | "endTime">;
-
-function formatTimeRange(startTime?: string | null, endTime?: string | null): string | null {
-  const start = startTime?.trim();
-  const end = endTime?.trim();
-  if (start && end) return `${start}–${end}`;
-  if (start) return start;
-  if (end) return `Until ${end}`;
-  return null;
-}
 
 /** Formats YYYY-MM-DD (and optional end date) for display, e.g. Jun 24–26, 2026 */
 export function formatEventDateRange(event: EventDates): string {
@@ -35,6 +27,6 @@ export function formatEventDateRange(event: EventDates): string {
 /** Date line with optional time suffix, e.g. Jun 24–26, 2026 · 9:00 AM–3:00 PM */
 export function formatEventSchedule(event: EventDates): string {
   const datePart = formatEventDateRange(event);
-  const timePart = formatTimeRange(event.startTime, event.endTime);
+  const timePart = formatTimeRange12h(event.startTime, event.endTime);
   return timePart ? `${datePart} · ${timePart}` : datePart;
 }

@@ -15,7 +15,7 @@ import { Link } from "wouter";
 import { useState } from "react";
 import { BusinessHoursDisplay } from "@/components/business-hours-display";
 import { resolveBusinessHours } from "@/lib/business-hours";
-import { resolvePaymentMode, paymentModeStorefrontNote, isSalonBusiness, salonStorefrontCopy } from "@workspace/api-zod";
+import { resolvePaymentMode, paymentModeStorefrontNote, resolveStorefrontMode, storefrontCopy, isAppointmentStorefrontMode, formatTime12h, formatTimeRange12h } from "@workspace/api-zod";
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog";
 import { BusinessThemeScope } from "@/components/business-theme-scope";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
@@ -54,6 +54,7 @@ export default function Storefront() {
   const { theme } = usePlatformBranding();
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
+  const [appointmentProductId, setAppointmentProductId] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -117,18 +118,29 @@ export default function Storefront() {
     : products;
 
   const paymentNote = paymentModeStorefrontNote(resolvePaymentMode(b));
-  const isSalon = isSalonBusiness(b.type);
-  const copy = salonStorefrontCopy(isSalon);
-  const accentHex = normalizeHex(b.accentColor) ?? mergePlatformTheme(theme).accentColor;
+  const storefrontMode = resolveStorefrontMode(b);
+  const isAppointmentMode = isAppointmentStorefrontMode(b);
+  const copy = storefrontCopy(storefrontMode);
 
-  const handleBookAppointment = () => {
+  const openAppointmentDialog = (productId?: number) => {
+    setAppointmentProductId(productId ?? null);
     setAppointmentOpen(true);
   };
 
+  const handleBookAppointment = () => {
+    openAppointmentDialog();
+  };
+
   const handleAddToCart = (product: { id: number; name: string; price: number; imageUrl?: string | null; available?: boolean | null }) => {
+    if (isAppointmentMode) {
+      openAppointmentDialog(product.id);
+      return;
+    }
     addToCart(product as never, b.id, 1);
     toast({ title: copy.addToastTitle, description: copy.addToastDescription(product.name) });
   };
+
+  const accentHex = normalizeHex(b.accentColor) ?? mergePlatformTheme(theme).accentColor;
 
   return (
     <BusinessThemeScope business={b} className="min-h-screen bg-muted/10 pb-20">
@@ -170,15 +182,17 @@ export default function Storefront() {
                 />
                 <h1 className="text-2xl font-serif font-bold text-foreground mb-1">{b.name}</h1>
                 <BusinessTags business={b} accentColor={b.accentColor} variant="storefront" />
-                <p className="text-xs text-muted-foreground mb-2">{paymentNote}</p>
-                {isSalon && (
+                {!isAppointmentMode && (
+                  <p className="text-xs text-muted-foreground mb-2">{paymentNote}</p>
+                )}
+                {isAppointmentMode && (
                   <Button
                     className="w-full rounded-full mt-2"
                     onClick={handleBookAppointment}
                     data-testid="button-book-appointment"
                   >
                     <CalendarDays className="h-4 w-4 mr-2" />
-                    Book Appointment
+                    {copy.primaryCtaLabel}
                   </Button>
                 )}
               </div>
@@ -216,16 +230,16 @@ export default function Storefront() {
                         </div>
                       </div>
                     )}
-                    {b.orderCutoffTime && (
+                    {b.orderCutoffTime && !isAppointmentMode && (
                       <div className="flex items-start gap-3 text-sm">
                         <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                        <span className="text-foreground/80">{copy.cutoffLabel(b.orderCutoffTime)}</span>
+                        <span className="text-foreground/80">{copy.cutoffLabel(formatTime12h(b.orderCutoffTime))}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Fulfillment info */}
-                  {(pickupInstructions || deliveryInstructions || deliveryNotes || minimumOrderForDelivery || deliveryRadiusMiles) && (
+                  {!isAppointmentMode && (pickupInstructions || deliveryInstructions || deliveryNotes || minimumOrderForDelivery || deliveryRadiusMiles) && (
                     <div className="p-5 space-y-3">
                       {pickupInstructions && (
                         <div className="flex items-start gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg p-3">
@@ -272,7 +286,9 @@ export default function Storefront() {
                               ) : (
                                 loc.locationDate
                               )}
-                              {loc.startTime ? ` · ${loc.startTime}${loc.endTime ? `–${loc.endTime}` : ""}` : ""}
+                              {formatTimeRange12h(loc.startTime, loc.endTime)
+                                ? ` · ${formatTimeRange12h(loc.startTime, loc.endTime)}`
+                                : ""}
                             </div>
                             {loc.address && <div className="text-muted-foreground">{loc.address}</div>}
                             {loc.locationNotes && <div className="text-muted-foreground italic mt-1">{loc.locationNotes}</div>}
@@ -288,16 +304,16 @@ export default function Storefront() {
 
           {/* Catalog grid */}
           <div className="md:mt-[3.25rem] md:w-2/3 lg:w-3/4">
-            {isSalon && (
-              <div className="mb-4">
-                <h2 className="text-2xl font-serif font-bold text-foreground">Our Services</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Browse available services and select what you need. Full online booking is coming soon.
-                </p>
+            {isAppointmentMode && (
+              <div className="mb-4 md:pt-20">
+                <h2 className="text-2xl font-serif font-bold text-foreground">{copy.catalogHeading}</h2>
+                {copy.catalogSubtitle && (
+                  <p className="mt-1 text-sm text-muted-foreground max-w-2xl">{copy.catalogSubtitle}</p>
+                )}
               </div>
             )}
             {categories.length > 0 && (
-              <div className="mb-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar md:pt-20">
+              <div className={`mb-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar ${!isAppointmentMode ? "md:pt-20" : ""}`}>
                 <Button
                   variant="ghost"
                   onClick={() => setActiveCategory(null)}
@@ -318,6 +334,9 @@ export default function Storefront() {
                   </Button>
                 ))}
               </div>
+            )}
+            {!isAppointmentMode && categories.length === 0 && (
+              <div className="md:pt-20" />
             )}
 
             {displayedProducts.length === 0 ? (
@@ -342,7 +361,9 @@ export default function Storefront() {
                     <CardContent className="p-4 flex flex-col flex-1">
                       <div className="flex justify-between items-start mb-2 gap-2">
                         <h4 className="font-medium leading-tight text-foreground">{product.name}</h4>
-                        <span className="font-semibold text-primary shrink-0">${product.price.toFixed(2)}</span>
+                        {!isAppointmentMode && (
+                          <span className="font-semibold text-primary shrink-0">${product.price.toFixed(2)}</span>
+                        )}
                       </div>
 
                       {product.description && (
@@ -359,7 +380,7 @@ export default function Storefront() {
                         )}
                         <Button
                           size="sm"
-                          variant="secondary"
+                          variant={isAppointmentMode ? "default" : "secondary"}
                           className="rounded-full h-8"
                           onClick={() => handleAddToCart(product)}
                           disabled={!product.available || !b.active}
@@ -377,13 +398,17 @@ export default function Storefront() {
         </div>
       </div>
 
-      {isSalon && (
+      {isAppointmentMode && (
         <AppointmentBookingDialog
           open={appointmentOpen}
-          onOpenChange={setAppointmentOpen}
+          onOpenChange={(open) => {
+            setAppointmentOpen(open);
+            if (!open) setAppointmentProductId(null);
+          }}
           businessId={b.id}
           businessName={b.name}
           services={products.map((p) => ({ id: p.id, name: p.name }))}
+          initialProductId={appointmentProductId}
         />
       )}
     </BusinessThemeScope>

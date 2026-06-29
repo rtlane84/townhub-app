@@ -22,6 +22,7 @@ import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/b
 import { nullsToUndefinedTopLevel } from "../lib/request-body";
 import { parseStructuredHours } from "@workspace/api-zod";
 import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
+import { defaultStorefrontModeForBusinessType } from "@workspace/api-zod";
 
 function slugify(name: string): string {
   return name
@@ -68,6 +69,7 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     notifyAppointmentRequestsByEmail: b.notifyAppointmentRequestsByEmail,
     notifyAppointmentRequestsBySms: b.notifyAppointmentRequestsBySms,
     eventLocationEnabled: b.eventLocationEnabled,
+    storefrontMode: b.storefrontMode,
     accentColor: b.accentColor,
     buttonColor: b.buttonColor,
     bannerText: b.bannerText,
@@ -175,6 +177,7 @@ router.post("/businesses/register", async (req, res): Promise<void> => {
       pickupEnabled: true,
       payAtPickupEnabled: true,
       paymentMode: "BOTH",
+      storefrontMode: defaultStorefrontModeForBusinessType(type),
     })
     .returning();
 
@@ -439,6 +442,8 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.notifyAppointmentRequestsBySms = (d as Record<string, unknown>).notifyAppointmentRequestsBySms;
   if ((d as Record<string, unknown>).eventLocationEnabled !== undefined)
     updateData.eventLocationEnabled = (d as Record<string, unknown>).eventLocationEnabled;
+  if ((d as Record<string, unknown>).storefrontMode !== undefined)
+    updateData.storefrontMode = (d as Record<string, unknown>).storefrontMode;
   if ((d as Record<string, unknown>).accentColor !== undefined)
     updateData.accentColor = (d as Record<string, unknown>).accentColor;
   if ((d as Record<string, unknown>).buttonColor !== undefined)

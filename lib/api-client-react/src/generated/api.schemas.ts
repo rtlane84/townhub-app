@@ -24,6 +24,17 @@ export const BusinessType = {
   SALON: 'SALON',
 } as const;
 
+/**
+ * ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests.
+ */
+export type StorefrontMode = typeof StorefrontMode[keyof typeof StorefrontMode];
+
+
+export const StorefrontMode = {
+  ORDERING: 'ORDERING',
+  APPOINTMENT: 'APPOINTMENT',
+} as const;
+
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
 
@@ -146,6 +157,7 @@ export interface Business {
   notifyAppointmentRequestsByEmail?: boolean;
   notifyAppointmentRequestsBySms?: boolean;
   eventLocationEnabled?: boolean;
+  storefrontMode?: StorefrontMode | null;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */
@@ -261,6 +273,7 @@ export interface BusinessUpdate {
   notifyAppointmentRequestsByEmail?: boolean;
   notifyAppointmentRequestsBySms?: boolean;
   eventLocationEnabled?: boolean;
+  storefrontMode?: StorefrontMode | null;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */

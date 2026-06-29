@@ -21,6 +21,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
 import { formatEventSchedule } from "@/lib/event-dates";
 import { ImageField } from "@/components/image-field";
+import { TimeRangePicker, coerceFormTime } from "@/components/time-picker";
+import { isEndTimeAfterStart, normalizeOptionalTime } from "@workspace/api-zod";
 
 const EVENT_TYPES = [
   { value: "COMMUNITY", label: "Community" },
@@ -93,8 +95,8 @@ export default function AdminEvents() {
       title: e.title,
       date: e.date,
       endDate: e.endDate ?? "",
-      startTime: e.startTime ?? "",
-      endTime: e.endTime ?? "",
+      startTime: coerceFormTime(e.startTime),
+      endTime: coerceFormTime(e.endTime),
       location: e.location ?? "",
       description: e.description ?? "",
       imageUrl: e.imageUrl ?? "",
@@ -114,11 +116,21 @@ export default function AdminEvents() {
       return;
     }
 
+    const startTime = normalizeOptionalTime(form.startTime);
+    const endTime = normalizeOptionalTime(form.endTime);
+    if (startTime && endTime && !isEndTimeAfterStart(startTime, endTime)) {
+      toast({
+        title: "End time must be after start time",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const data = {
       ...form,
       endDate: form.endDate || undefined,
-      startTime: form.startTime || undefined,
-      endTime: form.endTime || undefined,
+      startTime: startTime || undefined,
+      endTime: endTime || undefined,
       location: form.location || undefined,
       description: form.description || undefined,
       imageUrl: form.imageUrl || undefined,
@@ -219,16 +231,14 @@ export default function AdminEvents() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Start Time</label>
-                <Input value={form.startTime} onChange={f("startTime")} placeholder="9:00 AM" />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">End Time</label>
-                <Input value={form.endTime} onChange={f("endTime")} placeholder="3:00 PM" />
-              </div>
-            </div>
+            <TimeRangePicker
+              startValue={form.startTime ?? ""}
+              endValue={form.endTime ?? ""}
+              onStartChange={(startTime) => setForm((p) => ({ ...p, startTime }))}
+              onEndChange={(endTime) => setForm((p) => ({ ...p, endTime }))}
+              startTestId="input-event-start-time"
+              endTestId="input-event-end-time"
+            />
             <div>
               <label className="text-sm font-medium mb-1.5 block">Location</label>
               <Input value={form.location} onChange={f("location")} placeholder="Town Square" />

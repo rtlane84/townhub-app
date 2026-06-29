@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { useCreateAppointmentRequest } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import { TimePicker } from "@/components/time-picker";
+import { normalizeRequiredTime } from "@workspace/api-zod";
 
 type ProductOption = { id: number; name: string };
 
@@ -24,6 +26,7 @@ type Props = {
   businessId: number;
   businessName: string;
   services?: ProductOption[];
+  initialProductId?: number | null;
 };
 
 export function AppointmentBookingDialog({
@@ -32,6 +35,7 @@ export function AppointmentBookingDialog({
   businessId,
   businessName,
   services = [],
+  initialProductId = null,
 }: Props) {
   const { toast } = useToast();
   const createRequest = useCreateAppointmentRequest();
@@ -48,15 +52,22 @@ export function AppointmentBookingDialog({
     setCustomerName("");
     setCustomerEmail("");
     setCustomerPhone("");
-    setProductId("");
+    setProductId(initialProductId ? String(initialProductId) : "");
     setServiceName("");
     setRequestedDate("");
     setRequestedTime("");
     setNotes("");
   }
 
+  useEffect(() => {
+    if (open) {
+      setProductId(initialProductId ? String(initialProductId) : "");
+    }
+  }, [open, initialProductId]);
+
   async function handleSubmit() {
-    if (!customerName.trim() || !requestedDate || !requestedTime.trim()) {
+    const time = normalizeRequiredTime(requestedTime);
+    if (!customerName.trim() || !requestedDate || !time) {
       toast({
         title: "Missing details",
         description: "Please provide your name, preferred date, and time.",
@@ -75,13 +86,13 @@ export function AppointmentBookingDialog({
           productId: productId ? parseInt(productId, 10) : undefined,
           serviceName: serviceName.trim() || undefined,
           requestedDate,
-          requestedTime: requestedTime.trim(),
+          requestedTime: time,
           notes: notes.trim() || undefined,
         },
       });
       toast({
         title: "Request submitted",
-        description: `${businessName} will confirm your appointment soon.`,
+        description: `${businessName} will follow up to confirm your appointment.`,
       });
       resetForm();
       onOpenChange(false);
@@ -98,9 +109,9 @@ export function AppointmentBookingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif">Book an Appointment</DialogTitle>
+          <DialogTitle className="font-serif">Request an Appointment</DialogTitle>
           <DialogDescription>
-            Request an appointment at {businessName}. The owner will follow up to confirm.
+            Send a request to {businessName}. This is not instant booking — the business will follow up to confirm availability.
           </DialogDescription>
         </DialogHeader>
 
@@ -148,7 +159,13 @@ export function AppointmentBookingDialog({
             </div>
             <div>
               <Label htmlFor="appt-time">Preferred time</Label>
-              <Input id="appt-time" value={requestedTime} onChange={(e) => setRequestedTime(e.target.value)} placeholder="2:30 PM" />
+              <TimePicker
+                id="appt-time"
+                value={requestedTime}
+                onChange={setRequestedTime}
+                required
+                data-testid="input-appt-time"
+              />
             </div>
           </div>
           <div>

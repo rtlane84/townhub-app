@@ -6,7 +6,7 @@ import {
   ListBusinessAppointmentRequestsParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireRole";
-import { isSalonBusiness } from "@workspace/api-zod";
+import { acceptsAppointmentRequests } from "@workspace/api-zod";
 import { notifyOwnerNewAppointmentRequest } from "../lib/notifications";
 
 const router: IRouter = Router();
@@ -52,7 +52,7 @@ router.post("/appointment-requests", async (req, res): Promise<void> => {
     return;
   }
 
-  if (!isSalonBusiness(business.type)) {
+  if (!acceptsAppointmentRequests(business)) {
     res.status(400).json({ error: "This business does not accept appointment requests." });
     return;
   }

@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Loader2, Info } from "lucide-react";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { useToast } from "@/hooks/use-toast";
+import { formatTime12h } from "@workspace/api-zod";
 import { useUser } from "@clerk/react";
 import {
   resolvePaymentMode,
@@ -155,7 +156,7 @@ export default function Cart() {
                       <div>
                         <Label htmlFor="pickup" className="cursor-pointer font-medium">Store Pickup</Label>
                         {business?.orderCutoffTime && (
-                          <p className="text-xs text-muted-foreground mt-0.5">Order by {business.orderCutoffTime}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Order by {formatTime12h(business.orderCutoffTime)}</p>
                         )}
                       </div>
                     </div>

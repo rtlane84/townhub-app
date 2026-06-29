@@ -37,6 +37,11 @@ export const paymentModeEnum = pgEnum("payment_mode", [
   "BOTH",
 ]);
 
+export const storefrontModeEnum = pgEnum("storefront_mode", [
+  "ORDERING",
+  "APPOINTMENT",
+]);
+
 export const businessesTable = pgTable("businesses", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -77,6 +82,9 @@ export const businessesTable = pgTable("businesses", {
 
   // Food truck mode
   eventLocationEnabled: boolean("event_location_enabled").notNull().default(false),
+
+  // Storefront experience: online ordering vs appointment requests
+  storefrontMode: storefrontModeEnum("storefront_mode"),
 
   // Per-business storefront theming
   accentColor: text("accent_color"),

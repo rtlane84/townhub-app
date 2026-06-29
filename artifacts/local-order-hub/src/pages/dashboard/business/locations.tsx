@@ -29,6 +29,8 @@ import {
   validateFoodTruckCoordinates,
   type FoodTruckLocationFormValues,
 } from "@/lib/food-truck-location-form";
+import { TimeRangePicker } from "@/components/time-picker";
+import { formatTimeRange12h } from "@workspace/api-zod";
 
 export default function BusinessLocations() {
   const { data: business, isLoading: bizLoading } = useGetMyBusiness();
@@ -197,7 +199,10 @@ export default function BusinessLocations() {
                             {loc.locationDate === today && <Badge variant="default" className="text-xs">Today</Badge>}
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {loc.locationDate} {loc.startTime ? `· ${loc.startTime}${loc.endTime ? `–${loc.endTime}` : ""}` : ""}
+                            {loc.locationDate}
+                            {formatTimeRange12h(loc.startTime, loc.endTime)
+                              ? ` · ${formatTimeRange12h(loc.startTime, loc.endTime)}`
+                              : ""}
                             {loc.address ? ` · ${loc.address}` : ""}
                           </p>
                         </div>
@@ -219,7 +224,10 @@ export default function BusinessLocations() {
                         <div>
                           <span className="font-medium text-sm">{loc.locationName}</span>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {loc.locationDate}{loc.address ? ` · ${loc.address}` : ""}
+                            {loc.locationDate}
+                            {formatTimeRange12h(loc.startTime, loc.endTime)
+                              ? ` · ${formatTimeRange12h(loc.startTime, loc.endTime)}`
+                              : ""}
                           </p>
                         </div>
                         <div className="flex gap-1">
@@ -250,16 +258,14 @@ export default function BusinessLocations() {
               <label className="text-sm font-medium mb-1.5 block">Date *</label>
               <Input type="date" value={form.locationDate} onChange={f("locationDate")} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Start Time</label>
-                <Input value={form.startTime} onChange={f("startTime")} placeholder="9:00 AM" />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">End Time</label>
-                <Input value={form.endTime} onChange={f("endTime")} placeholder="2:00 PM" />
-              </div>
-            </div>
+            <TimeRangePicker
+              startValue={form.startTime}
+              endValue={form.endTime}
+              onStartChange={(startTime) => setForm((prev) => ({ ...prev, startTime }))}
+              onEndChange={(endTime) => setForm((prev) => ({ ...prev, endTime }))}
+              startTestId="input-location-start-time"
+              endTestId="input-location-end-time"
+            />
             <div>
               <label className="text-sm font-medium mb-1.5 block">Address</label>
               <Input value={form.address} onChange={f("address")} placeholder="123 Main St" />

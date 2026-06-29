@@ -5,7 +5,7 @@ import { useState, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useGetMe, useGetMyBusiness } from "@workspace/api-client-react";
-import { isSalonBusiness } from "@workspace/api-zod";
+import { acceptsAppointmentRequests } from "@workspace/api-zod";
 import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
 import { OrderAlertControls } from "@/components/order-alert-controls";
 
@@ -59,7 +59,7 @@ export function BusinessDashboardLayout({ children }: { children: React.ReactNod
       { href: "/dashboard/business", label: "Overview", icon: LayoutDashboard },
       { href: "/dashboard/business/orders", label: "Orders", icon: ShoppingBag },
     ];
-    if (isSalonBusiness(business?.type)) {
+    if (acceptsAppointmentRequests(business ?? {})) {
       items.push({ href: "/dashboard/business/appointments", label: "Appointments", icon: CalendarDays });
     }
     items.push(
@@ -70,7 +70,7 @@ export function BusinessDashboardLayout({ children }: { children: React.ReactNod
       { href: "/dashboard/business/settings", label: "Settings", icon: Settings },
     );
     return items;
-  }, [business?.type]);
+  }, [business?.type, business?.storefrontMode]);
 
   const activeLabel =
     navItems.find(

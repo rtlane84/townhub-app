@@ -1,12 +1,13 @@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import {
   DAY_LABELS,
+  isEndTimeAfterStart,
   normalizeWeeklyHours,
 } from "@workspace/api-zod";
 import type { BusinessDayHours } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+import { TimePicker } from "@/components/time-picker";
 
 type WeeklyHoursPickerProps = {
   value: BusinessDayHours[];
@@ -56,20 +57,24 @@ export function WeeklyHoursPicker({ value, onChange, className }: WeeklyHoursPic
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Opens</Label>
-                <Input
-                  type="time"
+                <TimePicker
                   value={day.openTime ?? "09:00"}
-                  onChange={(e) => updateDay(day.dayOfWeek, { openTime: e.target.value })}
-                  className="h-9 text-sm"
+                  onChange={(openTime) => updateDay(day.dayOfWeek, { openTime })}
+                  data-testid={`hours-open-time-${day.dayOfWeek}`}
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Closes</Label>
-                <Input
-                  type="time"
+                <TimePicker
                   value={day.closeTime ?? "17:00"}
-                  onChange={(e) => updateDay(day.dayOfWeek, { closeTime: e.target.value })}
-                  className="h-9 text-sm"
+                  onChange={(closeTime) => updateDay(day.dayOfWeek, { closeTime })}
+                  min={day.openTime ?? undefined}
+                  error={
+                    day.openTime && day.closeTime && !isEndTimeAfterStart(day.openTime, day.closeTime)
+                      ? "Must close after opening"
+                      : undefined
+                  }
+                  data-testid={`hours-close-time-${day.dayOfWeek}`}
                 />
               </div>
             </div>

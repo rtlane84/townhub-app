@@ -58,6 +58,7 @@ export * from './platformThemeInput';
 export * from './product';
 export * from './productInput';
 export * from './productUpdate';
+export * from './storefrontMode';
 export * from './subscriptionPlan';
 export * from './subscriptionPlanInput';
 export * from './userProfile';

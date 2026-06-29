@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useRoute } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
 import {
   ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
@@ -7,7 +7,8 @@ import {
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
 import { Badge } from "./ui/badge";
-import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, useGetBusinessBySlug, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
+import { isAppointmentStorefrontMode } from "@workspace/api-zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -39,9 +40,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useUser();
   const { itemCount } = useCart();
   const [location] = useLocation();
+  const [, storefrontParams] = useRoute("/businesses/:slug");
+  const storefrontSlug = storefrontParams?.slug;
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
+  const { data: storefrontData } = useGetBusinessBySlug(storefrontSlug ?? "", {
+    query: {
+      enabled: !!storefrontSlug,
+      queryKey: getGetBusinessBySlugQueryKey(storefrontSlug ?? ""),
+    },
+  });
+  const hideCart = !!storefrontSlug && isAppointmentStorefrontMode(storefrontData?.business ?? {});
 
   const isAdmin = me?.role === "ADMIN";
   const isBusinessOwner = me?.role === "BUSINESS_OWNER";
@@ -111,17 +121,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Right: cart + auth + mobile menu */}
           <div className="flex items-center gap-2">
-            <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative text-foreground">
-                <ShoppingBag className="h-5 w-5" />
-                {itemCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full">
-                    {itemCount}
-                  </Badge>
-                )}
-                <span className="sr-only">Cart</span>
-              </Button>
-            </Link>
+            {!hideCart && (
+              <Link href="/cart">
+                <Button variant="ghost" size="icon" className="relative text-foreground">
+                  <ShoppingBag className="h-5 w-5" />
+                  {itemCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full">
+                      {itemCount}
+                    </Badge>
+                  )}
+                  <span className="sr-only">Cart</span>
+                </Button>
+              </Link>
+            )}
 
             {isLoaded && !isSignedIn && (
               <SignInButton mode="modal">

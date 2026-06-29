@@ -1,4 +1,5 @@
 import { BusinessType as BusinessTypeValues, type BusinessType } from "./generated/types/businessType";
+import { storefrontCopy } from "./storefront-mode";
 
 export const BUSINESS_TYPE_OPTIONS: Array<{ value: BusinessType; label: string }> = [
   { value: BusinessTypeValues.FOOD_VENDOR, label: "Restaurant / Food Service" },
@@ -31,19 +32,7 @@ export function isSalonBusiness(type: string | undefined | null): boolean {
   return type === BusinessTypeValues.SALON;
 }
 
+/** @deprecated Use storefrontCopy(resolveStorefrontMode(business)) instead. */
 export function salonStorefrontCopy(isSalon: boolean) {
-  return {
-    catalogHeading: isSalon ? "Services" : "Products",
-    allItemsLabel: isSalon ? "All Services" : "All Items",
-    emptyTitle: isSalon ? "No services listed" : "No products found",
-    emptyDescription: isSalon
-      ? "Check back soon for available services."
-      : "This category is empty.",
-    addButtonLabel: isSalon ? "Select" : "Add",
-    addToastTitle: isSalon ? "Service selected" : "Added to cart",
-    addToastDescription: (name: string) =>
-      isSalon ? `${name} added to your appointment request.` : `${name} added to your cart.`,
-    cutoffLabel: (time: string) => (isSalon ? `Book by ${time}` : `Order by ${time}`),
-    prepTimeLabel: (minutes: number) => (isSalon ? `${minutes} min service` : `${minutes}m`),
-  };
+  return storefrontCopy(isSalon ? "APPOINTMENT" : "ORDERING");
 }

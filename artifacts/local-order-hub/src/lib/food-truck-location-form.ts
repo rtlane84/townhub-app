@@ -1,4 +1,5 @@
 import type { FoodTruckLocation, FoodTruckLocationInput } from "@workspace/api-client-react";
+import { isEndTimeAfterStart, normalizeOptionalTime, parseTimeToHHmm } from "@workspace/api-zod";
 
 export type FoodTruckLocationFormValues = {
   locationName: string;
@@ -31,8 +32,8 @@ export function foodTruckLocationToFormValues(loc: FoodTruckLocation): FoodTruck
     latitude: loc.latitude ?? "",
     longitude: loc.longitude ?? "",
     locationDate: loc.locationDate,
-    startTime: loc.startTime ?? "",
-    endTime: loc.endTime ?? "",
+    startTime: normalizeOptionalTime(loc.startTime),
+    endTime: normalizeOptionalTime(loc.endTime),
     locationNotes: loc.locationNotes ?? "",
     isActive: loc.isActive,
   };
@@ -76,11 +77,19 @@ function emptyToUndefined(value: string): string | undefined {
   return trimmed === "" ? undefined : trimmed;
 }
 
+function normalizeStoredTime(value: string): string | null | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return parseTimeToHHmm(trimmed) ?? trimmed;
+}
+
 export function buildFoodTruckLocationPayload(
   form: FoodTruckLocationFormValues,
   mode: "create" | "update",
 ): FoodTruckLocationInput {
   const normalize = mode === "update" ? emptyToNull : emptyToUndefined;
+  const startTime = normalizeStoredTime(form.startTime);
+  const endTime = normalizeStoredTime(form.endTime);
 
   return {
     locationName: form.locationName.trim(),
@@ -88,11 +97,20 @@ export function buildFoodTruckLocationPayload(
     address: normalize(form.address) ?? null,
     latitude: normalize(form.latitude) ?? null,
     longitude: normalize(form.longitude) ?? null,
-    startTime: normalize(form.startTime) ?? null,
-    endTime: normalize(form.endTime) ?? null,
+    startTime: mode === "update" ? (startTime ?? null) : (startTime ?? undefined),
+    endTime: mode === "update" ? (endTime ?? null) : (endTime ?? undefined),
     locationNotes: normalize(form.locationNotes) ?? null,
     isActive: form.isActive,
   };
+}
+
+export function validateFoodTruckLocationTimes(form: FoodTruckLocationFormValues): string | null {
+  const startTime = normalizeOptionalTime(form.startTime);
+  const endTime = normalizeOptionalTime(form.endTime);
+  if (startTime && endTime && !isEndTimeAfterStart(startTime, endTime)) {
+    return "End time must be after start time.";
+  }
+  return null;
 }
 
 export function canSaveFoodTruckLocationForm(
@@ -101,6 +119,7 @@ export function canSaveFoodTruckLocationForm(
 ): boolean {
   if (!form.locationName.trim() || !form.locationDate) return false;
   if (validateFoodTruckCoordinates(form.latitude, form.longitude)) return false;
+  if (validateFoodTruckLocationTimes(form)) return false;
   if (options.editing && !isFoodTruckLocationFormDirty(options.initial, form)) return false;
   return true;
 }
