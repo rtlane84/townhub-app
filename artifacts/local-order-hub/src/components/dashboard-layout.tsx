@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useGetMe, useGetMyBusiness } from "@workspace/api-client-react";
 import { acceptsAppointmentRequests } from "@workspace/api-zod";
 import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
+import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
 import { OrderAlertControls } from "@/components/order-alert-controls";
 
 interface NavItem {
@@ -46,6 +47,14 @@ function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location:
 }
 
 export function BusinessDashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <OrderDashboardRefreshProvider>
+      <BusinessDashboardLayoutInner>{children}</BusinessDashboardLayoutInner>
+    </OrderDashboardRefreshProvider>
+  );
+}
+
+function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
   const { data: me } = useGetMe();

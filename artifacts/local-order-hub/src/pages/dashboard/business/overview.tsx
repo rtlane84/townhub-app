@@ -1,10 +1,13 @@
+import { keepPreviousData } from "@tanstack/react-query";
 import { useGetMe, useGetBusinessOrderSummary, getGetBusinessOrderSummaryQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { ShoppingBag, Clock, DollarSign, TrendingUp } from "lucide-react";
+import { ShoppingBag, Clock, DollarSign, TrendingUp, Loader2 } from "lucide-react";
+import { OrderRow, orderStatusHighlightClass } from "@/components/order-row";
+import { useOrderHighlight } from "@/hooks/order-dashboard-refresh-context";
+import { cn } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-700",
@@ -16,30 +19,54 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELED: "bg-red-100 text-red-700",
 };
 
+function OverviewOrderStatus({ orderId, status }: { orderId: number; status: string }) {
+  const highlight = useOrderHighlight(orderId);
+  return (
+    <span
+      className={cn(
+        "text-xs px-2 py-1 rounded-full font-medium",
+        STATUS_COLORS[status] ?? "bg-muted",
+        orderStatusHighlightClass(highlight),
+      )}
+    >
+      {status.replace(/_/g, " ")}
+    </span>
+  );
+}
+
 export default function BusinessOverview() {
-  const { data: me, isLoading: meLoading } = useGetMe();
+  const { data: me, isPending: mePending } = useGetMe();
   const businessId = me?.businessId ?? 0;
 
-  const { data: summary, isLoading: summaryLoading } = useGetBusinessOrderSummary(businessId, {
+  const { data: summary, isPending: summaryPending, isFetching } = useGetBusinessOrderSummary(businessId, {
     query: {
       enabled: !!businessId,
       queryKey: getGetBusinessOrderSummaryQueryKey(businessId),
+      placeholderData: keepPreviousData,
     },
   });
 
-  const isLoading = meLoading || summaryLoading;
+  const showInitialSkeleton = (mePending && !me) || (summaryPending && !summary);
 
   return (
     <BusinessDashboardLayout>
       <div className="max-w-5xl mx-auto space-y-8">
-        <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground">Overview</h1>
-          <p className="text-muted-foreground mt-1">Your business at a glance</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-foreground">Overview</h1>
+            <p className="text-muted-foreground mt-1">Your business at a glance</p>
+          </div>
+          {isFetching && summary && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 pt-1">
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+              Updating
+            </span>
+          )}
         </div>
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {isLoading ? (
+          {showInitialSkeleton ? (
             Array.from({ length: 4 }).map((_, i) => (
               <Card key={i}><CardContent className="p-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
             ))
@@ -102,7 +129,7 @@ export default function BusinessOverview() {
             </Link>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {showInitialSkeleton ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
@@ -115,18 +142,19 @@ export default function BusinessOverview() {
               <div className="divide-y divide-border">
                 {summary.recentOrders.map((order) => (
                   <Link key={order.id} href={`/dashboard/business/orders/${order.id}`}>
-                    <div className="flex items-center justify-between py-3 hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors cursor-pointer" data-testid={`row-order-${order.id}`}>
+                    <OrderRow
+                      orderId={order.id}
+                      className="flex items-center justify-between py-3 hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
+                    >
                       <div>
                         <p className="font-medium text-sm">{order.orderNumber}</p>
                         <p className="text-xs text-muted-foreground">{order.customerName} · {order.fulfillmentType}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-medium text-sm">${order.total.toFixed(2)}</span>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${STATUS_COLORS[order.status] ?? "bg-muted"}`}>
-                          {order.status.replace(/_/g, " ")}
-                        </span>
+                        <OverviewOrderStatus orderId={order.id} status={order.status} />
                       </div>
-                    </div>
+                    </OrderRow>
                   </Link>
                 ))}
               </div>

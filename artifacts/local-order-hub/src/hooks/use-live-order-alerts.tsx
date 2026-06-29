@@ -3,15 +3,23 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   listBusinessOrders,
+  getBusinessOrderSummary,
   getListBusinessOrdersQueryKey,
   getGetBusinessOrderSummaryQueryKey,
   type Order,
+  type BusinessOrderSummary,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { getOrderSoundsEnabled } from "@/lib/order-alert-preferences";
 import { playOrderAlertChime } from "@/lib/order-alert-sound";
 import { orderAlertDescription } from "@/lib/order-alert-format";
+import {
+  detectOrderListChanges,
+  orderListsEqual,
+  orderSummariesEqual,
+} from "@/lib/order-dashboard-sync";
+import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh-context";
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -24,11 +32,36 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { markHighlights } = useOrderDashboardRefreshActions();
 
   const baselineSetRef = useRef(false);
   const latestKnownIdRef = useRef(0);
   const alertedIdsRef = useRef(new Set<number>());
   const pollingRef = useRef(false);
+
+  const syncDashboardCache = useCallback(
+    (orders: Order[], summary: BusinessOrderSummary) => {
+      const listKey = getListBusinessOrdersQueryKey(businessId!);
+      const summaryKey = getGetBusinessOrderSummaryQueryKey(businessId!);
+
+      const previousOrders = queryClient.getQueryData<Order[]>(listKey);
+      const changes = detectOrderListChanges(previousOrders, orders);
+
+      if (!orderListsEqual(previousOrders, orders)) {
+        queryClient.setQueryData(listKey, orders);
+      }
+
+      const previousSummary = queryClient.getQueryData<BusinessOrderSummary>(summaryKey);
+      if (!orderSummariesEqual(previousSummary, summary)) {
+        queryClient.setQueryData(summaryKey, summary);
+      }
+
+      if (changes.newOrderIds.length || changes.updatedOrderIds.length) {
+        markHighlights(changes.newOrderIds, changes.updatedOrderIds);
+      }
+    },
+    [businessId, markHighlights, queryClient],
+  );
 
   const showNewOrderAlert = useCallback(
     (order: Order) => {
@@ -86,13 +119,17 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
       pollingRef.current = true;
 
       try {
-        const orders = await listBusinessOrders(businessId);
+        const [orders, summary] = await Promise.all([
+          listBusinessOrders(businessId),
+          getBusinessOrderSummary(businessId),
+        ]);
 
         if (cancelled) return;
 
         if (!baselineSetRef.current) {
           latestKnownIdRef.current = maxOrderId(orders);
           baselineSetRef.current = true;
+          syncDashboardCache(orders, summary);
           return;
         }
 
@@ -112,9 +149,9 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
 
         if (newOrders.length > 0) {
           latestKnownIdRef.current = Math.max(latestKnownIdRef.current, maxOrderId(newOrders));
-          void queryClient.invalidateQueries({ queryKey: getListBusinessOrdersQueryKey(businessId) });
-          void queryClient.invalidateQueries({ queryKey: getGetBusinessOrderSummaryQueryKey(businessId) });
         }
+
+        syncDashboardCache(orders, summary);
       } catch {
         // ignore transient poll failures
       } finally {
@@ -135,5 +172,5 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
       if (intervalId) clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [businessId, queryClient, showMultipleOrdersAlert, showNewOrderAlert]);
+  }, [businessId, syncDashboardCache, showMultipleOrdersAlert, showNewOrderAlert]);
 }
