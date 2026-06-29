@@ -3,12 +3,28 @@ import type Stripe from "stripe";
 import { db, ordersTable, businessesTable } from "@workspace/db";
 import { logOperationalFailure } from "./operational-log";
 import {
-  expectedCheckoutAmountCents,
   parseCheckoutSessionOrderId,
   parseCheckoutSessionConnectedAccountId,
   type MarkOrderPaidResult,
 } from "./stripe-config";
 import { handleAccountUpdatedEvent } from "./stripe-connect";
+import {
+  evaluateCheckoutSessionPayment,
+  verifyStripeWebhookSignature,
+} from "./stripe-webhook-safety";
+
+export {
+  evaluateCheckoutSessionPayment,
+  verifyStripeWebhookSignature,
+  type CheckoutPaymentEvaluation,
+  type CheckoutSessionBusinessSnapshot,
+  type CheckoutSessionOrderSnapshot,
+  type StripeWebhookVerificationResult,
+} from "./stripe-webhook-safety";
+
+function logCheckoutPaymentRejection(reason: string, orderId?: number): void {
+  logOperationalFailure("stripe_webhook_failed", { reason, orderId });
+}
 
 export async function markOrderPaidFromCheckoutSession(
   session: Stripe.Checkout.Session,
@@ -37,76 +53,32 @@ export async function markOrderPaidFromCheckoutSession(
     return { ok: false, reason: "order_not_found", orderId };
   }
 
-  if (order.paymentMethod === "IN_PERSON") {
-    logOperationalFailure("stripe_webhook_failed", {
-      reason: "pay_at_pickup_order",
-      orderId,
-    });
-    return { ok: false, reason: "pay_at_pickup_order", orderId };
-  }
-
   const [business] = await db
     .select()
     .from(businessesTable)
     .where(eq(businessesTable.id, order.businessId));
 
-  if (!business?.stripeConnectedAccountId) {
-    logOperationalFailure("stripe_webhook_failed", {
-      reason: "business_not_connected",
-      orderId,
-    });
-    return { ok: false, reason: "business_not_connected", orderId };
+  const evaluation = evaluateCheckoutSessionPayment(session, eventAccount, order, business);
+
+  if (evaluation.action === "reject") {
+    logCheckoutPaymentRejection(evaluation.reason, evaluation.orderId);
+    return { ok: false, reason: evaluation.reason, orderId: evaluation.orderId };
   }
 
-  if (business.stripeConnectedAccountId !== connectedAccountId) {
-    logOperationalFailure("stripe_webhook_failed", {
-      reason: "connected_account_mismatch",
-      orderId,
-    });
-    return { ok: false, reason: "connected_account_mismatch", orderId };
-  }
-
-  if (order.paymentStatus === "PAID") {
-    return { ok: true, orderId, alreadyPaid: true };
-  }
-
-  if (order.stripeSessionId && order.stripeSessionId !== session.id) {
-    logOperationalFailure("stripe_webhook_failed", {
-      reason: "session_mismatch",
-      orderId,
-    });
-    return { ok: false, reason: "session_mismatch", orderId };
-  }
-
-  if (order.stripeConnectedAccountId && order.stripeConnectedAccountId !== connectedAccountId) {
-    logOperationalFailure("stripe_webhook_failed", {
-      reason: "order_account_mismatch",
-      orderId,
-    });
-    return { ok: false, reason: "order_account_mismatch", orderId };
-  }
-
-  if (session.amount_total != null) {
-    const expected = expectedCheckoutAmountCents(order.total);
-    if (session.amount_total !== expected) {
-      logOperationalFailure("stripe_webhook_failed", {
-        reason: "amount_mismatch",
-        orderId,
-      });
-      return { ok: false, reason: "amount_mismatch", orderId };
-    }
+  if (evaluation.action === "already_paid") {
+    return { ok: true, orderId: evaluation.orderId, alreadyPaid: true };
   }
 
   await db
     .update(ordersTable)
     .set({
       paymentStatus: "PAID",
-      stripeSessionId: session.id,
-      stripeConnectedAccountId: connectedAccountId,
+      stripeSessionId: evaluation.sessionId,
+      stripeConnectedAccountId: evaluation.connectedAccountId,
     })
-    .where(eq(ordersTable.id, orderId));
+    .where(eq(ordersTable.id, evaluation.orderId));
 
-  return { ok: true, orderId, alreadyPaid: false };
+  return { ok: true, orderId: evaluation.orderId, alreadyPaid: false };
 }
 
 export async function handleStripeWebhookEvent(event: Stripe.Event): Promise<{

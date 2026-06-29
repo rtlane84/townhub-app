@@ -14,7 +14,7 @@ import {
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession, stripe, isMockMode } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
-import { handleStripeWebhookEvent } from "../lib/stripe-webhook";
+import { handleStripeWebhookEvent, verifyStripeWebhookSignature } from "../lib/stripe-webhook";
 import { validatePaymentMethodForBusiness } from "../lib/payment-mode";
 import { validateOnlineCardPaymentReady } from "../lib/stripe-connect";
 import { getAppBaseUrl } from "../lib/app-base-url";
@@ -565,35 +565,20 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
 
 // POST /api/checkout/webhook (Stripe webhook)
 router.post("/checkout/webhook", async (req, res): Promise<void> => {
-  const sig = req.headers["stripe-signature"];
-  if (!sig || typeof sig !== "string") {
-    logOperationalFailure("stripe_webhook_failed", { reason: "missing_signature" });
-    res.status(400).json({ error: "Missing Stripe signature" });
+  const verification = verifyStripeWebhookSignature({
+    rawBody: req.body,
+    signatureHeader: req.headers["stripe-signature"],
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    stripeClient: stripe,
+  });
+
+  if (!verification.ok) {
+    logOperationalFailure("stripe_webhook_failed", { reason: verification.reason });
+    res.status(verification.status).json({ error: verification.error });
     return;
   }
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
-  if (!webhookSecret || !stripe) {
-    logOperationalFailure("stripe_webhook_failed", { reason: "not_configured" });
-    res.status(503).json({ error: "Webhook processing not configured" });
-    return;
-  }
-
-  const rawBody = req.body;
-  if (!Buffer.isBuffer(rawBody)) {
-    logOperationalFailure("stripe_webhook_failed", { reason: "invalid_body" });
-    res.status(400).json({ error: "Webhook requires raw request body" });
-    return;
-  }
-
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-  } catch {
-    logOperationalFailure("stripe_webhook_failed", { reason: "invalid_signature" });
-    res.status(400).json({ error: "Invalid Stripe signature" });
-    return;
-  }
+  const event = verification.event;
 
   try {
     const { handled, result } = await handleStripeWebhookEvent(event);
