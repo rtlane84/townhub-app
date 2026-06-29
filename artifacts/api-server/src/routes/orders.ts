@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { db, ordersTable, orderItemsTable, productsTable, businessesTable } from "@workspace/db";
+import { db, ordersTable, orderItemsTable, productsTable, businessesTable, usersTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
+import { getAuth } from "@clerk/express";
 import {
   CreateOrderBody,
   GetOrderParams,
@@ -20,6 +21,7 @@ import {
   buildOrderConfirmationEmail,
   buildStatusUpdateEmail,
 } from "../lib/notifications";
+import { authorizeOrderStatusUpdate } from "../lib/order-access";
 
 const router: IRouter = Router();
 
@@ -267,6 +269,43 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
     return;
   }
 
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, params.data.id));
+
+  if (!order) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  const [user] = await db
+    .select({ role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId!));
+
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [business] = await db
+    .select({ ownerId: businessesTable.ownerId })
+    .from(businessesTable)
+    .where(eq(businessesTable.id, order.businessId));
+
+  const auth = authorizeOrderStatusUpdate({
+    userId: userId!,
+    userRole: user.role,
+    businessOwnerId: business?.ownerId,
+  });
+
+  if (!auth.allowed) {
+    res.status(auth.statusCode).json({ error: auth.error });
+    return;
+  }
+
   await db
     .update(ordersTable)
     .set({ status: parsed.data.status as never })
@@ -281,12 +320,7 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
   res.json(result);
 
   // ── Notify customer of status change (fire-and-forget) ────────────────────
-  const [order] = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.id, params.data.id));
-
-  if (order?.customerEmail) {
+  if (order.customerEmail) {
     const { subject, body } = buildStatusUpdateEmail({
       orderNumber: result.orderNumber,
       businessName: result.businessName,
