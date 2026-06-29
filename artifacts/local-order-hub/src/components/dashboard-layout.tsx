@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal, ClipboardList, CalendarDays } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal, ClipboardList, CalendarDays, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -146,6 +146,7 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
     { href: "/dashboard/admin/events", label: "Events", icon: Calendar },
     { href: "/dashboard/admin/highlights", label: "Highlights", icon: Sparkles },
     { href: "/dashboard/admin/plans", label: "Plans", icon: Layers },
+    { href: "/dashboard/admin/system-status", label: "System Status", icon: Activity },
     { href: "/dashboard/admin/settings", label: "Settings", icon: SlidersHorizontal },
   ];
 

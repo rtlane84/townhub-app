@@ -42,6 +42,7 @@ import AdminEvents from "@/pages/dashboard/admin/events";
 import AdminHighlights from "@/pages/dashboard/admin/highlights";
 import AdminPlans from "@/pages/dashboard/admin/plans";
 import AdminSettings from "@/pages/dashboard/admin/settings";
+import AdminSystemStatus from "@/pages/dashboard/admin/system-status";
 
 import Setup from "@/pages/setup";
 import ListYourBusiness from "@/pages/list-your-business";
@@ -253,6 +254,7 @@ function ClerkProviderWithRoutes() {
                 <ProtectedRoute path="/dashboard/admin/highlights" component={AdminHighlights} />
                 <ProtectedRoute path="/dashboard/admin/plans" component={AdminPlans} />
                 <ProtectedRoute path="/dashboard/admin/settings" component={AdminSettings} />
+                <ProtectedRoute path="/dashboard/admin/system-status" component={AdminSystemStatus} />
                 <ProtectedRoute path="/dashboard/admin" component={AdminOverview} />
 
                 <Route component={NotFound} />

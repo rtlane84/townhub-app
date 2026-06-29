@@ -645,6 +645,26 @@ paths:
                 items:
                   $ref: "#/components/schemas/AppointmentRequest"
 
+  # ─── Admin: System Health ───────────────────────────────────────
+  /admin/system/health:
+    get:
+      operationId: getAdminSystemHealth
+      tags: [admin]
+      summary: Detailed system health (admin only)
+      responses:
+        "200":
+          description: System health report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemHealthReport"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "503":
+          description: Health check failed
+
   # ─── Admin: Users ───────────────────────────────────────────────
   /admin/users:
     get:
@@ -1307,6 +1327,70 @@ components:
       properties:
         status:
           type: string
+
+    ServiceHealthStatus:
+      type: string
+      enum: [healthy, degraded, unhealthy, not_configured]
+
+    SystemHealthStatus:
+      type: string
+      enum: [healthy, degraded, unhealthy]
+
+    ServiceHealth:
+      type: object
+      required: [name, status, message]
+      properties:
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ServiceHealthStatus"
+        message:
+          type: string
+        responseTimeMs:
+          type: number
+        metadata:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+
+    ApplicationHealth:
+      type: object
+      required: [name, environment, uptimeSeconds, timestamp]
+      properties:
+        name:
+          type: string
+        environment:
+          type: string
+        version:
+          type: string
+        buildDate:
+          type: string
+        commitSha:
+          type: string
+        uptimeSeconds:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+
+    SystemHealthReport:
+      type: object
+      required: [status, timestamp, application, services]
+      properties:
+        status:
+          $ref: "#/components/schemas/SystemHealthStatus"
+        timestamp:
+          type: string
+          format: date-time
+        application:
+          $ref: "#/components/schemas/ApplicationHealth"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealth"
 
     # ─── Enums (as strings, validated on server) ────────────────
     BusinessType:

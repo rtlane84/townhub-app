@@ -1,4 +1,5 @@
 import { logger } from "./logger";
+import { logOperationalFailure } from "./operational-log";
 
 export function isSmsConfigured(): boolean {
   return Boolean(
@@ -34,7 +35,8 @@ export async function sendSms(
     return { sent: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logger.error({ err, to }, "SMS send failed");
+    logOperationalFailure("sms_send_failed", { provider: "twilio" });
+    logger.error({ err }, "SMS send failed");
     return { sent: false, error: message };
   }
 }

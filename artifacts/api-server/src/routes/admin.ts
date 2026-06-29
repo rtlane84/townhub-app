@@ -6,14 +6,40 @@ import {
   UpdateUserRoleBody,
   AssignBusinessOwnerParams,
   AssignBusinessOwnerBody,
+  GetAdminSystemHealthResponse,
 } from "@workspace/api-zod";
 import { serializeBusiness } from "./businesses";
+import { buildSystemHealthReport } from "../lib/system-health";
+import { logOperationalFailure } from "../lib/operational-log";
 
 const router: IRouter = Router();
 
 function parseId(raw: string | string[]): number {
   return parseInt(Array.isArray(raw) ? raw[0] : raw, 10);
 }
+
+// GET /api/admin/system/health
+router.get("/admin/system/health", async (req, res): Promise<void> => {
+  try {
+    const report = await buildSystemHealthReport();
+    const data = GetAdminSystemHealthResponse.parse(report);
+
+    if (data.status === "unhealthy") {
+      logOperationalFailure("health_check_unhealthy", {
+        overallStatus: data.status,
+        unhealthyServices: data.services
+          .filter((s) => s.status === "unhealthy")
+          .map((s) => s.name),
+      });
+    }
+
+    res.json(data);
+  } catch (err) {
+    logOperationalFailure("health_check_failed", { scope: "admin_system_health" });
+    req.log.error({ err }, "Admin system health check failed");
+    res.status(503).json({ error: "Health check failed" });
+  }
+});
 
 // GET /api/admin/users
 router.get("/admin/users", async (req, res): Promise<void> => {

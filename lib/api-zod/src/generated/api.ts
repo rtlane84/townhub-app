@@ -970,6 +970,31 @@ export const ListBusinessAppointmentRequestsResponse = zod.array(ListBusinessApp
 
 
 /**
+ * @summary Detailed system health (admin only)
+ */
+export const GetAdminSystemHealthResponse = zod.object({
+  "status": zod.enum(['healthy', 'degraded', 'unhealthy']),
+  "timestamp": zod.coerce.date(),
+  "application": zod.object({
+  "name": zod.string(),
+  "environment": zod.string(),
+  "version": zod.string().optional(),
+  "buildDate": zod.string().optional(),
+  "commitSha": zod.string().optional(),
+  "uptimeSeconds": zod.number(),
+  "timestamp": zod.coerce.date()
+}),
+  "services": zod.array(zod.object({
+  "name": zod.string(),
+  "status": zod.enum(['healthy', 'degraded', 'unhealthy', 'not_configured']),
+  "message": zod.string(),
+  "responseTimeMs": zod.number().optional(),
+  "metadata": zod.record(zod.string(), zod.union([zod.string(),zod.number(),zod.boolean()])).optional()
+}))
+})
+
+
+/**
  * @summary List all users (admin)
  */
 export const ListUsersResponseItem = zod.object({

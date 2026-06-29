@@ -2,6 +2,7 @@ import { db, notificationLogsTable } from "@workspace/db";
 import { sendEmail } from "./email";
 import { sendSms } from "./sms";
 import { logger } from "./logger";
+import { logOperationalFailure } from "./operational-log";
 import {
   resolveOwnerNotificationEmail,
   resolveOwnerNotificationPhone,
@@ -81,9 +82,16 @@ async function deliverEmailNotification(input: {
 
   if (status === "LOGGED") {
     logger.info(
-      { eventType: input.eventType, to: input.to, subject: input.subject },
-      `[NOTIFICATION LOG] ${input.eventType} → ${input.to}`,
+      { eventType: input.eventType, subject: input.subject },
+      `[NOTIFICATION LOG] ${input.eventType}`,
     );
+  } else if (status === "FAILED") {
+    logOperationalFailure("order_notification_email_failed", {
+      eventType: input.eventType,
+      businessId: input.businessId,
+      orderId: input.orderId,
+      appointmentRequestId: input.appointmentRequestId,
+    });
   }
 
   await logNotification({
@@ -112,7 +120,14 @@ async function deliverSmsNotification(input: {
   const status = resolveNotificationStatus(result);
 
   if (status === "LOGGED") {
-    logger.info({ eventType: input.eventType, to: input.to }, `[NOTIFICATION LOG SMS] ${input.eventType}`);
+    logger.info({ eventType: input.eventType }, `[NOTIFICATION LOG SMS] ${input.eventType}`);
+  } else if (status === "FAILED") {
+    logOperationalFailure("order_notification_sms_failed", {
+      eventType: input.eventType,
+      businessId: input.businessId,
+      orderId: input.orderId,
+      appointmentRequestId: input.appointmentRequestId,
+    });
   }
 
   await logNotification({
@@ -145,6 +160,11 @@ export async function sendCustomerEmailNotification(payload: {
     body: payload.body,
     orderId: payload.orderId,
   }).catch((err) => {
+    logOperationalFailure("order_notification_email_failed", {
+      eventType: payload.eventType,
+      businessId: payload.businessId,
+      orderId: payload.orderId,
+    });
     logger.error({ err, orderId: payload.orderId }, "Customer notification failed");
   });
 }
@@ -240,6 +260,11 @@ export async function notifyOwnerNewOrder(input: {
 
     await Promise.all(tasks);
   } catch (err) {
+    logOperationalFailure("order_notification_failed", {
+      kind: "owner_new_order",
+      orderId: input.orderId,
+      businessId: input.business.id,
+    });
     logger.error({ err, orderId: input.orderId }, "Owner new order notification failed");
   }
 }
@@ -314,6 +339,11 @@ export async function notifyOwnerNewAppointmentRequest(input: {
 
     await Promise.all(tasks);
   } catch (err) {
+    logOperationalFailure("order_notification_failed", {
+      kind: "owner_appointment_request",
+      appointmentRequestId: input.appointmentRequestId,
+      businessId: input.business.id,
+    });
     logger.error(
       { err, appointmentRequestId: input.appointmentRequestId },
       "Owner appointment request notification failed",

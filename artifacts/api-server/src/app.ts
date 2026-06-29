@@ -5,6 +5,7 @@ import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { buildPublicHealthResponse } from "./lib/system-health";
 import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
@@ -32,6 +33,11 @@ app.use(
     },
   }),
 );
+
+// Public uptime monitor endpoint — no auth, minimal payload
+app.get("/health", (_req, res) => {
+  res.json(buildPublicHealthResponse());
+});
 
 // Clerk proxy — must be before body parsers
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());

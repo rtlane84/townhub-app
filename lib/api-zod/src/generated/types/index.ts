@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './applicationHealth';
 export * from './appointmentRequest';
 export * from './appointmentRequestInput';
 export * from './business';
@@ -58,9 +59,14 @@ export * from './platformThemeInput';
 export * from './product';
 export * from './productInput';
 export * from './productUpdate';
+export * from './serviceHealth';
+export * from './serviceHealthMetadata';
+export * from './serviceHealthStatus';
 export * from './storefrontMode';
 export * from './subscriptionPlan';
 export * from './subscriptionPlanInput';
+export * from './systemHealthReport';
+export * from './systemHealthStatus';
 export * from './userProfile';
 export * from './userRole';
 export * from './userRoleUpdate';

@@ -12,7 +12,8 @@ import {
   ListAllOrdersQueryParams,
   CreateCheckoutSessionBody,
 } from "@workspace/api-zod";
-import { createStripeCheckoutSession } from "../lib/stripe";
+import { createStripeCheckoutSession, stripe } from "../lib/stripe";
+import { logOperationalFailure } from "../lib/operational-log";
 import { validatePaymentMethodForBusiness } from "../lib/payment-mode";
 import { requireAuth } from "../middlewares/requireRole";
 import {
@@ -538,14 +539,26 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
 // POST /api/checkout/webhook (Stripe webhook)
 router.post("/checkout/webhook", async (req, res): Promise<void> => {
   const sig = req.headers["stripe-signature"];
-  if (!sig) {
+  if (!sig || typeof sig !== "string") {
+    logOperationalFailure("stripe_webhook_failed", { reason: "missing_signature" });
     res.status(400).json({ error: "No signature" });
     return;
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
+  if (!webhookSecret || !stripe) {
+    logOperationalFailure("stripe_webhook_failed", { reason: "not_configured" });
+    res.status(503).json({ error: "Webhook processing not configured" });
+    return;
+  }
+
   try {
+    // Signature verification requires the raw request body; this handler acknowledges
+    // receipt until raw-body middleware is wired for production Stripe webhooks.
     res.json({ received: true });
-  } catch {
+  } catch (err) {
+    logOperationalFailure("stripe_webhook_failed", { reason: "processing_error" });
+    req.log.error({ err }, "Stripe webhook processing failed");
     res.status(400).json({ error: "Webhook error" });
   }
 });

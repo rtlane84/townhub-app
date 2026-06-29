@@ -17,6 +17,7 @@ import {
   sanitizeLocalStoredFilename,
   saveMediaFile,
 } from "../lib/media-storage";
+import { logOperationalFailure } from "../lib/operational-log";
 
 const router: IRouter = Router();
 
@@ -162,6 +163,11 @@ router.post(
     try {
       saved = await saveMediaFile(buffer, contentType, scope);
     } catch (err) {
+      logOperationalFailure("storage_upload_failed", {
+        businessId: scope.businessId,
+        mimeType: contentType,
+        byteSize: buffer.length,
+      });
       req.log.error({ err }, "Media upload failed");
       res.status(500).json({
         error: err instanceof Error ? err.message : "Upload failed",

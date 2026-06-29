@@ -1,4 +1,5 @@
 import { logger } from "./logger";
+import { logOperationalFailure } from "./operational-log";
 
 function emailFromAddress(): string | null {
   return process.env.RESEND_FROM ?? process.env.SMTP_FROM ?? null;
@@ -39,6 +40,7 @@ export async function sendEmail(
         text: body,
       });
       if (result.error) {
+        logOperationalFailure("email_send_failed", { provider: "resend" });
         return { sent: false, error: result.error.message };
       }
       return { sent: true };
@@ -63,7 +65,10 @@ export async function sendEmail(
     return { sent: false, providerUnavailable: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    logger.error({ err, to, subject }, "Email send failed");
+    logOperationalFailure("email_send_failed", {
+      provider: process.env.RESEND_API_KEY ? "resend" : "smtp",
+    });
+    logger.error({ err, subject }, "Email send failed");
     return { sent: false, error: message };
   }
 }

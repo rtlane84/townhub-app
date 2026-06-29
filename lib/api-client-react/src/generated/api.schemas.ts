@@ -9,6 +9,52 @@ export interface HealthStatus {
   status: string;
 }
 
+export type ServiceHealthStatus = typeof ServiceHealthStatus[keyof typeof ServiceHealthStatus];
+
+
+export const ServiceHealthStatus = {
+  healthy: 'healthy',
+  degraded: 'degraded',
+  unhealthy: 'unhealthy',
+  not_configured: 'not_configured',
+} as const;
+
+export type SystemHealthStatus = typeof SystemHealthStatus[keyof typeof SystemHealthStatus];
+
+
+export const SystemHealthStatus = {
+  healthy: 'healthy',
+  degraded: 'degraded',
+  unhealthy: 'unhealthy',
+} as const;
+
+export type ServiceHealthMetadata = {[key: string]: string | number | boolean};
+
+export interface ServiceHealth {
+  name: string;
+  status: ServiceHealthStatus;
+  message: string;
+  responseTimeMs?: number;
+  metadata?: ServiceHealthMetadata;
+}
+
+export interface ApplicationHealth {
+  name: string;
+  environment: string;
+  version?: string;
+  buildDate?: string;
+  commitSha?: string;
+  uptimeSeconds: number;
+  timestamp: string;
+}
+
+export interface SystemHealthReport {
+  status: SystemHealthStatus;
+  timestamp: string;
+  application: ApplicationHealth;
+  services: ServiceHealth[];
+}
+
 export type BusinessType = typeof BusinessType[keyof typeof BusinessType];
 
 
