@@ -9,6 +9,7 @@ import { acceptsAppointmentRequests } from "@workspace/api-zod";
 import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
 import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
 import { OrderAlertControls } from "@/components/order-alert-controls";
+import { NewOrderAlertBanner } from "@/components/new-order-alert-banner";
 
 interface NavItem {
   href: string;
@@ -127,6 +128,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
       </div>
 
       <main className="flex-1 p-4 pt-20 md:pt-0 md:p-10">
+        <NewOrderAlertBanner />
         {children}
       </main>
     </div>

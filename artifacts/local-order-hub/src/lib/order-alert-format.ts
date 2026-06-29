@@ -22,3 +22,20 @@ export function orderAlertDescription(order: Order): string {
   ];
   return parts.join(" · ");
 }
+
+export function orderBannerHeadline(order: Order, extraCount = 0): string {
+  const label = order.orderNumber ?? `Order #${order.id}`;
+  if (extraCount > 0) {
+    return `New order · ${label} (+${extraCount} more)`;
+  }
+  return `New order · ${label}`;
+}
+
+export function orderBannerDetails(order: Order): string {
+  return [
+    order.customerName,
+    `$${order.total.toFixed(2)}`,
+    formatFulfillmentType(order.fulfillmentType),
+    formatPaymentMethod(order.paymentMethod),
+  ].join(" · ");
+}

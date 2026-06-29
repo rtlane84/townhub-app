@@ -7,20 +7,30 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { Order } from "@workspace/api-client-react";
 import { ORDER_HIGHLIGHT_DURATION_MS } from "@/lib/order-dashboard-sync";
 
 export type OrderHighlightKind = "new" | "updated";
 
+export interface PendingOrderBanner {
+  order: Order;
+}
+
 interface OrderDashboardRefreshContextValue {
   getHighlight: (orderId: number) => OrderHighlightKind | undefined;
   markHighlights: (newOrderIds: number[], updatedOrderIds: number[]) => void;
+  pendingBanners: PendingOrderBanner[];
+  addNewOrderBanners: (orders: Order[]) => void;
+  dismissBanner: (orderId: number) => void;
 }
 
 const OrderDashboardRefreshContext = createContext<OrderDashboardRefreshContextValue | null>(null);
 
 export function OrderDashboardRefreshProvider({ children }: { children: ReactNode }) {
   const [highlights, setHighlights] = useState<Map<number, OrderHighlightKind>>(() => new Map());
+  const [pendingBanners, setPendingBanners] = useState<PendingOrderBanner[]>([]);
   const timeoutIdsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const bannerOrderIdsRef = useRef<Set<number>>(new Set());
 
   const clearHighlight = useCallback((orderId: number) => {
     setHighlights((prev) => {
@@ -72,14 +82,38 @@ export function OrderDashboardRefreshProvider({ children }: { children: ReactNod
     [scheduleClear],
   );
 
+  const addNewOrderBanners = useCallback((orders: Order[]) => {
+    if (!orders.length) return;
+
+    setPendingBanners((prev) => {
+      const next = [...prev];
+      for (const order of orders) {
+        if (bannerOrderIdsRef.current.has(order.id)) continue;
+        bannerOrderIdsRef.current.add(order.id);
+        next.push({ order });
+      }
+      return next.sort((a, b) => b.order.id - a.order.id);
+    });
+  }, []);
+
+  const dismissBanner = useCallback((orderId: number) => {
+    setPendingBanners((prev) => prev.filter((b) => b.order.id !== orderId));
+  }, []);
+
   const getHighlight = useCallback(
     (orderId: number) => highlights.get(orderId),
     [highlights],
   );
 
   const value = useMemo(
-    () => ({ getHighlight, markHighlights }),
-    [getHighlight, markHighlights],
+    () => ({
+      getHighlight,
+      markHighlights,
+      pendingBanners,
+      addNewOrderBanners,
+      dismissBanner,
+    }),
+    [getHighlight, markHighlights, pendingBanners, addNewOrderBanners, dismissBanner],
   );
 
   return (
@@ -100,4 +134,15 @@ export function useOrderDashboardRefreshActions() {
     throw new Error("useOrderDashboardRefreshActions must be used within OrderDashboardRefreshProvider");
   }
   return ctx;
+}
+
+export function usePendingOrderBanners() {
+  const ctx = useContext(OrderDashboardRefreshContext);
+  if (!ctx) {
+    throw new Error("usePendingOrderBanners must be used within OrderDashboardRefreshProvider");
+  }
+  return {
+    pendingBanners: ctx.pendingBanners,
+    dismissBanner: ctx.dismissBanner,
+  };
 }

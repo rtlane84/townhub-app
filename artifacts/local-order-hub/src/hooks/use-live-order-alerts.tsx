@@ -32,7 +32,7 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const { markHighlights } = useOrderDashboardRefreshActions();
+  const { markHighlights, addNewOrderBanners } = useOrderDashboardRefreshActions();
 
   const baselineSetRef = useRef(false);
   const latestKnownIdRef = useRef(0);
@@ -143,6 +143,10 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
           showMultipleOrdersAlert(newOrders);
         }
 
+        if (newOrders.length > 0) {
+          addNewOrderBanners(newOrders);
+        }
+
         for (const order of newOrders) {
           alertedIdsRef.current.add(order.id);
         }
@@ -172,5 +176,5 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
       if (intervalId) clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [businessId, syncDashboardCache, showMultipleOrdersAlert, showNewOrderAlert]);
+  }, [businessId, syncDashboardCache, showMultipleOrdersAlert, showNewOrderAlert, addNewOrderBanners]);
 }

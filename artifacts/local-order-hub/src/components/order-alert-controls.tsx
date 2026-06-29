@@ -74,7 +74,7 @@ export function OrderAlertControls({ compact = false }: { compact?: boolean }) {
         Live order alerts
       </div>
       <p className="text-xs text-muted-foreground leading-relaxed">
-        New orders appear automatically every few seconds. Browsers require one click before sounds can play.
+        New orders show a banner and toast every few seconds. Browsers require one click before sounds can play.
       </p>
       {soundsEnabled ? (
         <Button
