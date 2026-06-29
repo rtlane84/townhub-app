@@ -6,14 +6,18 @@ Resend is preferred over SMTP when `RESEND_API_KEY` is set.
 
 ## What TownHub sends
 
-| Event | Recipient |
-|-------|-----------|
-| New order | Business owner (if enabled in business settings) |
-| New appointment request | Business owner (if enabled) |
-| Order placed | Customer confirmation email |
-| Order status update | Customer status email |
+See **[NOTIFICATIONS.md](./NOTIFICATIONS.md)** for the full order lifecycle flow (customer email/SMS, business alerts, triggers, and link rules).
 
-Implementation: `artifacts/api-server/src/lib/email.ts` and `artifacts/api-server/src/lib/notifications.ts`.
+Summary:
+
+| Event | Recipient | Channel |
+|-------|-----------|---------|
+| Order received | Customer | Email + SMS (when contact info provided) |
+| Order status change | Customer | Email + SMS per lifecycle event |
+| New order | Business owner | Email + SMS (per business settings) |
+| New appointment request | Business owner | Email + SMS (per business settings) |
+
+Implementation: `artifacts/api-server/src/lib/notification-service.ts`, `email-templates/`, `notification-sms.ts`, and `notification-delivery.ts`.
 
 ---
 

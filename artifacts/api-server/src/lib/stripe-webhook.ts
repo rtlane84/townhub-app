@@ -8,6 +8,7 @@ import {
   type MarkOrderPaidResult,
 } from "./stripe-config";
 import { handleAccountUpdatedEvent } from "./stripe-connect";
+import { notifyCustomerOrderReceived } from "./notification-service";
 import {
   evaluateCheckoutSessionPayment,
   verifyStripeWebhookSignature,
@@ -77,6 +78,8 @@ export async function markOrderPaidFromCheckoutSession(
       stripeConnectedAccountId: evaluation.connectedAccountId,
     })
     .where(eq(ordersTable.id, evaluation.orderId));
+
+  notifyCustomerOrderReceived(evaluation.orderId).catch(() => {});
 
   return { ok: true, orderId: evaluation.orderId, alreadyPaid: false };
 }

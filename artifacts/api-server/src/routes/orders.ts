@@ -21,10 +21,9 @@ import { getAppBaseUrl } from "../lib/app-base-url";
 import { isMockCheckoutAllowed } from "../lib/stripe-config";
 import { requireAuth } from "../middlewares/requireRole";
 import {
-  notifyOwnerNewOrder,
-  sendCustomerEmailNotification,
-  buildOrderConfirmationEmail,
-  buildStatusUpdateEmail,
+  notifyOwnerNewOrderFromOrderId,
+  notifyCustomerOrderReceived,
+  notifyCustomerOrderStatusChange,
 } from "../lib/notifications";
 import { authorizeOrderStatusUpdate } from "../lib/order-access";
 import { authorizeOrderView } from "../lib/order-customer-access";
@@ -228,43 +227,11 @@ router.post("/orders", async (req, res): Promise<void> => {
   res.status(201).json(result);
 
   // ── Fire-and-forget notifications (never block the response) ──────────────
-  const notifItems = orderItems.map((i) => ({
-    productName: i.productName,
-    quantity: i.quantity,
-    unitPrice: i.unitPrice,
-  }));
+  notifyOwnerNewOrderFromOrderId(order.id).catch(() => {});
 
-  // Notify business owner (email + SMS per business settings)
-  notifyOwnerNewOrder({
-    business,
-    orderId: order.id,
-    orderNumber: order.orderNumber,
-    customerName: d.customerName,
-    customerEmail: d.customerEmail,
-    total,
-    paymentMethod,
-    fulfillmentType: d.fulfillmentType,
-    items: notifItems,
-  }).catch(() => {});
-
-  // Send customer order confirmation (email only)
-  if (d.customerEmail) {
-    const { subject, body } = buildOrderConfirmationEmail({
-      orderNumber: order.orderNumber,
-      businessName: business?.name ?? "the business",
-      total,
-      items: notifItems,
-      fulfillmentType: d.fulfillmentType,
-      customerName: d.customerName,
-    });
-    sendCustomerEmailNotification({
-      eventType: "ORDER_PLACED_CUSTOMER",
-      businessId: d.businessId,
-      orderId: order.id,
-      recipientEmail: d.customerEmail,
-      subject,
-      body,
-    }).catch(() => {});
+  // Pay-at-pickup: notify customer immediately. Stripe orders notify after payment webhook.
+  if (paymentMethod === "IN_PERSON") {
+    notifyCustomerOrderReceived(order.id).catch(() => {});
   }
 });
 
@@ -424,22 +391,9 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
 
   res.json(result);
 
-  // ── Notify customer of status change (fire-and-forget) ────────────────────
-  if (order.customerEmail) {
-    const { subject, body } = buildStatusUpdateEmail({
-      orderNumber: result.orderNumber,
-      businessName: result.businessName,
-      status: parsed.data.status,
-      customerName: result.customerName,
-    });
-    sendCustomerEmailNotification({
-      eventType: "ORDER_STATUS_UPDATE",
-      businessId: result.businessId,
-      orderId: result.id,
-      recipientEmail: order.customerEmail,
-      subject,
-      body,
-    }).catch(() => {});
+  // ── Notify customer of meaningful status changes (fire-and-forget) ────────
+  if (parsed.data.status !== order.status) {
+    notifyCustomerOrderStatusChange(result.id, parsed.data.status).catch(() => {});
   }
 });
 

@@ -22,6 +22,7 @@ export async function sendEmail(
   to: string,
   subject: string,
   body: string,
+  html?: string,
 ): Promise<EmailSendResult> {
   const from = emailFromAddress();
   if (!from) {
@@ -38,6 +39,7 @@ export async function sendEmail(
         to,
         subject,
         text: body,
+        ...(html ? { html } : {}),
       });
       if (result.error) {
         logOperationalFailure("email_send_failed", { provider: "resend" });
@@ -57,7 +59,13 @@ export async function sendEmail(
             ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
             : undefined,
       });
-      await transporter.sendMail({ from, to, subject, text: body });
+      await transporter.sendMail({
+        from,
+        to,
+        subject,
+        text: body,
+        ...(html ? { html } : {}),
+      });
       return { sent: true };
     }
 

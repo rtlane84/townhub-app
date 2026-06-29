@@ -1,0 +1,70 @@
+export type OrderItemLine = {
+  productName: string;
+  quantity: number;
+  unitPrice?: number;
+};
+
+export type OrderNotificationData = {
+  orderId: number;
+  orderNumber: string;
+  businessId: number;
+  businessName: string;
+  businessLogoUrl?: string | null;
+  businessAddress?: string | null;
+  pickupInstructions?: string | null;
+  customerName: string;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  fulfillmentType: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  total: number;
+  items: OrderItemLine[];
+  orderedAt: Date | string;
+  notes?: string | null;
+};
+
+export type EmailContent = {
+  subject: string;
+  text: string;
+  html: string;
+};
+
+export type CustomerLifecycleEvent =
+  | "ORDER_RECEIVED"
+  | "ORDER_ACCEPTED"
+  | "ORDER_PREPARING"
+  | "ORDER_READY_FOR_PICKUP"
+  | "ORDER_OUT_FOR_DELIVERY"
+  | "ORDER_COMPLETED"
+  | "ORDER_CANCELLED";
+
+export const CUSTOMER_NOTIFIABLE_STATUSES = [
+  "CONFIRMED",
+  "PREPARING",
+  "READY_FOR_PICKUP",
+  "OUT_FOR_DELIVERY",
+  "COMPLETED",
+  "CANCELED",
+] as const;
+
+export type CustomerNotifiableStatus = (typeof CUSTOMER_NOTIFIABLE_STATUSES)[number];
+
+export function statusToCustomerEvent(status: string): CustomerLifecycleEvent | null {
+  switch (status) {
+    case "CONFIRMED":
+      return "ORDER_ACCEPTED";
+    case "PREPARING":
+      return "ORDER_PREPARING";
+    case "READY_FOR_PICKUP":
+      return "ORDER_READY_FOR_PICKUP";
+    case "OUT_FOR_DELIVERY":
+      return "ORDER_OUT_FOR_DELIVERY";
+    case "COMPLETED":
+      return "ORDER_COMPLETED";
+    case "CANCELED":
+      return "ORDER_CANCELLED";
+    default:
+      return null;
+  }
+}

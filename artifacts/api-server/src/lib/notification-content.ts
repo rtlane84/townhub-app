@@ -1,9 +1,5 @@
 import { formatTime12h } from "@workspace/api-zod";
-import {
-  dashboardAppointmentsUrl,
-  dashboardOrderUrl,
-  paymentMethodLabel,
-} from "./owner-notification-settings";
+import { dashboardAppointmentsUrl } from "./notification-urls";
 
 export type NotificationStatus = "SENT" | "LOGGED" | "FAILED";
 
@@ -17,51 +13,6 @@ export function resolveNotificationStatus(result: DeliveryResult): NotificationS
   if (result.sent) return "SENT";
   if (result.providerUnavailable) return "LOGGED";
   return "FAILED";
-}
-
-export function buildOwnerNewOrderEmail(order: {
-  businessName: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  total: number;
-  paymentMethod: string;
-  fulfillmentType: string;
-  items: Array<{ productName: string; quantity: number }>;
-  orderId: number;
-}): { subject: string; body: string } {
-  const subject = `New order ${order.orderNumber} — ${order.businessName}`;
-  const itemLines = order.items.map((i) => `  - ${i.productName} x${i.quantity}`).join("\n");
-  const body = [
-    `New order for ${order.businessName}`,
-    ``,
-    `Order #: ${order.orderNumber}`,
-    `Customer: ${order.customerName}${order.customerEmail ? ` <${order.customerEmail}>` : ""}`,
-    `Payment: ${paymentMethodLabel(order.paymentMethod)}`,
-    `Fulfillment: ${order.fulfillmentType}`,
-    `Total: $${order.total.toFixed(2)}`,
-    ``,
-    `Items:`,
-    itemLines,
-    ``,
-    `View in dashboard: ${dashboardOrderUrl(order.orderId)}`,
-  ].join("\n");
-  return { subject, body };
-}
-
-export function buildOwnerNewOrderSms(order: {
-  businessName: string;
-  orderNumber: string;
-  customerName: string;
-  total: number;
-  paymentMethod: string;
-  orderId: number;
-}): string {
-  return [
-    `${order.businessName}: New order ${order.orderNumber}`,
-    `${order.customerName} · $${order.total.toFixed(2)} · ${paymentMethodLabel(order.paymentMethod)}`,
-    dashboardOrderUrl(order.orderId),
-  ].join("\n");
 }
 
 export function buildOwnerNewAppointmentEmail(request: {
@@ -107,86 +58,8 @@ export function buildOwnerNewAppointmentSms(request: {
   ].join("\n");
 }
 
-export function buildOrderPlacedBusinessEmail(order: {
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  total: number;
-  items: Array<{ productName: string; quantity: number; unitPrice: number }>;
-  fulfillmentType: string;
-  notes?: string | null;
-}): { subject: string; body: string } {
-  const subject = `New order ${order.orderNumber} from ${order.customerName}`;
-  const itemLines = order.items
-    .map((i) => `  - ${i.productName} x${i.quantity} @ $${i.unitPrice.toFixed(2)}`)
-    .join("\n");
-  const body = [
-    `A new order has been placed!`,
-    ``,
-    `Order #: ${order.orderNumber}`,
-    `Customer: ${order.customerName} <${order.customerEmail}>`,
-    `Fulfillment: ${order.fulfillmentType}`,
-    `Total: $${order.total.toFixed(2)}`,
-    ``,
-    `Items:`,
-    itemLines,
-    order.notes ? `\nCustomer notes: ${order.notes}` : "",
-    ``,
-    `Log in to your dashboard to confirm and prepare this order.`,
-  ].join("\n");
-  return { subject, body };
-}
-
-export function buildOrderConfirmationEmail(order: {
-  orderNumber: string;
-  businessName: string;
-  total: number;
-  items: Array<{ productName: string; quantity: number }>;
-  fulfillmentType: string;
-  customerName: string;
-}): { subject: string; body: string } {
-  const subject = `Your order ${order.orderNumber} is confirmed — ${order.businessName}`;
-  const itemLines = order.items.map((i) => `  - ${i.productName} x${i.quantity}`).join("\n");
-  const body = [
-    `Hi ${order.customerName},`,
-    ``,
-    `Thanks for your order from ${order.businessName}!`,
-    ``,
-    `Order #: ${order.orderNumber}`,
-    `Fulfillment: ${order.fulfillmentType}`,
-    `Total: $${order.total.toFixed(2)}`,
-    ``,
-    `Items:`,
-    itemLines,
-    ``,
-    `We'll send you another update when your order status changes.`,
-    `Thank you for supporting local!`,
-  ].join("\n");
-  return { subject, body };
-}
-
-export function buildStatusUpdateEmail(order: {
-  orderNumber: string;
-  businessName: string;
-  status: string;
-  customerName: string;
-}): { subject: string; body: string } {
-  const statusMessages: Record<string, string> = {
-    CONFIRMED: "has been confirmed",
-    PREPARING: "is being prepared",
-    READY_FOR_PICKUP: "is ready for pickup — come pick it up!",
-    OUT_FOR_DELIVERY: "is out for delivery",
-    COMPLETED: "has been completed",
-    CANCELED: "has been canceled",
-  };
-  const msg = statusMessages[order.status] ?? `status changed to ${order.status}`;
-  const subject = `Order ${order.orderNumber} ${msg}`;
-  const body = [
-    `Hi ${order.customerName},`,
-    ``,
-    `Your order ${order.orderNumber} from ${order.businessName} ${msg}.`,
-    ``,
-    `Thank you for supporting local!`,
-  ].join("\n");
-  return { subject, body };
-}
+// Re-export template builders for tests and legacy imports
+export { buildOwnerNewOrderEmail } from "./email-templates/business-emails";
+export { buildOwnerNewOrderSms, buildCustomerLifecycleSms } from "./notification-sms";
+export { buildCustomerLifecycleEmail } from "./email-templates/customer-emails";
+export { paymentMethodLabel } from "./email-templates/components";

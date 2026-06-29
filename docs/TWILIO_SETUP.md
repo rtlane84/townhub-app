@@ -6,14 +6,15 @@ SMS is optional. Email can work independently.
 
 ## What TownHub sends
 
+See **[NOTIFICATIONS.md](./NOTIFICATIONS.md)** for the full order lifecycle flow.
+
 | Event | Recipient | When |
 |-------|-----------|------|
+| Order lifecycle updates | Customer | When email/phone provided at checkout |
 | New order | Business owner | Owner enabled **Text me for new orders** and has a notification phone |
 | New appointment request | Business owner | Owner enabled **Text me for appointment requests** and has a notification phone |
 
-TownHub does **not** send SMS to customers — only to the business owner’s `notificationPhone`.
-
-Implementation: `artifacts/api-server/src/lib/sms.ts` and `artifacts/api-server/src/lib/notifications.ts`.
+Implementation: `artifacts/api-server/src/lib/sms.ts`, `notification-sms.ts`, and `notification-delivery.ts`.
 
 ---
 
@@ -139,6 +140,7 @@ Check API server logs for `[operational] sms_send_failed` or `order_notification
 ## Related docs
 
 - [STRIPE_SETUP.md](./STRIPE_SETUP.md) — card payments
+- [NOTIFICATIONS.md](./NOTIFICATIONS.md) — full order notification flow
 - [RESEND_SETUP.md](./RESEND_SETUP.md) — email notifications
 - [PRODUCTION.md](../PRODUCTION.md) — full production checklist
 - [PRODUCTION_MONITORING.md](./PRODUCTION_MONITORING.md) — health checks and operational logging

@@ -1,0 +1,65 @@
+import { dashboardOrderUrl } from "../notification-urls";
+import {
+  formatOrderDateTime,
+  fulfillmentLabel,
+  paymentMethodLabel,
+  paymentStatusLabel,
+  renderDetailTable,
+  renderOrderItems,
+} from "./components";
+import { renderEmailLayout } from "./layout";
+import type { EmailContent, OrderNotificationData } from "./types";
+
+export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailContent {
+  const openUrl = dashboardOrderUrl(order.orderId);
+
+  const detailRows = [
+    { label: "Order number", value: order.orderNumber },
+    { label: "Customer", value: order.customerName },
+    { label: "Phone", value: order.customerPhone?.trim() ?? "—" },
+    { label: "Email", value: order.customerEmail?.trim() ?? "—" },
+    { label: "Payment method", value: paymentMethodLabel(order.paymentMethod) },
+    { label: "Payment status", value: paymentStatusLabel(order.paymentMethod, order.paymentStatus) },
+    { label: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType) },
+    { label: "Order placed", value: formatOrderDateTime(order.orderedAt) },
+  ];
+
+  const bodyHtml = `${renderDetailTable(detailRows)}${renderOrderItems(order.items, order.total)}`;
+
+  const html = renderEmailLayout({
+    preheader: `New order ${order.orderNumber} from ${order.customerName}.`,
+    businessName: order.businessName,
+    businessLogoUrl: order.businessLogoUrl,
+    heading: "New Order Received",
+    bodyHtml,
+    actionLabel: "Open Order",
+    actionUrl: openUrl,
+  });
+
+  const itemLines = order.items.map((i) => `  - ${i.productName} x${i.quantity}`).join("\n");
+  const text = [
+    "New Order Received",
+    "",
+    `Business: ${order.businessName}`,
+    `Order #: ${order.orderNumber}`,
+    `Customer: ${order.customerName}`,
+    order.customerPhone ? `Phone: ${order.customerPhone}` : "",
+    order.customerEmail ? `Email: ${order.customerEmail}` : "",
+    `Payment: ${paymentMethodLabel(order.paymentMethod)} (${paymentStatusLabel(order.paymentMethod, order.paymentStatus)})`,
+    `Fulfillment: ${fulfillmentLabel(order.fulfillmentType)}`,
+    `Total: $${order.total.toFixed(2)}`,
+    "",
+    "Items:",
+    itemLines,
+    "",
+    `Open Order: ${openUrl}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    subject: `New order ${order.orderNumber} — ${order.businessName}`,
+    text,
+    html,
+  };
+}

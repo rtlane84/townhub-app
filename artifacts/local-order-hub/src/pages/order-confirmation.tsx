@@ -80,9 +80,9 @@ export default function OrderConfirmation() {
         <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
           <CheckCircle2 className="h-10 w-10 text-green-600" />
         </div>
-        <h1 className="text-4xl font-serif font-bold text-foreground mb-4">Order Confirmed!</h1>
+        <h1 className="text-4xl font-serif font-bold text-foreground mb-4">Order Received!</h1>
         <p className="text-lg text-muted-foreground">
-          Thank you for supporting local. Your order #{order.orderNumber} has been received.
+          Thank you for supporting local. {order.businessName} has received your order #{order.orderNumber}.
         </p>
         {paymentPendingMessage ? (
           <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">{paymentPendingMessage}</p>

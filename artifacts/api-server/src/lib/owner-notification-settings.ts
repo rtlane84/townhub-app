@@ -1,9 +1,8 @@
-export function getAppBaseUrl(): string {
-  if (process.env.APP_BASE_URL) return process.env.APP_BASE_URL.replace(/\/$/, "");
-  const replitDomain = process.env.REPLIT_DOMAINS?.split(",")[0]?.trim();
-  if (replitDomain) return `https://${replitDomain}`;
-  return "http://localhost:5173";
-}
+export {
+  getAppBaseUrl,
+  dashboardOrderUrl,
+  dashboardAppointmentsUrl,
+} from "./notification-urls";
 
 export function resolveOwnerNotificationEmail(business: {
   notificationEmail?: string | null;
@@ -19,14 +18,4 @@ export function resolveOwnerNotificationPhone(business: {
   return phone || null;
 }
 
-export function paymentMethodLabel(paymentMethod: string): string {
-  return paymentMethod === "IN_PERSON" ? "Pay at pickup" : "Online payment (card)";
-}
-
-export function dashboardOrderUrl(orderId: number): string {
-  return `${getAppBaseUrl()}/dashboard/business/orders/${orderId}`;
-}
-
-export function dashboardAppointmentsUrl(): string {
-  return `${getAppBaseUrl()}/dashboard/business/appointments`;
-}
+export { paymentMethodLabel } from "./email-templates/components";

@@ -25,7 +25,7 @@ describe("owner notification settings", () => {
   });
 
   it("labels payment methods for owner alerts", () => {
-    assert.equal(paymentMethodLabel("IN_PERSON"), "Pay at pickup");
-    assert.equal(paymentMethodLabel("STRIPE"), "Online payment (card)");
+    assert.equal(paymentMethodLabel("IN_PERSON"), "Pay at pickup/delivery");
+    assert.equal(paymentMethodLabel("STRIPE"), "Online card payment");
   });
 });
