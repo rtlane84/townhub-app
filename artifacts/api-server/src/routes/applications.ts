@@ -94,6 +94,35 @@ router.get("/subscription-plans", async (_req, res): Promise<void> => {
   );
 });
 
+// GET /api/businesses/my-application — current user's application status (for apply flow)
+router.get("/businesses/my-application", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [application] = await db
+    .select()
+    .from(businessApplicationsTable)
+    .where(eq(businessApplicationsTable.userId, userId));
+
+  if (!application) {
+    res.status(404).json({ error: "No application found" });
+    return;
+  }
+
+  let plan = null;
+  if (application.planId) {
+    [plan] = await db
+      .select()
+      .from(subscriptionPlansTable)
+      .where(eq(subscriptionPlansTable.id, application.planId));
+  }
+
+  res.json(serializeApplication(application, plan));
+});
+
 // POST /api/businesses/apply — submit a business listing application
 router.post("/businesses/apply", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
