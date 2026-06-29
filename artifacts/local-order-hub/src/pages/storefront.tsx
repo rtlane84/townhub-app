@@ -15,13 +15,15 @@ import { Link } from "wouter";
 import { useState } from "react";
 import { BusinessHoursDisplay } from "@/components/business-hours-display";
 import { resolveBusinessHours } from "@/lib/business-hours";
-import { resolvePaymentMode, paymentModeStorefrontNote, resolveStorefrontMode, storefrontCopy, isAppointmentStorefrontMode, formatTime12h, formatTimeRange12h } from "@workspace/api-zod";
+import { resolvePaymentMode, paymentModeStorefrontNote, resolveStorefrontMode, storefrontCopy, isAppointmentStorefrontMode, isInformationStorefrontMode, showsStorefrontCatalog, informationPrimaryCtaLabel, formatTime12h, formatTimeRange12h, normalizeWebsiteUrl } from "@workspace/api-zod";
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog";
+import { BusinessWebsiteCard } from "@/components/business-website-card";
 import { BusinessThemeScope } from "@/components/business-theme-scope";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { BusinessTags } from "@/components/business-tags";
 import { accentTintStyle, mergePlatformTheme, normalizeHex } from "@/lib/theme-colors";
 import { usePlatformBranding } from "@/components/theme-provider";
+import { cn } from "@/lib/utils";
 
 const categoryPillActiveClass =
   "rounded-full whitespace-nowrap bg-platform-button text-white border border-platform-button !shadow-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-platform-button hover:text-white hover:!shadow-none active:!shadow-none";
@@ -120,7 +122,12 @@ export default function Storefront() {
   const paymentNote = paymentModeStorefrontNote(resolvePaymentMode(b));
   const storefrontMode = resolveStorefrontMode(b);
   const isAppointmentMode = isAppointmentStorefrontMode(b);
+  const isInformationMode = isInformationStorefrontMode(b);
+  const showCatalog = showsStorefrontCatalog(storefrontMode);
   const copy = storefrontCopy(storefrontMode);
+  const contactCtaLabel = informationPrimaryCtaLabel(!!b.phone?.trim());
+  const websiteUrl = normalizeWebsiteUrl(bx.websiteUrl as string | undefined);
+  const showWebsiteCard = bx.showWebsiteCard === true && !!websiteUrl;
 
   const openAppointmentDialog = (productId?: number) => {
     setAppointmentProductId(productId ?? null);
@@ -168,9 +175,9 @@ export default function Storefront() {
         </div>
 
         <div className="relative z-10 -mt-[6.125rem] md:-mt-[7.125rem]">
-          <div className="flex flex-col gap-8 md:flex-row">
-          {/* Sidebar */}
-          <div className="md:w-1/3 lg:w-1/4 flex-shrink-0">
+          <div className={cn("flex flex-col gap-8", showCatalog && "md:flex-row")}>
+          {/* Business details */}
+          <div className={cn(showCatalog && "md:w-1/3 lg:w-1/4 flex-shrink-0")}>
             <Card className="sticky top-24 overflow-visible border-border/40 shadow-xl">
               <div className="flex flex-col items-center rounded-t-xl border-b bg-white p-6 pt-12 text-center">
                 <BusinessLogoBadge
@@ -182,7 +189,10 @@ export default function Storefront() {
                 />
                 <h1 className="text-2xl font-serif font-bold text-foreground mb-1">{b.name}</h1>
                 <BusinessTags business={b} accentColor={b.accentColor} variant="storefront" />
-                {!isAppointmentMode && (
+                {isInformationMode && copy.informationTagline && (
+                  <p className="text-sm text-muted-foreground mt-2">{copy.informationTagline}</p>
+                )}
+                {!isAppointmentMode && !isInformationMode && (
                   <p className="text-xs text-muted-foreground mb-2">{paymentNote}</p>
                 )}
                 {isAppointmentMode && (
@@ -195,6 +205,26 @@ export default function Storefront() {
                     {copy.primaryCtaLabel}
                   </Button>
                 )}
+                {isInformationMode && (
+                  b.phone?.trim() ? (
+                    <Button asChild className="w-full rounded-full mt-2">
+                      <a href={`tel:${b.phone.replace(/\s/g, "")}`} data-testid="button-call-to-order">
+                        <Phone className="h-4 w-4 mr-2" />
+                        {contactCtaLabel}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-full mt-2"
+                      onClick={() => document.getElementById("business-contact")?.scrollIntoView({ behavior: "smooth" })}
+                      data-testid="button-contact-business"
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      {contactCtaLabel}
+                    </Button>
+                  )
+                )}
               </div>
 
               <CardContent className="p-0 overflow-hidden rounded-b-xl">
@@ -205,17 +235,26 @@ export default function Storefront() {
                     </div>
                   )}
 
-                  <div className="p-5 space-y-4">
+                  <div id="business-contact" className="p-5 space-y-4">
                     {b.address && (
                       <div className="flex items-start gap-3 text-sm">
                         <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <span className="text-foreground/80">{b.address}</span>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-foreground/80 hover:text-primary transition-colors"
+                        >
+                          {b.address}
+                        </a>
                       </div>
                     )}
                     {b.phone && (
                       <div className="flex items-start gap-3 text-sm">
                         <Phone className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <span className="text-foreground/80">{b.phone}</span>
+                        <a href={`tel:${b.phone.replace(/\s/g, "")}`} className="text-foreground/80 hover:text-primary transition-colors">
+                          {b.phone}
+                        </a>
                       </div>
                     )}
                     {businessHours.hasHours && (
@@ -230,7 +269,7 @@ export default function Storefront() {
                         </div>
                       </div>
                     )}
-                    {b.orderCutoffTime && !isAppointmentMode && (
+                    {b.orderCutoffTime && !isAppointmentMode && !isInformationMode && (
                       <div className="flex items-start gap-3 text-sm">
                         <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                         <span className="text-foreground/80">{copy.cutoffLabel(formatTime12h(b.orderCutoffTime))}</span>
@@ -239,7 +278,7 @@ export default function Storefront() {
                   </div>
 
                   {/* Fulfillment info */}
-                  {!isAppointmentMode && (pickupInstructions || deliveryInstructions || deliveryNotes || minimumOrderForDelivery || deliveryRadiusMiles) && (
+                  {!isAppointmentMode && !isInformationMode && (pickupInstructions || deliveryInstructions || deliveryNotes || minimumOrderForDelivery || deliveryRadiusMiles) && (
                     <div className="p-5 space-y-3">
                       {pickupInstructions && (
                         <div className="flex items-start gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg p-3">
@@ -297,14 +336,20 @@ export default function Storefront() {
                       </div>
                     </div>
                   )}
+                  {showWebsiteCard && (
+                    <div className="p-5">
+                      <BusinessWebsiteCard websiteUrl={websiteUrl} />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Catalog grid */}
+          {showCatalog && (
           <div className="md:mt-[3.25rem] md:w-2/3 lg:w-3/4">
-            {isAppointmentMode && (
+            {(isAppointmentMode || isInformationMode) && copy.catalogHeading && (
               <div className="mb-4 md:pt-20">
                 <h2 className="text-2xl font-serif font-bold text-foreground">{copy.catalogHeading}</h2>
                 {copy.catalogSubtitle && (
@@ -313,7 +358,7 @@ export default function Storefront() {
               </div>
             )}
             {categories.length > 0 && (
-              <div className={`mb-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar ${!isAppointmentMode ? "md:pt-20" : ""}`}>
+              <div className={`mb-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar ${!isAppointmentMode && !isInformationMode ? "md:pt-20" : ""}`}>
                 <Button
                   variant="ghost"
                   onClick={() => setActiveCategory(null)}
@@ -335,7 +380,7 @@ export default function Storefront() {
                 ))}
               </div>
             )}
-            {!isAppointmentMode && categories.length === 0 && (
+            {!isAppointmentMode && !isInformationMode && categories.length === 0 && (
               <div className="md:pt-20" />
             )}
 
@@ -378,15 +423,17 @@ export default function Storefront() {
                         ) : (
                           <span />
                         )}
-                        <Button
-                          size="sm"
-                          variant={isAppointmentMode ? "default" : "secondary"}
-                          className="rounded-full h-8"
-                          onClick={() => handleAddToCart(product)}
-                          disabled={!product.available || !b.active}
-                        >
-                          <Plus className="h-4 w-4 mr-1" /> {copy.addButtonLabel}
-                        </Button>
+                        {!isInformationMode && (
+                          <Button
+                            size="sm"
+                            variant={isAppointmentMode ? "default" : "secondary"}
+                            className="rounded-full h-8"
+                            onClick={() => handleAddToCart(product)}
+                            disabled={!product.available || !b.active}
+                          >
+                            <Plus className="h-4 w-4 mr-1" /> {copy.addButtonLabel}
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -394,6 +441,7 @@ export default function Storefront() {
               </div>
             )}
           </div>
+          )}
         </div>
         </div>
       </div>

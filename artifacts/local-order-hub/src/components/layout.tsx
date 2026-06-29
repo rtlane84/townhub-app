@@ -8,7 +8,7 @@ import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
 import { Badge } from "./ui/badge";
 import { useGetMe, getGetMeQueryKey, useGetBusinessBySlug, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
-import { isAppointmentStorefrontMode } from "@workspace/api-zod";
+import { hidesStorefrontCart } from "@workspace/api-zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -51,7 +51,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       queryKey: getGetBusinessBySlugQueryKey(storefrontSlug ?? ""),
     },
   });
-  const hideCart = !!storefrontSlug && isAppointmentStorefrontMode(storefrontData?.business ?? {});
+  const hideCart = !!storefrontSlug && hidesStorefrontCart(storefrontData?.business ?? {});
 
   const isAdmin = me?.role === "ADMIN";
   const isBusinessOwner = me?.role === "BUSINESS_OWNER";

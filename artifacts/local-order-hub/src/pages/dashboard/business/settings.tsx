@@ -19,7 +19,9 @@ import {
   resolvePaymentMode,
   resolveStorefrontMode,
   acceptsAppointmentRequests,
+  isInformationStorefrontMode,
   normalizeOptionalTime,
+  normalizeWebsiteUrl,
   BUSINESS_TYPE_OPTIONS,
 } from "@workspace/api-zod";
 import type { BusinessDayHours, PaymentMode, BusinessType, StorefrontMode } from "@workspace/api-client-react";
@@ -31,6 +33,7 @@ import { ImageField } from "@/components/image-field";
 
 type FormState = {
   name: string; type: BusinessType; description: string; address: string; phone: string;
+  websiteUrl: string; showWebsiteCard: boolean;
   structuredHours: BusinessDayHours[];
   logoUrl: string; heroImageUrl: string;
   pickupEnabled: boolean; deliveryEnabled: boolean; paymentMode: PaymentMode;
@@ -50,6 +53,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   name: "", type: "GENERAL", description: "", address: "", phone: "",
+  websiteUrl: "", showWebsiteCard: false,
   structuredHours: defaultWeeklyHours(),
   logoUrl: "", heroImageUrl: "",
   pickupEnabled: true, deliveryEnabled: false, paymentMode: "ONLINE_ONLY",
@@ -78,6 +82,8 @@ export default function BusinessSettings() {
         description: business.description ?? "",
         address: business.address ?? "",
         phone: business.phone ?? "",
+        websiteUrl: business.websiteUrl ?? "",
+        showWebsiteCard: business.showWebsiteCard === true,
         structuredHours: parseStructuredHours(business.structuredHours) ?? defaultWeeklyHours(),
         logoUrl: business.logoUrl ?? "",
         heroImageUrl: business.heroImageUrl ?? "",
@@ -140,6 +146,8 @@ export default function BusinessSettings() {
         description: opt(form.description),
         address: opt(form.address),
         phone: opt(form.phone),
+        websiteUrl: normalizeWebsiteUrl(form.websiteUrl) ?? undefined,
+        showWebsiteCard: form.showWebsiteCard,
         structuredHours: normalizeWeeklyHours(form.structuredHours),
         logoUrl: form.logoUrl.trim(),
         heroImageUrl: form.heroImageUrl.trim(),
@@ -199,6 +207,7 @@ export default function BusinessSettings() {
   }
 
   const acceptsAppointments = acceptsAppointmentRequests({ type: form.type, storefrontMode: form.storefrontMode });
+  const isInformationMode = isInformationStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
 
   function toggle(label: string, desc: string, key: "pickupEnabled" | "deliveryEnabled") {
     return (
@@ -251,6 +260,31 @@ export default function BusinessSettings() {
                 {field("Description", "description", { multiline: true, placeholder: "Tell customers what makes your business special" })}
                 {field("Address", "address", { placeholder: "123 Main St, Anytown, MN 55101" })}
                 {field("Phone", "phone", { placeholder: "(555) 555-0100" })}
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Website</label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Optional external website link for your public storefront.
+                  </p>
+                  <Input
+                    type="url"
+                    value={form.websiteUrl}
+                    onChange={(e) => setForm((f) => ({ ...f, websiteUrl: e.target.value }))}
+                    placeholder="https://www.yourbusiness.com"
+                    data-testid="input-websiteUrl"
+                  />
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <div>
+                    <p className="text-sm font-medium">Show website card</p>
+                    <p className="text-xs text-muted-foreground">Display a link to your website on your public page</p>
+                  </div>
+                  <Switch
+                    checked={form.showWebsiteCard}
+                    onCheckedChange={(showWebsiteCard) => setForm((f) => ({ ...f, showWebsiteCard }))}
+                    disabled={!form.websiteUrl.trim()}
+                    data-testid="switch-showWebsiteCard"
+                  />
+                </div>
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Business Hours</label>
                   <p className="text-xs text-muted-foreground mb-3">
@@ -330,6 +364,7 @@ export default function BusinessSettings() {
               </CardContent>
             </Card>
 
+            {!isInformationMode && (
             <Card>
               <CardHeader><CardTitle className="text-base">Ordering Options</CardTitle></CardHeader>
               <CardContent>
@@ -375,6 +410,7 @@ export default function BusinessSettings() {
                 </div>
               </CardContent>
             </Card>
+            )}
 
             <Card>
               <CardHeader><CardTitle className="text-base">Owner Notifications</CardTitle></CardHeader>

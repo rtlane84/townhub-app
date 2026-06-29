@@ -7,7 +7,7 @@
  */
 
 /**
- * ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests.
+ * ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu/products without online ordering.
  */
 export type StorefrontMode = typeof StorefrontMode[keyof typeof StorefrontMode];
 
@@ -15,4 +15,5 @@ export type StorefrontMode = typeof StorefrontMode[keyof typeof StorefrontMode];
 export const StorefrontMode = {
   ORDERING: 'ORDERING',
   APPOINTMENT: 'APPOINTMENT',
+  INFORMATION: 'INFORMATION',
 } as const;

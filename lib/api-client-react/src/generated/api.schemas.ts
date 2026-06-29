@@ -25,7 +25,7 @@ export const BusinessType = {
 } as const;
 
 /**
- * ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests.
+ * ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu/products without online ordering.
  */
 export type StorefrontMode = typeof StorefrontMode[keyof typeof StorefrontMode];
 
@@ -33,6 +33,7 @@ export type StorefrontMode = typeof StorefrontMode[keyof typeof StorefrontMode];
 export const StorefrontMode = {
   ORDERING: 'ORDERING',
   APPOINTMENT: 'APPOINTMENT',
+  INFORMATION: 'INFORMATION',
 } as const;
 
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
@@ -120,6 +121,13 @@ export interface Business {
   address?: string | null;
   /** @nullable */
   phone?: string | null;
+  /**
+     * External website URL shown when the website card is enabled.
+     * @nullable
+     */
+  websiteUrl?: string | null;
+  /** When true and websiteUrl is set, show a website card on the public storefront. */
+  showWebsiteCard?: boolean;
   /** @nullable */
   hours?: string | null;
   /** @nullable */
@@ -241,6 +249,8 @@ export interface BusinessUpdate {
   heroImageUrl?: string;
   address?: string;
   phone?: string;
+  websiteUrl?: string;
+  showWebsiteCard?: boolean;
   hours?: string;
   structuredHours?: BusinessDayHours[];
   active?: boolean;

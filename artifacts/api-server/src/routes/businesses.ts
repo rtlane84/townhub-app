@@ -22,7 +22,7 @@ import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/b
 import { nullsToUndefinedTopLevel } from "../lib/request-body";
 import { parseStructuredHours } from "@workspace/api-zod";
 import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
-import { defaultStorefrontModeForBusinessType } from "@workspace/api-zod";
+import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
 
 function slugify(name: string): string {
   return name
@@ -45,6 +45,8 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     heroImageUrl: b.heroImageUrl,
     address: b.address,
     phone: b.phone,
+    websiteUrl: b.websiteUrl,
+    showWebsiteCard: b.showWebsiteCard,
     hours: b.hours,
     structuredHours: parseStructuredHours(b.structuredHours),
     active: b.active,
@@ -444,6 +446,13 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.eventLocationEnabled = (d as Record<string, unknown>).eventLocationEnabled;
   if ((d as Record<string, unknown>).storefrontMode !== undefined)
     updateData.storefrontMode = (d as Record<string, unknown>).storefrontMode;
+  if ((d as Record<string, unknown>).websiteUrl !== undefined) {
+    const raw = (d as Record<string, unknown>).websiteUrl;
+    updateData.websiteUrl =
+      typeof raw === "string" && raw.trim() ? normalizeWebsiteUrl(raw) : null;
+  }
+  if ((d as Record<string, unknown>).showWebsiteCard !== undefined)
+    updateData.showWebsiteCard = (d as Record<string, unknown>).showWebsiteCard;
   if ((d as Record<string, unknown>).accentColor !== undefined)
     updateData.accentColor = (d as Record<string, unknown>).accentColor;
   if ((d as Record<string, unknown>).buttonColor !== undefined)

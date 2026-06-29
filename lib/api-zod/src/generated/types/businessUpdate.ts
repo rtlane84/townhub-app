@@ -18,6 +18,8 @@ export interface BusinessUpdate {
   heroImageUrl?: string;
   address?: string;
   phone?: string;
+  websiteUrl?: string;
+  showWebsiteCard?: boolean;
   hours?: string;
   structuredHours?: BusinessDayHours[];
   active?: boolean;

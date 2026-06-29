@@ -40,6 +40,7 @@ export const paymentModeEnum = pgEnum("payment_mode", [
 export const storefrontModeEnum = pgEnum("storefront_mode", [
   "ORDERING",
   "APPOINTMENT",
+  "INFORMATION",
 ]);
 
 export const businessesTable = pgTable("businesses", {
@@ -52,6 +53,8 @@ export const businessesTable = pgTable("businesses", {
   heroImageUrl: text("hero_image_url"),
   address: text("address"),
   phone: text("phone"),
+  websiteUrl: text("website_url"),
+  showWebsiteCard: boolean("show_website_card").notNull().default(false),
   hours: text("hours"),
   structuredHours: jsonb("structured_hours").$type<StructuredHoursJson | null>(),
   active: boolean("active").notNull().default(true),

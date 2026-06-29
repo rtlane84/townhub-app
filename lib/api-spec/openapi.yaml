@@ -1327,7 +1327,8 @@ components:
       enum:
         - ORDERING
         - APPOINTMENT
-      description: ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests.
+        - INFORMATION
+      description: ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu/products without online ordering.
 
     OrderStatus:
       type: string
@@ -1419,6 +1420,12 @@ components:
           type: ["string", "null"]
         phone:
           type: ["string", "null"]
+        websiteUrl:
+          type: ["string", "null"]
+          description: External website URL shown when the website card is enabled.
+        showWebsiteCard:
+          type: boolean
+          description: When true and websiteUrl is set, show a website card on the public storefront.
         hours:
           type: ["string", "null"]
         structuredHours:
@@ -1586,6 +1593,10 @@ components:
           type: string
         phone:
           type: string
+        websiteUrl:
+          type: string
+        showWebsiteCard:
+          type: boolean
         hours:
           type: string
         structuredHours:

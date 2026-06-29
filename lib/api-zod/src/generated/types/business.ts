@@ -25,6 +25,13 @@ export interface Business {
   address?: string | null;
   /** @nullable */
   phone?: string | null;
+  /**
+     * External website URL shown when the website card is enabled.
+     * @nullable
+     */
+  websiteUrl?: string | null;
+  /** When true and websiteUrl is set, show a website card on the public storefront. */
+  showWebsiteCard?: boolean;
   /** @nullable */
   hours?: string | null;
   /** @nullable */
