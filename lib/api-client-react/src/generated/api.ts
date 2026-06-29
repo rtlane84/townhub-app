@@ -62,6 +62,9 @@ import type {
   Product,
   ProductInput,
   ProductUpdate,
+  StripeConnectStartInput,
+  StripeConnectStartResult,
+  StripeConnectStatus,
   SubscriptionPlan,
   SubscriptionPlanInput,
   SystemHealthReport,
@@ -2176,6 +2179,155 @@ export const useStripeWebhook = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getStripeWebhookMutationOptions(options));
+    }
+
+export const getGetBusinessStripeStatusUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/stripe/status`
+}
+
+/**
+ * @summary Stripe Connect status for a business (owner or admin)
+ */
+export const getBusinessStripeStatus = async (businessId: number, options?: RequestInit): Promise<StripeConnectStatus> => {
+
+  return customFetch<StripeConnectStatus>(getGetBusinessStripeStatusUrl(businessId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBusinessStripeStatusQueryKey = (businessId: number,) => {
+    return [
+    `/api/businesses/${businessId}/stripe/status`
+    ] as const;
+    }
+
+
+export const getGetBusinessStripeStatusQueryOptions = <TData = Awaited<ReturnType<typeof getBusinessStripeStatus>>, TError = ErrorType<unknown>>(businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBusinessStripeStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBusinessStripeStatusQueryKey(businessId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBusinessStripeStatus>>> = ({ signal }) => getBusinessStripeStatus(businessId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(businessId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBusinessStripeStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBusinessStripeStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getBusinessStripeStatus>>>
+export type GetBusinessStripeStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Stripe Connect status for a business (owner or admin)
+ */
+
+export function useGetBusinessStripeStatus<TData = Awaited<ReturnType<typeof getBusinessStripeStatus>>, TError = ErrorType<unknown>>(
+ businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBusinessStripeStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBusinessStripeStatusQueryOptions(businessId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getStartBusinessStripeConnectUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/stripe/connect/start`
+}
+
+/**
+ * @summary Start or resume Stripe Connect onboarding for a business
+ */
+export const startBusinessStripeConnect = async (businessId: number,
+    stripeConnectStartInput?: StripeConnectStartInput, options?: RequestInit): Promise<StripeConnectStartResult> => {
+
+  return customFetch<StripeConnectStartResult>(getStartBusinessStripeConnectUrl(businessId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      stripeConnectStartInput,)
+  }
+);}
+
+
+
+
+export const getStartBusinessStripeConnectMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startBusinessStripeConnect>>, TError,{businessId: number;data?: BodyType<StripeConnectStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startBusinessStripeConnect>>, TError,{businessId: number;data?: BodyType<StripeConnectStartInput>}, TContext> => {
+
+const mutationKey = ['startBusinessStripeConnect'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startBusinessStripeConnect>>, {businessId: number;data?: BodyType<StripeConnectStartInput>}> = (props) => {
+          const {businessId,data} = props ?? {};
+
+          return  startBusinessStripeConnect(businessId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartBusinessStripeConnectMutationResult = NonNullable<Awaited<ReturnType<typeof startBusinessStripeConnect>>>
+    export type StartBusinessStripeConnectMutationBody = BodyType<StripeConnectStartInput> | undefined
+    export type StartBusinessStripeConnectMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Start or resume Stripe Connect onboarding for a business
+ */
+export const useStartBusinessStripeConnect = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startBusinessStripeConnect>>, TError,{businessId: number;data?: BodyType<StripeConnectStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startBusinessStripeConnect>>,
+        TError,
+        {businessId: number;data?: BodyType<StripeConnectStartInput>},
+        TContext
+      > => {
+      return useMutation(getStartBusinessStripeConnectMutationOptions(options));
     }
 
 export const getCreateAppointmentRequestUrl = () => {

@@ -121,6 +121,75 @@ export const PaymentMode = {
   BOTH: 'BOTH',
 } as const;
 
+export type StripeConnectPaymentStatus = typeof StripeConnectPaymentStatus[keyof typeof StripeConnectPaymentStatus];
+
+
+export const StripeConnectPaymentStatus = {
+  not_connected: 'not_connected',
+  pending: 'pending',
+  connected: 'connected',
+  restricted: 'restricted',
+} as const;
+
+export type StripeConnectStatusMode = typeof StripeConnectStatusMode[keyof typeof StripeConnectStatusMode];
+
+
+export const StripeConnectStatusMode = {
+  mock: 'mock',
+  test: 'test',
+  live: 'live',
+  unknown: 'unknown',
+} as const;
+
+export interface StripeConnectStatus {
+  paymentStatus: StripeConnectPaymentStatus;
+  /**
+     * Masked connected account identifier when present.
+     * @nullable
+     */
+  connectedAccountId?: string | null;
+  /**
+     * Masked connected account identifier for display.
+     * @nullable
+     */
+  connectedAccountLabel?: string | null;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  detailsSubmitted: boolean;
+  requirementsCurrentlyDueCount: number;
+  mode: StripeConnectStatusMode;
+  onlinePaymentsAvailable: boolean;
+}
+
+/**
+ * Use dashboard to open the Stripe Express dashboard when connected.
+ */
+export type StripeConnectStartInputAction = typeof StripeConnectStartInputAction[keyof typeof StripeConnectStartInputAction];
+
+
+export const StripeConnectStartInputAction = {
+  onboarding: 'onboarding',
+  dashboard: 'dashboard',
+} as const;
+
+export interface StripeConnectStartInput {
+  /** Use dashboard to open the Stripe Express dashboard when connected. */
+  action?: StripeConnectStartInputAction;
+}
+
+export type StripeConnectStartResultAction = typeof StripeConnectStartResultAction[keyof typeof StripeConnectStartResultAction];
+
+
+export const StripeConnectStartResultAction = {
+  onboarding: 'onboarding',
+  dashboard: 'dashboard',
+} as const;
+
+export interface StripeConnectStartResult {
+  url: string;
+  action: StripeConnectStartResultAction;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -188,6 +257,9 @@ export interface Business {
   minimumOrder?: number | null;
   payAtPickupEnabled?: boolean;
   paymentMode?: PaymentMode | null;
+  /** True when payment mode allows online card checkout and Stripe Connect is ready. */
+  onlinePaymentsAvailable?: boolean;
+  stripeConnectStatus?: StripeConnectPaymentStatus;
   /** @nullable */
   orderCutoffTime?: string | null;
   /** @nullable */

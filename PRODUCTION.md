@@ -33,47 +33,28 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
 
 ---
 
-## 2. Stripe Payments
+## 2. Stripe Connect Payments
 
-### Without Stripe (mock mode)
-If `STRIPE_SECRET_KEY` is not set, checkout silently returns a mock success URL and orders are recorded with `status: PAID`. This is fine for internal demos but **must not be used in production**.
+See **[docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md)** for platform Connect setup (Part A) and per-business onboarding (Part B).
 
-### With Stripe (live mode)
-1. Create a [Stripe](https://stripe.com) account and complete identity verification.
-2. In the Stripe dashboard, switch to **Live mode**.
-3. Copy the **Secret key** (`sk_live_...`) — never the publishable key for server use.
-4. Set `STRIPE_SECRET_KEY=sk_live_...` in your server environment.
+Each business connects its own Stripe account via **Business Dashboard → Settings → Payments**. Online card checkout requires a connected account; pay-at-pickup works without Stripe.
 
-### Stripe Webhooks
-The webhook at `POST /api/checkout/webhook` marks orders as PAID after Stripe confirms payment. Without this, pay-later orders will never be marked paid.
+### Without Stripe (mock mode — dev only)
+If `STRIPE_SECRET_KEY` is not set, checkout returns a mock success URL. Orders stay `paymentStatus: PENDING`. **Mock mode is blocked in production.**
 
-1. Go to **Stripe Dashboard → Developers → Webhooks → Add endpoint**.
-2. URL: `https://yourdomain.com/api/checkout/webhook`
-3. Events to listen for: `checkout.session.completed`
-4. Copy the **Signing secret** (`whsec_...`) and set `STRIPE_WEBHOOK_SECRET=whsec_...`
-5. In `artifacts/api-server/src/routes/orders.ts`, enable webhook signature verification:
-   ```ts
-   const event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!);
-   ```
-   The webhook handler currently trusts the event payload without signature verification — add this before deploying with real Stripe keys.
-
-### Required environment variables
-```
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-```
+### With Stripe (test or live)
+Set platform `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`, register the platform webhook, and have each business complete Connect onboarding before accepting online card payments.
 
 ---
 
 ## 3. Email Notifications (Resend or SMTP)
 
+See **[docs/RESEND_SETUP.md](docs/RESEND_SETUP.md)** for domain verification, API keys, env vars, and testing. **[docs/TWILIO_SETUP.md](docs/TWILIO_SETUP.md)** covers optional owner SMS alerts.
+
 Order status change emails are sent via `artifacts/api-server/src/lib/notifications.ts`. Without an email provider configured, notifications are logged to the DB but not delivered.
 
 ### Option A — Resend (recommended)
-1. Create an account at [resend.com](https://resend.com).
-2. Verify your sending domain.
-3. Generate an API key.
-4. Set `RESEND_API_KEY=re_...`
+Follow [docs/RESEND_SETUP.md](docs/RESEND_SETUP.md). Set `RESEND_API_KEY` and `RESEND_FROM`.
 
 ### Option B — SMTP
 Set the following (values depend on your provider):
@@ -169,7 +150,6 @@ The following known gaps exist and should be addressed before handling real user
 
 | Item | Risk | Location |
 |---|---|---|
-| Stripe webhook signature verification not enforced | Any caller can fake payment confirmations | `routes/orders.ts` — `POST /checkout/webhook` |
 | `/setup` bootstrap page remains accessible after setup | Low (returns 403 if admin exists) | `pages/setup.tsx` |
 | No per-business ownership check on `PATCH /orders/:id/status` | Authenticated non-owner can change any order status | `routes/orders.ts` |
 | No real Stripe recurring billing | Plans are manual / display-only | `routes/subscriptions.ts` |

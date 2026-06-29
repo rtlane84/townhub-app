@@ -138,6 +138,7 @@ Check API server logs for `[operational] sms_send_failed` or `order_notification
 
 ## Related docs
 
+- [STRIPE_SETUP.md](./STRIPE_SETUP.md) — card payments
 - [RESEND_SETUP.md](./RESEND_SETUP.md) — email notifications
 - [PRODUCTION.md](../PRODUCTION.md) — full production checklist
 - [PRODUCTION_MONITORING.md](./PRODUCTION_MONITORING.md) — health checks and operational logging

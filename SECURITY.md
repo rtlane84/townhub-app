@@ -84,7 +84,7 @@ These gaps were identified but not fixed in this pass. Address them before handl
 | Risk | Severity | What to do |
 |---|---|---|
 | `PATCH /orders/:id/status` — auth added but no ownership check | Medium | Any authenticated user can update any order's status. Fix: fetch the order's `businessId`, verify the caller owns that business or is admin before updating. |
-| Stripe webhook signature not verified | **High** | The webhook at `POST /api/checkout/webhook` trusts the event payload without signature verification. A malicious caller can fake payment confirmations. Fix: add `stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET)` and pass the raw body to Express (use `express.raw()` for that route). |
+| Stripe webhook signature verification | **Resolved** | Platform webhook verifies signatures; Connect direct charges on business connected accounts; orders marked paid idempotently via `checkout.session.completed` only. See [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md). |
 | `/setup` bootstrap page stays live after first use | Low | The endpoint returns 403 once an admin exists, so there is no functional risk. Removing or hiding the route after bootstrap is good hygiene. |
 | No rate limiting on public endpoints | Medium | `/api/businesses`, `/api/orders`, and checkout endpoints are unbounded. Add `express-rate-limit` before accepting real traffic. |
 | No pagination on list endpoints | Medium | All list endpoints return full DB rows. Fine at demo scale; will degrade with real data. Add `limit` + `offset` query params and a `total` count in responses. |

@@ -45,6 +45,7 @@ export const ordersTable = pgTable("orders", {
   paymentStatus: text("payment_status").notNull().default("PENDING"),
   paymentMethod: text("payment_method").notNull().default("STRIPE"),
   stripeSessionId: text("stripe_session_id"),
+  stripeConnectedAccountId: text("stripe_connected_account_id"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

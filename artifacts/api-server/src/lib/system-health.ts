@@ -1,6 +1,7 @@
 import { isEmailConfigured } from "./email";
 import { isSmsConfigured } from "./sms";
 import { getMediaStorageBackend } from "./media-storage";
+import { getStripeKeyMode, validateStripeConfig } from "./stripe-config";
 
 export type ServiceHealthStatus =
   | "healthy"
@@ -191,7 +192,10 @@ export function checkSmsHealth(): ServiceHealth {
 
 export function checkStripeHealth(): ServiceHealth {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!key) {
+  const mode = getStripeKeyMode(key);
+  const validation = validateStripeConfig();
+
+  if (mode === "mock") {
     return {
       name: "Stripe",
       status: "not_configured",
@@ -200,23 +204,22 @@ export function checkStripeHealth(): ServiceHealth {
     };
   }
 
-  const mode = key.startsWith("sk_live_")
-    ? "live"
-    : key.startsWith("sk_test_")
-      ? "test"
-      : "unknown";
   const webhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim());
+  let status: ServiceHealthStatus = validation.ok ? "healthy" : "degraded";
+  if (mode === "unknown") status = "degraded";
+  if (mode === "live" && !webhookConfigured) status = "unhealthy";
 
   return {
     name: "Stripe",
-    status: mode === "unknown" ? "degraded" : "healthy",
-    message:
-      mode === "unknown"
-        ? "Stripe secret key format unrecognized"
-        : `Stripe configured (${mode} mode)`,
+    status,
+    message: validation.ok
+      ? `Stripe configured (${mode} mode)`
+      : validation.issues[0] ?? "Stripe configuration incomplete",
     metadata: {
       mode,
       webhookConfigured,
+      connectSupport: true,
+      configIssueCount: validation.issues.length,
     },
   };
 }

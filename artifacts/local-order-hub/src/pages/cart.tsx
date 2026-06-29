@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/components/cart-context";
 import { useGetBusiness, useCreateOrder, useCreateCheckoutSession } from "@workspace/api-client-react";
@@ -20,12 +20,27 @@ import {
   allowsOnlinePayment,
   allowsPayAtPickup,
 } from "@workspace/api-zod";
+import { parseStripeCheckoutReturn } from "@/lib/stripe-checkout-return";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
   const { user } = useUser();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const stripeReturn = useMemo(
+    () => parseStripeCheckoutReturn(typeof window !== "undefined" ? window.location.search : ""),
+    [],
+  );
+
+  useEffect(() => {
+    if (stripeReturn !== "canceled") return;
+    toast({
+      title: "Checkout canceled",
+      description: "Your cart was not changed. You can try again when you're ready.",
+    });
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [stripeReturn, toast]);
 
   const { data: business } = useGetBusiness(cart.businessId!, {
     query: { enabled: !!cart.businessId, queryKey: ["/api/businesses/manage", cart.businessId] },
@@ -125,8 +140,11 @@ export default function Cart() {
   const showPickup = business?.pickupEnabled !== false;
   const showDelivery = business?.deliveryEnabled === true;
   const paymentMode = business ? resolvePaymentMode(business) : "ONLINE_ONLY";
-  const showOnlinePayment = allowsOnlinePayment(paymentMode);
+  const onlinePaymentsAvailable = business?.onlinePaymentsAvailable === true;
+  const showOnlinePayment = allowsOnlinePayment(paymentMode) && onlinePaymentsAvailable;
   const showPayAtPickup = allowsPayAtPickup(paymentMode);
+  const onlineUnavailable =
+    allowsOnlinePayment(paymentMode) && !onlinePaymentsAvailable;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -327,6 +345,13 @@ export default function Cart() {
               </div>
 
               <div className="w-full space-y-3 pt-4">
+                {onlineUnavailable && (
+                  <p className="text-sm text-muted-foreground text-center px-2">
+                    Online card payments are not available for this business yet.
+                    {showPayAtPickup ? " You can still pay at pickup." : ""}
+                  </p>
+                )}
+
                 {showOnlinePayment && (
                   <Button
                     className="w-full h-12 text-lg rounded-full"

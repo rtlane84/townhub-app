@@ -14,6 +14,8 @@ import platformRouter from "./platform";
 import weatherRouter from "./weather";
 import appointmentRequestsRouter from "./appointment-requests";
 import mediaRouter from "./media";
+import devRouter from "./dev";
+import stripeConnectRouter from "./stripe-connect";
 import { requireAdmin } from "../middlewares/requireRole";
 
 const router: IRouter = Router();
@@ -42,7 +44,9 @@ router.use(applicationsRouter);
 router.use(foodTruckRouter);
 router.use(appointmentRequestsRouter);
 router.use(mediaRouter);
+router.use(devRouter);
 router.use(businessesRouter);
+router.use(stripeConnectRouter);
 router.use(productsRouter);
 router.use(ordersRouter);
 router.use(adminRouter);

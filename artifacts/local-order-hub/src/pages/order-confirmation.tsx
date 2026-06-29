@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { useRoute, Link } from "wouter";
 import { useGetOrder } from "@workspace/api-client-react";
 import { CheckCircle2, ShoppingBag, Store, MapPin, Clock } from "lucide-react";
@@ -5,14 +6,47 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { useCart } from "@/components/cart-context";
+import {
+  formatOrderPaymentLabel,
+  isStripeCartClearedForOrder,
+  markStripeCartClearedForOrder,
+  parseStripeCheckoutReturn,
+  shouldClearCartForStripeSuccess,
+  stripePaymentPendingMessage,
+} from "@/lib/stripe-checkout-return";
 
 export default function OrderConfirmation() {
   const [, params] = useRoute("/order/:id");
   const orderId = Number(params?.id);
+  const { cart, clearCartForBusiness } = useCart();
+
+  const stripeReturn = useMemo(
+    () => parseStripeCheckoutReturn(typeof window !== "undefined" ? window.location.search : ""),
+    [orderId],
+  );
 
   const { data: order, isLoading } = useGetOrder(orderId, {
-    query: { enabled: !!orderId, queryKey: ['/api/orders', orderId] }
+    query: { enabled: !!orderId, queryKey: ["/api/orders", orderId] },
   });
+
+  useEffect(() => {
+    if (!orderId || !order) return;
+
+    const alreadyCleared = isStripeCartClearedForOrder(orderId);
+    if (
+      !shouldClearCartForStripeSuccess(stripeReturn, order.businessId, cart.businessId, alreadyCleared)
+    ) {
+      return;
+    }
+
+    clearCartForBusiness(order.businessId);
+    markStripeCartClearedForOrder(orderId);
+  }, [orderId, order, stripeReturn, cart.businessId, clearCartForBusiness]);
+
+  const paymentPendingMessage = order
+    ? stripePaymentPendingMessage(stripeReturn, order.paymentMethod, order.paymentStatus)
+    : null;
 
   if (isLoading) {
     return (
@@ -50,6 +84,9 @@ export default function OrderConfirmation() {
         <p className="text-lg text-muted-foreground">
           Thank you for supporting local. Your order #{order.orderNumber} has been received.
         </p>
+        {paymentPendingMessage ? (
+          <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">{paymentPendingMessage}</p>
+        ) : null}
       </div>
 
       <Card className="border-border/50 shadow-md mb-8 overflow-hidden">
@@ -103,7 +140,7 @@ export default function OrderConfirmation() {
                 <p><span className="text-muted-foreground">Name:</span> {order.customerName}</p>
                 <p><span className="text-muted-foreground">Email:</span> {order.customerEmail}</p>
                 {order.customerPhone && <p><span className="text-muted-foreground">Phone:</span> {order.customerPhone}</p>}
-                <p><span className="text-muted-foreground">Payment:</span> {order.paymentMethod === "IN_PERSON" ? "Pay at pickup/delivery" : "Paid with Card"}</p>
+                <p><span className="text-muted-foreground">Payment:</span> {formatOrderPaymentLabel(order.paymentMethod, order.paymentStatus)}</p>
               </div>
             </div>
           </div>

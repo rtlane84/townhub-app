@@ -64,6 +64,8 @@ export const GetMyBusinessResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
+  "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
+  "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -128,6 +130,8 @@ export const ListBusinessesResponseItem = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
+  "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
+  "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -242,6 +246,8 @@ export const GetBusinessBySlugResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
+  "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
+  "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -385,6 +391,8 @@ export const GetBusinessResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
+  "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
+  "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -498,6 +506,8 @@ export const UpdateBusinessResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
+  "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
+  "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
@@ -926,6 +936,43 @@ export const CreateCheckoutSessionResponse = zod.object({
 
 
 /**
+ * @summary Stripe Connect status for a business (owner or admin)
+ */
+export const GetBusinessStripeStatusParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const GetBusinessStripeStatusResponse = zod.object({
+  "paymentStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']),
+  "connectedAccountId": zod.string().nullish().describe('Masked connected account identifier when present.'),
+  "connectedAccountLabel": zod.string().nullish().describe('Masked connected account identifier for display.'),
+  "chargesEnabled": zod.boolean(),
+  "payoutsEnabled": zod.boolean(),
+  "detailsSubmitted": zod.boolean(),
+  "requirementsCurrentlyDueCount": zod.number(),
+  "mode": zod.enum(['mock', 'test', 'live', 'unknown']),
+  "onlinePaymentsAvailable": zod.boolean()
+})
+
+
+/**
+ * @summary Start or resume Stripe Connect onboarding for a business
+ */
+export const StartBusinessStripeConnectParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const StartBusinessStripeConnectBody = zod.object({
+  "action": zod.enum(['onboarding', 'dashboard']).optional().describe('Use dashboard to open the Stripe Express dashboard when connected.')
+})
+
+export const StartBusinessStripeConnectResponse = zod.object({
+  "url": zod.string(),
+  "action": zod.enum(['onboarding', 'dashboard'])
+})
+
+
+/**
  * @summary Submit a salon appointment request
  */
 
@@ -1072,6 +1119,8 @@ export const AssignBusinessOwnerResponse = zod.object({
   "minimumOrder": zod.number().nullish(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
+  "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
+  "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),

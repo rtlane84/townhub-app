@@ -8,7 +8,9 @@
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps --env-file=../../.env ./dist/index.mjs",
     "test": "node --import tsx/esm --test src/**/*.test.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "relink-clerk-user": "node --import tsx/esm --env-file=../../.env ./scripts/relink-clerk-user.ts",
+    "assign-dev-clerk-accounts": "node --import tsx/esm --env-file=../../.env ./scripts/assign-dev-clerk-accounts.ts"
   },
   "dependencies": {
     "@clerk/express": "^2.1.30",

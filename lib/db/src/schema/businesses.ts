@@ -74,6 +74,10 @@ export const businessesTable = pgTable("businesses", {
   paymentMode: paymentModeEnum("payment_mode"),
   orderCutoffTime: text("order_cutoff_time"),
 
+  // Stripe Connect (per-business connected account for card payments)
+  stripeConnectedAccountId: text("stripe_connected_account_id"),
+  stripeConnectStatus: text("stripe_connect_status").notNull().default("not_connected"),
+
   // Owner notifications
   orderNotificationEmail: text("order_notification_email"),
   notificationEmail: text("notification_email"),

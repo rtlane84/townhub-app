@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useGetMyBusiness, useUpdateBusiness, getGetMyBusinessQueryKey, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import {
 import type { BusinessDayHours, PaymentMode, BusinessType, StorefrontMode } from "@workspace/api-client-react";
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { PaymentModeSelector } from "@/components/payment-mode-selector";
+import { BusinessStripePaymentsCard } from "@/components/business-stripe-payments-card";
 import { StorefrontModeSelector } from "@/components/storefront-mode-selector";
 import { TimePicker, coerceFormTime } from "@/components/time-picker";
 import { ImageField } from "@/components/image-field";
@@ -72,6 +73,11 @@ export default function BusinessSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>({ ...EMPTY });
+  const stripeReturn = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("stripe") === "return";
+  }, []);
 
   useEffect(() => {
     if (business) {
@@ -365,6 +371,7 @@ export default function BusinessSettings() {
             </Card>
 
             {!isInformationMode && (
+            <>
             <Card>
               <CardHeader><CardTitle className="text-base">Ordering Options</CardTitle></CardHeader>
               <CardContent>
@@ -376,7 +383,7 @@ export default function BusinessSettings() {
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Payment options</label>
                   <p className="text-xs text-muted-foreground mb-3">
-                    Choose how customers can pay for orders from your business.
+                    Choose how customers can pay for orders from your business. Online card payments require a connected Stripe account below.
                   </p>
                   <PaymentModeSelector
                     value={form.paymentMode}
@@ -410,6 +417,11 @@ export default function BusinessSettings() {
                 </div>
               </CardContent>
             </Card>
+
+            {business ? (
+              <BusinessStripePaymentsCard businessId={business.id} stripeReturn={stripeReturn} />
+            ) : null}
+            </>
             )}
 
             <Card>

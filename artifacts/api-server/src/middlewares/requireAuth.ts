@@ -1,7 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { usersTable } from "@workspace/db";
+import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
 
 export type UserRole = "CUSTOMER" | "BUSINESS_OWNER" | "ADMIN";
 
@@ -24,23 +24,23 @@ export async function requireAuth(
     return;
   }
 
-  // Upsert user in our DB (Clerk is the source of truth for identity)
-  const existing = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-
-  if (existing.length === 0) {
-    const email =
-      (req as unknown as { auth?: { sessionClaims?: { email?: string } } })
-        ?.auth?.sessionClaims?.email ?? `${userId}@unknown.local`;
-    const [user] = await db
-      .insert(usersTable)
-      .values({ id: userId, email, role: "CUSTOMER" })
-      .returning();
-    req.dbUser = user;
-  } else {
-    req.dbUser = existing[0];
+  try {
+    req.dbUser = await ensureDbUserForClerkSession({
+      userId,
+      sessionClaims: (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })
+        ?.auth?.sessionClaims,
+    });
+  } catch (err) {
+    if (err instanceof ClerkUserDesyncError) {
+      res.status(409).json({
+        error: err.message,
+        currentClerkUserId: err.currentClerkUserId,
+        localUserId: err.localUserId,
+        relinkCommand: err.relinkCommand,
+      });
+      return;
+    }
+    throw err;
   }
 
   next();

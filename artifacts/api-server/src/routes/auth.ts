@@ -3,8 +3,14 @@ import { getAuth } from "@clerk/express";
 import { db, usersTable, businessesTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
 import { serializeBusiness } from "./businesses";
+import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
 
 const router: IRouter = Router();
+
+function sessionClaims(req: Parameters<typeof getAuth>[0]): Record<string, unknown> | undefined {
+  return (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth
+    ?.sessionClaims;
+}
 
 // GET /api/auth/me
 router.get("/auth/me", async (req, res): Promise<void> => {
@@ -14,21 +20,23 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     return;
   }
 
-  let [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-
-  if (!user) {
-    // Auto-create user on first auth
-    const claims = (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth?.sessionClaims;
-    const email = (claims?.email as string) ?? `${userId}@user.local`;
-    const name = (claims?.name as string) ?? null;
-    const [created] = await db
-      .insert(usersTable)
-      .values({ id: userId, email, name, role: "CUSTOMER" })
-      .returning();
-    user = created;
+  let user;
+  try {
+    user = await ensureDbUserForClerkSession({
+      userId,
+      sessionClaims: sessionClaims(req),
+    });
+  } catch (err) {
+    if (err instanceof ClerkUserDesyncError) {
+      res.status(409).json({
+        error: err.message,
+        currentClerkUserId: err.currentClerkUserId,
+        localUserId: err.localUserId,
+        relinkCommand: err.relinkCommand,
+      });
+      return;
+    }
+    throw err;
   }
 
   const [business] = await db
@@ -88,16 +96,23 @@ router.post("/admin/bootstrap", async (req, res): Promise<void> => {
   }
 
   // Ensure the user row exists
-  let [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  if (!user) {
-    const claims = (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth?.sessionClaims;
-    const email = (claims?.email as string) ?? `${userId}@user.local`;
-    const name = (claims?.name as string) ?? null;
-    const [created] = await db
-      .insert(usersTable)
-      .values({ id: userId, email, name, role: "CUSTOMER" })
-      .returning();
-    user = created;
+  let user;
+  try {
+    user = await ensureDbUserForClerkSession({
+      userId,
+      sessionClaims: sessionClaims(req),
+    });
+  } catch (err) {
+    if (err instanceof ClerkUserDesyncError) {
+      res.status(409).json({
+        error: err.message,
+        currentClerkUserId: err.currentClerkUserId,
+        localUserId: err.localUserId,
+        relinkCommand: err.relinkCommand,
+      });
+      return;
+    }
+    throw err;
   }
 
   // Promote to ADMIN

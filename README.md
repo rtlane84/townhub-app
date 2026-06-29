@@ -153,9 +153,9 @@ pnpm --filter @workspace/api-spec run codegen  # Regenerate hooks + Zod schemas
 | `CLERK_SECRET_KEY` | ✅ Yes | From Clerk dashboard → API Keys |
 | `CLERK_PUBLISHABLE_KEY` | ✅ Yes | Same source |
 | `SESSION_SECRET` | ✅ Yes | Any random string ≥ 32 chars |
-| `STRIPE_SECRET_KEY` | Optional | If absent, checkout returns a mock success URL |
-| `STRIPE_WEBHOOK_SECRET` | Optional | For real Stripe webhooks |
-| `RESEND_API_KEY` | Optional | Email notifications via Resend |
+| `STRIPE_SECRET_KEY` | Optional | Live/test secret key — see [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) |
+| `STRIPE_WEBHOOK_SECRET` | With Stripe | Webhook signing secret — see [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) |
+| `RESEND_API_KEY` | Optional | Email notifications — see [docs/RESEND_SETUP.md](docs/RESEND_SETUP.md) |
 | `SMTP_HOST` / `SMTP_PORT` | Optional | Alternative email transport |
 | `SUPABASE_URL` | ✅ Yes (media) | Supabase project URL for image storage |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ Yes (media) | Server-side only — uploads via API |
@@ -163,6 +163,8 @@ pnpm --filter @workspace/api-spec run codegen  # Regenerate hooks + Zod schemas
 | `MEDIA_STORAGE` | Optional | Set to `local` for dev-only filesystem fallback (default: Supabase) |
 | `PORT` | Auto | Set by Replit/workflow; defaults to 8080 |
 | `NODE_ENV` | Auto | `development` or `production` |
+
+**Production provider setup guides:** [Stripe](docs/STRIPE_SETUP.md) · [Resend](docs/RESEND_SETUP.md) · [Twilio](docs/TWILIO_SETUP.md) · [Production checklist](PRODUCTION.md)
 
 ### Frontend (`artifacts/local-order-hub/`)
 
@@ -242,6 +244,8 @@ All Clerk Frontend API (FAPI) calls are proxied through the Express server at `/
 3. Click **Bootstrap Admin** — this promotes the first signed-in user to the `ADMIN` role
 4. Only works once (no-op if an admin already exists)
 
+**Changed Clerk keys locally?** If your session user ID no longer matches the DB, see [docs/DEV_CLERK_RELINK.md](docs/DEV_CLERK_RELINK.md) for a dev-only relink script.
+
 ### Role Assignment
 
 Admins can promote/demote users at **Admin → Users** (`/dashboard/admin/users`). Roles: `CUSTOMER`, `BUSINESS_OWNER`, `ADMIN`.
@@ -250,11 +254,13 @@ Admins can promote/demote users at **Admin → Users** (`/dashboard/admin/users`
 
 ## Stripe / Mock Payment Notes
 
+TownHub uses **Stripe Connect** — each business connects its own Stripe account; card payments are direct charges on that account. See [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md).
+
 - The Stripe client in `artifacts/api-server/src/lib/stripe.ts` checks for `STRIPE_SECRET_KEY` at startup.
-- **If the key is absent:** `POST /api/checkout/session` returns a mock success redirect URL — orders are still created in the DB with `status: PAID`.
-- **If the key is present:** A real Stripe Checkout session is created. The webhook at `POST /api/checkout/webhook` handles `checkout.session.completed` to mark orders paid.
-- **Pay at Pickup:** Customers can choose "Pay at Pickup" at checkout — this bypasses Stripe entirely and creates the order with `paymentMethod: IN_PERSON`.
-- Webhook endpoint must be registered in the Stripe dashboard pointing to `https://yourdomain.com/api/checkout/webhook`.
+- **If the key is absent (dev only):** mock checkout redirects without charging; orders stay `PENDING`.
+- **If the key is present:** Checkout sessions are created on the business's connected account. The webhook at `POST /api/checkout/webhook` verifies signatures and handles `checkout.session.completed` to mark orders paid.
+- **Pay at Pickup:** Bypasses Stripe entirely (`paymentMethod: IN_PERSON`).
+- Online card checkout requires the business to complete Connect onboarding (**Settings → Payments**).
 
 ---
 
@@ -434,8 +440,7 @@ Access `/dashboard/admin` for:
 **Medium priority:**
 5. Server-side cart (useful for multi-device and abandoned cart recovery)
 6. Order search + date filtering on the business dashboard
-7. Stripe webhook signature verification (`stripe.webhooks.constructEvent`) for production security
-8. Rate limiting on public endpoints
+7. Rate limiting on public endpoints
 
 **Nice to have:**
 10. Business analytics charts (revenue over time, best-selling products)

@@ -9,6 +9,7 @@ import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
 import type { PaymentMode } from './paymentMode';
 import type { StorefrontMode } from './storefrontMode';
+import type { StripeConnectPaymentStatus } from './stripeConnectPaymentStatus';
 
 export interface Business {
   id: number;
@@ -46,6 +47,9 @@ export interface Business {
   minimumOrder?: number | null;
   payAtPickupEnabled?: boolean;
   paymentMode?: PaymentMode | null;
+  /** True when payment mode allows online card checkout and Stripe Connect is ready. */
+  onlinePaymentsAvailable?: boolean;
+  stripeConnectStatus?: StripeConnectPaymentStatus;
   /** @nullable */
   orderCutoffTime?: string | null;
   /** @nullable */

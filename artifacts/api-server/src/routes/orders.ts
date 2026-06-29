@@ -12,9 +12,13 @@ import {
   ListAllOrdersQueryParams,
   CreateCheckoutSessionBody,
 } from "@workspace/api-zod";
-import { createStripeCheckoutSession, stripe } from "../lib/stripe";
+import { createStripeCheckoutSession, stripe, isMockMode } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
+import { handleStripeWebhookEvent } from "../lib/stripe-webhook";
 import { validatePaymentMethodForBusiness } from "../lib/payment-mode";
+import { validateOnlineCardPaymentReady } from "../lib/stripe-connect";
+import { getAppBaseUrl } from "../lib/app-base-url";
+import { isMockCheckoutAllowed } from "../lib/stripe-config";
 import { requireAuth } from "../middlewares/requireRole";
 import {
   notifyOwnerNewOrder,
@@ -154,6 +158,14 @@ router.post("/orders", async (req, res): Promise<void> => {
   if (paymentError) {
     res.status(400).json({ error: paymentError });
     return;
+  }
+
+  if (paymentMethod === "STRIPE") {
+    const stripeError = validateOnlineCardPaymentReady(business);
+    if (stripeError) {
+      res.status(400).json({ error: stripeError });
+      return;
+    }
   }
 
   const deliveryFee =
@@ -507,21 +519,33 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
     return;
   }
 
-  const baseUrl =
-    process.env.REPLIT_DOMAINS?.split(",")[0]
-      ? `https://${process.env.REPLIT_DOMAINS.split(",")[0]}`
-      : "http://localhost:80";
+  const stripeError = validateOnlineCardPaymentReady(business);
+  if (stripeError) {
+    res.status(400).json({ error: stripeError });
+    return;
+  }
+
+  if (!business.stripeConnectedAccountId) {
+    res.status(400).json({ error: "This business has not connected Stripe for online card payments." });
+    return;
+  }
+
+  if (isMockMode && !isMockCheckoutAllowed()) {
+    res.status(503).json({ error: "Online card payments are not available right now." });
+    return;
+  }
+
+  const baseUrl = getAppBaseUrl();
 
   const result = await createStripeCheckoutSession(
     order.id,
     order.orderNumber,
-    order.businessName,
     order.items.map((i) => ({
       name: i.productName,
       price: i.unitPrice,
       quantity: i.quantity,
     })),
-    order.total,
+    business.stripeConnectedAccountId,
     `${baseUrl}/order/${order.id}?payment=success`,
     `${baseUrl}/cart?payment=canceled`,
   );
@@ -529,7 +553,10 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
   if (result.sessionId) {
     await db
       .update(ordersTable)
-      .set({ stripeSessionId: result.sessionId })
+      .set({
+        stripeSessionId: result.sessionId,
+        stripeConnectedAccountId: business.stripeConnectedAccountId,
+      })
       .where(eq(ordersTable.id, order.id));
   }
 
@@ -541,7 +568,7 @@ router.post("/checkout/webhook", async (req, res): Promise<void> => {
   const sig = req.headers["stripe-signature"];
   if (!sig || typeof sig !== "string") {
     logOperationalFailure("stripe_webhook_failed", { reason: "missing_signature" });
-    res.status(400).json({ error: "No signature" });
+    res.status(400).json({ error: "Missing Stripe signature" });
     return;
   }
 
@@ -552,15 +579,46 @@ router.post("/checkout/webhook", async (req, res): Promise<void> => {
     return;
   }
 
+  const rawBody = req.body;
+  if (!Buffer.isBuffer(rawBody)) {
+    logOperationalFailure("stripe_webhook_failed", { reason: "invalid_body" });
+    res.status(400).json({ error: "Webhook requires raw request body" });
+    return;
+  }
+
+  let event;
   try {
-    // Signature verification requires the raw request body; this handler acknowledges
-    // receipt until raw-body middleware is wired for production Stripe webhooks.
-    res.json({ received: true });
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+  } catch {
+    logOperationalFailure("stripe_webhook_failed", { reason: "invalid_signature" });
+    res.status(400).json({ error: "Invalid Stripe signature" });
+    return;
+  }
+
+  try {
+    const { handled, result } = await handleStripeWebhookEvent(event);
+
+    if (handled && result && !result.ok) {
+      req.log.warn(
+        { eventId: event.id, eventType: event.type, reason: result.reason, orderId: result.orderId },
+        "Stripe webhook event rejected",
+      );
+    }
+
+    if (handled && result?.ok && !result.alreadyPaid) {
+      req.log.info(
+        { eventId: event.id, orderId: result.orderId },
+        "Order marked paid via Stripe webhook",
+      );
+    }
   } catch (err) {
     logOperationalFailure("stripe_webhook_failed", { reason: "processing_error" });
-    req.log.error({ err }, "Stripe webhook processing failed");
-    res.status(400).json({ error: "Webhook error" });
+    req.log.error({ err, eventId: event.id }, "Stripe webhook processing failed");
+    res.status(500).json({ error: "Webhook processing failed" });
+    return;
   }
+
+  res.json({ received: true });
 });
 
 export default router;

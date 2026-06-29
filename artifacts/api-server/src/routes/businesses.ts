@@ -22,6 +22,8 @@ import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/b
 import { nullsToUndefinedTopLevel } from "../lib/request-body";
 import { parseStructuredHours } from "@workspace/api-zod";
 import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
+import { allowsOnlinePayment, resolvePaymentMode } from "@workspace/api-zod";
+import { businessHasOnlinePaymentsReady } from "../lib/stripe-connect";
 import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
 
 function slugify(name: string): string {
@@ -35,6 +37,10 @@ function slugify(name: string): string {
 const router: IRouter = Router();
 
 export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
+  const paymentMode = resolvePaymentMode(b);
+  const onlinePaymentsAvailable =
+    allowsOnlinePayment(paymentMode) && businessHasOnlinePaymentsReady(b);
+
   return {
     id: b.id,
     name: b.name,
@@ -62,6 +68,8 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     deliveryInstructions: b.deliveryInstructions,
     payAtPickupEnabled: b.payAtPickupEnabled,
     paymentMode: b.paymentMode,
+    onlinePaymentsAvailable,
+    stripeConnectStatus: b.stripeConnectStatus,
     orderCutoffTime: b.orderCutoffTime,
     orderNotificationEmail: b.orderNotificationEmail,
     notificationEmail: b.notificationEmail ?? b.orderNotificationEmail,

@@ -604,6 +604,50 @@ paths:
         "200":
           description: Received
 
+  /businesses/{businessId}/stripe/status:
+    get:
+      operationId: getBusinessStripeStatus
+      tags: [businesses]
+      summary: Stripe Connect status for a business (owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stripe Connect status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeConnectStatus"
+
+  /businesses/{businessId}/stripe/connect/start:
+    post:
+      operationId: startBusinessStripeConnect
+      tags: [businesses]
+      summary: Start or resume Stripe Connect onboarding for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeConnectStartInput"
+      responses:
+        "200":
+          description: Stripe onboarding or dashboard redirect URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeConnectStartResult"
+
   # ─── Appointment Requests (Salon) ───────────────────────────────
   /appointment-requests:
     post:
@@ -1445,6 +1489,65 @@ components:
         - PAY_AT_PICKUP_ONLY
         - BOTH
 
+    StripeConnectPaymentStatus:
+      type: string
+      enum:
+        - not_connected
+        - pending
+        - connected
+        - restricted
+
+    StripeConnectStatus:
+      type: object
+      required:
+        - paymentStatus
+        - chargesEnabled
+        - payoutsEnabled
+        - detailsSubmitted
+        - requirementsCurrentlyDueCount
+        - mode
+        - onlinePaymentsAvailable
+      properties:
+        paymentStatus:
+          $ref: "#/components/schemas/StripeConnectPaymentStatus"
+        connectedAccountId:
+          type: ["string", "null"]
+          description: Masked connected account identifier when present.
+        connectedAccountLabel:
+          type: ["string", "null"]
+          description: Masked connected account identifier for display.
+        chargesEnabled:
+          type: boolean
+        payoutsEnabled:
+          type: boolean
+        detailsSubmitted:
+          type: boolean
+        requirementsCurrentlyDueCount:
+          type: integer
+        mode:
+          type: string
+          enum: [mock, test, live, unknown]
+        onlinePaymentsAvailable:
+          type: boolean
+
+    StripeConnectStartInput:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [onboarding, dashboard]
+          description: Use dashboard to open the Stripe Express dashboard when connected.
+
+    StripeConnectStartResult:
+      type: object
+      required: [url, action]
+      properties:
+        url:
+          type: string
+        action:
+          type: string
+          enum: [onboarding, dashboard]
+
     # ─── Core Entities ───────────────────────────────────────────
     UserProfile:
       type: object
@@ -1534,6 +1637,11 @@ components:
           allOf:
             - $ref: "#/components/schemas/PaymentMode"
           nullable: true
+        onlinePaymentsAvailable:
+          type: boolean
+          description: True when payment mode allows online card checkout and Stripe Connect is ready.
+        stripeConnectStatus:
+          $ref: "#/components/schemas/StripeConnectPaymentStatus"
         orderCutoffTime:
           type: ["string", "null"]
         minimumOrderForDelivery:
