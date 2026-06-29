@@ -2,7 +2,7 @@ import { Link, useLocation, useRoute } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
 import {
   ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
-  Wrench, Menu, ExternalLink, Calendar, Truck,
+  Wrench, Menu, ExternalLink, Calendar, Truck, Package,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
@@ -96,6 +96,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 Food Trucks
               </Link>
 
+              {isCustomer && (
+                <Link href="/my-orders" className={navLinkClass("/my-orders")}>
+                  <Package className="h-3.5 w-3.5" />
+                  My Orders
+                </Link>
+              )}
+
               {isLoaded && (isAdmin || isBusinessOwner) && (
                 <Link href={dashboardHref} className={navLinkClass("/dashboard")}>
                   <DashboardIcon className="h-3.5 w-3.5" />
@@ -177,6 +184,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <Truck className="h-4 w-4" /> Food Trucks
                     </span>
                   </Link>
+
+                  {isCustomer && (
+                    <Link href="/my-orders" onClick={close}>
+                      <span className={navLinkClass("/my-orders")}>
+                        <Package className="h-4 w-4" /> My Orders
+                      </span>
+                    </Link>
+                  )}
 
                   {isLoaded && (isAdmin || isBusinessOwner) && (
                     <Link href={dashboardHref} onClick={close}>

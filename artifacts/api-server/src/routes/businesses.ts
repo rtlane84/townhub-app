@@ -240,6 +240,27 @@ router.get("/businesses/stats", async (req, res): Promise<void> => {
   });
 });
 
+// GET /api/businesses/checkout/:businessId — public checkout context (no auth)
+router.get("/businesses/checkout/:businessId", async (req, res): Promise<void> => {
+  const businessId = parseInt(Array.isArray(req.params.businessId) ? req.params.businessId[0] : req.params.businessId, 10);
+  if (!Number.isFinite(businessId)) {
+    res.status(400).json({ error: "Invalid business id" });
+    return;
+  }
+
+  const [business] = await db
+    .select()
+    .from(businessesTable)
+    .where(and(eq(businessesTable.id, businessId), eq(businessesTable.active, true)));
+
+  if (!business) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  res.json(serializeBusiness(business));
+});
+
 // GET /api/businesses/:slug — storefront
 router.get("/businesses/:slug", async (req, res): Promise<void> => {
   const params = GetBusinessBySlugParams.safeParse(req.params);
@@ -248,8 +269,8 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
     return;
   }
 
-  // Prevent conflict with /businesses/manage and /businesses/stats
-  if (["manage", "stats"].includes(params.data.slug)) {
+  // Prevent conflict with /businesses/manage, /businesses/stats, and /businesses/checkout
+  if (["manage", "stats", "checkout"].includes(params.data.slug)) {
     res.status(404).json({ error: "Not found" });
     return;
   }

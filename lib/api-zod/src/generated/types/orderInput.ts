@@ -13,8 +13,10 @@ export interface OrderInput {
   fulfillmentType: FulfillmentType;
   /** @minLength 1 */
   customerName: string;
+  /** @minLength 1 */
   customerEmail: string;
-  customerPhone?: string;
+  /** @minLength 7 */
+  customerPhone: string;
   deliveryAddress?: string;
   pickupTime?: string;
   notes?: string;

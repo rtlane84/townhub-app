@@ -554,6 +554,83 @@ export function useGetMarketplaceStats<TData = Awaited<ReturnType<typeof getMark
 
 
 
+export const getGetBusinessCheckoutUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/checkout/${businessId}`
+}
+
+/**
+ * @summary Public business checkout context (no auth)
+ */
+export const getBusinessCheckout = async (businessId: number, options?: RequestInit): Promise<Business> => {
+
+  return customFetch<Business>(getGetBusinessCheckoutUrl(businessId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBusinessCheckoutQueryKey = (businessId: number,) => {
+    return [
+    `/api/businesses/checkout/${businessId}`
+    ] as const;
+    }
+
+
+export const getGetBusinessCheckoutQueryOptions = <TData = Awaited<ReturnType<typeof getBusinessCheckout>>, TError = ErrorType<void>>(businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBusinessCheckout>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBusinessCheckoutQueryKey(businessId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBusinessCheckout>>> = ({ signal }) => getBusinessCheckout(businessId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(businessId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBusinessCheckout>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBusinessCheckoutQueryResult = NonNullable<Awaited<ReturnType<typeof getBusinessCheckout>>>
+export type GetBusinessCheckoutQueryError = ErrorType<void>
+
+
+/**
+ * @summary Public business checkout context (no auth)
+ */
+
+export function useGetBusinessCheckout<TData = Awaited<ReturnType<typeof getBusinessCheckout>>, TError = ErrorType<void>>(
+ businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBusinessCheckout>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBusinessCheckoutQueryOptions(businessId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getGetBusinessBySlugUrl = (slug: string,) => {
 
 
@@ -1652,6 +1729,83 @@ export const useCreateOrder = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getCreateOrderMutationOptions(options));
     }
+
+export const getListMyOrdersUrl = () => {
+
+
+
+
+  return `/api/me/orders`
+}
+
+/**
+ * @summary List orders for the signed-in customer
+ */
+export const listMyOrders = async ( options?: RequestInit): Promise<Order[]> => {
+
+  return customFetch<Order[]>(getListMyOrdersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMyOrdersQueryKey = () => {
+    return [
+    `/api/me/orders`
+    ] as const;
+    }
+
+
+export const getListMyOrdersQueryOptions = <TData = Awaited<ReturnType<typeof listMyOrders>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMyOrdersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyOrders>>> = ({ signal }) => listMyOrders({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyOrders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyOrdersQueryResult = NonNullable<Awaited<ReturnType<typeof listMyOrders>>>
+export type ListMyOrdersQueryError = ErrorType<void>
+
+
+/**
+ * @summary List orders for the signed-in customer
+ */
+
+export function useListMyOrders<TData = Awaited<ReturnType<typeof listMyOrders>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyOrdersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetOrderUrl = (id: number,) => {
 

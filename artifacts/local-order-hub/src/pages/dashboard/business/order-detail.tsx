@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
 
@@ -103,22 +104,33 @@ export default function BusinessOrderDetail({ params }: Props) {
 
             {/* Customer info */}
             <Card>
-              <CardHeader><CardTitle className="text-base">Customer</CardTitle></CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between gap-3">
+                <CardTitle className="text-base">Customer</CardTitle>
+                {!order.customerUserId ? (
+                  <Badge variant="secondary">Guest checkout</Badge>
+                ) : null}
+              </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Name</span>
-                  <span className="font-medium">{order.customerName}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground shrink-0">Name</span>
+                  <span className="font-medium text-right">{order.customerName}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email</span>
-                  <span className="font-medium">{order.customerEmail}</span>
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground shrink-0">Email</span>
+                  <a href={`mailto:${order.customerEmail}`} className="font-medium text-right text-primary hover:underline">
+                    {order.customerEmail}
+                  </a>
                 </div>
-                {order.customerPhone && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Phone</span>
-                    <span className="font-medium">{order.customerPhone}</span>
-                  </div>
-                )}
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted-foreground shrink-0">Phone</span>
+                  {order.customerPhone ? (
+                    <a href={`tel:${order.customerPhone}`} className="font-medium text-right text-primary hover:underline">
+                      {order.customerPhone}
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">Not provided</span>
+                  )}
+                </div>
                 {order.fulfillmentType === "DELIVERY" && order.deliveryAddress && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Delivery address</span>

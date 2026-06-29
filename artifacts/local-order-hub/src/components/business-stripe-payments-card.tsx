@@ -56,7 +56,7 @@ export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) 
   const queryClient = useQueryClient();
 
   const { data: status, isLoading, refetch } = useGetBusinessStripeStatus(businessId, {
-    query: { enabled: businessId > 0 },
+    query: { enabled: businessId > 0, queryKey: getGetBusinessStripeStatusQueryKey(businessId) },
   });
 
   const startConnect = useStartBusinessStripeConnect({

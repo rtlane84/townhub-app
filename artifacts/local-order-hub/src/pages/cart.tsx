@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/components/cart-context";
-import { useGetBusiness, useCreateOrder, useCreateCheckoutSession } from "@workspace/api-client-react";
+import { useGetBusinessCheckout, useCreateOrder, useCreateCheckoutSession } from "@workspace/api-client-react";
 import { FulfillmentType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,9 +42,17 @@ export default function Cart() {
     window.history.replaceState({}, "", window.location.pathname);
   }, [stripeReturn, toast]);
 
-  const { data: business } = useGetBusiness(cart.businessId!, {
-    query: { enabled: !!cart.businessId, queryKey: ["/api/businesses/manage", cart.businessId] },
+  const { data: business } = useGetBusinessCheckout(cart.businessId!, {
+    query: { enabled: !!cart.businessId, queryKey: ["/api/businesses/checkout", cart.businessId] },
   });
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.fullName) setCustomerName(user.fullName);
+    if (user.primaryEmailAddress?.emailAddress) {
+      setCustomerEmail(user.primaryEmailAddress.emailAddress);
+    }
+  }, [user]);
 
   const bx = business as unknown as Record<string, unknown> | undefined;
   const pickupInstructions = bx?.pickupInstructions as string | undefined;
@@ -87,11 +95,19 @@ export default function Cart() {
     !minimumOrderForDelivery || total >= minimumOrderForDelivery;
 
   const handleCheckout = async (payAtPickup: boolean) => {
-    if (!customerName || !customerEmail) {
-      toast({ title: "Missing details", description: "Please provide your name and email.", variant: "destructive" });
+    if (!customerName.trim()) {
+      toast({ title: "Missing details", description: "Please provide your name.", variant: "destructive" });
       return;
     }
-    if (fulfillmentType === "DELIVERY" && !deliveryAddress) {
+    if (!customerEmail.trim()) {
+      toast({ title: "Missing details", description: "Please provide your email for order updates.", variant: "destructive" });
+      return;
+    }
+    if (!customerPhone.trim()) {
+      toast({ title: "Missing details", description: "Please provide a phone number so the business can reach you.", variant: "destructive" });
+      return;
+    }
+    if (fulfillmentType === "DELIVERY" && !deliveryAddress.trim()) {
       toast({ title: "Missing details", description: "Please provide a delivery address.", variant: "destructive" });
       return;
     }
@@ -106,9 +122,9 @@ export default function Cart() {
         data: {
           businessId: cart.businessId!,
           fulfillmentType,
-          customerName,
-          customerEmail,
-          customerPhone,
+          customerName: customerName.trim(),
+          customerEmail: customerEmail.trim(),
+          customerPhone: customerPhone.trim(),
           deliveryAddress: fulfillmentType === "DELIVERY" ? deliveryAddress : undefined,
           notes,
           paymentMethod: payAtPickup ? "IN_PERSON" : "STRIPE",
@@ -118,7 +134,7 @@ export default function Cart() {
 
       if (payAtPickup) {
         clearCart();
-        setLocation(`/order/${order.id}`);
+        setLocation(user ? `/my-orders/${order.id}` : `/order/${order.id}`);
         toast({ title: "Order placed successfully!" });
       } else {
         const session = await createCheckoutSession.mutateAsync({ data: { orderId: order.id } });
@@ -126,7 +142,7 @@ export default function Cart() {
           window.location.href = session.url;
         } else {
           clearCart();
-          setLocation(`/order/${order.id}`);
+          setLocation(user ? `/my-orders/${order.id}` : `/order/${order.id}`);
           toast({ title: "Order placed successfully!" });
         }
       }
@@ -148,7 +164,12 @@ export default function Cart() {
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
-      <h1 className="text-3xl font-serif font-bold text-foreground mb-8">Checkout</h1>
+      <h1 className="text-3xl font-serif font-bold text-foreground mb-2">Checkout</h1>
+      <p className="text-muted-foreground mb-8">
+        {user
+          ? "Your account details are prefilled below. You can edit them before placing your order."
+          : "No account needed — enter your contact details to place your order."}
+      </p>
 
       <div className="grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-7 space-y-6">
@@ -233,8 +254,8 @@ export default function Cart() {
                     <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                    <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
+                    <Input id="phone" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} required />
                   </div>
                   <div className="col-span-2 space-y-2">
                     <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>

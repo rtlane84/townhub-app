@@ -174,6 +174,7 @@ export const GetPlatformStatsResponse = zod.object({
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
   "notes": zod.string().nullish(),
@@ -203,6 +204,70 @@ export const GetPlatformStatsResponse = zod.object({
 export const GetMarketplaceStatsResponse = zod.object({
   "localShopsCount": zod.number().describe('Number of active local businesses'),
   "uniqueItemsCount": zod.number().describe('Number of available products across active businesses')
+})
+
+
+/**
+ * @summary Public business checkout context (no auth)
+ */
+export const GetBusinessCheckoutParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMin = 0;
+export const getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
+
+export const GetBusinessCheckoutResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "heroImageUrl": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "websiteUrl": zod.string().nullish().describe('External website URL shown when the website card is enabled.'),
+  "showWebsiteCard": zod.boolean().optional().describe('When true and websiteUrl is set, show a website card on the public storefront.'),
+  "hours": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMin).max(getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
+  "active": zod.boolean(),
+  "featured": zod.boolean().optional(),
+  "pickupEnabled": zod.boolean().optional(),
+  "deliveryEnabled": zod.boolean().optional(),
+  "deliveryFee": zod.number().nullish(),
+  "minimumOrder": zod.number().nullish(),
+  "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
+  "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
+  "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
+  "orderCutoffTime": zod.string().nullish(),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
+  "ownerId": zod.string().nullish(),
+  "createdAt": zod.coerce.date().optional()
 })
 
 
@@ -692,14 +757,17 @@ export const DeleteProductParams = zod.object({
  */
 
 
+export const createOrderBodyCustomerPhoneMin = 7;
+
+
 
 
 export const CreateOrderBody = zod.object({
   "businessId": zod.number(),
   "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
   "customerName": zod.string().min(1),
-  "customerEmail": zod.string(),
-  "customerPhone": zod.string().optional(),
+  "customerEmail": zod.string().email().min(1),
+  "customerPhone": zod.string().min(createOrderBodyCustomerPhoneMin),
   "deliveryAddress": zod.string().optional(),
   "pickupTime": zod.string().optional(),
   "notes": zod.string().optional(),
@@ -710,6 +778,43 @@ export const CreateOrderBody = zod.object({
   "quantity": zod.number().min(1)
 }))
 })
+
+
+/**
+ * @summary List orders for the signed-in customer
+ */
+export const ListMyOrdersResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "businessName": zod.string(),
+  "orderNumber": zod.string().optional(),
+  "status": zod.enum(['NEW', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELED']),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "customerName": zod.string(),
+  "customerEmail": zod.string(),
+  "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
+  "deliveryAddress": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "total": zod.number(),
+  "deliveryFee": zod.number().nullish(),
+  "paymentStatus": zod.string().optional(),
+  "paymentMethod": zod.string().optional(),
+  "stripeSessionId": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "orderId": zod.number().optional(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "subtotal": zod.number()
+})).optional(),
+  "createdAt": zod.coerce.date().optional()
+})
+export const ListMyOrdersResponse = zod.array(ListMyOrdersResponseItem)
 
 
 /**
@@ -729,6 +834,7 @@ export const GetOrderResponse = zod.object({
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
   "notes": zod.string().nullish(),
@@ -772,6 +878,7 @@ export const UpdateOrderStatusResponse = zod.object({
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
   "notes": zod.string().nullish(),
@@ -811,6 +918,7 @@ export const ListBusinessOrdersResponseItem = zod.object({
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
   "notes": zod.string().nullish(),
@@ -856,6 +964,7 @@ export const GetBusinessOrderSummaryResponse = zod.object({
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
   "notes": zod.string().nullish(),
@@ -898,6 +1007,7 @@ export const ListAllOrdersResponseItem = zod.object({
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
   "notes": zod.string().nullish(),

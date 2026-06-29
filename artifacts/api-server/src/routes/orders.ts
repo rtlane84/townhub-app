@@ -27,6 +27,9 @@ import {
   buildStatusUpdateEmail,
 } from "../lib/notifications";
 import { authorizeOrderStatusUpdate } from "../lib/order-access";
+import { authorizeOrderView } from "../lib/order-customer-access";
+import { validateGuestOrderContact } from "../lib/guest-checkout";
+import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 
 const router: IRouter = Router();
 
@@ -77,6 +80,7 @@ function serializeOrder(
     customerName: order.customerName,
     customerEmail: order.customerEmail,
     customerPhone: order.customerPhone,
+    customerUserId: order.customerUserId,
     deliveryAddress: order.deliveryAddress,
     pickupTime: order.pickupTime,
     notes: order.notes,
@@ -108,6 +112,20 @@ router.post("/orders", async (req, res): Promise<void> => {
   }
 
   const d = parsed.data;
+
+  const guestValidation = validateGuestOrderContact({
+    customerName: d.customerName,
+    customerEmail: d.customerEmail,
+    customerPhone: d.customerPhone,
+    fulfillmentType: d.fulfillmentType,
+    deliveryAddress: d.deliveryAddress,
+  });
+  if (!guestValidation.ok) {
+    res.status(400).json({ error: guestValidation.error });
+    return;
+  }
+
+  const { userId: customerUserId } = getAuth(req);
 
   const products = await db
     .select()
@@ -181,10 +199,11 @@ router.post("/orders", async (req, res): Promise<void> => {
       businessId: d.businessId,
       orderNumber: generateOrderNumber(),
       fulfillmentType: d.fulfillmentType as never,
-      customerName: d.customerName,
-      customerEmail: d.customerEmail,
-      customerPhone: d.customerPhone,
-      deliveryAddress: d.deliveryAddress,
+      customerName: d.customerName.trim(),
+      customerEmail: d.customerEmail.trim(),
+      customerPhone: d.customerPhone?.trim() ?? null,
+      customerUserId: customerUserId ?? null,
+      deliveryAddress: d.deliveryAddress?.trim(),
       pickupTime: d.pickupTime,
       notes: d.notes,
       specialFields: d.specialFields,
@@ -249,11 +268,84 @@ router.post("/orders", async (req, res): Promise<void> => {
   }
 });
 
+// GET /api/me/orders — signed-in customer's own order history
+router.get("/me/orders", requireAuth, async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const orders = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.customerUserId, userId))
+    .orderBy(sql`${ordersTable.createdAt} DESC`);
+
+  const ordersWithItems = await Promise.all(
+    orders.map(async (order) => {
+      const items = await db
+        .select()
+        .from(orderItemsTable)
+        .where(eq(orderItemsTable.orderId, order.id));
+
+      const [business] = await db
+        .select()
+        .from(businessesTable)
+        .where(eq(businessesTable.id, order.businessId));
+
+      return serializeOrder(order, items, business?.name ?? "Unknown");
+    }),
+  );
+
+  res.json(ordersWithItems);
+});
+
 // GET /api/orders/:id
 router.get("/orders/:id", async (req, res): Promise<void> => {
   const params = GetOrderParams.safeParse({ id: parseId(req.params.id) });
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, params.data.id));
+
+  if (!order) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  let viewerRole: (typeof usersTable.$inferSelect)["role"] | null = null;
+  let businessOwnerId: string | null = null;
+
+  if (userId) {
+    const [user] = await db
+      .select({ role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    viewerRole = user?.role ?? null;
+
+    const [business] = await db
+      .select({ ownerId: businessesTable.ownerId })
+      .from(businessesTable)
+      .where(eq(businessesTable.id, order.businessId));
+    businessOwnerId = business?.ownerId ?? null;
+  }
+
+  const viewAuth = authorizeOrderView({
+    viewerUserId: userId,
+    viewerRole,
+    businessOwnerId,
+    orderCustomerUserId: order.customerUserId,
+  });
+
+  if (!viewAuth.allowed) {
+    res.status(viewAuth.statusCode).json({ error: viewAuth.error });
     return;
   }
 
@@ -354,10 +446,21 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
 // GET /api/businesses/:businessId/orders
 router.get(
   "/businesses/:businessId/orders",
+  requireAuth,
   async (req, res): Promise<void> => {
-    const params = ListBusinessOrdersParams.safeParse({
-      businessId: parseId(req.params.businessId),
-    });
+    const businessId = parseId(req.params.businessId);
+    if (!Number.isFinite(businessId)) {
+      res.status(400).json({ error: "Invalid business id" });
+      return;
+    }
+
+    const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
+    if (!access.ok) {
+      res.status(access.status).json({ error: access.error });
+      return;
+    }
+
+    const params = ListBusinessOrdersParams.safeParse({ businessId });
     if (!params.success) {
       res.status(400).json({ error: params.error.message });
       return;
@@ -395,16 +498,26 @@ router.get(
 // GET /api/businesses/:businessId/orders/summary
 router.get(
   "/businesses/:businessId/orders/summary",
+  requireAuth,
   async (req, res): Promise<void> => {
-    const params = GetBusinessOrderSummaryParams.safeParse({
-      businessId: parseId(req.params.businessId),
-    });
+    const businessId = parseId(req.params.businessId);
+    if (!Number.isFinite(businessId)) {
+      res.status(400).json({ error: "Invalid business id" });
+      return;
+    }
+
+    const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
+    if (!access.ok) {
+      res.status(access.status).json({ error: access.error });
+      return;
+    }
+
+    const params = GetBusinessOrderSummaryParams.safeParse({ businessId });
     if (!params.success) {
       res.status(400).json({ error: params.error.message });
       return;
     }
 
-    const businessId = params.data.businessId;
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 

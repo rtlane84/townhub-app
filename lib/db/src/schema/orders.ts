@@ -36,6 +36,7 @@ export const ordersTable = pgTable("orders", {
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),
+  customerUserId: text("customer_user_id"),
   deliveryAddress: text("delivery_address"),
   pickupTime: text("pickup_time"),
   notes: text("notes"),

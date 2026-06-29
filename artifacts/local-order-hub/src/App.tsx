@@ -22,6 +22,8 @@ import Businesses from "@/pages/businesses";
 import Storefront from "@/pages/storefront";
 import Cart from "@/pages/cart";
 import OrderConfirmation from "@/pages/order-confirmation";
+import MyOrders from "@/pages/my-orders";
+import MyOrderDetail from "@/pages/my-order-detail";
 
 import BusinessOverview from "@/pages/dashboard/business/overview";
 import BusinessOrders from "@/pages/dashboard/business/orders";
@@ -228,6 +230,8 @@ function ClerkProviderWithRoutes() {
                 <Route path="/businesses/:slug" component={Storefront} />
                 <Route path="/cart" component={Cart} />
                 <Route path="/order/:id" component={OrderConfirmation} />
+                <ProtectedRoute path="/my-orders/:id" component={MyOrderDetail} />
+                <ProtectedRoute path="/my-orders" component={MyOrders} />
 
                 <Route path="/sign-in/*?" component={SignInPage} />
                 <Route path="/sign-up/*?" component={SignUpPage} />

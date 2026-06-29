@@ -20,6 +20,11 @@ export interface Order {
   customerEmail: string;
   /** @nullable */
   customerPhone?: string | null;
+  /**
+     * Clerk user id when the customer was signed in at checkout; null for guest orders.
+     * @nullable
+     */
+  customerUserId?: string | null;
   /** @nullable */
   deliveryAddress?: string | null;
   /** @nullable */
