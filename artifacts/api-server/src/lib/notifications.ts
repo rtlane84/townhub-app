@@ -2,21 +2,35 @@ import { db, notificationLogsTable } from "@workspace/db";
 import { sendEmail } from "./email";
 import { sendSms } from "./sms";
 import { logger } from "./logger";
-import { formatTime12h } from "@workspace/api-zod";
 import {
-  dashboardAppointmentsUrl,
-  dashboardOrderUrl,
-  paymentMethodLabel,
   resolveOwnerNotificationEmail,
   resolveOwnerNotificationPhone,
 } from "./owner-notification-settings";
+import {
+  buildOwnerNewAppointmentEmail,
+  buildOwnerNewAppointmentSms,
+  buildOwnerNewOrderEmail,
+  buildOwnerNewOrderSms,
+  resolveNotificationStatus,
+  type NotificationStatus,
+} from "./notification-content";
 
 export type NotificationChannel = "EMAIL" | "SMS";
 export type OwnerEventType = "NEW_ORDER" | "NEW_APPOINTMENT_REQUEST";
 export type CustomerEventType = "ORDER_PLACED_CUSTOMER" | "ORDER_STATUS_UPDATE";
 export type NotificationEventType = OwnerEventType | CustomerEventType | "ORDER_PLACED_BUSINESS";
 
-export type NotificationStatus = "SENT" | "LOGGED" | "FAILED";
+export type { NotificationStatus } from "./notification-content";
+export {
+  buildOwnerNewAppointmentEmail,
+  buildOwnerNewAppointmentSms,
+  buildOwnerNewOrderEmail,
+  buildOwnerNewOrderSms,
+  buildOrderConfirmationEmail,
+  buildOrderPlacedBusinessEmail,
+  buildStatusUpdateEmail,
+  resolveNotificationStatus,
+} from "./notification-content";
 
 interface LogNotificationInput {
   businessId: number;
@@ -63,9 +77,9 @@ async function deliverEmailNotification(input: {
   appointmentRequestId?: number;
 }): Promise<void> {
   const result = await sendEmail(input.to, input.subject, input.body);
-  const status: NotificationStatus = result.sent ? "SENT" : result.error ? "FAILED" : "LOGGED";
+  const status = resolveNotificationStatus(result);
 
-  if (!result.sent && !result.error) {
+  if (status === "LOGGED") {
     logger.info(
       { eventType: input.eventType, to: input.to, subject: input.subject },
       `[NOTIFICATION LOG] ${input.eventType} → ${input.to}`,
@@ -95,9 +109,9 @@ async function deliverSmsNotification(input: {
   appointmentRequestId?: number;
 }): Promise<void> {
   const result = await sendSms(input.to, input.body);
-  const status: NotificationStatus = result.sent ? "SENT" : result.error ? "FAILED" : "LOGGED";
+  const status = resolveNotificationStatus(result);
 
-  if (!result.sent && !result.error) {
+  if (status === "LOGGED") {
     logger.info({ eventType: input.eventType, to: input.to }, `[NOTIFICATION LOG SMS] ${input.eventType}`);
   }
 
@@ -198,32 +212,36 @@ export async function notifyOwnerNewOrder(input: {
 
   const tasks: Promise<void>[] = [];
 
-  if (input.business.notifyNewOrdersByEmail !== false && email) {
-    tasks.push(
-      deliverEmailNotification({
-        businessId: input.business.id,
-        eventType: "NEW_ORDER",
-        to: email,
-        subject,
-        body: emailBody,
-        orderId: input.orderId,
-      }),
-    );
-  }
+  try {
+    if (input.business.notifyNewOrdersByEmail !== false && email) {
+      tasks.push(
+        deliverEmailNotification({
+          businessId: input.business.id,
+          eventType: "NEW_ORDER",
+          to: email,
+          subject,
+          body: emailBody,
+          orderId: input.orderId,
+        }),
+      );
+    }
 
-  if (input.business.notifyNewOrdersBySms && phone) {
-    tasks.push(
-      deliverSmsNotification({
-        businessId: input.business.id,
-        eventType: "NEW_ORDER",
-        to: phone,
-        body: smsBody,
-        orderId: input.orderId,
-      }),
-    );
-  }
+    if (input.business.notifyNewOrdersBySms && phone) {
+      tasks.push(
+        deliverSmsNotification({
+          businessId: input.business.id,
+          eventType: "NEW_ORDER",
+          to: phone,
+          body: smsBody,
+          orderId: input.orderId,
+        }),
+      );
+    }
 
-  await Promise.all(tasks);
+    await Promise.all(tasks);
+  } catch (err) {
+    logger.error({ err, orderId: input.orderId }, "Owner new order notification failed");
+  }
 }
 
 export async function notifyOwnerNewAppointmentRequest(input: {
@@ -268,204 +286,39 @@ export async function notifyOwnerNewAppointmentRequest(input: {
 
   const tasks: Promise<void>[] = [];
 
-  if (input.business.notifyAppointmentRequestsByEmail !== false && email) {
-    tasks.push(
-      deliverEmailNotification({
-        businessId: input.business.id,
-        eventType: "NEW_APPOINTMENT_REQUEST",
-        to: email,
-        subject,
-        body: emailBody,
-        appointmentRequestId: input.appointmentRequestId,
-      }),
+  try {
+    if (input.business.notifyAppointmentRequestsByEmail !== false && email) {
+      tasks.push(
+        deliverEmailNotification({
+          businessId: input.business.id,
+          eventType: "NEW_APPOINTMENT_REQUEST",
+          to: email,
+          subject,
+          body: emailBody,
+          appointmentRequestId: input.appointmentRequestId,
+        }),
+      );
+    }
+
+    if (input.business.notifyAppointmentRequestsBySms && phone) {
+      tasks.push(
+        deliverSmsNotification({
+          businessId: input.business.id,
+          eventType: "NEW_APPOINTMENT_REQUEST",
+          to: phone,
+          body: smsBody,
+          appointmentRequestId: input.appointmentRequestId,
+        }),
+      );
+    }
+
+    await Promise.all(tasks);
+  } catch (err) {
+    logger.error(
+      { err, appointmentRequestId: input.appointmentRequestId },
+      "Owner appointment request notification failed",
     );
   }
-
-  if (input.business.notifyAppointmentRequestsBySms && phone) {
-    tasks.push(
-      deliverSmsNotification({
-        businessId: input.business.id,
-        eventType: "NEW_APPOINTMENT_REQUEST",
-        to: phone,
-        body: smsBody,
-        appointmentRequestId: input.appointmentRequestId,
-      }),
-    );
-  }
-
-  await Promise.all(tasks);
-}
-
-export function buildOwnerNewOrderEmail(order: {
-  businessName: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  total: number;
-  paymentMethod: string;
-  fulfillmentType: string;
-  items: Array<{ productName: string; quantity: number }>;
-  orderId: number;
-}): { subject: string; body: string } {
-  const subject = `New order ${order.orderNumber} — ${order.businessName}`;
-  const itemLines = order.items.map((i) => `  - ${i.productName} x${i.quantity}`).join("\n");
-  const body = [
-    `New order for ${order.businessName}`,
-    ``,
-    `Order #: ${order.orderNumber}`,
-    `Customer: ${order.customerName}${order.customerEmail ? ` <${order.customerEmail}>` : ""}`,
-    `Payment: ${paymentMethodLabel(order.paymentMethod)}`,
-    `Fulfillment: ${order.fulfillmentType}`,
-    `Total: $${order.total.toFixed(2)}`,
-    ``,
-    `Items:`,
-    itemLines,
-    ``,
-    `View in dashboard: ${dashboardOrderUrl(order.orderId)}`,
-  ].join("\n");
-  return { subject, body };
-}
-
-export function buildOwnerNewOrderSms(order: {
-  businessName: string;
-  orderNumber: string;
-  customerName: string;
-  total: number;
-  paymentMethod: string;
-  orderId: number;
-}): string {
-  return [
-    `${order.businessName}: New order ${order.orderNumber}`,
-    `${order.customerName} · $${order.total.toFixed(2)} · ${paymentMethodLabel(order.paymentMethod)}`,
-    dashboardOrderUrl(order.orderId),
-  ].join("\n");
-}
-
-export function buildOwnerNewAppointmentEmail(request: {
-  businessName: string;
-  customerName: string;
-  customerEmail?: string | null;
-  customerPhone?: string | null;
-  serviceName?: string | null;
-  requestedDate: string;
-  requestedTime: string;
-  notes?: string | null;
-}): { subject: string; body: string } {
-  const subject = `New appointment request — ${request.businessName}`;
-  const body = [
-    `New appointment request for ${request.businessName}`,
-    ``,
-    `Customer: ${request.customerName}`,
-    request.serviceName ? `Service: ${request.serviceName}` : "",
-    `Requested: ${request.requestedDate} at ${formatTime12h(request.requestedTime)}`,
-    request.customerEmail ? `Email: ${request.customerEmail}` : "",
-    request.customerPhone ? `Phone: ${request.customerPhone}` : "",
-    request.notes ? `\nNotes: ${request.notes}` : "",
-    ``,
-    `View requests: ${dashboardAppointmentsUrl()}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-  return { subject, body };
-}
-
-export function buildOwnerNewAppointmentSms(request: {
-  businessName: string;
-  customerName: string;
-  serviceName?: string | null;
-  requestedDate: string;
-  requestedTime: string;
-}): string {
-  const service = request.serviceName ? ` · ${request.serviceName}` : "";
-  return [
-    `${request.businessName}: New appointment request`,
-    `${request.customerName}${service} · ${request.requestedDate} ${formatTime12h(request.requestedTime)}`,
-    dashboardAppointmentsUrl(),
-  ].join("\n");
-}
-
-export function buildOrderPlacedBusinessEmail(order: {
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  total: number;
-  items: Array<{ productName: string; quantity: number; unitPrice: number }>;
-  fulfillmentType: string;
-  notes?: string | null;
-}): { subject: string; body: string } {
-  const subject = `New order ${order.orderNumber} from ${order.customerName}`;
-  const itemLines = order.items
-    .map((i) => `  - ${i.productName} x${i.quantity} @ $${i.unitPrice.toFixed(2)}`)
-    .join("\n");
-  const body = [
-    `A new order has been placed!`,
-    ``,
-    `Order #: ${order.orderNumber}`,
-    `Customer: ${order.customerName} <${order.customerEmail}>`,
-    `Fulfillment: ${order.fulfillmentType}`,
-    `Total: $${order.total.toFixed(2)}`,
-    ``,
-    `Items:`,
-    itemLines,
-    order.notes ? `\nCustomer notes: ${order.notes}` : "",
-    ``,
-    `Log in to your dashboard to confirm and prepare this order.`,
-  ].join("\n");
-  return { subject, body };
-}
-
-export function buildOrderConfirmationEmail(order: {
-  orderNumber: string;
-  businessName: string;
-  total: number;
-  items: Array<{ productName: string; quantity: number }>;
-  fulfillmentType: string;
-  customerName: string;
-}): { subject: string; body: string } {
-  const subject = `Your order ${order.orderNumber} is confirmed — ${order.businessName}`;
-  const itemLines = order.items.map((i) => `  - ${i.productName} x${i.quantity}`).join("\n");
-  const body = [
-    `Hi ${order.customerName},`,
-    ``,
-    `Thanks for your order from ${order.businessName}!`,
-    ``,
-    `Order #: ${order.orderNumber}`,
-    `Fulfillment: ${order.fulfillmentType}`,
-    `Total: $${order.total.toFixed(2)}`,
-    ``,
-    `Items:`,
-    itemLines,
-    ``,
-    `We'll send you another update when your order status changes.`,
-    `Thank you for supporting local!`,
-  ].join("\n");
-  return { subject, body };
-}
-
-export function buildStatusUpdateEmail(order: {
-  orderNumber: string;
-  businessName: string;
-  status: string;
-  customerName: string;
-}): { subject: string; body: string } {
-  const statusMessages: Record<string, string> = {
-    CONFIRMED: "has been confirmed",
-    PREPARING: "is being prepared",
-    READY_FOR_PICKUP: "is ready for pickup — come pick it up!",
-    OUT_FOR_DELIVERY: "is out for delivery",
-    COMPLETED: "has been completed",
-    CANCELED: "has been canceled",
-  };
-  const msg = statusMessages[order.status] ?? `status changed to ${order.status}`;
-  const subject = `Order ${order.orderNumber} ${msg}`;
-  const body = [
-    `Hi ${order.customerName},`,
-    ``,
-    `Your order ${order.orderNumber} from ${order.businessName} ${msg}.`,
-    ``,
-    `Thank you for supporting local!`,
-  ].join("\n");
-  return { subject, body };
 }
 
 export function serializeNotificationLog(row: typeof notificationLogsTable.$inferSelect) {

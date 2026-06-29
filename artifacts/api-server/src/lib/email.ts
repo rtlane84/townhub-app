@@ -10,15 +10,22 @@ export function isEmailConfigured(): boolean {
   return false;
 }
 
+export type EmailSendResult = {
+  sent: boolean;
+  /** Provider/env not configured — notification should be logged locally only. */
+  providerUnavailable?: boolean;
+  error?: string;
+};
+
 export async function sendEmail(
   to: string,
   subject: string,
   body: string,
-): Promise<{ sent: boolean; error?: string }> {
+): Promise<EmailSendResult> {
   const from = emailFromAddress();
   if (!from) {
     logger.info("Email not configured: missing RESEND_FROM or SMTP_FROM");
-    return { sent: false, error: "Email sender not configured" };
+    return { sent: false, providerUnavailable: true };
   }
 
   try {
@@ -53,7 +60,7 @@ export async function sendEmail(
     }
 
     logger.info("Email not configured: set RESEND_API_KEY or SMTP_HOST");
-    return { sent: false, error: "No email provider configured" };
+    return { sent: false, providerUnavailable: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ err, to, subject }, "Email send failed");

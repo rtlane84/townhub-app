@@ -8,17 +8,23 @@ export function isSmsConfigured(): boolean {
   );
 }
 
+export type SmsSendResult = {
+  sent: boolean;
+  providerUnavailable?: boolean;
+  error?: string;
+};
+
 export async function sendSms(
   to: string,
   body: string,
-): Promise<{ sent: boolean; error?: string }> {
+): Promise<SmsSendResult> {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_FROM_NUMBER;
 
   if (!accountSid || !authToken || !from) {
     logger.info("SMS not configured: set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER");
-    return { sent: false, error: "Twilio not configured" };
+    return { sent: false, providerUnavailable: true };
   }
 
   try {
