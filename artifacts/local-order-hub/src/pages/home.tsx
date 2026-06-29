@@ -161,7 +161,7 @@ export default function Home() {
         marketplaceStatsLoading={marketplaceStatsLoading}
       />
 
-      {/* Highlights banner */}
+      {/* Seasonal Highlights */}
       {featuredHighlights.length > 0 && (
         <section className="py-8 bg-primary/10 border-y border-primary/20">
           <div className="container px-4 mx-auto">
@@ -195,7 +195,7 @@ export default function Home() {
         </section>
       )}
 
-      {/* Categories */}
+      {/* Browse by Category */}
       <section className="py-16 bg-white">
         <div className="container px-4 mx-auto">
           <h2 className="text-3xl font-serif font-bold mb-8 text-center">Browse by Category</h2>
@@ -216,56 +216,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Today's Food Trucks */}
-      {todayTrucks.length > 0 && (
-        <section id="food-trucks-today" className="py-12 bg-accent/10 border-y border-accent/20">
-          <div className="container px-4 mx-auto">
-            <div className="flex items-center gap-2 mb-6">
-              <Truck className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl font-serif font-bold text-foreground">Food Trucks Today</h2>
-              <Badge className="bg-primary/10 text-primary border-0 ml-1">Live</Badge>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {todayTrucks.map((truck) => (
-                <Link key={truck.id} href={`/businesses/${truck.businessSlug}`}>
-                  <Card className="hover-elevate cursor-pointer border-primary/20 group">
-                    <CardContent className="p-5">
-                      <div className="flex items-start gap-3">
-                        {truck.businessLogoUrl ? (
-                          <BusinessLogoBadge
-                            src={truck.businessLogoUrl}
-                            alt={`${truck.businessName} logo`}
-                            size="sm"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <Truck className="h-5 w-5 text-primary" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{truck.businessName}</p>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                            <MapPin className="h-3 w-3" />
-                            <span className="truncate">{truck.locationName}</span>
-                          </div>
-                          {(truck.startTime || truck.endTime) && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
-                              <Clock className="h-3 w-3" />
-                              <span>{truck.startTime}{truck.endTime ? `–${truck.endTime}` : ""}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Featured Businesses */}
+      {/* Featured Local Favorites */}
       <section className="py-20 bg-muted/20">
         <div className="container px-4 mx-auto">
           <div className="flex items-center justify-between mb-10">
@@ -327,57 +278,108 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured & Upcoming Events */}
-      {!eventsLoading && (
-        <section className="py-16 bg-white border-t">
-          <div className="container px-4 mx-auto space-y-12">
-            {featuredEvents.length > 0 && (
-              <div className="rounded-2xl bg-primary/5 border border-primary/10 p-6 md:p-8">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    <h2 className="text-2xl font-serif font-bold text-foreground">Featured Events</h2>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Promoted highlights picked by the platform — don&apos;t miss these.
-                  </p>
-                </div>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {featuredEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* Food Trucks Today */}
+      {todayTrucks.length > 0 && (
+        <section id="food-trucks-today" className="py-12 bg-accent/10 border-y border-accent/20">
+          <div className="container px-4 mx-auto">
+            <div className="flex items-center gap-2 mb-6">
+              <Truck className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-serif font-bold text-foreground">Food Trucks Today</h2>
+              <Badge className="bg-primary/10 text-primary border-0 ml-1">Live</Badge>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {todayTrucks.map((truck) => (
+                <Link key={truck.id} href={`/businesses/${truck.businessSlug}`}>
+                  <Card className="hover-elevate cursor-pointer border-primary/20 group">
+                    <CardContent className="p-5">
+                      <div className="flex items-start gap-3">
+                        {truck.businessLogoUrl ? (
+                          <BusinessLogoBadge
+                            src={truck.businessLogoUrl}
+                            alt={`${truck.businessName} logo`}
+                            size="sm"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Truck className="h-5 w-5 text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{truck.businessName}</p>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate">{truck.locationName}</span>
+                          </div>
+                          {(truck.startTime || truck.endTime) && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                              <Clock className="h-3 w-3" />
+                              <span>{truck.startTime}{truck.endTime ? `–${truck.endTime}` : ""}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
-            <div>
+      {/* Featured Events */}
+      {!eventsLoading && featuredEvents.length > 0 && (
+        <section className="py-16 bg-white border-t">
+          <div className="container px-4 mx-auto">
+            <div className="rounded-2xl bg-primary/5 border border-primary/10 p-6 md:p-8">
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-1">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  <h2 className="text-2xl font-serif font-bold text-foreground">Upcoming Events</h2>
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <h2 className="text-2xl font-serif font-bold text-foreground">Featured Events</h2>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  More local events happening soon in the community.
+                  Promoted highlights picked by the platform — don&apos;t miss these.
                 </p>
               </div>
-              {upcomingEvents.length > 0 ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {upcomingEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-muted/30 rounded-2xl border border-border border-dashed">
-                  <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-                  <p className="font-medium text-foreground">No other upcoming events right now</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Check back soon or browse the full events calendar.
-                  </p>
-                </div>
-              )}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {featuredEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </div>
             </div>
+          </div>
+        </section>
+      )}
 
-            <div className="text-center">
+      {/* Upcoming Events */}
+      {!eventsLoading && (
+        <section className="py-16 bg-white border-t">
+          <div className="container px-4 mx-auto">
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <Calendar className="h-5 w-5 text-primary" />
+                <h2 className="text-2xl font-serif font-bold text-foreground">Upcoming Events</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                More local events happening soon in the community.
+              </p>
+            </div>
+            {upcomingEvents.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {upcomingEvents.map((event) => (
+                  <EventCard key={event.id} event={event} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-muted/30 rounded-2xl border border-border border-dashed">
+                <Calendar className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="font-medium text-foreground">No other upcoming events right now</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Check back soon or browse the full events calendar.
+                </p>
+              </div>
+            )}
+            <div className="mt-8 text-center">
               <Link href="/events">
                 <Button variant="outline">View All Events</Button>
               </Link>
@@ -393,6 +395,7 @@ export default function Home() {
           </div>
         </section>
       )}
+
     </div>
   );
 }
