@@ -19,6 +19,12 @@ export const businessSubscriptionStatusEnum = pgEnum("business_subscription_stat
   "CANCELED",
   "SUSPENDED",
   "PAUSED",
+  "INCOMPLETE",
+]);
+
+export const subscriptionBillingIntervalEnum = pgEnum("subscription_billing_interval", [
+  "monthly",
+  "yearly",
 ]);
 
 export const subscriptionPlansTable = pgTable("subscription_plans", {
@@ -36,6 +42,9 @@ export const subscriptionPlansTable = pgTable("subscription_plans", {
   isRecommended: boolean("is_recommended").notNull().default(false),
   isBeta: boolean("is_beta").notNull().default(false),
   sortOrder: integer("sort_order").notNull().default(0),
+  stripeProductId: text("stripe_product_id"),
+  stripeMonthlyPriceId: text("stripe_monthly_price_id"),
+  stripeYearlyPriceId: text("stripe_yearly_price_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
@@ -82,6 +91,9 @@ export const businessSubscriptionsTable = pgTable("business_subscriptions", {
   notes: text("notes"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   stripeCustomerId: text("stripe_customer_id"),
+  stripePriceId: text("stripe_price_id"),
+  billingInterval: subscriptionBillingIntervalEnum("billing_interval"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

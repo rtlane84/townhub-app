@@ -7,6 +7,7 @@ import {
   timestamp,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { subscriptionBillingIntervalEnum } from "./subscriptions";
 
 type StructuredHoursJson = Array<{
   dayOfWeek: number;
@@ -33,6 +34,7 @@ export const businessApplicationsTable = pgTable("business_applications", {
   hours: text("hours"),
   structuredHours: jsonb("structured_hours").$type<StructuredHoursJson | null>(),
   planId: integer("plan_id"),
+  billingInterval: subscriptionBillingIntervalEnum("billing_interval"),
   status: businessApplicationStatusEnum("status").notNull().default("PENDING"),
   reviewNote: text("review_note"),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
