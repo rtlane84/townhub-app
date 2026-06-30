@@ -55,6 +55,12 @@ paths:
       operationId: getMe
       tags: [auth]
       summary: Get current user profile
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+          description: Selected owned business id (must belong to the current user)
       responses:
         "200":
           description: Current user
@@ -65,11 +71,34 @@ paths:
         "401":
           description: Unauthorized
 
+  /auth/me/businesses:
+    get:
+      operationId: listMyBusinesses
+      tags: [auth]
+      summary: List businesses owned by the current user
+      responses:
+        "200":
+          description: Owned businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnedBusinessSummary"
+        "401":
+          description: Unauthorized
+
   /auth/me/business:
     get:
       operationId: getMyBusiness
       tags: [auth]
-      summary: Get the business owned by the current user
+      summary: Get an owned business for the current user
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+          description: Owned business id (defaults to primary owned business)
       responses:
         "200":
           description: My business
@@ -77,6 +106,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Business"
+        "403":
+          description: Forbidden
         "404":
           description: No business found
 
@@ -1603,9 +1634,30 @@ components:
           $ref: "#/components/schemas/UserRole"
         businessId:
           type: ["integer", "null"]
+          description: Selected owned business id for dashboard context
+        businessIds:
+          type: array
+          items:
+            type: integer
+          description: All business ids owned by this user
         createdAt:
           type: string
           format: date-time
+
+    OwnedBusinessSummary:
+      type: object
+      required: [id, name, slug, type, active]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        type:
+          type: string
+        active:
+          type: boolean
 
     BusinessDayHours:
       type: object

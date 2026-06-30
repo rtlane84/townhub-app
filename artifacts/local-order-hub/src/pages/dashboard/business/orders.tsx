@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
-import { useGetMe, useGetMyBusiness, useListBusinessOrders, getListBusinessOrdersQueryKey, type Order } from "@workspace/api-client-react";
+import { useListBusinessOrders, getListBusinessOrdersQueryKey, type Order } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { BusinessOrderListToolbar } from "@/components/business-order-list-toolbar";
 import { BusinessOrderQueueSummary } from "@/components/business-order-queue-summary";
 import { Card, CardContent } from "@/components/ui/card";
@@ -91,9 +92,8 @@ export default function BusinessOrders() {
   const [datePreset, setDatePreset] = useState<OrderDateFilterPreset>("today");
   const [customRange, setCustomRange] = useState<OrderCustomDateRange>({});
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: me } = useGetMe();
-  const { data: business } = useGetMyBusiness();
-  const businessId = me?.businessId ?? 0;
+  const { selectedBusinessId, business } = useSelectedBusiness();
+  const businessId = selectedBusinessId ?? 0;
 
   const { data: orders, isPending, isFetching, isError, error, refetch } = useListBusinessOrders(businessId, {
     query: {

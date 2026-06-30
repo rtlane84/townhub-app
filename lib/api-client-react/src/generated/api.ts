@@ -41,6 +41,8 @@ import type {
   FoodTruckLocation,
   FoodTruckLocationInput,
   FoodTruckLocationWithBusiness,
+  GetMeParams,
+  GetMyBusinessParams,
   HealthStatus,
   Highlight,
   HighlightInput,
@@ -56,6 +58,7 @@ import type {
   Order,
   OrderInput,
   OrderStatusUpdate,
+  OwnedBusinessSummary,
   PlatformStats,
   PlatformTheme,
   PlatformThemeInput,
@@ -162,20 +165,27 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
-export const getGetMeUrl = () => {
+export const getGetMeUrl = (params?: GetMeParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/auth/me`
+  return stringifiedParams.length > 0 ? `/api/auth/me?${stringifiedParams}` : `/api/auth/me`
 }
 
 /**
  * @summary Get current user profile
  */
-export const getMe = async ( options?: RequestInit): Promise<UserProfile> => {
+export const getMe = async (params?: GetMeParams, options?: RequestInit): Promise<UserProfile> => {
 
-  return customFetch<UserProfile>(getGetMeUrl(),
+  return customFetch<UserProfile>(getGetMeUrl(params),
   {
     ...options,
     method: 'GET'
@@ -188,23 +198,23 @@ export const getMe = async ( options?: RequestInit): Promise<UserProfile> => {
 
 
 
-export const getGetMeQueryKey = () => {
+export const getGetMeQueryKey = (params?: GetMeParams,) => {
     return [
-    `/api/auth/me`
+    `/api/auth/me`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<void>>(params?: GetMeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetMeQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetMeQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMe>>> = ({ signal }) => getMe({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMe>>> = ({ signal }) => getMe(params, { signal, ...requestOptions });
 
 
 
@@ -222,11 +232,11 @@ export type GetMeQueryError = ErrorType<void>
  */
 
 export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<void>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetMeParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetMeQueryOptions(options)
+  const queryOptions = getGetMeQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -239,20 +249,20 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
 
 
 
-export const getGetMyBusinessUrl = () => {
+export const getListMyBusinessesUrl = () => {
 
 
 
 
-  return `/api/auth/me/business`
+  return `/api/auth/me/businesses`
 }
 
 /**
- * @summary Get the business owned by the current user
+ * @summary List businesses owned by the current user
  */
-export const getMyBusiness = async ( options?: RequestInit): Promise<Business> => {
+export const listMyBusinesses = async ( options?: RequestInit): Promise<OwnedBusinessSummary[]> => {
 
-  return customFetch<Business>(getGetMyBusinessUrl(),
+  return customFetch<OwnedBusinessSummary[]>(getListMyBusinessesUrl(),
   {
     ...options,
     method: 'GET'
@@ -265,23 +275,107 @@ export const getMyBusiness = async ( options?: RequestInit): Promise<Business> =
 
 
 
-export const getGetMyBusinessQueryKey = () => {
+export const getListMyBusinessesQueryKey = () => {
     return [
-    `/api/auth/me/business`
+    `/api/auth/me/businesses`
     ] as const;
     }
 
 
-export const getGetMyBusinessQueryOptions = <TData = Awaited<ReturnType<typeof getMyBusiness>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBusiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListMyBusinessesQueryOptions = <TData = Awaited<ReturnType<typeof listMyBusinesses>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyBusinesses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetMyBusinessQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListMyBusinessesQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBusiness>>> = ({ signal }) => getMyBusiness({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMyBusinesses>>> = ({ signal }) => listMyBusinesses({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMyBusinesses>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMyBusinessesQueryResult = NonNullable<Awaited<ReturnType<typeof listMyBusinesses>>>
+export type ListMyBusinessesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List businesses owned by the current user
+ */
+
+export function useListMyBusinesses<TData = Awaited<ReturnType<typeof listMyBusinesses>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMyBusinesses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMyBusinessesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetMyBusinessUrl = (params?: GetMyBusinessParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/auth/me/business?${stringifiedParams}` : `/api/auth/me/business`
+}
+
+/**
+ * @summary Get an owned business for the current user
+ */
+export const getMyBusiness = async (params?: GetMyBusinessParams, options?: RequestInit): Promise<Business> => {
+
+  return customFetch<Business>(getGetMyBusinessUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyBusinessQueryKey = (params?: GetMyBusinessParams,) => {
+    return [
+    `/api/auth/me/business`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMyBusinessQueryOptions = <TData = Awaited<ReturnType<typeof getMyBusiness>>, TError = ErrorType<void>>(params?: GetMyBusinessParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBusiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBusinessQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBusiness>>> = ({ signal }) => getMyBusiness(params, { signal, ...requestOptions });
 
 
 
@@ -295,15 +389,15 @@ export type GetMyBusinessQueryError = ErrorType<void>
 
 
 /**
- * @summary Get the business owned by the current user
+ * @summary Get an owned business for the current user
  */
 
 export function useGetMyBusiness<TData = Awaited<ReturnType<typeof getMyBusiness>>, TError = ErrorType<void>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBusiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetMyBusinessParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBusiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetMyBusinessQueryOptions(options)
+  const queryOptions = getGetMyBusinessQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import {
-  useGetMe,
-  useGetMyBusiness,
   useListBusinessOrders,
   useUpdateOrderStatus,
   getListBusinessOrdersQueryKey,
   getGetBusinessOrderSummaryQueryKey,
 } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { KitchenDisplayToolbar } from "@/components/kitchen-display-toolbar";
 import { KitchenOrderCard } from "@/components/kitchen-order-card";
 import { Button } from "@/components/ui/button";
@@ -51,9 +50,8 @@ export default function BusinessKitchen() {
   const [fulfillmentFilter, setFulfillmentFilter] = useState<KitchenFulfillmentFilter>("all");
   const [paymentFilter, setPaymentFilter] = useState<KitchenPaymentFilter>("all");
 
-  const { data: me } = useGetMe();
-  const { data: business } = useGetMyBusiness();
-  const businessId = me?.businessId ?? 0;
+  const { selectedBusinessId, business } = useSelectedBusiness();
+  const businessId = selectedBusinessId ?? 0;
 
   const {
     data: orders,

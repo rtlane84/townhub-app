@@ -105,7 +105,12 @@ router.get("/businesses/my-application", async (req, res): Promise<void> => {
   const [application] = await db
     .select()
     .from(businessApplicationsTable)
-    .where(eq(businessApplicationsTable.userId, userId));
+    .where(and(
+      eq(businessApplicationsTable.userId, userId),
+      eq(businessApplicationsTable.status, "PENDING"),
+    ))
+    .orderBy(desc(businessApplicationsTable.updatedAt))
+    .limit(1);
 
   if (!application) {
     res.status(404).json({ error: "No application found" });
@@ -137,30 +142,25 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check for existing pending application or active business
-  const [existingApp] = await db
+  const [pendingApp] = await db
     .select()
     .from(businessApplicationsTable)
-    .where(eq(businessApplicationsTable.userId, userId));
+    .where(and(
+      eq(businessApplicationsTable.userId, userId),
+      eq(businessApplicationsTable.status, "PENDING"),
+    ));
 
-  if (existingApp?.status === "PENDING") {
+  if (pendingApp) {
     res.status(409).json({ error: "You already have a pending application." });
     return;
   }
-  if (existingApp?.status === "APPROVED") {
-    res.status(409).json({ error: "Your application has already been approved." });
-    return;
-  }
 
-  const [existingBiz] = await db
+  const [existingApp] = await db
     .select()
-    .from(businessesTable)
-    .where(eq(businessesTable.ownerId, userId));
-
-  if (existingBiz) {
-    res.status(409).json({ error: "You already have a business listed." });
-    return;
-  }
+    .from(businessApplicationsTable)
+    .where(eq(businessApplicationsTable.userId, userId))
+    .orderBy(desc(businessApplicationsTable.updatedAt))
+    .limit(1);
 
   const claims = (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth?.sessionClaims;
   const email = (claims?.email as string) ?? `${userId}@user.local`;

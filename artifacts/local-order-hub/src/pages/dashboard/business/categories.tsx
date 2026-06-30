@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  useGetMe,
   useListCategories,
   useCreateCategory,
   useUpdateCategory,
@@ -8,6 +7,7 @@ import {
   getListCategoriesQueryKey,
 } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -24,8 +24,8 @@ interface CategoryForm {
 }
 
 export default function BusinessCategories() {
-  const { data: me } = useGetMe();
-  const businessId = me?.businessId ?? 0;
+  const { selectedBusinessId } = useSelectedBusiness();
+  const businessId = selectedBusinessId ?? 0;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

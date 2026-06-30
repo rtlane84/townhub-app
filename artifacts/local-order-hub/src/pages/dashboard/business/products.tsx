@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  useGetMe,
   useListProducts,
   useListCategories,
   useCreateProduct,
@@ -10,6 +9,7 @@ import {
   getListCategoriesQueryKey,
 } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -48,8 +48,8 @@ const EMPTY_FORM: ProductForm = {
 };
 
 export default function BusinessProducts() {
-  const { data: me } = useGetMe();
-  const businessId = me?.businessId ?? 0;
+  const { selectedBusinessId } = useSelectedBusiness();
+  const businessId = selectedBusinessId ?? 0;
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

@@ -4,12 +4,13 @@ import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { useGetMe, useGetMyBusiness } from "@workspace/api-client-react";
 import { acceptsAppointmentRequests } from "@workspace/api-zod";
 import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
 import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
 import { OrderAlertControls } from "@/components/order-alert-controls";
 import { NewOrderAlertBanner } from "@/components/new-order-alert-banner";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
+import { BusinessSwitcher } from "@/components/business-switcher";
 
 interface NavItem {
   href: string;
@@ -58,9 +59,8 @@ export function BusinessDashboardLayout({ children }: { children: React.ReactNod
 function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [open, setOpen] = useState(false);
-  const { data: me } = useGetMe();
-  const { data: business } = useGetMyBusiness();
-  const businessId = me?.businessId ?? undefined;
+  const { selectedBusinessId, business } = useSelectedBusiness();
+  const businessId = selectedBusinessId ?? undefined;
 
   useLiveOrderAlerts(businessId);
 
@@ -95,8 +95,9 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
       {/* Desktop sidebar */}
       <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0 print:hidden">
         <div className="p-6">
-          <h2 className="font-serif font-bold text-lg mb-6">Business Hub</h2>
-          <nav className="space-y-1">
+          <h2 className="font-serif font-bold text-lg mb-4">Business Hub</h2>
+          <BusinessSwitcher />
+          <nav className="space-y-1 mt-6">
             <NavLinks items={navItems} location={location} />
           </nav>
           <div className="mt-8">
@@ -117,6 +118,9 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
             <SheetHeader className="p-6 pb-4">
               <SheetTitle className="font-serif text-left">Business Hub</SheetTitle>
             </SheetHeader>
+            <div className="px-6 pb-4">
+              <BusinessSwitcher compact />
+            </div>
             <nav className="px-3 space-y-1">
               <NavLinks items={navItems} location={location} onNavigate={() => setOpen(false)} />
             </nav>
@@ -125,7 +129,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
             </div>
           </SheetContent>
         </Sheet>
-        <span className="text-sm font-semibold">{activeLabel}</span>
+        <span className="text-sm font-semibold truncate">{business?.name ?? activeLabel}</span>
       </div>
 
       <main className="flex-1 p-4 pt-20 md:pt-0 md:p-10 print:p-0">

@@ -17,7 +17,7 @@ export default function Setup() {
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
 
-  const { data: me, isLoading: meLoading } = useGetMe({
+  const { data: me, isLoading: meLoading } = useGetMe(undefined, {
     query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() },
   });
 

@@ -21,7 +21,7 @@ import { requireAuth, requireAdmin } from "../middlewares/requireRole";
 import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
 import { nullsToUndefinedTopLevel } from "../lib/request-body";
 import { parseStructuredHours } from "@workspace/api-zod";
-import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
+import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import { allowsOnlinePayment, resolvePaymentMode } from "@workspace/api-zod";
 import { businessHasOnlinePaymentsReady } from "../lib/stripe-connect";
 import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
@@ -131,16 +131,7 @@ router.post("/businesses/register", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check user doesn't already own a business
-  const [existing] = await db
-    .select()
-    .from(businessesTable)
-    .where(eq(businessesTable.ownerId, userId));
-  if (existing) {
-    res.status(409).json({ error: "You already have a business listed." });
-    return;
-  }
-
+  // Multi-business owners may register additional listings on the same account.
   const { name, type, description, address, phone, hours, structuredHours } = req.body as {
     name?: string;
     type?: string;
@@ -373,17 +364,13 @@ router.get("/businesses/manage/:id", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  const [business] = await db
-    .select()
-    .from(businessesTable)
-    .where(eq(businessesTable.id, params.data.id));
-
-  if (!business) {
-    res.status(404).json({ error: "Business not found" });
+  const access = await authorizeBusinessOwnerOrAdmin(req, params.data.id);
+  if (!access.ok) {
+    res.status(access.status).json({ error: access.error });
     return;
   }
 
-  res.json(serializeBusiness(business));
+  res.json(serializeBusiness(access.business));
 });
 
 // PATCH /api/businesses/manage/:id
@@ -399,6 +386,12 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
   if (!parsed.success) {
     req.log?.warn({ err: parsed.error.flatten() }, "Invalid business update body");
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const access = await authorizeBusinessOwnerOrAdmin(req, params.data.id);
+  if (!access.ok) {
+    res.status(access.status).json({ error: access.error });
     return;
   }
 

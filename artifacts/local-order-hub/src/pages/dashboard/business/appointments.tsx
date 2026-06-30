@@ -1,5 +1,6 @@
-import { useGetMyBusiness, useListBusinessAppointmentRequests, getListBusinessAppointmentRequestsQueryKey } from "@workspace/api-client-react";
+import { useListBusinessAppointmentRequests, getListBusinessAppointmentRequestsQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,7 +8,7 @@ import { CalendarDays, Phone, Mail } from "lucide-react";
 import { formatTime12h } from "@workspace/api-zod";
 
 export default function BusinessAppointments() {
-  const { data: business, isLoading: businessLoading } = useGetMyBusiness();
+  const { business, isLoading: businessLoading } = useSelectedBusiness();
   const { data: requests = [], isLoading } = useListBusinessAppointmentRequests(
     business?.id ?? 0,
     {

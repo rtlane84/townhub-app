@@ -1,6 +1,7 @@
 import { keepPreviousData } from "@tanstack/react-query";
-import { useGetMe, useGetBusinessOrderSummary, getGetBusinessOrderSummaryQueryKey } from "@workspace/api-client-react";
+import { useGetBusinessOrderSummary, getGetBusinessOrderSummaryQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
@@ -35,8 +36,8 @@ function OverviewOrderStatus({ orderId, status }: { orderId: number; status: str
 }
 
 export default function BusinessOverview() {
-  const { data: me, isPending: mePending } = useGetMe();
-  const businessId = me?.businessId ?? 0;
+  const { selectedBusinessId, business, isLoading: selectionLoading } = useSelectedBusiness();
+  const businessId = selectedBusinessId ?? 0;
 
   const { data: summary, isPending: summaryPending, isFetching } = useGetBusinessOrderSummary(businessId, {
     query: {
@@ -46,7 +47,7 @@ export default function BusinessOverview() {
     },
   });
 
-  const showInitialSkeleton = (mePending && !me) || (summaryPending && !summary);
+  const showInitialSkeleton = (selectionLoading && !businessId) || (summaryPending && !summary);
 
   return (
     <BusinessDashboardLayout>
@@ -54,7 +55,9 @@ export default function BusinessOverview() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="font-serif text-3xl font-bold text-foreground">Overview</h1>
-            <p className="text-muted-foreground mt-1">Your business at a glance</p>
+            <p className="text-muted-foreground mt-1">
+              {business?.name ? `${business.name} at a glance` : "Your business at a glance"}
+            </p>
           </div>
           {isFetching && summary && (
             <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 pt-1">

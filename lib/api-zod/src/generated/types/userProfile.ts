@@ -13,7 +13,12 @@ export interface UserProfile {
   /** @nullable */
   name?: string | null;
   role: UserRole;
-  /** @nullable */
+  /**
+     * Selected owned business id for dashboard context
+     * @nullable
+     */
   businessId?: number | null;
+  /** All business ids owned by this user */
+  businessIds?: number[];
   createdAt?: Date;
 }

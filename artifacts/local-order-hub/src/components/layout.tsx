@@ -44,7 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const storefrontSlug = storefrontParams?.slug;
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { data: me } = useGetMe({ query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
+  const { data: me } = useGetMe(undefined, { query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
   const { data: storefrontData } = useGetBusinessBySlug(storefrontSlug ?? "", {
     query: {
       enabled: !!storefrontSlug,

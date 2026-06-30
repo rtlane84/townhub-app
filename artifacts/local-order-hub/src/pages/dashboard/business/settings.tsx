@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { useGetMyBusiness, useUpdateBusiness, getGetMyBusinessQueryKey, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
+import { useUpdateBusiness, getGetMyBusinessQueryKey, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -70,7 +71,7 @@ const EMPTY: FormState = {
 };
 
 export default function BusinessSettings() {
-  const { data: business, isLoading } = useGetMyBusiness();
+  const { selectedBusinessId, business, isLoading } = useSelectedBusiness();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>({ ...EMPTY });
@@ -122,7 +123,9 @@ export default function BusinessSettings() {
   const updateBusiness = useUpdateBusiness({
     mutation: {
       onSuccess: (updated) => {
-        queryClient.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
+        if (selectedBusinessId != null) {
+          queryClient.invalidateQueries({ queryKey: getGetMyBusinessQueryKey({ businessId: selectedBusinessId }) });
+        }
         if (updated?.slug) {
           queryClient.invalidateQueries({ queryKey: getGetBusinessBySlugQueryKey(updated.slug) });
         }

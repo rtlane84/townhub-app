@@ -37,6 +37,7 @@ import {
   formatBusinessTypeLabel,
 } from "@workspace/api-zod";
 import type { BusinessDayHours } from "@workspace/api-client-react";
+import { useListMyBusinesses, getListMyBusinessesQueryKey } from "@workspace/api-client-react";
 
 const BUSINESS_TYPES = BUSINESS_TYPE_OPTIONS;
 
@@ -165,6 +166,10 @@ export default function ListYourBusiness() {
   const { isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
   const [, setLocation] = useLocation();
+  const { data: ownedBusinesses = [] } = useListMyBusinesses({
+    query: { enabled: !!isSignedIn, queryKey: getListMyBusinessesQueryKey() },
+  });
+  const hasExistingBusinesses = ownedBusinesses.length > 0;
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -306,24 +311,6 @@ export default function ListYourBusiness() {
     );
   }
 
-  if (existingApp?.status === "APPROVED") {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-        <div className="max-w-md w-full text-center space-y-4">
-          <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto" />
-          <h2 className="font-serif text-2xl font-bold">You&apos;re approved!</h2>
-          <p className="text-muted-foreground text-sm">
-            Your application for <strong>{existingApp.name}</strong> was approved.
-            Head to your Business Hub to finish setup.
-          </p>
-          <Button onClick={() => setLocation("/dashboard/business")} className="mt-2">
-            Go to Business Hub <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   if (existingApp?.status === "PENDING" && !done) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
@@ -405,11 +392,34 @@ export default function ListYourBusiness() {
       <div className="max-w-xl mx-auto space-y-6 sm:space-y-8">
         <div className="text-center space-y-2">
           <Building2 className="h-7 w-7 text-primary mx-auto" />
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold">List your business</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold">
+            {hasExistingBusinesses ? "Add another business" : "List your business"}
+          </h1>
           <p className="text-muted-foreground text-sm sm:text-base">
-            Step {step} of 3 — {STEPS[step - 1]!.label}
+            {hasExistingBusinesses
+              ? "Submit a new application for an additional location or brand on your account."
+              : `Step ${step} of 3 — ${STEPS[step - 1]!.label}`}
           </p>
+          {hasExistingBusinesses && (
+            <p className="text-xs text-muted-foreground">
+              Step {step} of 3 — {STEPS[step - 1]!.label}
+            </p>
+          )}
         </div>
+
+        {hasExistingBusinesses && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle className="text-sm">You already manage {ownedBusinesses.length} business{ownedBusinesses.length === 1 ? "" : "es"}</AlertTitle>
+            <AlertDescription className="text-sm">
+              Approved applications are added to the same account. You can switch between businesses in the Business Hub.
+              {" "}
+              <button type="button" className="underline font-medium" onClick={() => setLocation("/dashboard/business")}>
+                Go to Business Hub
+              </button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <StepIndicator step={step} />
 

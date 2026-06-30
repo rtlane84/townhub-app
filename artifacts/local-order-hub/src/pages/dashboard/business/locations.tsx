@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  useGetMyBusiness,
   useUpdateBusiness,
   useListFoodTruckLocations,
   useCreateFoodTruckLocation,
@@ -11,6 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import type { FoodTruckLocation } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -34,7 +34,7 @@ import { TimeRangePicker } from "@/components/time-picker";
 import { formatTimeRange12h } from "@workspace/api-zod";
 
 export default function BusinessLocations() {
-  const { data: business, isLoading: bizLoading } = useGetMyBusiness();
+  const { selectedBusinessId, business, isLoading: bizLoading } = useSelectedBusiness();
   const { data: locations = [], isLoading: locLoading } = useListFoodTruckLocations(
     business?.id ?? 0,
     { query: { enabled: !!business?.id, queryKey: getListFoodTruckLocationsQueryKey(business?.id ?? 0) } },
@@ -55,7 +55,9 @@ export default function BusinessLocations() {
   const updateBusiness = useUpdateBusiness({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
+        if (selectedBusinessId != null) {
+          queryClient.invalidateQueries({ queryKey: getGetMyBusinessQueryKey({ businessId: selectedBusinessId }) });
+        }
         toast({ title: "Settings saved" });
       },
     },

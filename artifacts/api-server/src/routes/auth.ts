@@ -3,7 +3,14 @@ import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
 import { serializeBusiness } from "./businesses";
-import { getPrimaryOwnedBusiness } from "../lib/business-access";
+import {
+  getPrimaryOwnedBusiness,
+  listOwnedBusinesses,
+  listOwnedBusinessIds,
+  requestedBusinessIdFromRequest,
+  resolveSelectedOwnedBusiness,
+} from "../lib/business-access";
+import { resolveSelectedBusinessId } from "../lib/business-selection";
 import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
 
 const router: IRouter = Router();
@@ -40,7 +47,10 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     throw err;
   }
 
-  const business = await getPrimaryOwnedBusiness(userId);
+  const ownedIds = await listOwnedBusinessIds(userId);
+  const primary = ownedIds.length ? await getPrimaryOwnedBusiness(userId) : null;
+  const requestedId = requestedBusinessIdFromRequest(req);
+  const selectedId = resolveSelectedBusinessId(ownedIds, requestedId, primary?.id ?? null);
 
   res.set("Cache-Control", "no-store");
   res.json({
@@ -48,9 +58,23 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     email: user.email,
     name: user.name,
     role: user.role,
-    businessId: business?.id ?? null,
+    businessId: selectedId,
+    businessIds: ownedIds,
     createdAt: user.createdAt,
   });
+});
+
+// GET /api/auth/me/businesses
+router.get("/auth/me/businesses", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const businesses = await listOwnedBusinesses(userId);
+  res.set("Cache-Control", "no-store");
+  res.json(businesses);
 });
 
 // GET /api/auth/me/business
@@ -61,9 +85,14 @@ router.get("/auth/me/business", async (req, res): Promise<void> => {
     return;
   }
 
-  const business = await getPrimaryOwnedBusiness(userId);
+  const requestedId = requestedBusinessIdFromRequest(req);
+  const business = await resolveSelectedOwnedBusiness(userId, requestedId);
 
   if (!business) {
+    if (requestedId != null) {
+      res.status(403).json({ error: "Forbidden: business owner access required" });
+      return;
+    }
     res.status(404).json({ error: "No business found for this user" });
     return;
   }

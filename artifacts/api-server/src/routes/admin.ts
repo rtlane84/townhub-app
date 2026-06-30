@@ -49,9 +49,13 @@ router.get("/admin/users", async (req, res): Promise<void> => {
     .orderBy(usersTable.createdAt);
 
   const businesses = await db.select().from(businessesTable);
-  const bizByOwner = new Map(
-    businesses.filter((b) => b.ownerId).map((b) => [b.ownerId!, b.id]),
-  );
+  const bizIdsByOwner = new Map<string, number[]>();
+  for (const business of businesses) {
+    if (!business.ownerId) continue;
+    const existing = bizIdsByOwner.get(business.ownerId) ?? [];
+    existing.push(business.id);
+    bizIdsByOwner.set(business.ownerId, existing);
+  }
 
   res.json(
     users.map((u) => ({
@@ -59,7 +63,8 @@ router.get("/admin/users", async (req, res): Promise<void> => {
       email: u.email,
       name: u.name,
       role: u.role,
-      businessId: bizByOwner.get(u.id) ?? null,
+      businessId: bizIdsByOwner.get(u.id)?.[0] ?? null,
+      businessIds: bizIdsByOwner.get(u.id) ?? [],
       createdAt: u.createdAt,
     })),
   );

@@ -49,6 +49,7 @@ import AdminSystemStatus from "@/pages/dashboard/admin/system-status";
 
 import Setup from "@/pages/setup";
 import ListYourBusiness from "@/pages/list-your-business";
+import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -144,7 +145,7 @@ function PostSignInRedirector() {
   const [redirectPending, setRedirectPending] = useState(false);
   const prevSignedIn = useRef<boolean | undefined>(undefined);
 
-  const { data: me } = useGetMe({
+  const { data: me } = useGetMe(undefined, {
     query: {
       enabled: redirectPending,
       queryKey: getGetMeQueryKey(),
@@ -176,6 +177,31 @@ function PostSignInRedirector() {
   }, [redirectPending, me, setLocation]);
 
   return null;
+}
+
+function BusinessDashboardRoute({
+  component: Component,
+  ...rest
+}: {
+  component: React.ComponentType<{ params: Record<string, string> }>;
+  path: string;
+}) {
+  return (
+    <Route {...rest}>
+      {(params) => (
+        <>
+          <Show when="signed-in">
+            <SelectedBusinessProvider>
+              <Component params={params as Record<string, string>} />
+            </SelectedBusinessProvider>
+          </Show>
+          <Show when="signed-out">
+            <Redirect to="/sign-in" />
+          </Show>
+        </>
+      )}
+    </Route>
+  );
 }
 
 function ProtectedRoute({
@@ -240,16 +266,16 @@ function ClerkProviderWithRoutes() {
                 <Route path="/list-your-business" component={ListYourBusiness} />
 
                 {/* Business owner dashboard */}
-                <ProtectedRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />
-                <ProtectedRoute path="/dashboard/business/orders" component={BusinessOrders} />
-                <ProtectedRoute path="/dashboard/business/kitchen" component={BusinessKitchen} />
-                <ProtectedRoute path="/dashboard/business/products" component={BusinessProducts} />
-                <ProtectedRoute path="/dashboard/business/categories" component={BusinessCategories} />
-                <ProtectedRoute path="/dashboard/business/locations" component={BusinessLocations} />
-                <ProtectedRoute path="/dashboard/business/billing" component={BusinessBilling} />
-                <ProtectedRoute path="/dashboard/business/appointments" component={BusinessAppointments} />
-                <ProtectedRoute path="/dashboard/business/settings" component={BusinessSettings} />
-                <ProtectedRoute path="/dashboard/business" component={BusinessOverview} />
+                <BusinessDashboardRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />
+                <BusinessDashboardRoute path="/dashboard/business/orders" component={BusinessOrders} />
+                <BusinessDashboardRoute path="/dashboard/business/kitchen" component={BusinessKitchen} />
+                <BusinessDashboardRoute path="/dashboard/business/products" component={BusinessProducts} />
+                <BusinessDashboardRoute path="/dashboard/business/categories" component={BusinessCategories} />
+                <BusinessDashboardRoute path="/dashboard/business/locations" component={BusinessLocations} />
+                <BusinessDashboardRoute path="/dashboard/business/billing" component={BusinessBilling} />
+                <BusinessDashboardRoute path="/dashboard/business/appointments" component={BusinessAppointments} />
+                <BusinessDashboardRoute path="/dashboard/business/settings" component={BusinessSettings} />
+                <BusinessDashboardRoute path="/dashboard/business" component={BusinessOverview} />
 
                 {/* Admin dashboard */}
                 <ProtectedRoute path="/dashboard/admin/applications" component={AdminApplications} />

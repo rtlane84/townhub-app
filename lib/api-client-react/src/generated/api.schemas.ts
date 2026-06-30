@@ -196,9 +196,22 @@ export interface UserProfile {
   /** @nullable */
   name?: string | null;
   role: UserRole;
-  /** @nullable */
+  /**
+     * Selected owned business id for dashboard context
+     * @nullable
+     */
   businessId?: number | null;
+  /** All business ids owned by this user */
+  businessIds?: number[];
   createdAt?: string;
+}
+
+export interface OwnedBusinessSummary {
+  id: number;
+  name: string;
+  slug: string;
+  type: string;
+  active: boolean;
 }
 
 export interface BusinessDayHours {
@@ -974,6 +987,20 @@ export interface AppointmentRequestInput {
   requestedTime: string;
   notes?: string;
 }
+
+export type GetMeParams = {
+/**
+ * Selected owned business id (must belong to the current user)
+ */
+businessId?: number;
+};
+
+export type GetMyBusinessParams = {
+/**
+ * Owned business id (defaults to primary owned business)
+ */
+businessId?: number;
+};
 
 export type ListBusinessesParams = {
 /**

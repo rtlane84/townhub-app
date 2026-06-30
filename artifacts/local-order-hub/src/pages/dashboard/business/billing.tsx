@@ -1,10 +1,10 @@
 import {
-  useGetMyBusiness,
   useGetMySubscription,
   useListSubscriptionPlans,
   getGetMySubscriptionQueryKey,
 } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +19,7 @@ const STATUS_CONFIG = {
 };
 
 export default function BusinessBilling() {
-  const { data: business, isLoading: bizLoading } = useGetMyBusiness();
+  const { business, isLoading: bizLoading } = useSelectedBusiness();
   const { data: subscription, isLoading: subLoading } = useGetMySubscription(
     business?.id ?? 0,
     { query: { enabled: !!business?.id, queryKey: getGetMySubscriptionQueryKey(business?.id ?? 0) } },

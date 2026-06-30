@@ -19,19 +19,41 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Get current user profile
  */
+export const GetMeQueryParams = zod.object({
+  "businessId": zod.coerce.number().optional().describe('Selected owned business id (must belong to the current user)')
+})
+
 export const GetMeResponse = zod.object({
   "id": zod.string(),
   "email": zod.string(),
   "name": zod.string().nullish(),
   "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN']),
-  "businessId": zod.number().nullish(),
+  "businessId": zod.number().nullish().describe('Selected owned business id for dashboard context'),
+  "businessIds": zod.array(zod.number()).optional().describe('All business ids owned by this user'),
   "createdAt": zod.coerce.date().optional()
 })
 
 
 /**
- * @summary Get the business owned by the current user
+ * @summary List businesses owned by the current user
  */
+export const ListMyBusinessesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "type": zod.string(),
+  "active": zod.boolean()
+})
+export const ListMyBusinessesResponse = zod.array(ListMyBusinessesResponseItem)
+
+
+/**
+ * @summary Get an owned business for the current user
+ */
+export const GetMyBusinessQueryParams = zod.object({
+  "businessId": zod.coerce.number().optional().describe('Owned business id (defaults to primary owned business)')
+})
+
 export const getMyBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
 export const getMyBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
@@ -1159,7 +1181,8 @@ export const ListUsersResponseItem = zod.object({
   "email": zod.string(),
   "name": zod.string().nullish(),
   "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN']),
-  "businessId": zod.number().nullish(),
+  "businessId": zod.number().nullish().describe('Selected owned business id for dashboard context'),
+  "businessIds": zod.array(zod.number()).optional().describe('All business ids owned by this user'),
   "createdAt": zod.coerce.date().optional()
 })
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
@@ -1181,7 +1204,8 @@ export const UpdateUserRoleResponse = zod.object({
   "email": zod.string(),
   "name": zod.string().nullish(),
   "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN']),
-  "businessId": zod.number().nullish(),
+  "businessId": zod.number().nullish().describe('Selected owned business id for dashboard context'),
+  "businessIds": zod.array(zod.number()).optional().describe('All business ids owned by this user'),
   "createdAt": zod.coerce.date().optional()
 })
 
