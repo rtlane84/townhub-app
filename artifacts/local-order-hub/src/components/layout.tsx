@@ -7,13 +7,14 @@ import {
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
 import { Badge } from "./ui/badge";
-import { useGetMe, getGetMeQueryKey, useGetBusinessBySlug, getGetBusinessBySlugQueryKey, useGetAdminBootstrapStatus, getGetAdminBootstrapStatusQueryKey } from "@workspace/api-client-react";
+import { useGetBusinessBySlug, getGetBusinessBySlugQueryKey, useGetAdminBootstrapStatus, getGetAdminBootstrapStatusQueryKey } from "@workspace/api-client-react";
 import { hidesStorefrontCart } from "@workspace/api-zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { usePlatformBranding } from "@/components/theme-provider";
+import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 
 function PlatformLogo({ className }: { className?: string }) {
   const { logoUrl, platformName, logoSizePx } = usePlatformBranding();
@@ -37,14 +38,20 @@ function PlatformLogo({ className }: { className?: string }) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { platformName, footerTagline } = usePlatformBranding();
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded: clerkLoaded } = useUser();
+  const {
+    authResolved,
+    isAdmin,
+    isBusinessOwner,
+    isCustomer,
+    isLoggedOut,
+  } = useNavAuthState();
   const { itemCount } = useCart();
   const [location] = useLocation();
   const [, storefrontParams] = useRoute("/businesses/:slug");
   const storefrontSlug = storefrontParams?.slug;
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const { data: me } = useGetMe(undefined, { query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
   const { data: bootstrapStatus, isPending: bootstrapPending } = useGetAdminBootstrapStatus({
     query: { queryKey: getGetAdminBootstrapStatusQueryKey() },
   });
@@ -56,11 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   });
   const hideCart = !!storefrontSlug && hidesStorefrontCart(storefrontData?.business ?? {});
 
-  const isAdmin = me?.role === "ADMIN";
-  const isBusinessOwner = me?.role === "BUSINESS_OWNER";
-  const isCustomer = isLoaded && isSignedIn && !isAdmin && !isBusinessOwner;
-  const isLoggedOut = isLoaded && !isSignedIn;
-  const setupAvailable = !bootstrapPending && bootstrapStatus?.setupComplete === false;
+  const setupAvailable = authResolved && !bootstrapPending && bootstrapStatus?.setupComplete === false;
 
   const dashboardHref = isAdmin ? "/dashboard/admin" : "/dashboard/business";
   const dashboardLabel = isAdmin ? "Admin Dashboard" : "Business Hub";
@@ -73,6 +76,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }
 
   function close() { setMobileOpen(false); }
+
+  const showRoleNav = authResolved;
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0">
@@ -100,21 +105,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 Food Trucks
               </Link>
 
-              {isCustomer && (
+              {showRoleNav && isCustomer && (
                 <Link href="/my-orders" className={navLinkClass("/my-orders")}>
                   <Package className="h-3.5 w-3.5" />
                   My Orders
                 </Link>
               )}
 
-              {isLoaded && (isAdmin || isBusinessOwner) && (
+              {showRoleNav && (isAdmin || isBusinessOwner) && (
                 <Link href={dashboardHref} className={navLinkClass("/dashboard")}>
                   <DashboardIcon className="h-3.5 w-3.5" />
                   {isAdmin ? "Admin" : "Business Hub"}
                 </Link>
               )}
 
-              {(isLoggedOut || isCustomer) && (
+              {showRoleNav && (isLoggedOut || isCustomer) && (
                 <Link href="/list-your-business" className={navLinkClass("/list-your-business")}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   List Your Business
@@ -146,13 +151,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             )}
 
-            {isLoaded && !isSignedIn && (
+            {clerkLoaded && !isSignedIn && (
               <SignInButton mode="modal">
                 <Button size="sm">Sign In</Button>
               </SignInButton>
             )}
 
-            {isLoaded && isSignedIn && (
+            {clerkLoaded && isSignedIn && (
               <UserButton appearance={clerkUserButtonAppearance} />
             )}
 
@@ -189,7 +194,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </span>
                   </Link>
 
-                  {isCustomer && (
+                  {showRoleNav && isCustomer && (
                     <Link href="/my-orders" onClick={close}>
                       <span className={navLinkClass("/my-orders")}>
                         <Package className="h-4 w-4" /> My Orders
@@ -197,7 +202,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   )}
 
-                  {isLoaded && (isAdmin || isBusinessOwner) && (
+                  {showRoleNav && (isAdmin || isBusinessOwner) && (
                     <Link href={dashboardHref} onClick={close}>
                       <span className={navLinkClass("/dashboard")}>
                         <DashboardIcon className="h-4 w-4" /> {dashboardLabel}
@@ -205,7 +210,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   )}
 
-                  {(isLoggedOut || isCustomer) && (
+                  {showRoleNav && (isLoggedOut || isCustomer) && (
                     <Link href="/list-your-business" onClick={close}>
                       <span className={navLinkClass("/list-your-business")}>
                         <PlusCircle className="h-4 w-4" /> List Your Business
@@ -222,7 +227,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   )}
 
-                  {!isSignedIn && isLoaded && (
+                  {clerkLoaded && !isSignedIn && (
                     <div className="pt-3 border-t">
                       <SignInButton mode="modal">
                         <Button className="w-full" onClick={close}>Sign In</Button>
@@ -230,7 +235,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </div>
                   )}
 
-                  {isSignedIn && isCustomer && setupAvailable && (
+                  {showRoleNav && isSignedIn && isCustomer && setupAvailable && (
                     <div className="pt-3 border-t">
                       <p className="px-3 py-2 text-xs text-muted-foreground">
                         Signed in as customer. Visit <strong>Admin Setup</strong> to claim admin access on first deploy, or <strong>List Your Business</strong> to become a business owner.

@@ -8,14 +8,18 @@ import type {
 import { Button } from "@/components/ui/button";
 import { WeatherCardContent, WeatherUnavailableContent } from "@/components/weather-widget";
 import { QuickTownInfo, QuickTownInfoCard } from "@/components/quick-town-info";
+import { QuickTownInfoCardSkeleton } from "@/components/home-section-skeletons";
 import { formatEventSchedule } from "@/lib/event-dates";
 
 type QuickTownInfoSectionProps = {
   weatherEnabled: boolean;
   weather: WeatherForecast | undefined;
   weatherError: boolean;
+  weatherLoading: boolean;
   todayTrucks: FoodTruckLocationWithBusiness[];
+  todayTrucksLoading: boolean;
   upcomingEvents: Event[];
+  upcomingEventsLoading: boolean;
   marketplaceStats: MarketplaceStats | undefined;
   marketplaceStatsLoading: boolean;
 };
@@ -24,7 +28,12 @@ function WeatherDashboardCard({
   weatherEnabled,
   weather,
   weatherError,
-}: Pick<QuickTownInfoSectionProps, "weatherEnabled" | "weather" | "weatherError">) {
+  weatherLoading,
+}: Pick<QuickTownInfoSectionProps, "weatherEnabled" | "weather" | "weatherError" | "weatherLoading">) {
+  if (weatherEnabled && weatherLoading) {
+    return <QuickTownInfoCardSkeleton />;
+  }
+
   return (
     <QuickTownInfoCard title="Weather" icon="☀️">
       {!weatherEnabled ? (
@@ -46,7 +55,14 @@ function WeatherDashboardCard({
   );
 }
 
-function FoodTrucksDashboardCard({ todayTrucks }: { todayTrucks: FoodTruckLocationWithBusiness[] }) {
+function FoodTrucksDashboardCard({
+  todayTrucks,
+  todayTrucksLoading,
+}: Pick<QuickTownInfoSectionProps, "todayTrucks" | "todayTrucksLoading">) {
+  if (todayTrucksLoading) {
+    return <QuickTownInfoCardSkeleton />;
+  }
+
   const count = todayTrucks.length;
 
   return (
@@ -87,45 +103,50 @@ function LocalMarketplaceDashboardCard({
   marketplaceStats,
   marketplaceStatsLoading,
 }: Pick<QuickTownInfoSectionProps, "marketplaceStats" | "marketplaceStatsLoading">) {
+  if (marketplaceStatsLoading) {
+    return <QuickTownInfoCardSkeleton />;
+  }
+
   const shops = marketplaceStats?.localShopsCount ?? 0;
   const items = marketplaceStats?.uniqueItemsCount ?? 0;
 
   return (
     <QuickTownInfoCard title="Local Marketplace" icon="🏪">
       <div className="flex flex-1 flex-col">
-        {marketplaceStatsLoading ? (
-          <p className="text-sm text-muted-foreground">Loading marketplace stats…</p>
-        ) : (
-          <>
-            <div className="flex gap-6">
-              <div>
-                <p className="text-2xl font-serif font-bold text-foreground">{shops}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {shops === 1 ? "local shop" : "local shops"}
-                </p>
-              </div>
-              <div>
-                <p className="text-2xl font-serif font-bold text-foreground">{items}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {items === 1 ? "unique item" : "unique items"}
-                </p>
-              </div>
-            </div>
-            <div className="mt-auto pt-4">
-              <Link href="/businesses">
-                <Button variant="outline" size="sm" className="rounded-full">
-                  Browse Businesses
-                </Button>
-              </Link>
-            </div>
-          </>
-        )}
+        <div className="flex gap-6">
+          <div>
+            <p className="text-2xl font-serif font-bold text-foreground">{shops}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {shops === 1 ? "local shop" : "local shops"}
+            </p>
+          </div>
+          <div>
+            <p className="text-2xl font-serif font-bold text-foreground">{items}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {items === 1 ? "unique item" : "unique items"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-auto pt-4">
+          <Link href="/businesses">
+            <Button variant="outline" size="sm" className="rounded-full">
+              Browse Businesses
+            </Button>
+          </Link>
+        </div>
       </div>
     </QuickTownInfoCard>
   );
 }
 
-function EventsDashboardCard({ upcomingEvents }: { upcomingEvents: Event[] }) {
+function EventsDashboardCard({
+  upcomingEvents,
+  upcomingEventsLoading,
+}: Pick<QuickTownInfoSectionProps, "upcomingEvents" | "upcomingEventsLoading">) {
+  if (upcomingEventsLoading) {
+    return <QuickTownInfoCardSkeleton />;
+  }
+
   const sorted = [...upcomingEvents].sort((a, b) => a.date.localeCompare(b.date));
   const nextEvent = sorted[0];
   const count = sorted.length;
@@ -167,8 +188,11 @@ export function QuickTownInfoSection({
   weatherEnabled,
   weather,
   weatherError,
+  weatherLoading,
   todayTrucks,
+  todayTrucksLoading,
   upcomingEvents,
+  upcomingEventsLoading,
   marketplaceStats,
   marketplaceStatsLoading,
 }: QuickTownInfoSectionProps) {
@@ -178,9 +202,13 @@ export function QuickTownInfoSection({
         weatherEnabled={weatherEnabled}
         weather={weather}
         weatherError={weatherError}
+        weatherLoading={weatherLoading}
       />
-      <FoodTrucksDashboardCard todayTrucks={todayTrucks} />
-      <EventsDashboardCard upcomingEvents={upcomingEvents} />
+      <FoodTrucksDashboardCard todayTrucks={todayTrucks} todayTrucksLoading={todayTrucksLoading} />
+      <EventsDashboardCard
+        upcomingEvents={upcomingEvents}
+        upcomingEventsLoading={upcomingEventsLoading}
+      />
       <LocalMarketplaceDashboardCard
         marketplaceStats={marketplaceStats}
         marketplaceStatsLoading={marketplaceStatsLoading}

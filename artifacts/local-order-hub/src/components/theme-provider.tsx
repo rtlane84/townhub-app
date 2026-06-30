@@ -36,6 +36,7 @@ export type PlatformBranding = {
   townName: string | null;
   weatherEnabled: boolean;
   weatherLocation: string;
+  themeLoading: boolean;
 };
 
 const PlatformBrandingContext = createContext<PlatformBranding>({
@@ -54,6 +55,7 @@ const PlatformBrandingContext = createContext<PlatformBranding>({
   townName: null,
   weatherEnabled: false,
   weatherLocation: "",
+  themeLoading: true,
 });
 
 export function usePlatformBranding(): PlatformBranding {
@@ -61,7 +63,7 @@ export function usePlatformBranding(): PlatformBranding {
 }
 
 export function PlatformThemeProvider({ children }: { children: React.ReactNode }) {
-  const { data: theme } = useGetPlatformTheme({
+  const { data: theme, isPending: themePending } = useGetPlatformTheme({
     query: {
       queryKey: getGetPlatformThemeQueryKey(),
       staleTime: 30 * 1000,
@@ -93,8 +95,9 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
       townName: theme?.townName?.trim() || null,
       weatherEnabled: resolveWeatherEnabled(theme),
       weatherLocation: resolveWeatherLocation(theme),
+      themeLoading: themePending && theme == null,
     };
-  }, [theme]);
+  }, [theme, themePending]);
 
   useEffect(() => {
     applyPlatformThemeToRoot(theme);
