@@ -81,6 +81,13 @@ export const ENTITLED_SUBSCRIPTION_STATUSES = new Set([
   "PAST_DUE",
 ]);
 
+/** Statuses that lock paid plans but may still grant complimentary/founding access. */
+export const RESTRICTED_SUBSCRIPTION_STATUSES = new Set([
+  "CANCELED",
+  "SUSPENDED",
+  "INCOMPLETE",
+]);
+
 /** Legacy values that may still exist before enum migration. */
 export const LEGACY_SUBSCRIPTION_STATUS_ALIASES: Record<string, string> = {
   TRIALING: "TRIAL",
@@ -93,4 +100,16 @@ export function normalizeSubscriptionStatus(status: string): string {
 
 export function subscriptionStatusGrantsFeatures(status: string): boolean {
   return ENTITLED_SUBSCRIPTION_STATUSES.has(normalizeSubscriptionStatus(status));
+}
+
+/** Whether a business subscription status grants features for its plan type. */
+export function subscriptionGrantsFeaturesForPlan(status: string, complimentary: boolean): boolean {
+  const normalized = normalizeSubscriptionStatus(status);
+  if (complimentary) {
+    return normalized !== "SUSPENDED";
+  }
+  if (RESTRICTED_SUBSCRIPTION_STATUSES.has(normalized)) {
+    return false;
+  }
+  return ENTITLED_SUBSCRIPTION_STATUSES.has(normalized);
 }

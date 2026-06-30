@@ -38,6 +38,7 @@ import type {
   Category,
   CategoryInput,
   CategoryUpdate,
+  ChangeSubscriptionPlanResponse,
   CheckoutSessionInput,
   CheckoutSessionResult,
   Event,
@@ -78,6 +79,8 @@ import type {
   StripeConnectStartInput,
   StripeConnectStartResult,
   StripeConnectStatus,
+  StripeRedirectResponse,
+  SubscriptionCheckoutInput,
   SubscriptionFeature,
   SubscriptionFeatureInput,
   SubscriptionPlan,
@@ -5397,6 +5400,290 @@ export function useGetMySubscription<TData = Awaited<ReturnType<typeof getMySubs
 
 
 
+
+export const getCreateBusinessSubscriptionCheckoutUrl = (id: number,) => {
+
+
+
+
+  return `/api/businesses/${id}/subscription/checkout`
+}
+
+/**
+ * @summary Start Stripe subscription checkout for a business (owner or admin)
+ */
+export const createBusinessSubscriptionCheckout = async (id: number,
+    subscriptionCheckoutInput: SubscriptionCheckoutInput, options?: RequestInit): Promise<StripeRedirectResponse> => {
+
+  return customFetch<StripeRedirectResponse>(getCreateBusinessSubscriptionCheckoutUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subscriptionCheckoutInput,)
+  }
+);}
+
+
+
+
+export const getCreateBusinessSubscriptionCheckoutMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBusinessSubscriptionCheckout>>, TError,{id: number;data: BodyType<SubscriptionCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBusinessSubscriptionCheckout>>, TError,{id: number;data: BodyType<SubscriptionCheckoutInput>}, TContext> => {
+
+const mutationKey = ['createBusinessSubscriptionCheckout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBusinessSubscriptionCheckout>>, {id: number;data: BodyType<SubscriptionCheckoutInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createBusinessSubscriptionCheckout(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBusinessSubscriptionCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof createBusinessSubscriptionCheckout>>>
+    export type CreateBusinessSubscriptionCheckoutMutationBody = BodyType<SubscriptionCheckoutInput>
+    export type CreateBusinessSubscriptionCheckoutMutationError = ErrorType<void>
+
+    /**
+ * @summary Start Stripe subscription checkout for a business (owner or admin)
+ */
+export const useCreateBusinessSubscriptionCheckout = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBusinessSubscriptionCheckout>>, TError,{id: number;data: BodyType<SubscriptionCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createBusinessSubscriptionCheckout>>,
+        TError,
+        {id: number;data: BodyType<SubscriptionCheckoutInput>},
+        TContext
+      > => {
+      return useMutation(getCreateBusinessSubscriptionCheckoutMutationOptions(options));
+    }
+
+export const getCreateBusinessSubscriptionPortalUrl = (id: number,) => {
+
+
+
+
+  return `/api/businesses/${id}/subscription/portal`
+}
+
+/**
+ * @summary Open Stripe Customer Portal for a business (owner or admin)
+ */
+export const createBusinessSubscriptionPortal = async (id: number, options?: RequestInit): Promise<StripeRedirectResponse> => {
+
+  return customFetch<StripeRedirectResponse>(getCreateBusinessSubscriptionPortalUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCreateBusinessSubscriptionPortalMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBusinessSubscriptionPortal>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBusinessSubscriptionPortal>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['createBusinessSubscriptionPortal'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBusinessSubscriptionPortal>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  createBusinessSubscriptionPortal(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBusinessSubscriptionPortalMutationResult = NonNullable<Awaited<ReturnType<typeof createBusinessSubscriptionPortal>>>
+
+    export type CreateBusinessSubscriptionPortalMutationError = ErrorType<void>
+
+    /**
+ * @summary Open Stripe Customer Portal for a business (owner or admin)
+ */
+export const useCreateBusinessSubscriptionPortal = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBusinessSubscriptionPortal>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createBusinessSubscriptionPortal>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getCreateBusinessSubscriptionPortalMutationOptions(options));
+    }
+
+export const getSyncBusinessSubscriptionFromStripeUrl = (id: number,) => {
+
+
+
+
+  return `/api/businesses/${id}/subscription/sync`
+}
+
+/**
+ * @summary Pull latest subscription state from Stripe (owner or admin)
+ */
+export const syncBusinessSubscriptionFromStripe = async (id: number, options?: RequestInit): Promise<BusinessSubscription> => {
+
+  return customFetch<BusinessSubscription>(getSyncBusinessSubscriptionFromStripeUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSyncBusinessSubscriptionFromStripeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncBusinessSubscriptionFromStripe>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof syncBusinessSubscriptionFromStripe>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['syncBusinessSubscriptionFromStripe'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof syncBusinessSubscriptionFromStripe>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  syncBusinessSubscriptionFromStripe(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SyncBusinessSubscriptionFromStripeMutationResult = NonNullable<Awaited<ReturnType<typeof syncBusinessSubscriptionFromStripe>>>
+
+    export type SyncBusinessSubscriptionFromStripeMutationError = ErrorType<void>
+
+    /**
+ * @summary Pull latest subscription state from Stripe (owner or admin)
+ */
+export const useSyncBusinessSubscriptionFromStripe = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof syncBusinessSubscriptionFromStripe>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof syncBusinessSubscriptionFromStripe>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getSyncBusinessSubscriptionFromStripeMutationOptions(options));
+    }
+
+export const getChangeBusinessSubscriptionPlanUrl = (id: number,) => {
+
+
+
+
+  return `/api/businesses/${id}/subscription/change-plan`
+}
+
+/**
+ * @summary Change subscription plan or billing interval (owner or admin)
+ */
+export const changeBusinessSubscriptionPlan = async (id: number,
+    subscriptionCheckoutInput: SubscriptionCheckoutInput, options?: RequestInit): Promise<ChangeSubscriptionPlanResponse> => {
+
+  return customFetch<ChangeSubscriptionPlanResponse>(getChangeBusinessSubscriptionPlanUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subscriptionCheckoutInput,)
+  }
+);}
+
+
+
+
+export const getChangeBusinessSubscriptionPlanMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeBusinessSubscriptionPlan>>, TError,{id: number;data: BodyType<SubscriptionCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeBusinessSubscriptionPlan>>, TError,{id: number;data: BodyType<SubscriptionCheckoutInput>}, TContext> => {
+
+const mutationKey = ['changeBusinessSubscriptionPlan'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeBusinessSubscriptionPlan>>, {id: number;data: BodyType<SubscriptionCheckoutInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  changeBusinessSubscriptionPlan(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeBusinessSubscriptionPlanMutationResult = NonNullable<Awaited<ReturnType<typeof changeBusinessSubscriptionPlan>>>
+    export type ChangeBusinessSubscriptionPlanMutationBody = BodyType<SubscriptionCheckoutInput>
+    export type ChangeBusinessSubscriptionPlanMutationError = ErrorType<void>
+
+    /**
+ * @summary Change subscription plan or billing interval (owner or admin)
+ */
+export const useChangeBusinessSubscriptionPlan = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeBusinessSubscriptionPlan>>, TError,{id: number;data: BodyType<SubscriptionCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof changeBusinessSubscriptionPlan>>,
+        TError,
+        {id: number;data: BodyType<SubscriptionCheckoutInput>},
+        TContext
+      > => {
+      return useMutation(getChangeBusinessSubscriptionPlanMutationOptions(options));
+    }
 
 export const getGetBusinessFeatureAccessUrl = (id: number,) => {
 

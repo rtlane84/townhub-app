@@ -16,6 +16,13 @@ import {
   enforceSingleRecommendedPlan,
 } from "../lib/subscription-plans";
 import {
+  createCustomerPortalSession,
+  createSubscriptionCheckoutSession,
+  changeBusinessSubscriptionPlan,
+  refreshBusinessSubscriptionFromStripe,
+} from "../lib/stripe-billing";
+import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
+import {
   getPlanFeatures,
   setPlanFeatures,
   getBusinessFeatureKeys,
@@ -45,14 +52,23 @@ const planInputSchema = z.object({
   isRecommended: z.boolean().optional().default(false),
   isBeta: z.boolean().optional().default(false),
   sortOrder: z.number().int().optional().default(0),
+  stripeProductId: z.string().optional(),
+  stripeMonthlyPriceId: z.string().optional(),
+  stripeYearlyPriceId: z.string().optional(),
 });
 
 const subscriptionInputSchema = z.object({
   planId: z.number().int(),
-  status: z.enum(["BETA", "TRIAL", "TRIALING", "ACTIVE", "PAST_DUE", "CANCELED", "SUSPENDED", "PAUSED"]),
+  status: z.enum(["BETA", "TRIAL", "TRIALING", "ACTIVE", "PAST_DUE", "CANCELED", "SUSPENDED", "PAUSED", "INCOMPLETE"]),
   trialEndsAt: z.string().optional(),
   renewalAt: z.string().optional(),
   notes: z.string().optional(),
+  billingInterval: z.enum(["monthly", "yearly"]).optional(),
+});
+
+const subscriptionCheckoutSchema = z.object({
+  planId: z.number().int(),
+  interval: z.enum(["monthly", "yearly"]).default("monthly"),
 });
 
 const featureInputSchema = z.object({
@@ -85,6 +101,9 @@ function buildPlanUpdateSet(data: Partial<z.infer<typeof planInputSchema>>) {
   if (data.isRecommended !== undefined) updateSet.isRecommended = data.isRecommended;
   if (data.isBeta !== undefined) updateSet.isBeta = data.isBeta;
   if (data.sortOrder !== undefined) updateSet.sortOrder = data.sortOrder;
+  if (data.stripeProductId !== undefined) updateSet.stripeProductId = data.stripeProductId || null;
+  if (data.stripeMonthlyPriceId !== undefined) updateSet.stripeMonthlyPriceId = data.stripeMonthlyPriceId || null;
+  if (data.stripeYearlyPriceId !== undefined) updateSet.stripeYearlyPriceId = data.stripeYearlyPriceId || null;
 
   return updateSet;
 }
@@ -137,6 +156,9 @@ adminRouter.post("/subscription-plans", async (req, res): Promise<void> => {
     isRecommended: d.isRecommended,
     isBeta: d.isBeta,
     sortOrder: d.sortOrder,
+    stripeProductId: d.stripeProductId,
+    stripeMonthlyPriceId: d.stripeMonthlyPriceId,
+    stripeYearlyPriceId: d.stripeYearlyPriceId,
   }).returning();
 
   if (plan.isDefault) await enforceSingleDefaultPlan(plan.id);
@@ -289,6 +311,7 @@ adminRouter.put("/businesses/:id/subscription", async (req, res): Promise<void> 
   if (parsed.data.trialEndsAt) values.trialEndsAt = new Date(parsed.data.trialEndsAt);
   if (parsed.data.renewalAt) values.renewalAt = new Date(parsed.data.renewalAt);
   if (parsed.data.notes !== undefined) values.notes = parsed.data.notes;
+  if (parsed.data.billingInterval) values.billingInterval = parsed.data.billingInterval;
 
   let sub;
   if (existing.length > 0) {
@@ -357,6 +380,134 @@ router.get("/businesses/:businessId/subscription", async (req, res): Promise<voi
   const enabledFeatures = features.filter((feature) => featureKeys.has(feature.key));
 
   res.json(serializeSubscription(sub, plan, enabledFeatures));
+});
+
+// POST /api/businesses/:businessId/subscription/checkout
+router.post("/businesses/:businessId/subscription/checkout", async (req, res): Promise<void> => {
+  const businessId = parseInt(req.params.businessId, 10);
+  const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
+  if (!access.ok) {
+    res.status(access.status).json({ error: access.error });
+    return;
+  }
+
+  const parsed = subscriptionCheckoutSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  const result = await createSubscriptionCheckoutSession({
+    businessId,
+    planId: parsed.data.planId,
+    interval: parsed.data.interval,
+    userId,
+  });
+
+  if (!result.ok) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+
+  res.json({ url: result.url, mockMode: result.mockMode });
+});
+
+// POST /api/businesses/:businessId/subscription/portal
+router.post("/businesses/:businessId/subscription/portal", async (req, res): Promise<void> => {
+  const businessId = parseInt(req.params.businessId, 10);
+  const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
+  if (!access.ok) {
+    res.status(access.status).json({ error: access.error });
+    return;
+  }
+
+  const result = await createCustomerPortalSession(businessId);
+  if (!result.ok) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+
+  res.json({ url: result.url, mockMode: result.mockMode });
+});
+
+// POST /api/businesses/:businessId/subscription/sync — pull latest state from Stripe
+router.post("/businesses/:businessId/subscription/sync", async (req, res): Promise<void> => {
+  const businessId = parseInt(req.params.businessId, 10);
+  const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
+  if (!access.ok) {
+    res.status(access.status).json({ error: access.error });
+    return;
+  }
+
+  const syncResult = await refreshBusinessSubscriptionFromStripe(businessId);
+  if (!syncResult.ok) {
+    res.status(syncResult.status).json({ error: syncResult.error });
+    return;
+  }
+
+  const [sub] = await db
+    .select()
+    .from(businessSubscriptionsTable)
+    .where(eq(businessSubscriptionsTable.businessId, businessId));
+  if (!sub) {
+    res.status(404).json({ error: "No subscription" });
+    return;
+  }
+
+  const [plan] = await db.select().from(subscriptionPlansTable).where(eq(subscriptionPlansTable.id, sub.planId));
+  const featureKeys = await getBusinessFeatureKeys(businessId);
+  const features = await getPlanFeatures(sub.planId);
+  const enabledFeatures = features.filter((feature) => featureKeys.has(feature.key));
+
+  res.json(serializeSubscription(sub, plan, enabledFeatures));
+});
+
+// POST /api/businesses/:businessId/subscription/change-plan
+router.post("/businesses/:businessId/subscription/change-plan", async (req, res): Promise<void> => {
+  const businessId = parseInt(req.params.businessId, 10);
+  const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
+  if (!access.ok) {
+    res.status(access.status).json({ error: access.error });
+    return;
+  }
+
+  const parsed = subscriptionCheckoutSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  const result = await changeBusinessSubscriptionPlan({
+    businessId,
+    planId: parsed.data.planId,
+    interval: parsed.data.interval,
+    userId,
+  });
+
+  if (!result.ok) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+
+  if (result.mode === "checkout") {
+    res.json({ mode: "checkout", url: result.url, mockMode: result.mockMode });
+    return;
+  }
+
+  const [sub] = await db.select().from(businessSubscriptionsTable).where(eq(businessSubscriptionsTable.businessId, businessId));
+  const [plan] = sub
+    ? await db.select().from(subscriptionPlansTable).where(eq(subscriptionPlansTable.id, sub.planId))
+    : [undefined];
+  const featureKeys = await getBusinessFeatureKeys(businessId);
+  const features = sub ? await getPlanFeatures(sub.planId) : [];
+  const enabledFeatures = features.filter((feature) => featureKeys.has(feature.key));
+
+  res.json({
+    mode: "updated",
+    subscription: sub ? serializeSubscription(sub, plan, enabledFeatures) : null,
+  });
 });
 
 // GET /api/businesses/:id/feature-access — subscription-aware UI for business owners

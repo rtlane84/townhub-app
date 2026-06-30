@@ -80,6 +80,7 @@ export default function AdminBusinesses() {
   const [subDialogOpen, setSubDialogOpen] = useState(false);
   const [subBusinessId, setSubBusinessId] = useState<number | null>(null);
   const [subPlanId, setSubPlanId] = useState<string>("");
+  const [subBillingInterval, setSubBillingInterval] = useState<"monthly" | "yearly">("monthly");
   const [subSaving, setSubSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [assignBusinessId, setAssignBusinessId] = useState<number | null>(null);
@@ -152,6 +153,7 @@ export default function AdminBusinesses() {
   function openChangePlan(businessId: number) {
     setSubBusinessId(businessId);
     setSubPlanId("");
+    setSubBillingInterval("monthly");
     setSubDialogOpen(true);
   }
 
@@ -166,7 +168,11 @@ export default function AdminBusinesses() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ planId: parseInt(subPlanId, 10), status: "ACTIVE" }),
+        body: JSON.stringify({
+          planId: parseInt(subPlanId, 10),
+          status: "ACTIVE",
+          billingInterval: subBillingInterval,
+        }),
       });
       const ct = res.headers.get("content-type") ?? "";
       const body = ct.includes("application/json") ? await res.json() : { error: `Server error (${res.status})` };
@@ -378,6 +384,18 @@ export default function AdminBusinesses() {
                       {planAssignmentLabel(p)}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Billing interval</label>
+              <Select value={subBillingInterval} onValueChange={(v) => setSubBillingInterval(v as "monthly" | "yearly")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
                 </SelectContent>
               </Select>
             </div>

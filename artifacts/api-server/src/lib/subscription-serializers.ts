@@ -27,6 +27,9 @@ export function serializePlan(p: typeof subscriptionPlansTable.$inferSelect) {
     isRecommended: p.isRecommended,
     isBeta: p.isBeta,
     sortOrder: p.sortOrder,
+    stripeProductId: p.stripeProductId,
+    stripeMonthlyPriceId: p.stripeMonthlyPriceId,
+    stripeYearlyPriceId: p.stripeYearlyPriceId,
     createdAt: p.createdAt,
   };
 }
@@ -48,6 +51,10 @@ export function serializeSubscription(
     currentPeriodEnd: s.currentPeriodEnd,
     notes: s.notes,
     stripeSubscriptionId: s.stripeSubscriptionId,
+    stripeCustomerId: s.stripeCustomerId,
+    stripePriceId: s.stripePriceId,
+    billingInterval: s.billingInterval,
+    cancelAtPeriodEnd: s.cancelAtPeriodEnd,
     plan: plan ? serializePlan(plan) : undefined,
     features,
     createdAt: s.createdAt,

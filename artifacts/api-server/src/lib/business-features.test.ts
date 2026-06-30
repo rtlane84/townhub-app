@@ -4,6 +4,7 @@ import {
   LEGACY_SUBSCRIPTION_STATUS_ALIASES,
   normalizeSubscriptionStatus,
   subscriptionStatusGrantsFeatures,
+  subscriptionGrantsFeaturesForPlan,
   SUBSCRIPTION_FEATURE_KEYS,
 } from "./subscription-feature-keys.ts";
 
@@ -29,7 +30,14 @@ describe("subscription status helpers", () => {
     assert.equal(subscriptionStatusGrantsFeatures("PAST_DUE"), true);
     assert.equal(subscriptionStatusGrantsFeatures("CANCELED"), false);
     assert.equal(subscriptionStatusGrantsFeatures("SUSPENDED"), false);
+    assert.equal(subscriptionStatusGrantsFeatures("INCOMPLETE"), false);
     assert.equal(subscriptionStatusGrantsFeatures("TRIALING"), true);
+  });
+
+  it("applies complimentary-plan overrides for restricted statuses", () => {
+    assert.equal(subscriptionGrantsFeaturesForPlan("CANCELED", true), true);
+    assert.equal(subscriptionGrantsFeaturesForPlan("CANCELED", false), false);
+    assert.equal(subscriptionGrantsFeaturesForPlan("INCOMPLETE", false), false);
   });
 
   it("maps all legacy aliases", () => {

@@ -20,4 +20,7 @@ export interface SubscriptionPlanInput {
   isRecommended?: boolean;
   isBeta?: boolean;
   sortOrder?: number;
+  stripeProductId?: string;
+  stripeMonthlyPriceId?: string;
+  stripeYearlyPriceId?: string;
 }

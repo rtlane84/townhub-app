@@ -31,6 +31,7 @@ interface Application {
   hours: string | null;
   structuredHours: BusinessDayHours[] | null;
   planId: number | null;
+  billingInterval?: "monthly" | "yearly" | null;
   planName: string | null;
   status: "PENDING" | "APPROVED" | "REJECTED";
   reviewNote: string | null;
@@ -74,6 +75,7 @@ export default function AdminApplications() {
   const [rejectDialog, setRejectDialog] = useState<{ id: number; name: string } | null>(null);
   const [approveDialog, setApproveDialog] = useState<Application | null>(null);
   const [approvePlanId, setApprovePlanId] = useState<string>("");
+  const [approveBillingInterval, setApproveBillingInterval] = useState<"monthly" | "yearly">("monthly");
   const [rejectNote, setRejectNote] = useState("");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
@@ -96,6 +98,7 @@ export default function AdminApplications() {
           ? String(plans.find((p) => p.isDefault && p.isActive)!.id)
           : "";
     setApprovePlanId(defaultPlan);
+    setApproveBillingInterval(app.billingInterval ?? "monthly");
     setApproveDialog(app);
   }
 
@@ -105,10 +108,11 @@ export default function AdminApplications() {
     setActionLoading(id);
     try {
       const token = await getToken();
-      const body: { planId?: number } = {};
+      const body: { planId?: number; billingInterval?: "monthly" | "yearly" } = {};
       if (approvePlanId) {
         body.planId = parseInt(approvePlanId, 10);
       }
+      body.billingInterval = approveBillingInterval;
       const res = await fetch(`/api/admin/applications/${id}/approve`, {
         method: "POST",
         headers: {
@@ -372,8 +376,28 @@ export default function AdminApplications() {
               Override with any plan, including inactive or internal plans. Leave on the first option to use the applicant&apos;s selection or platform default.
             </p>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="approve-interval">Billing interval</Label>
+            <Select
+              value={approveBillingInterval}
+              onValueChange={(v) => setApproveBillingInterval(v as "monthly" | "yearly")}
+            >
+              <SelectTrigger id="approve-interval">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
+            {approveDialog?.billingInterval && (
+              <p className="text-xs text-muted-foreground">
+                Applicant selected: {approveDialog.billingInterval === "yearly" ? "Yearly" : "Monthly"}
+              </p>
+            )}
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setApproveDialog(null); setApprovePlanId(""); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setApproveDialog(null); setApprovePlanId(""); setApproveBillingInterval("monthly"); }}>Cancel</Button>
             <LoadingButton
               onClick={() => void handleApprove()}
               loading={actionLoading === approveDialog?.id}

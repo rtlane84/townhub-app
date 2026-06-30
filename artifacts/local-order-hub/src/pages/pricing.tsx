@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Layers, Loader2, Sparkles } from "lucide-react";
-import { formatPlanAmount } from "@/lib/subscription-display";
+import { formatPlanAmount, pricingPlanCtaLabel } from "@/lib/subscription-display";
 import { cn } from "@/lib/utils";
 
 export default function Pricing() {
@@ -108,7 +108,7 @@ export default function Pricing() {
               <CardFooter>
                 <Link href="/list-your-business" className="w-full">
                   <Button className="w-full" variant={plan.isRecommended ? "default" : "outline"}>
-                    Get Started
+                    {pricingPlanCtaLabel(plan)}
                   </Button>
                 </Link>
               </CardFooter>
@@ -118,9 +118,9 @@ export default function Pricing() {
       )}
 
       <p className="text-center text-sm text-muted-foreground mt-10">
-        Billing integration coming soon.{" "}
+        Paid plans use secure Stripe checkout after your business is approved.{" "}
         <Link href="/help" className="text-primary hover:underline">Visit Help Center</Link>
-        {" "}to learn how listing works today.
+        {" "}to learn how listing works.
       </p>
     </div>
   );

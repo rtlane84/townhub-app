@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BusinessSubscriptionStatus } from './businessSubscriptionStatus';
+import type { SubscriptionBillingInterval } from './subscriptionBillingInterval';
 
 export interface BusinessSubscriptionInput {
   planId: number;
@@ -13,4 +14,5 @@ export interface BusinessSubscriptionInput {
   trialEndsAt?: Date;
   renewalAt?: Date;
   notes?: string;
+  billingInterval?: SubscriptionBillingInterval;
 }

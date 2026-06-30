@@ -26,6 +26,12 @@ export interface SubscriptionPlan {
   isRecommended: boolean;
   isBeta: boolean;
   sortOrder: number;
+  /** @nullable */
+  stripeProductId?: string | null;
+  /** @nullable */
+  stripeMonthlyPriceId?: string | null;
+  /** @nullable */
+  stripeYearlyPriceId?: string | null;
   features?: SubscriptionFeature[];
   createdAt?: Date;
 }

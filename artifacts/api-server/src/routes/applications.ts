@@ -43,6 +43,7 @@ function serializeApplication(
     hours: a.hours,
     structuredHours: parseStructuredHours(a.structuredHours),
     planId: a.planId,
+    billingInterval: a.billingInterval,
     planName: plan?.name ?? null,
     status: a.status,
     reviewNote: a.reviewNote,
@@ -66,10 +67,12 @@ const applySchema = z.object({
     closeTime: z.string().nullable(),
   })).optional(),
   planId: z.number().int().positive().optional(),
+  billingInterval: z.enum(["monthly", "yearly"]).optional(),
 });
 
 const approveSchema = z.object({
   planId: z.number().int().positive().optional(),
+  billingInterval: z.enum(["monthly", "yearly"]).optional(),
 });
 
 // GET /api/subscription-plans — public list of active plans for the apply form
@@ -86,6 +89,7 @@ router.get("/subscription-plans", async (_req, res): Promise<void> => {
       name: p.name,
       description: p.description,
       monthlyPrice: parseFloat(p.monthlyPrice),
+      yearlyPrice: p.yearlyPrice ? parseFloat(p.yearlyPrice) : null,
       setupFee: p.setupFee ? parseFloat(p.setupFee) : null,
       transactionFeePercent: p.transactionFeePercent ? parseFloat(p.transactionFeePercent) : null,
       trialDays: p.trialDays,
@@ -165,7 +169,7 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
   const claims = (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth?.sessionClaims;
   const email = (claims?.email as string) ?? `${userId}@user.local`;
 
-  const { name, type, description, address, phone, hours, structuredHours, planId } = parsed.data;
+  const { name, type, description, address, phone, hours, structuredHours, planId, billingInterval } = parsed.data;
 
   if (planId) {
     const [plan] = await db
@@ -192,6 +196,7 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
         structuredHours: resolveStructuredHoursInput(structuredHours) ?? null,
         hours: legacyHoursFromStructured(structuredHours) ?? (hours?.trim() || null),
         planId: planId ?? null,
+        billingInterval: billingInterval ?? null,
         status: "PENDING",
         reviewNote: null,
         reviewedAt: null,
@@ -215,6 +220,7 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
         structuredHours: resolveStructuredHoursInput(structuredHours) ?? null,
         hours: legacyHoursFromStructured(structuredHours) ?? (hours?.trim() || null),
         planId: planId ?? null,
+        billingInterval: billingInterval ?? null,
         status: "PENDING",
       })
       .returning();
@@ -320,7 +326,9 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
     // Attach subscription: admin override > application plan > default active plan
     const plan = await resolveApprovalPlan(app.planId, parsedBody.data.planId);
     if (plan) {
-      await attachPlanToBusiness(business.id, plan);
+      const billingInterval =
+        parsedBody.data.billingInterval ?? app.billingInterval ?? "monthly";
+      await attachPlanToBusiness(business.id, plan, { billingInterval });
     }
 
     // Mark application as approved

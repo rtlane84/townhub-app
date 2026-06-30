@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BusinessSubscriptionStatus } from './businessSubscriptionStatus';
+import type { SubscriptionBillingInterval } from './subscriptionBillingInterval';
 import type { SubscriptionFeature } from './subscriptionFeature';
 import type { SubscriptionPlan } from './subscriptionPlan';
 
@@ -28,6 +29,12 @@ export interface BusinessSubscription {
   notes?: string | null;
   /** @nullable */
   stripeSubscriptionId?: string | null;
+  /** @nullable */
+  stripeCustomerId?: string | null;
+  /** @nullable */
+  stripePriceId?: string | null;
+  billingInterval?: SubscriptionBillingInterval | null;
+  cancelAtPeriodEnd?: boolean;
   plan?: SubscriptionPlan;
   features?: SubscriptionFeature[];
   createdAt?: Date;

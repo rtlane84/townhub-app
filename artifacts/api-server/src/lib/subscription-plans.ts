@@ -46,19 +46,42 @@ export async function resolveApprovalPlan(
   return defaultPlan ?? null;
 }
 
-export async function attachPlanToBusiness(businessId: number, plan: Plan): Promise<void> {
+export async function attachPlanToBusiness(
+  businessId: number,
+  plan: Plan,
+  options?: { billingInterval?: "monthly" | "yearly" | null },
+): Promise<void> {
   const now = new Date();
+  const monthly = parseFloat(plan.monthlyPrice);
+  const yearly = plan.yearlyPrice ? parseFloat(plan.yearlyPrice) : 0;
+  const complimentary = plan.isBeta || (monthly <= 0 && yearly <= 0);
+  const billingInterval = options?.billingInterval ?? "monthly";
+
+  if (!complimentary) {
+    await db.insert(businessSubscriptionsTable).values({
+      businessId,
+      planId: plan.id,
+      status: "INCOMPLETE",
+      startedAt: now,
+      billingInterval,
+    });
+    return;
+  }
+
   const trialEndsAt =
     plan.trialDays > 0
       ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000)
       : null;
 
+  const status = plan.isBeta ? "BETA" : plan.trialDays > 0 ? "TRIAL" : "ACTIVE";
+
   await db.insert(businessSubscriptionsTable).values({
     businessId,
     planId: plan.id,
-    status: plan.trialDays > 0 ? "TRIAL" : "ACTIVE",
+    status,
     startedAt: now,
     trialEndsAt,
     renewalAt: trialEndsAt,
+    billingInterval: complimentary ? null : billingInterval,
   });
 }

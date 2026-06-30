@@ -36,6 +36,9 @@ const BLANK: SubscriptionPlanInput = {
   isRecommended: false,
   isBeta: false,
   sortOrder: 0,
+  stripeProductId: undefined,
+  stripeMonthlyPriceId: undefined,
+  stripeYearlyPriceId: undefined,
 };
 
 export default function AdminPlans() {
@@ -94,6 +97,9 @@ export default function AdminPlans() {
       isRecommended: p.isRecommended,
       isBeta: p.isBeta,
       sortOrder: p.sortOrder,
+      stripeProductId: p.stripeProductId ?? undefined,
+      stripeMonthlyPriceId: p.stripeMonthlyPriceId ?? undefined,
+      stripeYearlyPriceId: p.stripeYearlyPriceId ?? undefined,
     });
     setOpen(true);
   }
@@ -262,6 +268,26 @@ export default function AdminPlans() {
             <div className="flex items-center justify-between py-1">
               <label className="text-sm font-medium">Beta / founding plan</label>
               <Switch checked={!!form.isBeta} onCheckedChange={(v) => setForm((p) => ({ ...p, isBeta: v }))} />
+            </div>
+            <div className="border-t pt-4 space-y-3">
+              <p className="text-sm font-medium">Stripe Billing IDs</p>
+              <p className="text-xs text-muted-foreground">
+                Link this plan to Stripe Product and Price IDs from your platform Stripe account.
+              </p>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Stripe Product ID</label>
+                <Input value={form.stripeProductId ?? ""} onChange={(e) => setForm((p) => ({ ...p, stripeProductId: e.target.value || undefined }))} placeholder="prod_..." />
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Monthly Price ID</label>
+                  <Input value={form.stripeMonthlyPriceId ?? ""} onChange={(e) => setForm((p) => ({ ...p, stripeMonthlyPriceId: e.target.value || undefined }))} placeholder="price_..." />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Yearly Price ID</label>
+                  <Input value={form.stripeYearlyPriceId ?? ""} onChange={(e) => setForm((p) => ({ ...p, stripeYearlyPriceId: e.target.value || undefined }))} placeholder="price_..." />
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>

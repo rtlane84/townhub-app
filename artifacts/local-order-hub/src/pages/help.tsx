@@ -1,13 +1,14 @@
 import { Link } from "wouter";
 import {
   HelpCircle,
+  Search,
   ShoppingBag,
   Store,
-  ArrowRight,
-  Users,
-  Briefcase,
+  Sparkles,
+  GraduationCap,
+  MessageCircleQuestion,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Accordion,
@@ -15,58 +16,41 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { usePlatformBranding } from "@/components/theme-provider";
+import { HelpVideoCard } from "@/components/help/help-video-card";
+import { HelpTopicCard } from "@/components/help/help-topic-card";
 import {
-  businessOwnerFaqs,
-  businessOwnerWorkflows,
+  featuredVideos,
+  whatsNewItems,
+  customerTopics,
+  businessOwnerTopics,
   customerFaqs,
-  customerWorkflows,
-  type HelpWorkflow,
+  businessOwnerFaqs,
+  type HelpFaq,
 } from "@/lib/help-content";
 
-function WorkflowCard({ workflow }: { workflow: HelpWorkflow }) {
+function FaqSection({ title, items }: { title: string; items: HelpFaq[] }) {
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="text-lg font-serif">{workflow.title}</CardTitle>
-        <CardDescription>{workflow.summary}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-          {workflow.steps.map((step) => (
-            <li key={step} className="leading-relaxed">
-              {step}
-            </li>
-          ))}
-        </ol>
-        {workflow.link && (
-          <Link href={workflow.link.href}>
-            <Button variant="outline" size="sm" className="gap-1.5">
-              {workflow.link.label}
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function FaqAccordion({ items }: { items: typeof customerFaqs }) {
-  return (
-    <Accordion type="single" collapsible className="w-full">
-      {items.map((faq) => (
-        <AccordionItem key={faq.id} value={faq.id}>
-          <AccordionTrigger className="text-left font-medium">
-            {faq.question}
-          </AccordionTrigger>
-          <AccordionContent className="text-muted-foreground leading-relaxed">
-            {faq.answer}
-          </AccordionContent>
-        </AccordionItem>
-      ))}
-    </Accordion>
+    <section className="space-y-4">
+      <div className="flex items-center gap-2">
+        <MessageCircleQuestion className="h-5 w-5 text-primary" />
+        <h2 className="font-serif text-2xl font-semibold">{title}</h2>
+      </div>
+      <Accordion type="single" collapsible className="w-full rounded-xl border bg-card px-4">
+        {items.map((faq) => (
+          <AccordionItem key={faq.id} value={faq.id}>
+            <AccordionTrigger className="text-left font-medium hover:no-underline">
+              {faq.question}
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground leading-relaxed pb-4">
+              {faq.answer}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </section>
   );
 }
 
@@ -74,49 +58,91 @@ export default function Help() {
   const { platformName } = usePlatformBranding();
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <div className="mb-10">
-        <div className="flex items-center gap-2 mb-2">
-          <HelpCircle className="h-7 w-7 text-primary" />
-          <h1 className="text-3xl font-serif font-bold text-foreground">Help Center</h1>
+    <div className="container mx-auto px-4 py-8 md:py-10 max-w-6xl">
+      {/* Hero */}
+      <div className="text-center max-w-2xl mx-auto mb-8">
+        <div className="inline-flex items-center gap-2 text-primary mb-3">
+          <GraduationCap className="h-5 w-5" />
+          <span className="text-sm font-semibold uppercase tracking-wide">Learning Hub</span>
         </div>
-        <p className="text-muted-foreground max-w-2xl leading-relaxed">
-          Learn how to use {platformName} — whether you are browsing local businesses,
-          placing orders, or managing your own listing on the platform.
+        <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground flex items-center justify-center gap-2 flex-wrap">
+          <HelpCircle className="h-8 w-8 text-primary hidden sm:block" />
+          {platformName} Help Center
+        </h1>
+        <p className="text-muted-foreground mt-3 leading-relaxed">
+          Short videos, guided steps, and answers — whether you are shopping locally or running your business on the platform.
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4 mb-10">
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-5 flex items-start gap-4">
-            <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
-              <Users className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium text-foreground">For customers</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Browse businesses, order online, track purchases, and request appointments.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-5 flex items-start gap-4">
-            <div className="rounded-lg bg-primary/10 p-2.5 shrink-0">
-              <Briefcase className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium text-foreground">For business owners</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Apply to list your business, manage your storefront, and run day-to-day operations.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Search placeholder */}
+      <div className="relative max-w-xl mx-auto mb-10">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          type="search"
+          disabled
+          placeholder="Search help articles — coming soon"
+          className="pl-10 h-11 bg-muted/40"
+          aria-label="Search help articles"
+        />
       </div>
 
+      {/* Featured videos */}
+      <section className="mb-12">
+        <div className="flex items-end justify-between gap-4 mb-5 flex-wrap">
+          <div>
+            <h2 className="font-serif text-2xl font-semibold">Featured training</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Start with a video overview, then dive into the guides below.
+            </p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-5">
+          {featuredVideos.map((video) => (
+            <HelpVideoCard
+              key={video.id}
+              video={{
+                ...video,
+                title: video.id === "welcome" ? `Welcome to ${platformName}` : video.title,
+              }}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* What's New */}
+      <section className="mb-12">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h2 className="font-serif text-2xl font-semibold">What&apos;s new</h2>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
+          {whatsNewItems.map((item) => (
+            <Card
+              key={item.id}
+              className="min-w-[280px] max-w-sm shrink-0 snap-start border-primary/15 bg-gradient-to-br from-primary/5 to-transparent"
+            >
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary" className="text-[10px]">
+                    {item.dateLabel}
+                  </Badge>
+                  {item.tag && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {item.tag}
+                    </Badge>
+                  )}
+                </div>
+                <h3 className="font-medium leading-snug">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.summary}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Audience tabs */}
       <Tabs defaultValue="customers" className="space-y-8">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-11">
           <TabsTrigger value="customers" className="gap-2">
             <ShoppingBag className="h-4 w-4" />
             Customers
@@ -128,45 +154,61 @@ export default function Help() {
         </TabsList>
 
         <TabsContent value="customers" className="space-y-10 mt-0">
-          <section>
-            <h2 className="font-serif text-2xl font-semibold mb-2">Getting started as a customer</h2>
-            <p className="text-muted-foreground mb-6 max-w-2xl">
-              These are the main workflows for finding businesses and using the site with confidence.
+          <div className="rounded-2xl border bg-muted/20 p-5 md:p-6 text-center md:text-left">
+            <p className="font-medium text-foreground">New here? Start with Customer Training above.</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+              These guides walk you through browsing, ordering as a guest, and tracking purchases — no technical background needed.
             </p>
-            <div className="grid md:grid-cols-2 gap-6">
-              {customerWorkflows.map((workflow) => (
-                <WorkflowCard key={workflow.id} workflow={workflow} />
+          </div>
+
+          <section className="space-y-5">
+            <h2 className="font-serif text-2xl font-semibold">Customer guides</h2>
+            <div className="grid sm:grid-cols-2 gap-5">
+              {customerTopics.map((topic) => (
+                <HelpTopicCard key={topic.id} topic={topic} />
               ))}
             </div>
           </section>
 
-          <section>
-            <h2 className="font-serif text-2xl font-semibold mb-4">Common questions</h2>
-            <FaqAccordion items={customerFaqs} />
-          </section>
+          <FaqSection title="Customer FAQs" items={customerFaqs} />
         </TabsContent>
 
         <TabsContent value="owners" className="space-y-10 mt-0">
-          <section>
-            <h2 className="font-serif text-2xl font-semibold mb-2">Getting started as a business owner</h2>
-            <p className="text-muted-foreground mb-6 max-w-2xl">
-              From your first application through daily order and appointment management in the Business Hub.
+          <div className="rounded-2xl border bg-muted/20 p-5 md:p-6">
+            <p className="font-medium text-foreground">Your guided journey</p>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">
+              Follow these steps from application through daily operations. Each card will become a full article over time.
             </p>
-            <div className="grid md:grid-cols-2 gap-6">
-              {businessOwnerWorkflows.map((workflow) => (
-                <WorkflowCard key={workflow.id} workflow={workflow} />
+            <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
+              {businessOwnerTopics.map((topic) => (
+                <a
+                  key={topic.id}
+                  href={`#help-${topic.id}`}
+                  className="snap-start shrink-0 inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary/40 hover:bg-primary/5 transition-colors"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                    {topic.journeyStep}
+                  </span>
+                  <span className="whitespace-nowrap max-w-[140px] truncate">{topic.title}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <section className="space-y-5">
+            <h2 className="font-serif text-2xl font-semibold">Business owner guides</h2>
+            <div className="grid sm:grid-cols-2 gap-5">
+              {businessOwnerTopics.map((topic) => (
+                <HelpTopicCard key={topic.id} topic={topic} showStep />
               ))}
             </div>
           </section>
 
-          <section>
-            <h2 className="font-serif text-2xl font-semibold mb-4">Common questions</h2>
-            <FaqAccordion items={businessOwnerFaqs} />
-          </section>
+          <FaqSection title="Business owner FAQs" items={businessOwnerFaqs} />
         </TabsContent>
       </Tabs>
 
-      <div className="mt-12 rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center">
+      <div className="mt-14 rounded-2xl border border-dashed border-border bg-muted/30 p-6 md:p-8 text-center">
         <p className="text-sm text-muted-foreground">
           Ready to explore?{" "}
           <Link href="/businesses" className="text-primary font-medium hover:underline">

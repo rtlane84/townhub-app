@@ -13,6 +13,13 @@ import {
   evaluateCheckoutSessionPayment,
   verifyStripeWebhookSignature,
 } from "./stripe-webhook-safety";
+import {
+  handleInvoicePaid,
+  handleInvoicePaymentFailed,
+  handleSubscriptionCheckoutCompleted,
+  isSubscriptionCheckoutSession,
+  syncBusinessSubscriptionFromStripeSubscription,
+} from "./stripe-billing";
 
 export {
   evaluateCheckoutSessionPayment,
@@ -86,18 +93,51 @@ export async function markOrderPaidFromCheckoutSession(
 
 export async function handleStripeWebhookEvent(event: Stripe.Event): Promise<{
   handled: boolean;
+  kind?: "order" | "subscription" | "connect";
   result?: MarkOrderPaidResult;
 }> {
   if (event.type === "account.updated") {
     await handleAccountUpdatedEvent(event.data.object as Stripe.Account);
-    return { handled: true };
+    return { handled: true, kind: "connect" };
   }
 
-  if (event.type !== "checkout.session.completed") {
-    return { handled: false };
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (isSubscriptionCheckoutSession(session)) {
+      await handleSubscriptionCheckoutCompleted(session);
+      return { handled: true, kind: "subscription" };
+    }
+
+    const orderId = parseCheckoutSessionOrderId(session);
+    if (!orderId) {
+      return { handled: false };
+    }
+
+    const result = await markOrderPaidFromCheckoutSession(session, event.account);
+    return { handled: true, kind: "order", result };
   }
 
-  const session = event.data.object as Stripe.Checkout.Session;
-  const result = await markOrderPaidFromCheckoutSession(session, event.account);
-  return { handled: true, result };
+  if (
+    event.type === "customer.subscription.created" ||
+    event.type === "customer.subscription.updated" ||
+    event.type === "customer.subscription.deleted"
+  ) {
+    await syncBusinessSubscriptionFromStripeSubscription(
+      event.data.object as Stripe.Subscription,
+      event.type,
+    );
+    return { handled: true, kind: "subscription" };
+  }
+
+  if (event.type === "invoice.paid") {
+    await handleInvoicePaid(event.data.object as Stripe.Invoice);
+    return { handled: true, kind: "subscription" };
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+    return { handled: true, kind: "subscription" };
+  }
+
+  return { handled: false };
 }

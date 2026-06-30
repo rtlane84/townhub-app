@@ -28,6 +28,7 @@ import {
   Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isComplimentaryPricingPlan } from "@/lib/subscription-display";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { WeeklyHoursPicker } from "@/components/weekly-hours-picker";
 import {
@@ -52,6 +53,7 @@ interface Plan {
   name: string;
   description: string | null;
   monthlyPrice: number;
+  yearlyPrice: number | null;
   setupFee: number | null;
   transactionFeePercent: number | null;
   trialDays: number;
@@ -90,8 +92,9 @@ function slugPreview(name: string) {
   return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function formatPrice(price: number) {
-  return price === 0 ? "Free" : `$${price.toFixed(2)}/mo`;
+function formatPrice(price: number, interval: "month" | "year" = "month") {
+  if (price === 0) return "Free";
+  return `$${price.toFixed(2)}/${interval === "year" ? "yr" : "mo"}`;
 }
 
 function formatSubmittedDate(iso: string) {
@@ -176,6 +179,7 @@ export default function ListYourBusiness() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [hoursOpen, setHoursOpen] = useState(false);
@@ -249,6 +253,7 @@ export default function ListYourBusiness() {
         phone: form.phone.trim() || undefined,
         structuredHours: normalizeWeeklyHours(form.structuredHours),
         planId: selectedPlanId ?? undefined,
+        billingInterval: selectedPlan && !isComplimentaryPricingPlan(selectedPlan) ? billingInterval : undefined,
       }),
     });
     const body = await res.json();
@@ -646,6 +651,11 @@ export default function ListYourBusiness() {
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <span className="font-bold text-sm">{formatPrice(plan.monthlyPrice)}</span>
+                            {plan.yearlyPrice != null && plan.yearlyPrice > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                / {formatPrice(plan.yearlyPrice, "year")}
+                              </span>
+                            )}
                             {selectedPlanId === plan.id && (
                               <Check className="h-4 w-4 text-primary" />
                             )}
@@ -657,9 +667,37 @@ export default function ListYourBusiness() {
                 </div>
               )}
 
-              {selectedPlan && selectedPlan.trialDays > 0 && (
+              {selectedPlan && !isComplimentaryPricingPlan(selectedPlan) && (
+                <div className="space-y-2">
+                  <Label>Billing interval</Label>
+                  <div className="flex gap-2">
+                    {(["monthly", "yearly"] as const).map((interval) => (
+                      <Button
+                        key={interval}
+                        type="button"
+                        size="sm"
+                        variant={billingInterval === interval ? "default" : "outline"}
+                        onClick={() => setBillingInterval(interval)}
+                        disabled={interval === "yearly" && !(selectedPlan.yearlyPrice != null && selectedPlan.yearlyPrice > 0)}
+                      >
+                        {interval === "monthly" ? "Monthly" : "Yearly"}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedPlan && selectedPlan.trialDays > 0 && !isComplimentaryPricingPlan(selectedPlan) && (
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-                  Your {selectedPlan.trialDays}-day free trial starts after approval. Nothing is charged until then.
+                  Your {selectedPlan.trialDays}-day free trial starts after you complete Stripe checkout in Business Hub.
+                  Nothing is charged until then.
+                </p>
+              )}
+
+              {selectedPlan && !isComplimentaryPricingPlan(selectedPlan) && (
+                <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
+                  After approval, complete subscription checkout in Business Hub to activate paid features.
+                  Applying does not charge your card.
                 </p>
               )}
 

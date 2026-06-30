@@ -8,10 +8,12 @@ import {
 import { and, asc, eq, inArray } from "drizzle-orm";
 import {
   DEFAULT_SUBSCRIPTION_FEATURES,
-  subscriptionStatusGrantsFeatures,
+  subscriptionGrantsFeaturesForPlan,
   type SubscriptionFeatureKey,
 } from "./subscription-feature-keys";
 import { serializeSubscriptionFeature } from "./subscription-serializers";
+import { isComplimentaryPlan } from "./stripe-billing";
+import { findPlanById } from "./subscription-plans";
 
 export type SerializedSubscriptionFeature = {
   id: number;
@@ -98,7 +100,10 @@ export async function getBusinessFeatureKeys(businessId: number): Promise<Set<st
     return listActiveFeatureKeys();
   }
 
-  if (!subscriptionStatusGrantsFeatures(subscription.status)) {
+  const plan = await findPlanById(subscription.planId);
+  const complimentary = plan ? isComplimentaryPlan(plan) : false;
+
+  if (!subscriptionGrantsFeaturesForPlan(subscription.status, complimentary)) {
     return new Set();
   }
 

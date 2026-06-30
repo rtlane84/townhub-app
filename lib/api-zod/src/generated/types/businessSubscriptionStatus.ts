@@ -16,4 +16,5 @@ export const BusinessSubscriptionStatus = {
   PAST_DUE: 'PAST_DUE',
   CANCELED: 'CANCELED',
   SUSPENDED: 'SUSPENDED',
+  INCOMPLETE: 'INCOMPLETE',
 } as const;

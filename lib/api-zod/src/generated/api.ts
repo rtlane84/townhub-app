@@ -1825,6 +1825,9 @@ export const ListSubscriptionPlansResponseItem = zod.object({
   "isRecommended": zod.boolean(),
   "isBeta": zod.boolean(),
   "sortOrder": zod.number(),
+  "stripeProductId": zod.string().nullish(),
+  "stripeMonthlyPriceId": zod.string().nullish(),
+  "stripeYearlyPriceId": zod.string().nullish(),
   "features": zod.array(zod.object({
   "id": zod.number(),
   "key": zod.string(),
@@ -1855,7 +1858,10 @@ export const CreateSubscriptionPlanBody = zod.object({
   "isPublic": zod.boolean().optional(),
   "isRecommended": zod.boolean().optional(),
   "isBeta": zod.boolean().optional(),
-  "sortOrder": zod.number().optional()
+  "sortOrder": zod.number().optional(),
+  "stripeProductId": zod.string().optional(),
+  "stripeMonthlyPriceId": zod.string().optional(),
+  "stripeYearlyPriceId": zod.string().optional()
 })
 
 
@@ -1879,7 +1885,10 @@ export const UpdateSubscriptionPlanBody = zod.object({
   "isPublic": zod.boolean().optional(),
   "isRecommended": zod.boolean().optional(),
   "isBeta": zod.boolean().optional(),
-  "sortOrder": zod.number().optional()
+  "sortOrder": zod.number().optional(),
+  "stripeProductId": zod.string().optional(),
+  "stripeMonthlyPriceId": zod.string().optional(),
+  "stripeYearlyPriceId": zod.string().optional()
 })
 
 export const UpdateSubscriptionPlanResponse = zod.object({
@@ -1897,6 +1906,9 @@ export const UpdateSubscriptionPlanResponse = zod.object({
   "isRecommended": zod.boolean(),
   "isBeta": zod.boolean(),
   "sortOrder": zod.number(),
+  "stripeProductId": zod.string().nullish(),
+  "stripeMonthlyPriceId": zod.string().nullish(),
+  "stripeYearlyPriceId": zod.string().nullish(),
   "features": zod.array(zod.object({
   "id": zod.number(),
   "key": zod.string(),
@@ -2062,7 +2074,7 @@ export const GetBusinessSubscriptionResponse = zod.object({
   "id": zod.number(),
   "businessId": zod.number(),
   "planId": zod.number(),
-  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED']),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED', 'INCOMPLETE']),
   "startedAt": zod.coerce.date().nullish(),
   "renewalAt": zod.coerce.date().nullish(),
   "trialEndsAt": zod.coerce.date().nullish(),
@@ -2070,6 +2082,10 @@ export const GetBusinessSubscriptionResponse = zod.object({
   "currentPeriodEnd": zod.coerce.date().nullish(),
   "notes": zod.string().nullish(),
   "stripeSubscriptionId": zod.string().nullish(),
+  "stripeCustomerId": zod.string().nullish(),
+  "stripePriceId": zod.string().nullish(),
+  "billingInterval": zod.union([zod.enum(['monthly', 'yearly']),zod.null()]).optional(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
   "plan": zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -2085,6 +2101,9 @@ export const GetBusinessSubscriptionResponse = zod.object({
   "isRecommended": zod.boolean(),
   "isBeta": zod.boolean(),
   "sortOrder": zod.number(),
+  "stripeProductId": zod.string().nullish(),
+  "stripeMonthlyPriceId": zod.string().nullish(),
+  "stripeYearlyPriceId": zod.string().nullish(),
   "features": zod.array(zod.object({
   "id": zod.number(),
   "key": zod.string(),
@@ -2118,17 +2137,18 @@ export const UpsertBusinessSubscriptionParams = zod.object({
 
 export const UpsertBusinessSubscriptionBody = zod.object({
   "planId": zod.number(),
-  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED']),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED', 'INCOMPLETE']),
   "trialEndsAt": zod.coerce.date().optional(),
   "renewalAt": zod.coerce.date().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "billingInterval": zod.enum(['monthly', 'yearly']).optional()
 })
 
 export const UpsertBusinessSubscriptionResponse = zod.object({
   "id": zod.number(),
   "businessId": zod.number(),
   "planId": zod.number(),
-  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED']),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED', 'INCOMPLETE']),
   "startedAt": zod.coerce.date().nullish(),
   "renewalAt": zod.coerce.date().nullish(),
   "trialEndsAt": zod.coerce.date().nullish(),
@@ -2136,6 +2156,10 @@ export const UpsertBusinessSubscriptionResponse = zod.object({
   "currentPeriodEnd": zod.coerce.date().nullish(),
   "notes": zod.string().nullish(),
   "stripeSubscriptionId": zod.string().nullish(),
+  "stripeCustomerId": zod.string().nullish(),
+  "stripePriceId": zod.string().nullish(),
+  "billingInterval": zod.union([zod.enum(['monthly', 'yearly']),zod.null()]).optional(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
   "plan": zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -2151,6 +2175,9 @@ export const UpsertBusinessSubscriptionResponse = zod.object({
   "isRecommended": zod.boolean(),
   "isBeta": zod.boolean(),
   "sortOrder": zod.number(),
+  "stripeProductId": zod.string().nullish(),
+  "stripeMonthlyPriceId": zod.string().nullish(),
+  "stripeYearlyPriceId": zod.string().nullish(),
   "features": zod.array(zod.object({
   "id": zod.number(),
   "key": zod.string(),
@@ -2186,7 +2213,7 @@ export const GetMySubscriptionResponse = zod.object({
   "id": zod.number(),
   "businessId": zod.number(),
   "planId": zod.number(),
-  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED']),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED', 'INCOMPLETE']),
   "startedAt": zod.coerce.date().nullish(),
   "renewalAt": zod.coerce.date().nullish(),
   "trialEndsAt": zod.coerce.date().nullish(),
@@ -2194,6 +2221,10 @@ export const GetMySubscriptionResponse = zod.object({
   "currentPeriodEnd": zod.coerce.date().nullish(),
   "notes": zod.string().nullish(),
   "stripeSubscriptionId": zod.string().nullish(),
+  "stripeCustomerId": zod.string().nullish(),
+  "stripePriceId": zod.string().nullish(),
+  "billingInterval": zod.union([zod.enum(['monthly', 'yearly']),zod.null()]).optional(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
   "plan": zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -2209,6 +2240,9 @@ export const GetMySubscriptionResponse = zod.object({
   "isRecommended": zod.boolean(),
   "isBeta": zod.boolean(),
   "sortOrder": zod.number(),
+  "stripeProductId": zod.string().nullish(),
+  "stripeMonthlyPriceId": zod.string().nullish(),
+  "stripeYearlyPriceId": zod.string().nullish(),
   "features": zod.array(zod.object({
   "id": zod.number(),
   "key": zod.string(),
@@ -2230,6 +2264,181 @@ export const GetMySubscriptionResponse = zod.object({
   "isActive": zod.boolean()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Start Stripe subscription checkout for a business (owner or admin)
+ */
+export const CreateBusinessSubscriptionCheckoutParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const createBusinessSubscriptionCheckoutBodyIntervalDefault = `monthly`;
+
+export const CreateBusinessSubscriptionCheckoutBody = zod.object({
+  "planId": zod.number(),
+  "interval": zod.enum(['monthly', 'yearly']).default(createBusinessSubscriptionCheckoutBodyIntervalDefault)
+})
+
+export const CreateBusinessSubscriptionCheckoutResponse = zod.object({
+  "url": zod.string(),
+  "mockMode": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Open Stripe Customer Portal for a business (owner or admin)
+ */
+export const CreateBusinessSubscriptionPortalParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateBusinessSubscriptionPortalResponse = zod.object({
+  "url": zod.string(),
+  "mockMode": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Pull latest subscription state from Stripe (owner or admin)
+ */
+export const SyncBusinessSubscriptionFromStripeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SyncBusinessSubscriptionFromStripeResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "planId": zod.number(),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED', 'INCOMPLETE']),
+  "startedAt": zod.coerce.date().nullish(),
+  "renewalAt": zod.coerce.date().nullish(),
+  "trialEndsAt": zod.coerce.date().nullish(),
+  "currentPeriodStart": zod.coerce.date().nullish(),
+  "currentPeriodEnd": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
+  "stripeSubscriptionId": zod.string().nullish(),
+  "stripeCustomerId": zod.string().nullish(),
+  "stripePriceId": zod.string().nullish(),
+  "billingInterval": zod.union([zod.enum(['monthly', 'yearly']),zod.null()]).optional(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isActive": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "isPublic": zod.boolean(),
+  "isRecommended": zod.boolean(),
+  "isBeta": zod.boolean(),
+  "sortOrder": zod.number(),
+  "stripeProductId": zod.string().nullish(),
+  "stripeMonthlyPriceId": zod.string().nullish(),
+  "stripeYearlyPriceId": zod.string().nullish(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
+  "createdAt": zod.coerce.date().optional()
+}).optional(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Change subscription plan or billing interval (owner or admin)
+ */
+export const ChangeBusinessSubscriptionPlanParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const changeBusinessSubscriptionPlanBodyIntervalDefault = `monthly`;
+
+export const ChangeBusinessSubscriptionPlanBody = zod.object({
+  "planId": zod.number(),
+  "interval": zod.enum(['monthly', 'yearly']).default(changeBusinessSubscriptionPlanBodyIntervalDefault)
+})
+
+export const ChangeBusinessSubscriptionPlanResponse = zod.object({
+  "mode": zod.enum(['checkout', 'updated']),
+  "url": zod.string().optional(),
+  "mockMode": zod.boolean().optional(),
+  "subscription": zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "planId": zod.number(),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED', 'INCOMPLETE']),
+  "startedAt": zod.coerce.date().nullish(),
+  "renewalAt": zod.coerce.date().nullish(),
+  "trialEndsAt": zod.coerce.date().nullish(),
+  "currentPeriodStart": zod.coerce.date().nullish(),
+  "currentPeriodEnd": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
+  "stripeSubscriptionId": zod.string().nullish(),
+  "stripeCustomerId": zod.string().nullish(),
+  "stripePriceId": zod.string().nullish(),
+  "billingInterval": zod.union([zod.enum(['monthly', 'yearly']),zod.null()]).optional(),
+  "cancelAtPeriodEnd": zod.boolean().optional(),
+  "plan": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isActive": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "isPublic": zod.boolean(),
+  "isRecommended": zod.boolean(),
+  "isBeta": zod.boolean(),
+  "sortOrder": zod.number(),
+  "stripeProductId": zod.string().nullish(),
+  "stripeMonthlyPriceId": zod.string().nullish(),
+  "stripeYearlyPriceId": zod.string().nullish(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
+  "createdAt": zod.coerce.date().optional()
+}).optional(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
+  "createdAt": zod.coerce.date().optional()
+}).optional()
 })
 
 

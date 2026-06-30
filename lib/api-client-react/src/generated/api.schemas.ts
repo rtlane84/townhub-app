@@ -849,6 +849,12 @@ export interface SubscriptionPlan {
   isRecommended: boolean;
   isBeta: boolean;
   sortOrder: number;
+  /** @nullable */
+  stripeProductId?: string | null;
+  /** @nullable */
+  stripeMonthlyPriceId?: string | null;
+  /** @nullable */
+  stripeYearlyPriceId?: string | null;
   features?: SubscriptionFeature[];
   createdAt?: string;
 }
@@ -867,6 +873,93 @@ export interface SubscriptionPlanInput {
   isRecommended?: boolean;
   isBeta?: boolean;
   sortOrder?: number;
+  stripeProductId?: string;
+  stripeMonthlyPriceId?: string;
+  stripeYearlyPriceId?: string;
+}
+
+export type SubscriptionCheckoutInputInterval = typeof SubscriptionCheckoutInputInterval[keyof typeof SubscriptionCheckoutInputInterval];
+
+
+export const SubscriptionCheckoutInputInterval = {
+  monthly: 'monthly',
+  yearly: 'yearly',
+} as const;
+
+export interface SubscriptionCheckoutInput {
+  planId: number;
+  interval?: SubscriptionCheckoutInputInterval;
+}
+
+export interface StripeRedirectResponse {
+  url: string;
+  mockMode?: boolean;
+}
+
+export type ChangeSubscriptionPlanResponseMode = typeof ChangeSubscriptionPlanResponseMode[keyof typeof ChangeSubscriptionPlanResponseMode];
+
+
+export const ChangeSubscriptionPlanResponseMode = {
+  checkout: 'checkout',
+  updated: 'updated',
+} as const;
+
+export type BusinessSubscriptionStatus = typeof BusinessSubscriptionStatus[keyof typeof BusinessSubscriptionStatus];
+
+
+export const BusinessSubscriptionStatus = {
+  BETA: 'BETA',
+  TRIAL: 'TRIAL',
+  ACTIVE: 'ACTIVE',
+  PAST_DUE: 'PAST_DUE',
+  CANCELED: 'CANCELED',
+  SUSPENDED: 'SUSPENDED',
+  INCOMPLETE: 'INCOMPLETE',
+} as const;
+
+export type SubscriptionBillingInterval = typeof SubscriptionBillingInterval[keyof typeof SubscriptionBillingInterval];
+
+
+export const SubscriptionBillingInterval = {
+  monthly: 'monthly',
+  yearly: 'yearly',
+} as const;
+
+export interface BusinessSubscription {
+  id: number;
+  businessId: number;
+  planId: number;
+  status: BusinessSubscriptionStatus;
+  /** @nullable */
+  startedAt?: string | null;
+  /** @nullable */
+  renewalAt?: string | null;
+  /** @nullable */
+  trialEndsAt?: string | null;
+  /** @nullable */
+  currentPeriodStart?: string | null;
+  /** @nullable */
+  currentPeriodEnd?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  stripeSubscriptionId?: string | null;
+  /** @nullable */
+  stripeCustomerId?: string | null;
+  /** @nullable */
+  stripePriceId?: string | null;
+  billingInterval?: SubscriptionBillingInterval | null;
+  cancelAtPeriodEnd?: boolean;
+  plan?: SubscriptionPlan;
+  features?: SubscriptionFeature[];
+  createdAt?: string;
+}
+
+export interface ChangeSubscriptionPlanResponse {
+  mode: ChangeSubscriptionPlanResponseMode;
+  url?: string;
+  mockMode?: boolean;
+  subscription?: BusinessSubscription;
 }
 
 export interface PublicPricingPlan {
@@ -892,48 +985,13 @@ export interface PublicPricingPlan {
   createdAt?: string;
 }
 
-export type BusinessSubscriptionStatus = typeof BusinessSubscriptionStatus[keyof typeof BusinessSubscriptionStatus];
-
-
-export const BusinessSubscriptionStatus = {
-  BETA: 'BETA',
-  TRIAL: 'TRIAL',
-  ACTIVE: 'ACTIVE',
-  PAST_DUE: 'PAST_DUE',
-  CANCELED: 'CANCELED',
-  SUSPENDED: 'SUSPENDED',
-} as const;
-
-export interface BusinessSubscription {
-  id: number;
-  businessId: number;
-  planId: number;
-  status: BusinessSubscriptionStatus;
-  /** @nullable */
-  startedAt?: string | null;
-  /** @nullable */
-  renewalAt?: string | null;
-  /** @nullable */
-  trialEndsAt?: string | null;
-  /** @nullable */
-  currentPeriodStart?: string | null;
-  /** @nullable */
-  currentPeriodEnd?: string | null;
-  /** @nullable */
-  notes?: string | null;
-  /** @nullable */
-  stripeSubscriptionId?: string | null;
-  plan?: SubscriptionPlan;
-  features?: SubscriptionFeature[];
-  createdAt?: string;
-}
-
 export interface BusinessSubscriptionInput {
   planId: number;
   status: BusinessSubscriptionStatus;
   trialEndsAt?: string;
   renewalAt?: string;
   notes?: string;
+  billingInterval?: SubscriptionBillingInterval;
 }
 
 export interface BusinessFeatureAccessEntry {
