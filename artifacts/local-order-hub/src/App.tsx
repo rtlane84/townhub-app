@@ -49,6 +49,7 @@ import AdminSystemStatus from "@/pages/dashboard/admin/system-status";
 
 import Setup from "@/pages/setup";
 import ListYourBusiness from "@/pages/list-your-business";
+import Help from "@/pages/help";
 import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -264,6 +265,7 @@ function ClerkProviderWithRoutes() {
                 <Route path="/sign-up/*?" component={SignUpPage} />
                 <Route path="/setup" component={Setup} />
                 <Route path="/list-your-business" component={ListYourBusiness} />
+                <Route path="/help" component={Help} />
 
                 {/* Business owner dashboard */}
                 <BusinessDashboardRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />

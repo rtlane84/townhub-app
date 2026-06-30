@@ -2,7 +2,7 @@ import { Link, useLocation, useRoute } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
 import {
   ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
-  Wrench, Menu, ExternalLink, Calendar, Truck, Package,
+  Wrench, Menu, ExternalLink, Calendar, Truck, Package, HelpCircle,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
@@ -104,6 +104,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link href="/food-trucks" className={navLinkClass("/food-trucks")}>
                 Food Trucks
               </Link>
+              <Link href="/help" className={navLinkClass("/help")}>
+                Help
+              </Link>
 
               {showRoleNav && isCustomer && (
                 <Link href="/my-orders" className={navLinkClass("/my-orders")}>
@@ -193,6 +196,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <Truck className="h-4 w-4" /> Food Trucks
                     </span>
                   </Link>
+                  <Link href="/help" onClick={close}>
+                    <span className={navLinkClass("/help")}>
+                      <HelpCircle className="h-4 w-4" /> Help
+                    </span>
+                  </Link>
 
                   {showRoleNav && isCustomer && (
                     <Link href="/my-orders" onClick={close}>
@@ -276,6 +284,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <p className="text-muted-foreground text-sm">
             {footerTagline}
+          </p>
+          <p className="text-muted-foreground text-sm mt-3">
+            <Link href="/help" className="hover:text-foreground transition-colors underline-offset-4 hover:underline">
+              Help Center
+            </Link>
           </p>
         </div>
       </footer>
