@@ -102,8 +102,10 @@ The first user to sign up can promote themselves to admin via `/setup`. This end
 Steps:
 1. Deploy the app.
 2. Sign up with your admin email at `/sign-up`.
-3. Visit `/setup` and click **Bootstrap Admin**.
-4. The `/setup` page should be removed or access-restricted after this step (not yet implemented — see Remaining Work).
+3. Visit `/setup` and click **Claim Admin Access**.
+4. After bootstrap completes, `/setup` redirects away and the **Admin Setup** nav link disappears. Ongoing admin management happens in the Admin Dashboard (`/dashboard/admin`).
+
+The frontend calls `GET /api/admin/bootstrap-status` (`{ setupComplete: boolean }`) to hide the setup flow once an admin exists. The API remains the source of truth — bootstrap POST still returns 403 after the first admin is created.
 
 ---
 
@@ -136,6 +138,7 @@ After deploying, verify the following manually:
 - [ ] `/` loads with correct theme colors (confirms DB + platform settings work)
 - [ ] `/sign-up` and `/sign-in` work (confirms Clerk production keys are correct)
 - [ ] `/setup` is reachable and bootstrap completes (first deploy only)
+- [ ] After bootstrap, `/setup` redirects to `/` (or `/dashboard/admin` for admins) and **Admin Setup** is hidden from navigation
 - [ ] Browsing `/businesses` returns active businesses (confirms DB reads work)
 - [ ] Adding to cart and reaching checkout (confirms Stripe key is valid)
 - [ ] A test order completes and status updates arrive via webhook (confirms webhook signing)
@@ -150,7 +153,6 @@ The following known gaps exist and should be addressed before handling real user
 
 | Item | Risk | Location |
 |---|---|---|
-| `/setup` bootstrap page remains accessible after setup | Low (returns 403 if admin exists) | `pages/setup.tsx` |
 | No per-business ownership check on `PATCH /orders/:id/status` | Authenticated non-owner can change any order status | `routes/orders.ts` |
 | No real Stripe recurring billing | Plans are manual / display-only | `routes/subscriptions.ts` |
 | No email on application approve/reject | Business owners get no notification | `routes/applications.ts` |

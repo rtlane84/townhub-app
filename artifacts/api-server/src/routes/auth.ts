@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
-import { eq, count } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { serializeBusiness } from "./businesses";
 import {
   getPrimaryOwnedBusiness,
@@ -12,6 +12,7 @@ import {
 } from "../lib/business-access";
 import { resolveSelectedBusinessId } from "../lib/business-selection";
 import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
+import { isAdminBootstrapComplete } from "../lib/admin-bootstrap";
 
 const router: IRouter = Router();
 
@@ -101,6 +102,13 @@ router.get("/auth/me/business", async (req, res): Promise<void> => {
   res.json(serializeBusiness(business));
 });
 
+// GET /api/admin/bootstrap-status
+router.get("/admin/bootstrap-status", async (_req, res): Promise<void> => {
+  const setupComplete = await isAdminBootstrapComplete();
+  res.set("Cache-Control", "no-store");
+  res.json({ setupComplete });
+});
+
 // POST /api/admin/bootstrap
 // Promotes the calling user to ADMIN — only works when zero admins exist in the DB.
 router.post("/admin/bootstrap", async (req, res): Promise<void> => {
@@ -110,13 +118,7 @@ router.post("/admin/bootstrap", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check if any admin already exists
-  const [{ value: adminCount }] = await db
-    .select({ value: count() })
-    .from(usersTable)
-    .where(eq(usersTable.role, "ADMIN"));
-
-  if (Number(adminCount) > 0) {
+  if (await isAdminBootstrapComplete()) {
     res.status(403).json({ error: "An admin already exists. Setup is locked." });
     return;
   }

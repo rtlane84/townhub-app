@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminBootstrapResult';
+export * from './adminBootstrapStatus';
 export * from './applicationHealth';
 export * from './appointmentRequest';
 export * from './appointmentRequestInput';

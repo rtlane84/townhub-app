@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminBootstrapResult,
+  AdminBootstrapStatus,
   AppointmentRequest,
   AppointmentRequestInput,
   AppointmentRequestStatusUpdate,
@@ -411,6 +413,154 @@ export function useGetMyBusiness<TData = Awaited<ReturnType<typeof getMyBusiness
 
 
 
+
+export const getGetAdminBootstrapStatusUrl = () => {
+
+
+
+
+  return `/api/admin/bootstrap-status`
+}
+
+/**
+ * Public endpoint used by the frontend to hide the first-run setup flow after an admin exists.
+ * @summary Check whether initial admin bootstrap is complete
+ */
+export const getAdminBootstrapStatus = async ( options?: RequestInit): Promise<AdminBootstrapStatus> => {
+
+  return customFetch<AdminBootstrapStatus>(getGetAdminBootstrapStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminBootstrapStatusQueryKey = () => {
+    return [
+    `/api/admin/bootstrap-status`
+    ] as const;
+    }
+
+
+export const getGetAdminBootstrapStatusQueryOptions = <TData = Awaited<ReturnType<typeof getAdminBootstrapStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminBootstrapStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminBootstrapStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminBootstrapStatus>>> = ({ signal }) => getAdminBootstrapStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminBootstrapStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminBootstrapStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminBootstrapStatus>>>
+export type GetAdminBootstrapStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Check whether initial admin bootstrap is complete
+ */
+
+export function useGetAdminBootstrapStatus<TData = Awaited<ReturnType<typeof getAdminBootstrapStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminBootstrapStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminBootstrapStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getBootstrapAdminUrl = () => {
+
+
+
+
+  return `/api/admin/bootstrap`
+}
+
+/**
+ * @summary Promote the signed-in user to platform admin (first deploy only)
+ */
+export const bootstrapAdmin = async ( options?: RequestInit): Promise<AdminBootstrapResult> => {
+
+  return customFetch<AdminBootstrapResult>(getBootstrapAdminUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getBootstrapAdminMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapAdmin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof bootstrapAdmin>>, TError,void, TContext> => {
+
+const mutationKey = ['bootstrapAdmin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bootstrapAdmin>>, void> = () => {
+
+
+          return  bootstrapAdmin(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BootstrapAdminMutationResult = NonNullable<Awaited<ReturnType<typeof bootstrapAdmin>>>
+
+    export type BootstrapAdminMutationError = ErrorType<void>
+
+    /**
+ * @summary Promote the signed-in user to platform admin (first deploy only)
+ */
+export const useBootstrapAdmin = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapAdmin>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof bootstrapAdmin>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getBootstrapAdminMutationOptions(options));
+    }
 
 export const getListBusinessesUrl = (params?: ListBusinessesParams,) => {
   const normalizedParams = new URLSearchParams();

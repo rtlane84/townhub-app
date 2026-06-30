@@ -7,7 +7,7 @@ import {
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
 import { Badge } from "./ui/badge";
-import { useGetMe, getGetMeQueryKey, useGetBusinessBySlug, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, useGetBusinessBySlug, getGetBusinessBySlugQueryKey, useGetAdminBootstrapStatus, getGetAdminBootstrapStatusQueryKey } from "@workspace/api-client-react";
 import { hidesStorefrontCart } from "@workspace/api-zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { useState } from "react";
@@ -45,6 +45,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const { data: me } = useGetMe(undefined, { query: { enabled: !!isSignedIn, queryKey: getGetMeQueryKey() } });
+  const { data: bootstrapStatus, isPending: bootstrapPending } = useGetAdminBootstrapStatus({
+    query: { queryKey: getGetAdminBootstrapStatusQueryKey() },
+  });
   const { data: storefrontData } = useGetBusinessBySlug(storefrontSlug ?? "", {
     query: {
       enabled: !!storefrontSlug,
@@ -57,6 +60,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isBusinessOwner = me?.role === "BUSINESS_OWNER";
   const isCustomer = isLoaded && isSignedIn && !isAdmin && !isBusinessOwner;
   const isLoggedOut = isLoaded && !isSignedIn;
+  const setupAvailable = !bootstrapPending && bootstrapStatus?.setupComplete === false;
 
   const dashboardHref = isAdmin ? "/dashboard/admin" : "/dashboard/business";
   const dashboardLabel = isAdmin ? "Admin Dashboard" : "Business Hub";
@@ -117,7 +121,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               )}
 
-              {(isLoggedOut || isCustomer) && (
+              {setupAvailable && (isLoggedOut || isCustomer) && (
                 <Link href="/setup" className={navLinkClass("/setup")}>
                   <Wrench className="h-3.5 w-3.5" />
                   Admin Setup
@@ -209,7 +213,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   )}
 
-                  {(isLoggedOut || isCustomer) && (
+                  {setupAvailable && (isLoggedOut || isCustomer) && (
                     <Link href="/setup" onClick={close}>
                       <span className={navLinkClass("/setup")}>
                         <Wrench className="h-4 w-4" /> Admin Setup
@@ -226,16 +230,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </div>
                   )}
 
-                  {isSignedIn && isCustomer && (
+                  {isSignedIn && isCustomer && setupAvailable && (
                     <div className="pt-3 border-t">
                       <p className="px-3 py-2 text-xs text-muted-foreground">
-                        Signed in as customer. Visit <strong>Admin Setup</strong> to claim admin access, or <strong>List Your Business</strong> to become a business owner.
+                        Signed in as customer. Visit <strong>Admin Setup</strong> to claim admin access on first deploy, or <strong>List Your Business</strong> to become a business owner.
                       </p>
                     </div>
                   )}
                 </nav>
 
-                {(isLoggedOut || isCustomer) && (
+                {setupAvailable && (isLoggedOut || isCustomer) && (
                   <div className="absolute bottom-6 left-4 right-4">
                     <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
                       <p className="text-xs font-semibold text-primary">First time here?</p>

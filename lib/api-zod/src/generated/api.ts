@@ -112,6 +112,24 @@ export const GetMyBusinessResponse = zod.object({
 
 
 /**
+ * Public endpoint used by the frontend to hide the first-run setup flow after an admin exists.
+ * @summary Check whether initial admin bootstrap is complete
+ */
+export const GetAdminBootstrapStatusResponse = zod.object({
+  "setupComplete": zod.boolean().describe('True when at least one platform admin exists.')
+})
+
+
+/**
+ * @summary Promote the signed-in user to platform admin (first deploy only)
+ */
+export const BootstrapAdminResponse = zod.object({
+  "message": zod.string(),
+  "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN'])
+})
+
+
+/**
  * @summary List all active businesses
  */
 export const ListBusinessesQueryParams = zod.object({

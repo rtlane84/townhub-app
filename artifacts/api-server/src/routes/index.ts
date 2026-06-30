@@ -23,9 +23,11 @@ const router: IRouter = Router();
 // Role guard: all /admin/* routes require ADMIN role.
 // Exceptions:
 // - GET /admin/settings/theme — public brand colors on unauthenticated pages
+// - GET /admin/bootstrap-status — public first-run setup probe (handler enforces)
 // - POST /admin/bootstrap — first-run setup when no ADMIN exists yet (handler enforces)
 router.use("/admin", (req, res, next) => {
   if (req.method === "GET" && req.path === "/settings/theme") return next();
+  if (req.method === "GET" && req.path === "/bootstrap-status") return next();
   if (req.method === "POST" && req.path === "/bootstrap") return next();
   return requireAdmin(req, res, next);
 });

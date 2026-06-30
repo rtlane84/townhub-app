@@ -111,6 +111,37 @@ paths:
         "404":
           description: No business found
 
+  /admin/bootstrap-status:
+    get:
+      operationId: getAdminBootstrapStatus
+      tags: [admin]
+      summary: Check whether initial admin bootstrap is complete
+      description: Public endpoint used by the frontend to hide the first-run setup flow after an admin exists.
+      responses:
+        "200":
+          description: Bootstrap status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBootstrapStatus"
+
+  /admin/bootstrap:
+    post:
+      operationId: bootstrapAdmin
+      tags: [admin]
+      summary: Promote the signed-in user to platform admin (first deploy only)
+      responses:
+        "200":
+          description: Admin access granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBootstrapResult"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Setup is locked — an admin already exists
+
   # ─── Businesses (public) ────────────────────────────────────────
   /businesses:
     get:
@@ -1683,6 +1714,23 @@ components:
           enum: [onboarding, dashboard]
 
     # ─── Core Entities ───────────────────────────────────────────
+    AdminBootstrapStatus:
+      type: object
+      required: [setupComplete]
+      properties:
+        setupComplete:
+          type: boolean
+          description: True when at least one platform admin exists.
+
+    AdminBootstrapResult:
+      type: object
+      required: [message, role]
+      properties:
+        message:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+
     UserProfile:
       type: object
       required: [id, email, role]

@@ -190,6 +190,16 @@ export interface StripeConnectStartResult {
   action: StripeConnectStartResultAction;
 }
 
+export interface AdminBootstrapStatus {
+  /** True when at least one platform admin exists. */
+  setupComplete: boolean;
+}
+
+export interface AdminBootstrapResult {
+  message: string;
+  role: UserRole;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
