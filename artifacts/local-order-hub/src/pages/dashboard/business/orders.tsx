@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
-import { useGetMe, useListBusinessOrders, getListBusinessOrdersQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useGetMyBusiness, useListBusinessOrders, getListBusinessOrdersQueryKey, type Order } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { BusinessOrderListToolbar } from "@/components/business-order-list-toolbar";
 import { BusinessOrderQueueSummary } from "@/components/business-order-queue-summary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +21,17 @@ import {
   PAYMENT_FLAG_LABELS,
   type QueueSummaryStatus,
 } from "@/lib/business-order-display";
+import {
+  applyBusinessOrderListFilters,
+  filterOrdersForQueueSummary,
+  getOrderListDateSummary,
+  getOrderListEmptyState,
+  countActiveOrdersOutsideDateRange,
+  hasActiveBusinessOrderFilters,
+  hasQueueScopeFilters,
+  type OrderCustomDateRange,
+  type OrderDateFilterPreset,
+} from "@/lib/business-order-filters";
 import { cn } from "@/lib/utils";
 
 const ALL_STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
@@ -78,10 +90,14 @@ function PaymentStatusBadge({
 
 export default function BusinessOrders() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [datePreset, setDatePreset] = useState<OrderDateFilterPreset>("today");
+  const [customRange, setCustomRange] = useState<OrderCustomDateRange>({});
+  const [searchQuery, setSearchQuery] = useState("");
   const { data: me } = useGetMe();
+  const { data: business } = useGetMyBusiness();
   const businessId = me?.businessId ?? 0;
 
-  const { data: orders, isPending, isFetching } = useListBusinessOrders(businessId, {
+  const { data: orders, isPending, isFetching, isError, error, refetch } = useListBusinessOrders(businessId, {
     query: {
       enabled: !!businessId,
       queryKey: getListBusinessOrdersQueryKey(businessId),
@@ -89,18 +105,88 @@ export default function BusinessOrders() {
     },
   });
 
-  const orderList = orders ?? [];
-  const queueCounts = useMemo(() => computeQueueCounts(orderList), [orderList]);
+  const lastOrdersRef = useRef<Order[]>([]);
+  const orderList = useMemo(() => {
+    if (Array.isArray(orders)) {
+      lastOrdersRef.current = orders;
+      return orders;
+    }
+    return lastOrdersRef.current;
+  }, [orders]);
+  const ordersForQueueCounts = useMemo(
+    () =>
+      filterOrdersForQueueSummary(orderList, {
+        datePreset,
+        customRange,
+        searchQuery,
+      }),
+    [orderList, datePreset, customRange, searchQuery],
+  );
+  const queueCounts = useMemo(() => computeQueueCounts(ordersForQueueCounts), [ordersForQueueCounts]);
 
-  const filtered = statusFilter === "all"
-    ? orderList
-    : orderList.filter((o) => o.status === statusFilter);
+  const filtered = useMemo(
+    () =>
+      applyBusinessOrderListFilters(orderList, {
+        datePreset,
+        customRange,
+        statusFilter,
+        searchQuery,
+      }),
+    [orderList, datePreset, customRange, statusFilter, searchQuery],
+  );
 
-  const showInitialSkeleton = isPending && !orders;
+  const dateSummary = useMemo(
+    () =>
+      getOrderListDateSummary(
+        datePreset,
+        customRange,
+        countActiveOrdersOutsideDateRange(orderList, datePreset, customRange),
+      ),
+    [datePreset, customRange, orderList],
+  );
+
+  const emptyState = useMemo(
+    () =>
+      getOrderListEmptyState({
+        totalOrders: orderList.length,
+        searchQuery,
+        statusFilter,
+        datePreset,
+      }),
+    [orderList.length, searchQuery, statusFilter, datePreset],
+  );
+
+  const showInitialSkeleton = isPending && !orders && !lastOrdersRef.current.length;
+
+  useEffect(() => {
+    if (businessId && !isPending && !Array.isArray(orders)) {
+      void refetch();
+    }
+  }, [businessId, isPending, orders, refetch]);
 
   const handleQueueSelect = (status: QueueSummaryStatus) => {
     setStatusFilter((current) => (current === status ? "all" : status));
   };
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setDatePreset("today");
+    setCustomRange({});
+    setSearchQuery("");
+  };
+
+  const filtersActive = hasActiveBusinessOrderFilters({
+    statusFilter,
+    datePreset,
+    searchQuery,
+    customRange,
+  });
+
+  const queueCountsReflectFilters = hasQueueScopeFilters({
+    datePreset,
+    searchQuery,
+    customRange,
+  });
 
   return (
     <BusinessDashboardLayout>
@@ -108,7 +194,10 @@ export default function BusinessOrders() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="font-serif text-3xl font-bold">Orders</h1>
-            <p className="text-muted-foreground mt-1">Manage incoming orders</p>
+            <p className="text-muted-foreground mt-1">
+              {business?.name ? `${business.name} · ` : ""}
+              Manage active orders and recent order history
+            </p>
           </div>
           {isFetching && orders && (
             <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 pt-1">
@@ -123,28 +212,63 @@ export default function BusinessOrders() {
             counts={queueCounts}
             activeStatus={statusFilter}
             onSelectStatus={handleQueueSelect}
+            reflectsFilters={queueCountsReflectFilters}
           />
         )}
 
-        {/* Status filter pills */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setStatusFilter("all")}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
-            data-testid="filter-all"
-          >
-            All
-          </button>
-          {ALL_STATUSES.map((s) => (
+        {!showInitialSkeleton && (
+          <BusinessOrderListToolbar
+            searchQuery={searchQuery}
+            onSearchQueryChange={setSearchQuery}
+            datePreset={datePreset}
+            onDatePresetChange={setDatePreset}
+            customRange={customRange}
+            onCustomRangeChange={setCustomRange}
+            dateSummary={dateSummary}
+          />
+        )}
+
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-xs text-muted-foreground" data-testid="order-list-count">
+                Showing {filtered.length} of {orderList.length} orders
+                {filtersActive ? " (filtered)" : ""}
+              </p>
+              {filtersActive ? (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-xs font-medium text-primary hover:underline"
+                  data-testid="clear-order-filters"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
-              data-testid={`filter-${s.toLowerCase()}`}
+              type="button"
+              onClick={() => setStatusFilter("all")}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+              data-testid="filter-all"
             >
-              {statusLabel(s)}
+              All
             </button>
-          ))}
+            {ALL_STATUSES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStatusFilter(s)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+                data-testid={`filter-${s.toLowerCase()}`}
+              >
+                {statusLabel(s)}
+              </button>
+            ))}
+          </div>
         </div>
 
         <Card>
@@ -154,11 +278,20 @@ export default function BusinessOrders() {
                 {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
             ) : !filtered.length ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <p className="text-lg font-serif">No orders found</p>
-                <p className="text-sm mt-1">
-                  {statusFilter === "all" ? "Orders will appear here once customers place them." : `No orders with status "${statusLabel(statusFilter)}".`}
-                </p>
+              <div className="text-center py-16 text-muted-foreground px-6">
+                {isError ? (
+                  <>
+                    <p className="text-lg font-serif">Could not load orders</p>
+                    <p className="text-sm mt-1 max-w-md mx-auto">
+                      {error instanceof Error ? error.message : "Try refreshing the page."}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-serif">{emptyState.title}</p>
+                    <p className="text-sm mt-1 max-w-md mx-auto">{emptyState.description}</p>
+                  </>
+                )}
               </div>
             ) : (
               <div className="divide-y divide-border">

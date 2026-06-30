@@ -41,6 +41,8 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
 
   const syncDashboardCache = useCallback(
     (orders: Order[], summary: BusinessOrderSummary) => {
+      if (!Array.isArray(orders) || !summary) return;
+
       const listKey = getListBusinessOrdersQueryKey(businessId!);
       const summaryKey = getGetBusinessOrderSummaryQueryKey(businessId!);
 

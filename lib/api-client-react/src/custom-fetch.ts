@@ -364,6 +364,11 @@ export async function customFetch<T = unknown>(
   // (Replit preview runs in an iframe; 'same-origin' default blocks Clerk session cookies)
   const response = await fetch(input, { credentials: "include", ...init, method, headers });
 
+  // 304 has an empty body; returning null would wipe React Query caches on refetch.
+  if (response.status === 304) {
+    throw new ApiError(response, { message: "Not Modified" }, requestInfo);
+  }
+
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
     throw new ApiError(response, errorData, requestInfo);

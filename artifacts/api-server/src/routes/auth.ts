@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable, businessesTable } from "@workspace/db";
+import { db, usersTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
 import { serializeBusiness } from "./businesses";
+import { getPrimaryOwnedBusiness } from "../lib/business-access";
 import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
 
 const router: IRouter = Router();
@@ -39,11 +40,9 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     throw err;
   }
 
-  const [business] = await db
-    .select()
-    .from(businessesTable)
-    .where(eq(businessesTable.ownerId, userId));
+  const business = await getPrimaryOwnedBusiness(userId);
 
+  res.set("Cache-Control", "no-store");
   res.json({
     id: user.id,
     email: user.email,
@@ -62,16 +61,14 @@ router.get("/auth/me/business", async (req, res): Promise<void> => {
     return;
   }
 
-  const [business] = await db
-    .select()
-    .from(businessesTable)
-    .where(eq(businessesTable.ownerId, userId));
+  const business = await getPrimaryOwnedBusiness(userId);
 
   if (!business) {
     res.status(404).json({ error: "No business found for this user" });
     return;
   }
 
+  res.set("Cache-Control", "no-store");
   res.json(serializeBusiness(business));
 });
 

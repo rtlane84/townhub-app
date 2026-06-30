@@ -98,7 +98,10 @@ function serializeOrder(
       unitPrice: parseFloat(item.unitPrice),
       subtotal: parseFloat(item.subtotal),
     })),
-    createdAt: order.createdAt,
+    createdAt:
+      order.createdAt instanceof Date
+        ? order.createdAt.toISOString()
+        : order.createdAt,
   };
 }
 
@@ -445,6 +448,7 @@ router.get(
       }),
     );
 
+    res.set("Cache-Control", "no-store");
     res.json(ordersWithItems);
   },
 );
@@ -506,6 +510,7 @@ router.get(
       }),
     );
 
+    res.set("Cache-Control", "no-store");
     res.json({
       todayCount: todayOrders.length,
       pendingCount: pendingOrders.length,

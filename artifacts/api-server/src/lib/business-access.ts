@@ -1,8 +1,43 @@
 import type { Request } from "express";
 import { getAuth } from "@clerk/express";
-import { db, businessesTable, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, businessesTable, ordersTable, usersTable } from "@workspace/db";
+import { count, eq, inArray } from "drizzle-orm";
 import type { Business } from "@workspace/db";
+
+/**
+ * When an owner has multiple businesses, pick the one with the most orders.
+ * Tie-break by lowest id so behavior is stable.
+ */
+export async function getPrimaryOwnedBusiness(ownerId: string): Promise<Business | null> {
+  const owned = await db
+    .select()
+    .from(businessesTable)
+    .where(eq(businessesTable.ownerId, ownerId));
+
+  if (owned.length === 0) return null;
+  if (owned.length === 1) return owned[0]!;
+
+  const orderCounts = await db
+    .select({
+      businessId: ordersTable.businessId,
+      orderCount: count(),
+    })
+    .from(ordersTable)
+    .where(inArray(ordersTable.businessId, owned.map((business) => business.id)))
+    .groupBy(ordersTable.businessId);
+
+  const countByBusiness = new Map(
+    orderCounts.map((row) => [row.businessId, Number(row.orderCount)]),
+  );
+
+  owned.sort((a, b) => {
+    const countDiff = (countByBusiness.get(b.id) ?? 0) - (countByBusiness.get(a.id) ?? 0);
+    if (countDiff !== 0) return countDiff;
+    return a.id - b.id;
+  });
+
+  return owned[0]!;
+}
 
 export type BusinessAccessResult =
   | { ok: true; business: Business; isAdmin: boolean }
