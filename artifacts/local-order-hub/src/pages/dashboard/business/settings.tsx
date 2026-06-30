@@ -21,7 +21,8 @@ import {
   resolvePaymentMode,
   resolveStorefrontMode,
   acceptsAppointmentRequests,
-  isInformationStorefrontMode,
+  isOrderingStorefrontMode,
+  isPaymentMode,
   normalizeOptionalTime,
   normalizeWebsiteUrl,
   BUSINESS_TYPE_OPTIONS,
@@ -148,6 +149,14 @@ export default function BusinessSettings() {
       return Number.isNaN(n) ? undefined : n;
     };
 
+    const orderingMode = isOrderingStorefrontMode({
+      type: form.type,
+      storefrontMode: form.storefrontMode,
+    });
+    const paymentMode = isPaymentMode(form.paymentMode)
+      ? form.paymentMode
+      : resolvePaymentMode(business);
+
     updateBusiness.mutate({
       id: business.id,
       data: {
@@ -161,18 +170,22 @@ export default function BusinessSettings() {
         structuredHours: normalizeWeeklyHours(form.structuredHours),
         logoUrl: form.logoUrl.trim(),
         heroImageUrl: form.heroImageUrl.trim(),
-        pickupEnabled: form.pickupEnabled,
-        deliveryEnabled: form.deliveryEnabled,
-        deliveryFee: optNum(form.deliveryFee),
-        minimumOrder: optNum(form.minimumOrder),
-        paymentMode: form.paymentMode,
         storefrontMode: form.storefrontMode,
-        orderCutoffTime: normalizeOptionalTime(form.orderCutoffTime) || undefined,
-        minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
-        deliveryRadiusMiles: optNum(form.deliveryRadiusMiles),
-        deliveryNotes: opt(form.deliveryNotes),
-        pickupInstructions: opt(form.pickupInstructions),
-        deliveryInstructions: opt(form.deliveryInstructions),
+        ...(orderingMode
+          ? {
+              pickupEnabled: form.pickupEnabled,
+              deliveryEnabled: form.deliveryEnabled,
+              deliveryFee: optNum(form.deliveryFee),
+              minimumOrder: optNum(form.minimumOrder),
+              paymentMode,
+              orderCutoffTime: normalizeOptionalTime(form.orderCutoffTime) || undefined,
+              minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
+              deliveryRadiusMiles: optNum(form.deliveryRadiusMiles),
+              deliveryNotes: opt(form.deliveryNotes),
+              pickupInstructions: opt(form.pickupInstructions),
+              deliveryInstructions: opt(form.deliveryInstructions),
+            }
+          : {}),
         notificationEmail: opt(form.notificationEmail),
         notificationPhone: opt(form.notificationPhone),
         notifyNewOrdersByEmail: form.notifyNewOrdersByEmail,
@@ -217,7 +230,7 @@ export default function BusinessSettings() {
   }
 
   const acceptsAppointments = acceptsAppointmentRequests({ type: form.type, storefrontMode: form.storefrontMode });
-  const isInformationMode = isInformationStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
+  const isOrderingMode = isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
 
   function toggle(label: string, desc: string, key: "pickupEnabled" | "deliveryEnabled") {
     return (
@@ -368,13 +381,26 @@ export default function BusinessSettings() {
               <CardContent>
                 <StorefrontModeSelector
                   value={form.storefrontMode}
-                  onChange={(storefrontMode) => setForm((f) => ({ ...f, storefrontMode }))}
+                  onChange={(storefrontMode) =>
+                    setForm((f) => ({
+                      ...f,
+                      storefrontMode,
+                      ...(storefrontMode === "ORDERING" && !isPaymentMode(f.paymentMode)
+                        ? { paymentMode: business ? resolvePaymentMode(business) : "ONLINE_ONLY" }
+                        : {}),
+                    }))
+                  }
                   idPrefix="business-settings-storefront"
                 />
+                {!isOrderingMode && (
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Switch to online ordering to configure pickup, delivery, and payment options.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
-            {!isInformationMode && (
+            {isOrderingMode && (
             <>
             <Card>
               <CardHeader><CardTitle className="text-base">Ordering Options</CardTitle></CardHeader>

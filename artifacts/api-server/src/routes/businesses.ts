@@ -24,6 +24,7 @@ import { parseStructuredHours } from "@workspace/api-zod";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import { allowsOnlinePayment, resolvePaymentMode } from "@workspace/api-zod";
 import { businessHasOnlinePaymentsReady } from "../lib/stripe-connect";
+import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
 import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
 
 function slugify(name: string): string {
@@ -419,15 +420,10 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.deliveryFee = d.deliveryFee ? String(d.deliveryFee) : null;
   if (d.minimumOrder !== undefined)
     updateData.minimumOrder = d.minimumOrder ? String(d.minimumOrder) : null;
-  try {
-    applyPaymentModeToUpdate(updateData, {
-      paymentMode: d.paymentMode,
-      payAtPickupEnabled: d.payAtPickupEnabled,
-    });
-  } catch {
-    res.status(400).json({ error: "Invalid payment mode" });
-    return;
-  }
+  applyPaymentModeToUpdate(updateData, {
+    paymentMode: d.paymentMode,
+    payAtPickupEnabled: d.payAtPickupEnabled,
+  });
   if (d.orderCutoffTime !== undefined)
     updateData.orderCutoffTime = d.orderCutoffTime;
   if ((d as Record<string, unknown>).minimumOrderForDelivery !== undefined)

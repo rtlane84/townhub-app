@@ -11,13 +11,13 @@ export function applyPaymentModeToUpdate(
   updateData: Record<string, unknown>,
   input: { paymentMode?: unknown; payAtPickupEnabled?: boolean },
 ): void {
-  if (input.paymentMode !== undefined) {
-    if (!isPaymentMode(input.paymentMode)) {
-      throw new Error("Invalid payment mode");
+  if (input.paymentMode !== undefined && input.paymentMode !== null) {
+    if (isPaymentMode(input.paymentMode)) {
+      updateData.paymentMode = input.paymentMode;
+      updateData.payAtPickupEnabled = payAtPickupEnabledFromMode(input.paymentMode);
+      return;
     }
-    updateData.paymentMode = input.paymentMode;
-    updateData.payAtPickupEnabled = payAtPickupEnabledFromMode(input.paymentMode);
-    return;
+    // Ignore invalid explicit values; fall through to payAtPickupEnabled if provided.
   }
 
   if (input.payAtPickupEnabled !== undefined) {
