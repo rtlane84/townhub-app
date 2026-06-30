@@ -133,8 +133,8 @@ export function resolveBusinessThemeColors(
       normalizeHex(business.buttonColor) ??
       platformMerged.buttonColor,
     primary:
-      normalizeHex(business.buttonColor) ??
-      platformMerged.primaryColor,
+      normalizeHex(business.accentColor) ??
+      platformMerged.accentColor,
   };
 }
 

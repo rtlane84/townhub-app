@@ -19,12 +19,19 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Star } from "lucide-react";
 import { ImageField } from "@/components/image-field";
 import { acceptsAppointmentRequests } from "@workspace/api-zod";
+import { ProductOptionsSection } from "@/components/product-options/product-options-section";
 
 interface ProductForm {
   name: string;
@@ -57,10 +64,11 @@ export default function BusinessProducts() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
+  const [modifierGroupIds, setModifierGroupIds] = useState<number[]>([]);
 
   const { data: products, isLoading } = useListProducts(businessId, {
     query: { enabled: !!businessId, queryKey: getListProductsQueryKey(businessId) },
@@ -75,14 +83,14 @@ export default function BusinessProducts() {
 
   const createProduct = useCreateProduct({
     mutation: {
-      onSuccess: () => { invalidate(); setDialogOpen(false); toast({ title: `${itemLabel} created` }); },
+      onSuccess: () => { invalidate(); setSheetOpen(false); toast({ title: `${itemLabel} created` }); },
       onError: () => toast({ title: `Failed to create ${itemLabel.toLowerCase()}`, variant: "destructive" }),
     },
   });
 
   const updateProduct = useUpdateProduct({
     mutation: {
-      onSuccess: () => { invalidate(); setDialogOpen(false); toast({ title: "Product updated" }); },
+      onSuccess: () => { invalidate(); setSheetOpen(false); toast({ title: "Product updated" }); },
       onError: () => toast({ title: "Failed to update product", variant: "destructive" }),
     },
   });
@@ -99,7 +107,8 @@ export default function BusinessProducts() {
   function openCreate() {
     setEditingId(null);
     setForm(EMPTY_FORM);
-    setDialogOpen(true);
+    setModifierGroupIds([]);
+    setSheetOpen(true);
   }
 
   function openEdit(p: NonNullable<typeof products>[0]) {
@@ -114,7 +123,8 @@ export default function BusinessProducts() {
       featured: p.featured ?? false,
       prepTimeMinutes: p.prepTimeMinutes ? String(p.prepTimeMinutes) : "",
     });
-    setDialogOpen(true);
+    setModifierGroupIds(p.modifierGroupIds ?? p.assignedModifierGroups?.map((g) => g.id) ?? []);
+    setSheetOpen(true);
   }
 
   function buildPayload() {
@@ -127,6 +137,7 @@ export default function BusinessProducts() {
       available: form.available,
       featured: form.featured,
       prepTimeMinutes: form.prepTimeMinutes ? parseInt(form.prepTimeMinutes) : undefined,
+      modifierGroupIds,
     };
   }
 
@@ -182,6 +193,11 @@ export default function BusinessProducts() {
                         {!product.available && (
                           <Badge variant="secondary" className="text-xs shrink-0">Unavailable</Badge>
                         )}
+                        {(product.assignedModifierGroups?.length ?? 0) > 0 && (
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            {product.assignedModifierGroups!.length} option group{product.assignedModifierGroups!.length === 1 ? "" : "s"}
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">
                         {product.description ?? "No description"}
@@ -216,69 +232,84 @@ export default function BusinessProducts() {
         </Card>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="font-serif">{editingId ? `Edit ${itemLabel}` : `Add ${itemLabel}`}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Name *</label>
-              <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Product name" data-testid="input-product-name" />
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
+          <div className="flex flex-col min-h-full">
+            <SheetHeader className="px-6 pt-6 pb-4 border-b">
+              <SheetTitle className="font-serif text-2xl">
+                {editingId ? `Edit ${itemLabel}` : `Add ${itemLabel}`}
+              </SheetTitle>
+            </SheetHeader>
+
+            <div className="flex-1 px-6 py-6 space-y-8">
+              <section className="space-y-4">
+                <h3 className="font-serif text-lg font-semibold">Details</h3>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Name *</label>
+                  <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Product name" data-testid="input-product-name" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Description</label>
+                  <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe this product…" rows={3} data-testid="input-product-description" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Price ($) *</label>
+                    <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} placeholder="0.00" data-testid="input-product-price" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Prep Time (min)</label>
+                    <Input type="number" value={form.prepTimeMinutes} onChange={(e) => setForm((f) => ({ ...f, prepTimeMinutes: e.target.value }))} placeholder="15" data-testid="input-product-prep-time" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Category</label>
+                  <Select value={form.categoryId || "__none"} onValueChange={(v) => setForm((f) => ({ ...f, categoryId: v === "__none" ? "" : v }))}>
+                    <SelectTrigger data-testid="select-product-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none">No category</SelectItem>
+                      {categories?.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <ImageField
+                  surface="product"
+                  value={form.imageUrl}
+                  onChange={(imageUrl) => setForm((f) => ({ ...f, imageUrl }))}
+                  testId="product-image"
+                />
+                <div className="flex gap-6">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={form.available} onCheckedChange={(v) => setForm((f) => ({ ...f, available: v }))} data-testid="switch-product-available" />
+                    <label className="text-sm font-medium">Available</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={form.featured} onCheckedChange={(v) => setForm((f) => ({ ...f, featured: v }))} data-testid="switch-product-featured" />
+                    <label className="text-sm font-medium">Featured</label>
+                  </div>
+                </div>
+              </section>
+
+              <ProductOptionsSection
+                businessId={businessId}
+                assignedIds={modifierGroupIds}
+                onChange={setModifierGroupIds}
+              />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Description</label>
-              <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe this product…" rows={2} data-testid="input-product-description" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Price ($) *</label>
-                <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} placeholder="0.00" data-testid="input-product-price" />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Prep Time (min)</label>
-                <Input type="number" value={form.prepTimeMinutes} onChange={(e) => setForm((f) => ({ ...f, prepTimeMinutes: e.target.value }))} placeholder="15" data-testid="input-product-prep-time" />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Category</label>
-              <Select value={form.categoryId || "__none"} onValueChange={(v) => setForm((f) => ({ ...f, categoryId: v === "__none" ? "" : v }))}>
-                <SelectTrigger data-testid="select-product-category">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">No category</SelectItem>
-                  {categories?.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <ImageField
-              surface="product"
-              value={form.imageUrl}
-              onChange={(imageUrl) => setForm((f) => ({ ...f, imageUrl }))}
-              testId="product-image"
-            />
-            <div className="flex gap-6">
-              <div className="flex items-center gap-2">
-                <Switch checked={form.available} onCheckedChange={(v) => setForm((f) => ({ ...f, available: v }))} data-testid="switch-product-available" />
-                <label className="text-sm font-medium">Available</label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.featured} onCheckedChange={(v) => setForm((f) => ({ ...f, featured: v }))} data-testid="switch-product-featured" />
-                <label className="text-sm font-medium">Featured</label>
-              </div>
-            </div>
+
+            <SheetFooter className="px-6 py-4 border-t mt-auto gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setSheetOpen(false)}>Cancel</Button>
+              <LoadingButton onClick={handleSubmit} disabled={!form.name.trim() || !form.price} loading={isPending} loadingText="Saving…" data-testid="button-save-product">
+                {editingId ? "Save Changes" : "Create"}
+              </LoadingButton>
+            </SheetFooter>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <LoadingButton onClick={handleSubmit} disabled={!form.name.trim() || !form.price} loading={isPending} loadingText="Saving…" data-testid="button-save-product">
-              {editingId ? "Save Changes" : "Create"}
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </BusinessDashboardLayout>
   );
 }

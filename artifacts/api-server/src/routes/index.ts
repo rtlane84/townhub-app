@@ -3,6 +3,7 @@ import healthRouter from "./health";
 import authRouter from "./auth";
 import businessesRouter from "./businesses";
 import productsRouter from "./products";
+import modifierGroupsRouter from "./modifier-groups";
 import ordersRouter from "./orders";
 import adminRouter from "./admin";
 import eventsRouter from "./events";
@@ -50,6 +51,7 @@ router.use(devRouter);
 router.use(businessesRouter);
 router.use(stripeConnectRouter);
 router.use(productsRouter);
+router.use(modifierGroupsRouter);
 router.use(ordersRouter);
 router.use(adminRouter);
 

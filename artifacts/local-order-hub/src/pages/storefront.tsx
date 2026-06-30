@@ -18,6 +18,8 @@ import { BusinessHoursDisplay } from "@/components/business-hours-display";
 import { resolveBusinessHours } from "@/lib/business-hours";
 import { resolvePaymentMode, paymentModeStorefrontNote, resolveStorefrontMode, storefrontCopy, isAppointmentStorefrontMode, isInformationStorefrontMode, showsStorefrontCatalog, informationPrimaryCtaLabel, formatTime12h, formatTimeRange12h, normalizeWebsiteUrl } from "@workspace/api-zod";
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog";
+import { ProductOptionsDialog } from "@/components/product-options-dialog";
+import type { Product } from "@workspace/api-client-react";
 import { BusinessWebsiteCard } from "@/components/business-website-card";
 import { BusinessThemeScope } from "@/components/business-theme-scope";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
@@ -28,6 +30,9 @@ import { cn } from "@/lib/utils";
 
 const categoryPillActiveClass =
   "rounded-full whitespace-nowrap bg-platform-button text-white border border-platform-button !shadow-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-platform-button hover:text-white hover:!shadow-none active:!shadow-none";
+
+const storefrontPrimaryButtonClass =
+  "rounded-full bg-platform-button text-white border border-platform-button hover:bg-platform-button/90 hover:text-white";
 
 const categoryPillInactiveClass =
   "rounded-full whitespace-nowrap border border-border bg-white text-foreground shadow-sm hover:bg-muted outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 active:shadow-sm";
@@ -59,6 +64,7 @@ export default function Storefront() {
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [appointmentProductId, setAppointmentProductId] = useState<number | null>(null);
   const [addingProductId, setAddingProductId] = useState<number | null>(null);
+  const [optionsProduct, setOptionsProduct] = useState<Product | null>(null);
   const addToCartLockRef = useRef(false);
 
   if (isLoading) {
@@ -141,17 +147,48 @@ export default function Storefront() {
     openAppointmentDialog();
   };
 
-  async function handleAddToCart(product: { id: number; name: string; price: number; imageUrl?: string | null; available?: boolean | null }) {
+  async function handleAddToCart(product: Product) {
     if (addToCartLockRef.current) return;
     if (isAppointmentMode) {
       openAppointmentDialog(product.id);
       return;
     }
+    if ((product.optionGroups?.length ?? 0) > 0) {
+      setOptionsProduct(product);
+      return;
+    }
     addToCartLockRef.current = true;
     setAddingProductId(product.id);
     try {
-      addToCart(product as never, b.id, 1);
+      addToCart(product, b.id, { quantity: 1 });
       toast({ title: copy.addToastTitle, description: copy.addToastDescription(product.name) });
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    } finally {
+      addToCartLockRef.current = false;
+      setAddingProductId(null);
+    }
+  }
+
+  async function handleConfirmOptions(payload: {
+    selectedOptionIds: number[];
+    selectedOptions: import("@/components/product-options-dialog").SelectedCartOption[];
+    unitPrice: number;
+  }) {
+    if (!optionsProduct) return;
+    addToCartLockRef.current = true;
+    setAddingProductId(optionsProduct.id);
+    try {
+      addToCart(optionsProduct, b.id, {
+        quantity: 1,
+        selectedOptionIds: payload.selectedOptionIds,
+        selectedOptions: payload.selectedOptions,
+        unitPrice: payload.unitPrice,
+      });
+      toast({
+        title: copy.addToastTitle,
+        description: copy.addToastDescription(optionsProduct.name),
+      });
+      setOptionsProduct(null);
       await new Promise((resolve) => setTimeout(resolve, 400));
     } finally {
       addToCartLockRef.current = false;
@@ -209,7 +246,7 @@ export default function Storefront() {
                 )}
                 {isAppointmentMode && (
                   <Button
-                    className="w-full rounded-full mt-2"
+                    className={cn("w-full mt-2", storefrontPrimaryButtonClass)}
                     onClick={handleBookAppointment}
                     data-testid="button-book-appointment"
                   >
@@ -219,7 +256,7 @@ export default function Storefront() {
                 )}
                 {isInformationMode && (
                   b.phone?.trim() ? (
-                    <Button asChild className="w-full rounded-full mt-2">
+                    <Button asChild className={cn("w-full mt-2", storefrontPrimaryButtonClass)}>
                       <a href={`tel:${b.phone.replace(/\s/g, "")}`} data-testid="button-call-to-order">
                         <Phone className="h-4 w-4 mr-2" />
                         {contactCtaLabel}
@@ -438,8 +475,8 @@ export default function Storefront() {
                         {!isInformationMode && (
                           <LoadingButton
                             size="sm"
-                            variant={isAppointmentMode ? "default" : "secondary"}
-                            className="rounded-full h-8"
+                            variant="default"
+                            className={cn("h-8", storefrontPrimaryButtonClass)}
                             onClick={() => void handleAddToCart(product)}
                             disabled={!product.available || !b.active || addingProductId !== null}
                             loading={addingProductId === product.id}
@@ -473,6 +510,16 @@ export default function Storefront() {
           initialProductId={appointmentProductId}
         />
       )}
+
+      <ProductOptionsDialog
+        product={optionsProduct}
+        open={!!optionsProduct}
+        onOpenChange={(open) => {
+          if (!open) setOptionsProduct(null);
+        }}
+        onConfirm={handleConfirmOptions}
+        loading={addingProductId !== null}
+      />
     </BusinessThemeScope>
   );
 }

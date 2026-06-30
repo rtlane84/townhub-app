@@ -16,6 +16,12 @@ import {
   DeleteCategoryParams,
 } from "@workspace/api-zod";
 import { serializeProduct } from "./businesses";
+import {
+  loadOptionGroupsByProductIds,
+  loadAssignedModifierGroupsByProductIds,
+  assignModifierGroupsToProduct,
+  clearProductModifierGroups,
+} from "../lib/product-options";
 
 const router: IRouter = Router();
 
@@ -173,7 +179,21 @@ router.get(
       .where(and(...conditions))
       .orderBy(productsTable.featured, productsTable.name);
 
-    res.json(products.map(serializeProduct));
+    const productIds = products.map((p) => p.id);
+    const [optionGroupsByProduct, assignedByProduct] = await Promise.all([
+      loadOptionGroupsByProductIds(productIds, { activeOnly: false }),
+      loadAssignedModifierGroupsByProductIds(productIds),
+    ]);
+
+    res.json(
+      products.map((p) =>
+        serializeProduct(
+          p,
+          optionGroupsByProduct.get(p.id) ?? [],
+          assignedByProduct.get(p.id) ?? [],
+        ),
+      ),
+    );
   },
 );
 
@@ -210,7 +230,32 @@ router.post(
       })
       .returning();
 
-    res.status(201).json(serializeProduct(product));
+    const modifierGroupIds = parsed.data.modifierGroupIds ?? [];
+    if (modifierGroupIds.length > 0) {
+      try {
+        await assignModifierGroupsToProduct(
+          product.id,
+          params.data.businessId,
+          modifierGroupIds,
+        );
+      } catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : "Invalid modifier groups" });
+        return;
+      }
+    }
+
+    const [optionGroupsByProduct, assignedByProduct] = await Promise.all([
+      loadOptionGroupsByProductIds([product.id], { activeOnly: false }),
+      loadAssignedModifierGroupsByProductIds([product.id]),
+    ]);
+
+    res.status(201).json(
+      serializeProduct(
+        product,
+        optionGroupsByProduct.get(product.id) ?? [],
+        assignedByProduct.get(product.id) ?? [],
+      ),
+    );
   },
 );
 
@@ -260,7 +305,31 @@ router.patch(
       return;
     }
 
-    res.json(serializeProduct(product));
+    if (d.modifierGroupIds !== undefined) {
+      try {
+        await assignModifierGroupsToProduct(
+          product.id,
+          params.data.businessId,
+          d.modifierGroupIds,
+        );
+      } catch (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : "Invalid modifier groups" });
+        return;
+      }
+    }
+
+    const [optionGroupsByProduct, assignedByProduct] = await Promise.all([
+      loadOptionGroupsByProductIds([product.id], { activeOnly: false }),
+      loadAssignedModifierGroupsByProductIds([product.id]),
+    ]);
+
+    res.json(
+      serializeProduct(
+        product,
+        optionGroupsByProduct.get(product.id) ?? [],
+        assignedByProduct.get(product.id) ?? [],
+      ),
+    );
   },
 );
 
@@ -276,6 +345,8 @@ router.delete(
       res.status(400).json({ error: params.error.message });
       return;
     }
+
+    await clearProductModifierGroups(params.data.id);
 
     await db
       .delete(productsTable)

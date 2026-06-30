@@ -430,6 +430,99 @@ paths:
         "204":
           description: Deleted
 
+  # ─── Modifier Groups ─────────────────────────────────────────────
+  /businesses/{businessId}/modifier-groups:
+    get:
+      operationId: listModifierGroups
+      tags: [modifier-groups]
+      summary: List modifier groups for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Modifier groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModifierGroup"
+    post:
+      operationId: createModifierGroup
+      tags: [modifier-groups]
+      summary: Create a modifier group
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModifierGroupInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModifierGroup"
+
+  /businesses/{businessId}/modifier-groups/{id}:
+    patch:
+      operationId: updateModifierGroup
+      tags: [modifier-groups]
+      summary: Update a modifier group
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModifierGroupUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModifierGroup"
+    delete:
+      operationId: deleteModifierGroup
+      tags: [modifier-groups]
+      summary: Delete a modifier group
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   # ─── Products ───────────────────────────────────────────────────
   /businesses/{businessId}/products:
     get:
@@ -1196,6 +1289,137 @@ paths:
         "204":
           description: Deleted
 
+  /admin/subscription-plans/{id}/features:
+    get:
+      operationId: getSubscriptionPlanFeatures
+      tags: [subscriptions]
+      summary: List features enabled for a plan (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Plan features
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionFeature"
+    put:
+      operationId: setSubscriptionPlanFeatures
+      tags: [subscriptions]
+      summary: Assign features to a plan (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanFeaturesInput"
+      responses:
+        "200":
+          description: Updated plan features
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionFeature"
+
+  /admin/subscription-features:
+    get:
+      operationId: listSubscriptionFeatures
+      tags: [subscriptions]
+      summary: List subscription features (admin)
+      responses:
+        "200":
+          description: Feature catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionFeature"
+    post:
+      operationId: createSubscriptionFeature
+      tags: [subscriptions]
+      summary: Create a subscription feature (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionFeatureInput"
+      responses:
+        "201":
+          description: Created feature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionFeature"
+
+  /admin/subscription-features/{id}:
+    put:
+      operationId: updateSubscriptionFeature
+      tags: [subscriptions]
+      summary: Update a subscription feature (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionFeatureInput"
+      responses:
+        "200":
+          description: Updated feature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionFeature"
+    delete:
+      operationId: deleteSubscriptionFeature
+      tags: [subscriptions]
+      summary: Delete a subscription feature (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /pricing/plans:
+    get:
+      operationId: listPublicPricingPlans
+      tags: [subscriptions]
+      summary: List public pricing plans for the marketing page
+      responses:
+        "200":
+          description: Public pricing plans with enabled features
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicPricingPlan"
+
   /admin/businesses/{id}/subscription:
     get:
       operationId: getBusinessSubscription
@@ -1258,6 +1482,25 @@ paths:
                 $ref: "#/components/schemas/BusinessSubscription"
         "404":
           description: No subscription
+
+  /businesses/{id}/feature-access:
+    get:
+      operationId: getBusinessFeatureAccess
+      tags: [subscriptions]
+      summary: Get subscription feature access for a business (owner UI)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feature access report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessFeatureAccess"
 
   # ─── Food Truck Locations ───────────────────────────────────────
   /businesses/{id}/food-truck-locations:
@@ -2110,6 +2353,211 @@ components:
           type: boolean
         prepTimeMinutes:
           type: ["integer", "null"]
+        optionGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOptionGroup"
+        assignedModifierGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssignedModifierGroup"
+        modifierGroupIds:
+          type: array
+          items:
+            type: integer
+
+    AssignedModifierGroup:
+      type: object
+      required: [id, name, active, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ModifierSelectionType:
+      type: string
+      enum: [SINGLE, MULTIPLE]
+
+    ModifierChoice:
+      type: object
+      required: [id, name, priceAdjustment, active, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        priceAdjustment:
+          type: number
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ModifierGroup:
+      type: object
+      required: [id, businessId, name, selectionType, required, active, sortOrder, choices]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        selectionType:
+          $ref: "#/components/schemas/ModifierSelectionType"
+        required:
+          type: boolean
+        maxSelections:
+          type: ["integer", "null"]
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModifierChoice"
+
+    ModifierChoiceInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        priceAdjustment:
+          type: number
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ModifierGroupInput:
+      type: object
+      required: [name, choices]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        selectionType:
+          $ref: "#/components/schemas/ModifierSelectionType"
+        required:
+          type: boolean
+        maxSelections:
+          type: integer
+          minimum: 1
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModifierChoiceInput"
+
+    ModifierGroupUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        selectionType:
+          $ref: "#/components/schemas/ModifierSelectionType"
+        required:
+          type: boolean
+        maxSelections:
+          type: integer
+          minimum: 1
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModifierChoiceInput"
+
+    ProductOption:
+      type: object
+      required: [id, name, priceAdjustment, available, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        priceAdjustment:
+          type: number
+        available:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ProductOptionGroup:
+      type: object
+      required: [id, name, required, minSelections, maxSelections, sortOrder, options]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        required:
+          type: boolean
+        minSelections:
+          type: integer
+        maxSelections:
+          type: integer
+        sortOrder:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOption"
+
+    ProductOptionInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        priceAdjustment:
+          type: number
+        available:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ProductOptionGroupInput:
+      type: object
+      required: [name, options]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        required:
+          type: boolean
+        minSelections:
+          type: integer
+          minimum: 0
+        maxSelections:
+          type: integer
+          minimum: 1
+        sortOrder:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOptionInput"
 
     ProductInput:
       type: object
@@ -2132,6 +2580,10 @@ components:
           type: boolean
         prepTimeMinutes:
           type: integer
+        modifierGroupIds:
+          type: array
+          items:
+            type: integer
 
     ProductUpdate:
       type: object
@@ -2152,6 +2604,25 @@ components:
           type: boolean
         prepTimeMinutes:
           type: integer
+        modifierGroupIds:
+          type: array
+          items:
+            type: integer
+
+    OrderItemOption:
+      type: object
+      required: [groupName, optionName, priceAdjustment]
+      properties:
+        id:
+          type: integer
+        optionId:
+          type: ["integer", "null"]
+        groupName:
+          type: string
+        optionName:
+          type: string
+        priceAdjustment:
+          type: number
 
     OrderItem:
       type: object
@@ -2171,6 +2642,10 @@ components:
           type: number
         subtotal:
           type: number
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItemOption"
 
     Order:
       type: object
@@ -2267,6 +2742,10 @@ components:
         quantity:
           type: integer
           minimum: 1
+        selectedOptionIds:
+          type: array
+          items:
+            type: integer
 
     OrderStatusUpdate:
       type: object
@@ -2484,9 +2963,65 @@ components:
           type: integer
 
     # ─── Subscriptions ────────────────────────────────────────────
+    SubscriptionFeature:
+      type: object
+      required: [id, key, name, sortOrder, isActive]
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+
+    SubscriptionFeatureInput:
+      type: object
+      required: [key, name]
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+
+    PlanFeaturesInput:
+      type: object
+      required: [featureIds]
+      properties:
+        featureIds:
+          type: array
+          items:
+            type: integer
+
+    PublicPricingFeature:
+      type: object
+      required: [key, name]
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+
     SubscriptionPlan:
       type: object
-      required: [id, name, monthlyPrice, trialDays, isActive, isDefault]
+      required: [id, name, monthlyPrice, trialDays, isActive, isDefault, isPublic, isRecommended, isBeta, sortOrder]
       properties:
         id:
           type: integer
@@ -2496,6 +3031,8 @@ components:
           type: ["string", "null"]
         monthlyPrice:
           type: number
+        yearlyPrice:
+          type: ["number", "null"]
         setupFee:
           type: ["number", "null"]
         transactionFeePercent:
@@ -2506,6 +3043,18 @@ components:
           type: boolean
         isDefault:
           type: boolean
+        isPublic:
+          type: boolean
+        isRecommended:
+          type: boolean
+        isBeta:
+          type: boolean
+        sortOrder:
+          type: integer
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriptionFeature"
         createdAt:
           type: string
           format: date-time
@@ -2520,6 +3069,8 @@ components:
           type: string
         monthlyPrice:
           type: number
+        yearlyPrice:
+          type: number
         setupFee:
           type: number
         transactionFeePercent:
@@ -2530,15 +3081,64 @@ components:
           type: boolean
         isDefault:
           type: boolean
+        isPublic:
+          type: boolean
+        isRecommended:
+          type: boolean
+        isBeta:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    PublicPricingPlan:
+      type: object
+      required: [id, name, monthlyPrice, trialDays, isActive, isDefault, isPublic, isRecommended, isBeta, sortOrder, features]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        monthlyPrice:
+          type: number
+        yearlyPrice:
+          type: ["number", "null"]
+        setupFee:
+          type: ["number", "null"]
+        transactionFeePercent:
+          type: ["number", "null"]
+        trialDays:
+          type: integer
+        isActive:
+          type: boolean
+        isDefault:
+          type: boolean
+        isPublic:
+          type: boolean
+        isRecommended:
+          type: boolean
+        isBeta:
+          type: boolean
+        sortOrder:
+          type: integer
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicPricingFeature"
+        createdAt:
+          type: string
+          format: date-time
 
     BusinessSubscriptionStatus:
       type: string
       enum:
-        - TRIALING
+        - BETA
+        - TRIAL
         - ACTIVE
         - PAST_DUE
         - CANCELED
-        - PAUSED
+        - SUSPENDED
 
     BusinessSubscription:
       type: object
@@ -2552,6 +3152,12 @@ components:
           type: integer
         status:
           $ref: "#/components/schemas/BusinessSubscriptionStatus"
+        startedAt:
+          type: ["string", "null"]
+          format: date-time
+        renewalAt:
+          type: ["string", "null"]
+          format: date-time
         trialEndsAt:
           type: ["string", "null"]
           format: date-time
@@ -2561,10 +3167,16 @@ components:
         currentPeriodEnd:
           type: ["string", "null"]
           format: date-time
+        notes:
+          type: ["string", "null"]
         stripeSubscriptionId:
           type: ["string", "null"]
         plan:
           $ref: "#/components/schemas/SubscriptionPlan"
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriptionFeature"
         createdAt:
           type: string
           format: date-time
@@ -2580,6 +3192,37 @@ components:
         trialEndsAt:
           type: string
           format: date-time
+        renewalAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+
+    BusinessFeatureAccessEntry:
+      type: object
+      required: [key, name, enabled]
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        enabled:
+          type: boolean
+
+    BusinessFeatureAccess:
+      type: object
+      required: [bypassRestrictions, planName, features]
+      properties:
+        bypassRestrictions:
+          type: boolean
+        planName:
+          type: ["string", "null"]
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessFeatureAccessEntry"
 
     # ─── Food Truck Locations ─────────────────────────────────────
     FoodTruckLocation:

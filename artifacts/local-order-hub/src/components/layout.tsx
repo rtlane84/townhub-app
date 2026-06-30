@@ -2,7 +2,7 @@ import { Link, useLocation, useRoute } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
 import {
   ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
-  Wrench, Menu, ExternalLink, Calendar, Truck, Package, HelpCircle,
+  Wrench, Menu, ExternalLink, Calendar, Truck, Package, HelpCircle, Layers,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
@@ -107,6 +107,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link href="/help" className={navLinkClass("/help")}>
                 Help
               </Link>
+              <Link href="/pricing" className={navLinkClass("/pricing")}>
+                Pricing
+              </Link>
 
               {showRoleNav && isCustomer && (
                 <Link href="/my-orders" className={navLinkClass("/my-orders")}>
@@ -199,6 +202,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Link href="/help" onClick={close}>
                     <span className={navLinkClass("/help")}>
                       <HelpCircle className="h-4 w-4" /> Help
+                    </span>
+                  </Link>
+                  <Link href="/pricing" onClick={close}>
+                    <span className={navLinkClass("/pricing")}>
+                      <Layers className="h-4 w-4" /> Pricing
                     </span>
                   </Link>
 

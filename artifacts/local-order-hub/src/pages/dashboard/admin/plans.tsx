@@ -18,17 +18,24 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Layers, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Layers, CheckCircle2, Sparkles } from "lucide-react";
+import { PlanFeaturesDialog } from "@/components/plan-features-dialog";
+import { formatPlanAmount } from "@/lib/subscription-display";
 
 const BLANK: SubscriptionPlanInput = {
   name: "",
   description: "",
   monthlyPrice: 0,
+  yearlyPrice: undefined,
   setupFee: undefined,
   transactionFeePercent: undefined,
   trialDays: 0,
   isActive: true,
   isDefault: false,
+  isPublic: true,
+  isRecommended: false,
+  isBeta: false,
+  sortOrder: 0,
 };
 
 export default function AdminPlans() {
@@ -40,6 +47,7 @@ export default function AdminPlans() {
   const [editing, setEditing] = useState<SubscriptionPlan | null>(null);
   const [form, setForm] = useState<SubscriptionPlanInput>({ ...BLANK });
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [featuresPlan, setFeaturesPlan] = useState<SubscriptionPlan | null>(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListSubscriptionPlansQueryKey() });
 
@@ -76,11 +84,16 @@ export default function AdminPlans() {
       name: p.name,
       description: p.description ?? "",
       monthlyPrice: p.monthlyPrice,
+      yearlyPrice: p.yearlyPrice ?? undefined,
       setupFee: p.setupFee ?? undefined,
       transactionFeePercent: p.transactionFeePercent ?? undefined,
       trialDays: p.trialDays,
       isActive: p.isActive,
       isDefault: p.isDefault,
+      isPublic: p.isPublic,
+      isRecommended: p.isRecommended,
+      isBeta: p.isBeta,
+      sortOrder: p.sortOrder,
     });
     setOpen(true);
   }
@@ -127,30 +140,51 @@ export default function AdminPlans() {
             plans.map((p) => (
               <Card key={p.id} className="relative">
                 <CardContent className="pt-6 pb-5 px-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="font-semibold text-lg">{p.name}</h3>
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-lg truncate">{p.name}</h3>
+                      <div className="flex gap-1 flex-wrap mt-1.5">
                         {p.isDefault && (
                           <Badge className="text-xs">
                             <CheckCircle2 className="h-3 w-3 mr-1" /> Default
                           </Badge>
                         )}
+                        {p.isRecommended && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Sparkles className="h-3 w-3 mr-1" /> Recommended
+                          </Badge>
+                        )}
+                        {!p.isActive && <Badge variant="outline" className="text-muted-foreground text-xs">Inactive</Badge>}
+                        {!p.isPublic && <Badge variant="outline" className="text-xs">Hidden</Badge>}
+                        {p.isBeta && <Badge variant="outline" className="text-xs">Beta</Badge>}
                       </div>
-                      {!p.isActive && <Badge variant="outline" className="text-muted-foreground text-xs">Inactive</Badge>}
                     </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteId(p.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    <div className="flex shrink-0 gap-0.5">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setFeaturesPlan(p)} title="Manage features">
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)} title="Edit plan">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDeleteId(p.id)} title="Delete plan">
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                   <div className="text-3xl font-bold text-primary mb-1">
-                    {p.monthlyPrice === 0
-                      ? <span>Free</span>
-                      : <>{`$${p.monthlyPrice.toFixed(2)}`}<span className="text-base font-normal text-muted-foreground">/mo</span></>
-                    }
+                    {formatPlanAmount(p.monthlyPrice)}
                   </div>
+                  {p.yearlyPrice != null && p.yearlyPrice > 0 && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      or {formatPlanAmount(p.yearlyPrice, "year")}
+                    </p>
+                  )}
                   {p.description && <p className="text-sm text-muted-foreground mb-3">{p.description}</p>}
+                  {p.features && p.features.length > 0 && (
+                    <div className="text-xs text-muted-foreground mb-3">
+                      {p.features.length} feature{p.features.length === 1 ? "" : "s"} enabled
+                    </div>
+                  )}
                   <div className="text-xs text-muted-foreground space-y-0.5">
                     {p.trialDays > 0 && <div>✓ {p.trialDays}-day free trial</div>}
                     {p.setupFee != null && p.setupFee > 0 && <div>· ${p.setupFee.toFixed(2)} setup fee</div>}
@@ -185,8 +219,18 @@ export default function AdminPlans() {
                 <Input type="number" min="0" step="0.01" value={form.monthlyPrice} onChange={(e) => setForm((p) => ({ ...p, monthlyPrice: parseFloat(e.target.value) || 0 }))} />
               </div>
               <div>
+                <label className="text-sm font-medium mb-1.5 block">Yearly Price ($)</label>
+                <Input type="number" min="0" step="0.01" value={form.yearlyPrice ?? ""} onChange={numField("yearlyPrice", form.yearlyPrice)} placeholder="Optional" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label className="text-sm font-medium mb-1.5 block">Setup Fee ($)</label>
                 <Input type="number" min="0" step="0.01" value={form.setupFee ?? ""} onChange={numField("setupFee", form.setupFee)} placeholder="0.00" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Sort order</label>
+                <Input type="number" value={form.sortOrder ?? 0} onChange={(e) => setForm((p) => ({ ...p, sortOrder: parseInt(e.target.value, 10) || 0 }))} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -207,6 +251,18 @@ export default function AdminPlans() {
               <label className="text-sm font-medium">Default plan for new businesses</label>
               <Switch checked={!!form.isDefault} onCheckedChange={(v) => setForm((p) => ({ ...p, isDefault: v }))} />
             </div>
+            <div className="flex items-center justify-between py-1">
+              <label className="text-sm font-medium">Public on pricing page</label>
+              <Switch checked={!!form.isPublic} onCheckedChange={(v) => setForm((p) => ({ ...p, isPublic: v }))} />
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <label className="text-sm font-medium">Recommended / highlighted</label>
+              <Switch checked={!!form.isRecommended} onCheckedChange={(v) => setForm((p) => ({ ...p, isRecommended: v }))} />
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <label className="text-sm font-medium">Beta / founding plan</label>
+              <Switch checked={!!form.isBeta} onCheckedChange={(v) => setForm((p) => ({ ...p, isBeta: v }))} />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
@@ -216,6 +272,12 @@ export default function AdminPlans() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PlanFeaturesDialog
+        plan={featuresPlan}
+        open={featuresPlan !== null}
+        onOpenChange={(next) => !next && setFeaturesPlan(null)}
+      />
 
       <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <DialogContent className="max-w-sm">

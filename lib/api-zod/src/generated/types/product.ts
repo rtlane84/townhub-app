@@ -5,6 +5,8 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { AssignedModifierGroup } from './assignedModifierGroup';
+import type { ProductOptionGroup } from './productOptionGroup';
 
 export interface Product {
   id: number;
@@ -21,4 +23,7 @@ export interface Product {
   featured?: boolean;
   /** @nullable */
   prepTimeMinutes?: number | null;
+  optionGroups?: ProductOptionGroup[];
+  assignedModifierGroups?: AssignedModifierGroup[];
+  modifierGroupIds?: number[];
 }

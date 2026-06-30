@@ -5,6 +5,7 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { SubscriptionFeature } from './subscriptionFeature';
 
 export interface SubscriptionPlan {
   id: number;
@@ -13,11 +14,18 @@ export interface SubscriptionPlan {
   description?: string | null;
   monthlyPrice: number;
   /** @nullable */
+  yearlyPrice?: number | null;
+  /** @nullable */
   setupFee?: number | null;
   /** @nullable */
   transactionFeePercent?: number | null;
   trialDays: number;
   isActive: boolean;
   isDefault: boolean;
+  isPublic: boolean;
+  isRecommended: boolean;
+  isBeta: boolean;
+  sortOrder: number;
+  features?: SubscriptionFeature[];
   createdAt?: Date;
 }

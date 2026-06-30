@@ -325,6 +325,31 @@ export interface Category {
   sortOrder?: number;
 }
 
+export interface ProductOption {
+  id: number;
+  name: string;
+  priceAdjustment: number;
+  available: boolean;
+  sortOrder: number;
+}
+
+export interface ProductOptionGroup {
+  id: number;
+  name: string;
+  required: boolean;
+  minSelections: number;
+  maxSelections: number;
+  sortOrder: number;
+  options: ProductOption[];
+}
+
+export interface AssignedModifierGroup {
+  id: number;
+  name: string;
+  active: boolean;
+  sortOrder: number;
+}
+
 export interface Product {
   id: number;
   businessId: number;
@@ -340,6 +365,9 @@ export interface Product {
   featured?: boolean;
   /** @nullable */
   prepTimeMinutes?: number | null;
+  optionGroups?: ProductOptionGroup[];
+  assignedModifierGroups?: AssignedModifierGroup[];
+  modifierGroupIds?: number[];
 }
 
 export interface BusinessStorefront {
@@ -445,6 +473,90 @@ export interface CategoryUpdate {
   sortOrder?: number;
 }
 
+export type ModifierSelectionType = typeof ModifierSelectionType[keyof typeof ModifierSelectionType];
+
+
+export const ModifierSelectionType = {
+  SINGLE: 'SINGLE',
+  MULTIPLE: 'MULTIPLE',
+} as const;
+
+export interface ModifierChoice {
+  id: number;
+  name: string;
+  priceAdjustment: number;
+  active: boolean;
+  sortOrder: number;
+}
+
+export interface ModifierGroup {
+  id: number;
+  businessId: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  selectionType: ModifierSelectionType;
+  required: boolean;
+  /** @nullable */
+  maxSelections?: number | null;
+  active: boolean;
+  sortOrder: number;
+  choices: ModifierChoice[];
+}
+
+export interface ModifierChoiceInput {
+  /** @minLength 1 */
+  name: string;
+  priceAdjustment?: number;
+  active?: boolean;
+  sortOrder?: number;
+}
+
+export interface ModifierGroupInput {
+  /** @minLength 1 */
+  name: string;
+  description?: string;
+  selectionType?: ModifierSelectionType;
+  required?: boolean;
+  /** @minimum 1 */
+  maxSelections?: number;
+  active?: boolean;
+  sortOrder?: number;
+  choices: ModifierChoiceInput[];
+}
+
+export interface ModifierGroupUpdate {
+  name?: string;
+  description?: string;
+  selectionType?: ModifierSelectionType;
+  required?: boolean;
+  /** @minimum 1 */
+  maxSelections?: number;
+  active?: boolean;
+  sortOrder?: number;
+  choices?: ModifierChoiceInput[];
+}
+
+export interface ProductOptionInput {
+  /** @minLength 1 */
+  name: string;
+  priceAdjustment?: number;
+  available?: boolean;
+  sortOrder?: number;
+}
+
+export interface ProductOptionGroupInput {
+  /** @minLength 1 */
+  name: string;
+  required?: boolean;
+  /** @minimum 0 */
+  minSelections?: number;
+  /** @minimum 1 */
+  maxSelections?: number;
+  sortOrder?: number;
+  options: ProductOptionInput[];
+}
+
 export interface ProductInput {
   /** @minLength 1 */
   name: string;
@@ -455,6 +567,7 @@ export interface ProductInput {
   available?: boolean;
   featured?: boolean;
   prepTimeMinutes?: number;
+  modifierGroupIds?: number[];
 }
 
 export interface ProductUpdate {
@@ -466,6 +579,16 @@ export interface ProductUpdate {
   available?: boolean;
   featured?: boolean;
   prepTimeMinutes?: number;
+  modifierGroupIds?: number[];
+}
+
+export interface OrderItemOption {
+  id?: number;
+  /** @nullable */
+  optionId?: number | null;
+  groupName: string;
+  optionName: string;
+  priceAdjustment: number;
 }
 
 export interface OrderItem {
@@ -476,6 +599,7 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  options?: OrderItemOption[];
 }
 
 export interface Order {
@@ -520,6 +644,7 @@ export interface OrderItemInput {
   productId: number;
   /** @minimum 1 */
   quantity: number;
+  selectedOptionIds?: number[];
 }
 
 export interface OrderInput {
@@ -673,6 +798,38 @@ export interface HighlightInput {
   sortOrder?: number;
 }
 
+export interface SubscriptionFeature {
+  id: number;
+  key: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  category?: string | null;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface SubscriptionFeatureInput {
+  key: string;
+  name: string;
+  description?: string;
+  category?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export interface PlanFeaturesInput {
+  featureIds: number[];
+}
+
+export interface PublicPricingFeature {
+  key: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+}
+
 export interface SubscriptionPlan {
   id: number;
   name: string;
@@ -680,12 +837,19 @@ export interface SubscriptionPlan {
   description?: string | null;
   monthlyPrice: number;
   /** @nullable */
+  yearlyPrice?: number | null;
+  /** @nullable */
   setupFee?: number | null;
   /** @nullable */
   transactionFeePercent?: number | null;
   trialDays: number;
   isActive: boolean;
   isDefault: boolean;
+  isPublic: boolean;
+  isRecommended: boolean;
+  isBeta: boolean;
+  sortOrder: number;
+  features?: SubscriptionFeature[];
   createdAt?: string;
 }
 
@@ -693,22 +857,51 @@ export interface SubscriptionPlanInput {
   name: string;
   description?: string;
   monthlyPrice: number;
+  yearlyPrice?: number;
   setupFee?: number;
   transactionFeePercent?: number;
   trialDays?: number;
   isActive?: boolean;
   isDefault?: boolean;
+  isPublic?: boolean;
+  isRecommended?: boolean;
+  isBeta?: boolean;
+  sortOrder?: number;
+}
+
+export interface PublicPricingPlan {
+  id: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  monthlyPrice: number;
+  /** @nullable */
+  yearlyPrice?: number | null;
+  /** @nullable */
+  setupFee?: number | null;
+  /** @nullable */
+  transactionFeePercent?: number | null;
+  trialDays: number;
+  isActive: boolean;
+  isDefault: boolean;
+  isPublic: boolean;
+  isRecommended: boolean;
+  isBeta: boolean;
+  sortOrder: number;
+  features: PublicPricingFeature[];
+  createdAt?: string;
 }
 
 export type BusinessSubscriptionStatus = typeof BusinessSubscriptionStatus[keyof typeof BusinessSubscriptionStatus];
 
 
 export const BusinessSubscriptionStatus = {
-  TRIALING: 'TRIALING',
+  BETA: 'BETA',
+  TRIAL: 'TRIAL',
   ACTIVE: 'ACTIVE',
   PAST_DUE: 'PAST_DUE',
   CANCELED: 'CANCELED',
-  PAUSED: 'PAUSED',
+  SUSPENDED: 'SUSPENDED',
 } as const;
 
 export interface BusinessSubscription {
@@ -717,14 +910,21 @@ export interface BusinessSubscription {
   planId: number;
   status: BusinessSubscriptionStatus;
   /** @nullable */
+  startedAt?: string | null;
+  /** @nullable */
+  renewalAt?: string | null;
+  /** @nullable */
   trialEndsAt?: string | null;
   /** @nullable */
   currentPeriodStart?: string | null;
   /** @nullable */
   currentPeriodEnd?: string | null;
   /** @nullable */
+  notes?: string | null;
+  /** @nullable */
   stripeSubscriptionId?: string | null;
   plan?: SubscriptionPlan;
+  features?: SubscriptionFeature[];
   createdAt?: string;
 }
 
@@ -732,6 +932,23 @@ export interface BusinessSubscriptionInput {
   planId: number;
   status: BusinessSubscriptionStatus;
   trialEndsAt?: string;
+  renewalAt?: string;
+  notes?: string;
+}
+
+export interface BusinessFeatureAccessEntry {
+  key: string;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  enabled: boolean;
+}
+
+export interface BusinessFeatureAccess {
+  bypassRestrictions: boolean;
+  /** @nullable */
+  planName: string | null;
+  features: BusinessFeatureAccessEntry[];
 }
 
 export interface FoodTruckLocation {

@@ -11,6 +11,14 @@ export async function enforceSingleDefaultPlan(keepPlanId: number): Promise<void
     .where(ne(subscriptionPlansTable.id, keepPlanId));
 }
 
+/** When marking a plan recommended, clear recommended on all other plans. */
+export async function enforceSingleRecommendedPlan(keepPlanId: number): Promise<void> {
+  await db
+    .update(subscriptionPlansTable)
+    .set({ isRecommended: false })
+    .where(ne(subscriptionPlansTable.id, keepPlanId));
+}
+
 export async function findPlanById(planId: number): Promise<Plan | undefined> {
   const [plan] = await db
     .select()
@@ -39,15 +47,18 @@ export async function resolveApprovalPlan(
 }
 
 export async function attachPlanToBusiness(businessId: number, plan: Plan): Promise<void> {
+  const now = new Date();
   const trialEndsAt =
     plan.trialDays > 0
-      ? new Date(Date.now() + plan.trialDays * 24 * 60 * 60 * 1000)
+      ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000)
       : null;
 
   await db.insert(businessSubscriptionsTable).values({
     businessId,
     planId: plan.id,
-    status: plan.trialDays > 0 ? "TRIALING" : "ACTIVE",
+    status: plan.trialDays > 0 ? "TRIAL" : "ACTIVE",
+    startedAt: now,
     trialEndsAt,
+    renewalAt: trialEndsAt,
   });
 }

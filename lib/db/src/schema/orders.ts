@@ -66,6 +66,16 @@ export const orderItemsTable = pgTable("order_items", {
   subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
 });
 
+/** Snapshot of selected options at order time. */
+export const orderItemOptionsTable = pgTable("order_item_options", {
+  id: serial("id").primaryKey(),
+  orderItemId: integer("order_item_id").notNull(),
+  optionId: integer("option_id"),
+  groupName: text("group_name").notNull(),
+  optionName: text("option_name").notNull(),
+  priceAdjustment: numeric("price_adjustment", { precision: 10, scale: 2 }).notNull().default("0"),
+});
+
 export const insertOrderSchema = createInsertSchema(ordersTable).omit({
   id: true,
   createdAt: true,
@@ -79,3 +89,4 @@ export const insertOrderItemSchema = createInsertSchema(orderItemsTable).omit({
 });
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type OrderItem = typeof orderItemsTable.$inferSelect;
+export type OrderItemOption = typeof orderItemOptionsTable.$inferSelect;

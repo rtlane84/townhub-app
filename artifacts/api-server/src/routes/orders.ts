@@ -1,6 +1,14 @@
 import { Router, type IRouter } from "express";
-import { db, ordersTable, orderItemsTable, productsTable, businessesTable, usersTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import {
+  db,
+  ordersTable,
+  orderItemsTable,
+  orderItemOptionsTable,
+  productsTable,
+  businessesTable,
+  usersTable,
+} from "@workspace/db";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import {
   CreateOrderBody,
@@ -29,6 +37,11 @@ import { authorizeOrderStatusUpdate } from "../lib/order-access";
 import { authorizeOrderView } from "../lib/order-customer-access";
 import { validateGuestOrderContact } from "../lib/guest-checkout";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
+import {
+  loadOptionGroupsByProductIds,
+  validateOrderItemSelections,
+  type OrderOptionSnapshot,
+} from "../lib/product-options";
 
 const router: IRouter = Router();
 
@@ -41,6 +54,35 @@ function generateOrderNumber(): string {
   const date = now.toISOString().slice(0, 10).replace(/-/g, "");
   const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
   return `LOH-${date}-${rand}`;
+}
+
+async function loadOptionsByOrderItemIds(itemIds: number[]) {
+  const map = new Map<number, (typeof orderItemOptionsTable.$inferSelect)[]>();
+  if (itemIds.length === 0) return map;
+
+  const rows = await db
+    .select()
+    .from(orderItemOptionsTable)
+    .where(inArray(orderItemOptionsTable.orderItemId, itemIds));
+
+  for (const row of rows) {
+    const list = map.get(row.orderItemId) ?? [];
+    list.push(row);
+    map.set(row.orderItemId, list);
+  }
+  return map;
+}
+
+async function serializeOrderWithLoadedItems(
+  order: typeof ordersTable.$inferSelect,
+  businessName: string,
+) {
+  const items = await db
+    .select()
+    .from(orderItemsTable)
+    .where(eq(orderItemsTable.orderId, order.id));
+  const optionsByItemId = await loadOptionsByOrderItemIds(items.map((i) => i.id));
+  return serializeOrder(order, items, businessName, optionsByItemId);
 }
 
 async function getOrderWithItems(orderId: number) {
@@ -56,18 +98,21 @@ async function getOrderWithItems(orderId: number) {
     .from(orderItemsTable)
     .where(eq(orderItemsTable.orderId, orderId));
 
+  const optionsByItemId = await loadOptionsByOrderItemIds(items.map((i) => i.id));
+
   const [business] = await db
     .select()
     .from(businessesTable)
     .where(eq(businessesTable.id, order.businessId));
 
-  return serializeOrder(order, items, business?.name ?? "Unknown");
+  return serializeOrder(order, items, business?.name ?? "Unknown", optionsByItemId);
 }
 
 function serializeOrder(
   order: typeof ordersTable.$inferSelect,
   items: typeof orderItemsTable.$inferSelect[],
   businessName: string,
+  optionsByItemId: Map<number, (typeof orderItemOptionsTable.$inferSelect)[]> = new Map(),
 ) {
   return {
     id: order.id,
@@ -97,6 +142,13 @@ function serializeOrder(
       quantity: item.quantity,
       unitPrice: parseFloat(item.unitPrice),
       subtotal: parseFloat(item.subtotal),
+      options: (optionsByItemId.get(item.id) ?? []).map((o) => ({
+        id: o.id,
+        optionId: o.optionId,
+        groupName: o.groupName,
+        optionName: o.optionName,
+        priceAdjustment: parseFloat(o.priceAdjustment),
+      })),
     })),
     createdAt:
       order.createdAt instanceof Date
@@ -135,6 +187,7 @@ router.post("/orders", async (req, res): Promise<void> => {
     .where(eq(productsTable.businessId, d.businessId));
 
   const productMap = new Map(products.map((p) => [p.id, p]));
+  const optionGroupsByProduct = await loadOptionGroupsByProductIds(products.map((p) => p.id));
 
   let subtotal = 0;
   const orderItems: Array<{
@@ -143,6 +196,7 @@ router.post("/orders", async (req, res): Promise<void> => {
     quantity: number;
     unitPrice: number;
     subtotal: number;
+    options: OrderOptionSnapshot[];
   }> = [];
 
   for (const item of d.items) {
@@ -151,15 +205,25 @@ router.post("/orders", async (req, res): Promise<void> => {
       res.status(400).json({ error: `Product ${item.productId} not found` });
       return;
     }
-    const unitPrice = parseFloat(product.price);
-    const itemSubtotal = unitPrice * item.quantity;
-    subtotal += itemSubtotal;
+    const groups = optionGroupsByProduct.get(product.id) ?? [];
+    const priced = validateOrderItemSelections(
+      product,
+      groups,
+      item.quantity,
+      item.selectedOptionIds,
+    );
+    if (!priced.ok) {
+      res.status(400).json({ error: priced.error });
+      return;
+    }
+    subtotal += priced.subtotal;
     orderItems.push({
       productId: item.productId,
-      productName: product.name,
+      productName: priced.productName,
       quantity: item.quantity,
-      unitPrice,
-      subtotal: itemSubtotal,
+      unitPrice: priced.unitPrice,
+      subtotal: priced.subtotal,
+      options: priced.options,
     });
   }
 
@@ -215,16 +279,32 @@ router.post("/orders", async (req, res): Promise<void> => {
     })
     .returning();
 
-  await db.insert(orderItemsTable).values(
-    orderItems.map((item) => ({
-      orderId: order.id,
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unitPrice: String(item.unitPrice),
-      subtotal: String(item.subtotal),
+  const insertedItems = await db
+    .insert(orderItemsTable)
+    .values(
+      orderItems.map((item) => ({
+        orderId: order.id,
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: String(item.unitPrice),
+        subtotal: String(item.subtotal),
+      })),
+    )
+    .returning();
+
+  const optionRows = insertedItems.flatMap((inserted, index) =>
+    orderItems[index].options.map((opt) => ({
+      orderItemId: inserted.id,
+      optionId: opt.optionId,
+      groupName: opt.groupName,
+      optionName: opt.optionName,
+      priceAdjustment: String(opt.priceAdjustment),
     })),
   );
+  if (optionRows.length > 0) {
+    await db.insert(orderItemOptionsTable).values(optionRows);
+  }
 
   const result = await getOrderWithItems(order.id);
   res.status(201).json(result);
@@ -254,17 +334,12 @@ router.get("/me/orders", requireAuth, async (req, res): Promise<void> => {
 
   const ordersWithItems = await Promise.all(
     orders.map(async (order) => {
-      const items = await db
-        .select()
-        .from(orderItemsTable)
-        .where(eq(orderItemsTable.orderId, order.id));
-
       const [business] = await db
         .select()
         .from(businessesTable)
         .where(eq(businessesTable.id, order.businessId));
 
-      return serializeOrder(order, items, business?.name ?? "Unknown");
+      return serializeOrderWithLoadedItems(order, business?.name ?? "Unknown");
     }),
   );
 
@@ -439,13 +514,9 @@ router.get(
       .where(eq(businessesTable.id, params.data.businessId));
 
     const ordersWithItems = await Promise.all(
-      orders.map(async (order) => {
-        const items = await db
-          .select()
-          .from(orderItemsTable)
-          .where(eq(orderItemsTable.orderId, order.id));
-        return serializeOrder(order, items, business?.name ?? "Unknown");
-      }),
+      orders.map((order) =>
+        serializeOrderWithLoadedItems(order, business?.name ?? "Unknown"),
+      ),
     );
 
     res.set("Cache-Control", "no-store");
@@ -501,13 +572,9 @@ router.get(
 
     const recentRaw = allOrders.slice(0, 5);
     const recentOrders = await Promise.all(
-      recentRaw.map(async (order) => {
-        const items = await db
-          .select()
-          .from(orderItemsTable)
-          .where(eq(orderItemsTable.orderId, order.id));
-        return serializeOrder(order, items, business?.name ?? "Unknown");
-      }),
+      recentRaw.map((order) =>
+        serializeOrderWithLoadedItems(order, business?.name ?? "Unknown"),
+      ),
     );
 
     res.set("Cache-Control", "no-store");
@@ -544,13 +611,9 @@ router.get("/admin/orders", async (req, res): Promise<void> => {
   const bizMap = new Map(businesses.map((b) => [b.id, b.name]));
 
   const ordersWithItems = await Promise.all(
-    orders.map(async (order) => {
-      const items = await db
-        .select()
-        .from(orderItemsTable)
-        .where(eq(orderItemsTable.orderId, order.id));
-      return serializeOrder(order, items, bizMap.get(order.businessId) ?? "Unknown");
-    }),
+    orders.map((order) =>
+      serializeOrderWithLoadedItems(order, bizMap.get(order.businessId) ?? "Unknown"),
+    ),
   );
 
   res.json(ordersWithItems);

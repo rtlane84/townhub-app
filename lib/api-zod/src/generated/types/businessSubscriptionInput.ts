@@ -11,4 +11,6 @@ export interface BusinessSubscriptionInput {
   planId: number;
   status: BusinessSubscriptionStatus;
   trialEndsAt?: Date;
+  renewalAt?: Date;
+  notes?: string;
 }

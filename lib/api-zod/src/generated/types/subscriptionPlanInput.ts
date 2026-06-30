@@ -10,9 +10,14 @@ export interface SubscriptionPlanInput {
   name: string;
   description?: string;
   monthlyPrice: number;
+  yearlyPrice?: number;
   setupFee?: number;
   transactionFeePercent?: number;
   trialDays?: number;
   isActive?: boolean;
   isDefault?: boolean;
+  isPublic?: boolean;
+  isRecommended?: boolean;
+  isBeta?: boolean;
+  sortOrder?: number;
 }

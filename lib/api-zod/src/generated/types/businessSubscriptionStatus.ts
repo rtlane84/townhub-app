@@ -10,9 +10,10 @@ export type BusinessSubscriptionStatus = typeof BusinessSubscriptionStatus[keyof
 
 
 export const BusinessSubscriptionStatus = {
-  TRIALING: 'TRIALING',
+  BETA: 'BETA',
+  TRIAL: 'TRIAL',
   ACTIVE: 'ACTIVE',
   PAST_DUE: 'PAST_DUE',
   CANCELED: 'CANCELED',
-  PAUSED: 'PAUSED',
+  SUSPENDED: 'SUSPENDED',
 } as const;

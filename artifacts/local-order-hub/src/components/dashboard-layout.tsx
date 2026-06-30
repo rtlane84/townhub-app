@@ -1,10 +1,22 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal, ClipboardList, CalendarDays, Activity, ChefHat } from "lucide-react";
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  Tags,
+  Settings,
+  Store,
+  Menu,
+  CreditCard,
+  MapPin,
+  CalendarDays,
+  ChefHat,
+  Lock,
+  SlidersHorizontal,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { acceptsAppointmentRequests } from "@workspace/api-zod";
 import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
 import { useLiveAppointmentAlerts } from "@/hooks/use-live-appointment-alerts";
 import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
@@ -13,35 +25,84 @@ import { NewOrderAlertBanner } from "@/components/new-order-alert-banner";
 import { NewAppointmentAlertBanner } from "@/components/new-appointment-alert-banner";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { BusinessSwitcher } from "@/components/business-switcher";
+import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
+import {
+  BUSINESS_HUB_NAV_ITEMS,
+  resolveBusinessHubFeatureKey,
+} from "@/lib/business-hub-features";
+import { FeatureLockedPage } from "@/components/locked-feature-modal";
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-}
+const NAV_ICONS = {
+  "/dashboard/business": LayoutDashboard,
+  "/dashboard/business/orders": ShoppingBag,
+  "/dashboard/business/kitchen": ChefHat,
+  "/dashboard/business/appointments": CalendarDays,
+  "/dashboard/business/products": Store,
+  "/dashboard/business/product-options": SlidersHorizontal,
+  "/dashboard/business/categories": Tags,
+  "/dashboard/business/locations": MapPin,
+  "/dashboard/business/subscription": CreditCard,
+  "/dashboard/business/settings": Settings,
+} as const;
 
-function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location: string; onNavigate?: () => void }) {
+type NavIconHref = keyof typeof NAV_ICONS;
+
+function BusinessNavLinks({
+  location,
+  onNavigate,
+}: {
+  location: string;
+  onNavigate?: () => void;
+}) {
+  const { hasFeature, openLockedFeature } = useBusinessFeatureAccess();
+
   return (
     <>
-      {items.map((item) => {
+      {BUSINESS_HUB_NAV_ITEMS.map((item) => {
+        const Icon = NAV_ICONS[item.href as NavIconHref] ?? LayoutDashboard;
         const active =
           location === item.href ||
-          (item.href !== "/dashboard/business" &&
-            item.href !== "/dashboard/admin" &&
-            location.startsWith(item.href + "/"));
+          (item.href !== "/dashboard/business" && location.startsWith(item.href + "/"));
+        const locked = item.featureKey !== null && !hasFeature(item.featureKey);
+
+        const className = cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full text-left",
+          locked && "opacity-60 cursor-not-allowed",
+          !locked && "cursor-pointer",
+          active && !locked && "bg-primary text-primary-foreground",
+          !active && !locked && "text-muted-foreground hover:bg-muted hover:text-foreground",
+          active && locked && "bg-muted text-muted-foreground",
+        );
+
+        const content = (
+          <>
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{item.label}</span>
+            {locked && <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />}
+          </>
+        );
+
+        if (locked) {
+          return (
+            <button
+              key={item.href}
+              type="button"
+              className={className}
+              onClick={() => {
+                onNavigate?.();
+                if (item.featureKey) openLockedFeature(item.featureKey);
+              }}
+              aria-label={`${item.label} (locked)`}
+            >
+              {content}
+            </button>
+          );
+        }
+
         return (
           <Link key={item.href} href={item.href}>
-            <span
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-              )}
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {item.label}
+            <span onClick={onNavigate} className={className}>
+              {content}
             </span>
           </Link>
         );
@@ -63,31 +124,17 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   const [open, setOpen] = useState(false);
   const { selectedBusinessId, business } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? undefined;
+  const { hasFeature, getFeature, planName, isLoading } = useBusinessFeatureAccess();
 
   useLiveOrderAlerts(businessId);
-  useLiveAppointmentAlerts(businessId, acceptsAppointmentRequests(business ?? {}));
+  useLiveAppointmentAlerts(businessId, hasFeature("appointment_requests"));
 
-  const navItems: NavItem[] = useMemo(() => {
-    const items: NavItem[] = [
-      { href: "/dashboard/business", label: "Overview", icon: LayoutDashboard },
-      { href: "/dashboard/business/orders", label: "Orders", icon: ShoppingBag },
-      { href: "/dashboard/business/kitchen", label: "Kitchen", icon: ChefHat },
-    ];
-    if (acceptsAppointmentRequests(business ?? {})) {
-      items.push({ href: "/dashboard/business/appointments", label: "Appointments", icon: CalendarDays });
-    }
-    items.push(
-      { href: "/dashboard/business/products", label: "Products", icon: Store },
-      { href: "/dashboard/business/categories", label: "Categories", icon: Tags },
-      { href: "/dashboard/business/locations", label: "Locations", icon: MapPin },
-      { href: "/dashboard/business/billing", label: "Billing", icon: CreditCard },
-      { href: "/dashboard/business/settings", label: "Settings", icon: Settings },
-    );
-    return items;
-  }, [business?.type, business?.storefrontMode]);
+  const routeFeatureKey = useMemo(() => resolveBusinessHubFeatureKey(location), [location]);
+  const routeLocked =
+    !isLoading && routeFeatureKey !== null && !hasFeature(routeFeatureKey);
 
   const activeLabel =
-    navItems.find(
+    BUSINESS_HUB_NAV_ITEMS.find(
       (item) =>
         location === item.href ||
         (item.href !== "/dashboard/business" && location.startsWith(item.href + "/")),
@@ -95,13 +142,12 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] print:block print:min-h-0">
-      {/* Desktop sidebar */}
       <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0 print:hidden">
         <div className="p-6">
           <h2 className="font-serif font-bold text-lg mb-4">Business Hub</h2>
           <BusinessSwitcher />
           <nav className="space-y-1 mt-6">
-            <NavLinks items={navItems} location={location} />
+            <BusinessNavLinks location={location} />
           </nav>
           <div className="mt-8">
             <OrderAlertControls />
@@ -109,7 +155,6 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      {/* Mobile top bar with hamburger */}
       <div className="md:hidden fixed top-16 left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-background border-b shadow-sm print:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
@@ -125,7 +170,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
               <BusinessSwitcher compact />
             </div>
             <nav className="px-3 space-y-1">
-              <NavLinks items={navItems} location={location} onNavigate={() => setOpen(false)} />
+              <BusinessNavLinks location={location} onNavigate={() => setOpen(false)} />
             </nav>
             <div className="px-3 mt-6 pb-6">
               <OrderAlertControls compact />
@@ -140,71 +185,19 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
           <NewOrderAlertBanner />
           <NewAppointmentAlertBanner />
         </div>
-        {children}
+        {routeLocked && routeFeatureKey ? (
+          <FeatureLockedPage
+            featureKey={routeFeatureKey}
+            feature={getFeature(routeFeatureKey)}
+            planName={planName}
+          />
+        ) : (
+          children
+        )}
       </main>
     </div>
   );
 }
 
-export function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
-  const [open, setOpen] = useState(false);
-
-  const navItems: NavItem[] = [
-    { href: "/dashboard/admin", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/admin/applications", label: "Applications", icon: ClipboardList },
-    { href: "/dashboard/admin/businesses", label: "Businesses", icon: Store },
-    { href: "/dashboard/admin/orders", label: "Orders", icon: ShoppingBag },
-    { href: "/dashboard/admin/users", label: "Users", icon: Users },
-    { href: "/dashboard/admin/events", label: "Events", icon: Calendar },
-    { href: "/dashboard/admin/highlights", label: "Highlights", icon: Sparkles },
-    { href: "/dashboard/admin/plans", label: "Plans", icon: Layers },
-    { href: "/dashboard/admin/system-status", label: "System Status", icon: Activity },
-    { href: "/dashboard/admin/settings", label: "Settings", icon: SlidersHorizontal },
-  ];
-
-  const activeLabel =
-    navItems.find(
-      (item) =>
-        location === item.href ||
-        (item.href !== "/dashboard/admin" && location.startsWith(item.href + "/")),
-    )?.label ?? "Platform Admin";
-
-  return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
-      {/* Desktop sidebar */}
-      <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0">
-        <div className="p-6">
-          <h2 className="font-serif font-bold text-lg mb-6">Platform Admin</h2>
-          <nav className="space-y-1">
-            <NavLinks items={navItems} location={location} />
-          </nav>
-        </div>
-      </aside>
-
-      {/* Mobile top bar with hamburger */}
-      <div className="md:hidden fixed top-16 left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-background border-b shadow-sm">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <Menu className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
-            <SheetHeader className="p-6 pb-4">
-              <SheetTitle className="font-serif text-left">Platform Admin</SheetTitle>
-            </SheetHeader>
-            <nav className="px-3 space-y-1">
-              <NavLinks items={navItems} location={location} onNavigate={() => setOpen(false)} />
-            </nav>
-          </SheetContent>
-        </Sheet>
-        <span className="text-sm font-semibold">{activeLabel}</span>
-      </div>
-
-      <main className="flex-1 p-4 pt-20 md:pt-0 md:p-10">
-        {children}
-      </main>
-    </div>
-  );
-}
+// Admin layout unchanged below — re-export from same file
+export { AdminDashboardLayout } from "./admin-dashboard-layout";

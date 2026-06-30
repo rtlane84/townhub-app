@@ -26,6 +26,7 @@ import type {
   AppointmentRequestInput,
   AppointmentRequestStatusUpdate,
   Business,
+  BusinessFeatureAccess,
   BusinessInput,
   BusinessOrderSummary,
   BusinessOwnerAssignment,
@@ -57,21 +58,28 @@ import type {
   MarketplaceStats,
   MediaAsset,
   MediaUploadForm,
+  ModifierGroup,
+  ModifierGroupInput,
+  ModifierGroupUpdate,
   NotificationLog,
   Order,
   OrderInput,
   OrderStatusUpdate,
   OwnedBusinessSummary,
   OwnerAppointmentRequestInput,
+  PlanFeaturesInput,
   PlatformStats,
   PlatformTheme,
   PlatformThemeInput,
   Product,
   ProductInput,
   ProductUpdate,
+  PublicPricingPlan,
   StripeConnectStartInput,
   StripeConnectStartResult,
   StripeConnectStatus,
+  SubscriptionFeature,
+  SubscriptionFeatureInput,
   SubscriptionPlan,
   SubscriptionPlanInput,
   SystemHealthReport,
@@ -1608,6 +1616,301 @@ export const useDeleteCategory = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteCategoryMutationOptions(options));
+    }
+
+export const getListModifierGroupsUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/modifier-groups`
+}
+
+/**
+ * @summary List modifier groups for a business
+ */
+export const listModifierGroups = async (businessId: number, options?: RequestInit): Promise<ModifierGroup[]> => {
+
+  return customFetch<ModifierGroup[]>(getListModifierGroupsUrl(businessId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListModifierGroupsQueryKey = (businessId: number,) => {
+    return [
+    `/api/businesses/${businessId}/modifier-groups`
+    ] as const;
+    }
+
+
+export const getListModifierGroupsQueryOptions = <TData = Awaited<ReturnType<typeof listModifierGroups>>, TError = ErrorType<unknown>>(businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listModifierGroups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListModifierGroupsQueryKey(businessId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listModifierGroups>>> = ({ signal }) => listModifierGroups(businessId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(businessId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listModifierGroups>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListModifierGroupsQueryResult = NonNullable<Awaited<ReturnType<typeof listModifierGroups>>>
+export type ListModifierGroupsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List modifier groups for a business
+ */
+
+export function useListModifierGroups<TData = Awaited<ReturnType<typeof listModifierGroups>>, TError = ErrorType<unknown>>(
+ businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listModifierGroups>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListModifierGroupsQueryOptions(businessId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateModifierGroupUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/modifier-groups`
+}
+
+/**
+ * @summary Create a modifier group
+ */
+export const createModifierGroup = async (businessId: number,
+    modifierGroupInput: ModifierGroupInput, options?: RequestInit): Promise<ModifierGroup> => {
+
+  return customFetch<ModifierGroup>(getCreateModifierGroupUrl(businessId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      modifierGroupInput,)
+  }
+);}
+
+
+
+
+export const getCreateModifierGroupMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createModifierGroup>>, TError,{businessId: number;data: BodyType<ModifierGroupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createModifierGroup>>, TError,{businessId: number;data: BodyType<ModifierGroupInput>}, TContext> => {
+
+const mutationKey = ['createModifierGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createModifierGroup>>, {businessId: number;data: BodyType<ModifierGroupInput>}> = (props) => {
+          const {businessId,data} = props ?? {};
+
+          return  createModifierGroup(businessId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateModifierGroupMutationResult = NonNullable<Awaited<ReturnType<typeof createModifierGroup>>>
+    export type CreateModifierGroupMutationBody = BodyType<ModifierGroupInput>
+    export type CreateModifierGroupMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a modifier group
+ */
+export const useCreateModifierGroup = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createModifierGroup>>, TError,{businessId: number;data: BodyType<ModifierGroupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createModifierGroup>>,
+        TError,
+        {businessId: number;data: BodyType<ModifierGroupInput>},
+        TContext
+      > => {
+      return useMutation(getCreateModifierGroupMutationOptions(options));
+    }
+
+export const getUpdateModifierGroupUrl = (businessId: number,
+    id: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/modifier-groups/${id}`
+}
+
+/**
+ * @summary Update a modifier group
+ */
+export const updateModifierGroup = async (businessId: number,
+    id: number,
+    modifierGroupUpdate: ModifierGroupUpdate, options?: RequestInit): Promise<ModifierGroup> => {
+
+  return customFetch<ModifierGroup>(getUpdateModifierGroupUrl(businessId,id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      modifierGroupUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateModifierGroupMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateModifierGroup>>, TError,{businessId: number;id: number;data: BodyType<ModifierGroupUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateModifierGroup>>, TError,{businessId: number;id: number;data: BodyType<ModifierGroupUpdate>}, TContext> => {
+
+const mutationKey = ['updateModifierGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateModifierGroup>>, {businessId: number;id: number;data: BodyType<ModifierGroupUpdate>}> = (props) => {
+          const {businessId,id,data} = props ?? {};
+
+          return  updateModifierGroup(businessId,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateModifierGroupMutationResult = NonNullable<Awaited<ReturnType<typeof updateModifierGroup>>>
+    export type UpdateModifierGroupMutationBody = BodyType<ModifierGroupUpdate>
+    export type UpdateModifierGroupMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a modifier group
+ */
+export const useUpdateModifierGroup = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateModifierGroup>>, TError,{businessId: number;id: number;data: BodyType<ModifierGroupUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateModifierGroup>>,
+        TError,
+        {businessId: number;id: number;data: BodyType<ModifierGroupUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateModifierGroupMutationOptions(options));
+    }
+
+export const getDeleteModifierGroupUrl = (businessId: number,
+    id: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/modifier-groups/${id}`
+}
+
+/**
+ * @summary Delete a modifier group
+ */
+export const deleteModifierGroup = async (businessId: number,
+    id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteModifierGroupUrl(businessId,id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteModifierGroupMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteModifierGroup>>, TError,{businessId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteModifierGroup>>, TError,{businessId: number;id: number}, TContext> => {
+
+const mutationKey = ['deleteModifierGroup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteModifierGroup>>, {businessId: number;id: number}> = (props) => {
+          const {businessId,id} = props ?? {};
+
+          return  deleteModifierGroup(businessId,id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteModifierGroupMutationResult = NonNullable<Awaited<ReturnType<typeof deleteModifierGroup>>>
+
+    export type DeleteModifierGroupMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a modifier group
+ */
+export const useDeleteModifierGroup = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteModifierGroup>>, TError,{businessId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteModifierGroup>>,
+        TError,
+        {businessId: number;id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteModifierGroupMutationOptions(options));
     }
 
 export const getListProductsUrl = (businessId: number,) => {
@@ -4353,6 +4656,522 @@ export const useDeleteSubscriptionPlan = <TError = ErrorType<unknown>,
       return useMutation(getDeleteSubscriptionPlanMutationOptions(options));
     }
 
+export const getGetSubscriptionPlanFeaturesUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/subscription-plans/${id}/features`
+}
+
+/**
+ * @summary List features enabled for a plan (admin)
+ */
+export const getSubscriptionPlanFeatures = async (id: number, options?: RequestInit): Promise<SubscriptionFeature[]> => {
+
+  return customFetch<SubscriptionFeature[]>(getGetSubscriptionPlanFeaturesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSubscriptionPlanFeaturesQueryKey = (id: number,) => {
+    return [
+    `/api/admin/subscription-plans/${id}/features`
+    ] as const;
+    }
+
+
+export const getGetSubscriptionPlanFeaturesQueryOptions = <TData = Awaited<ReturnType<typeof getSubscriptionPlanFeatures>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSubscriptionPlanFeatures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSubscriptionPlanFeaturesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSubscriptionPlanFeatures>>> = ({ signal }) => getSubscriptionPlanFeatures(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSubscriptionPlanFeatures>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSubscriptionPlanFeaturesQueryResult = NonNullable<Awaited<ReturnType<typeof getSubscriptionPlanFeatures>>>
+export type GetSubscriptionPlanFeaturesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List features enabled for a plan (admin)
+ */
+
+export function useGetSubscriptionPlanFeatures<TData = Awaited<ReturnType<typeof getSubscriptionPlanFeatures>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSubscriptionPlanFeatures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSubscriptionPlanFeaturesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSetSubscriptionPlanFeaturesUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/subscription-plans/${id}/features`
+}
+
+/**
+ * @summary Assign features to a plan (admin)
+ */
+export const setSubscriptionPlanFeatures = async (id: number,
+    planFeaturesInput: PlanFeaturesInput, options?: RequestInit): Promise<SubscriptionFeature[]> => {
+
+  return customFetch<SubscriptionFeature[]>(getSetSubscriptionPlanFeaturesUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      planFeaturesInput,)
+  }
+);}
+
+
+
+
+export const getSetSubscriptionPlanFeaturesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setSubscriptionPlanFeatures>>, TError,{id: number;data: BodyType<PlanFeaturesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setSubscriptionPlanFeatures>>, TError,{id: number;data: BodyType<PlanFeaturesInput>}, TContext> => {
+
+const mutationKey = ['setSubscriptionPlanFeatures'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setSubscriptionPlanFeatures>>, {id: number;data: BodyType<PlanFeaturesInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  setSubscriptionPlanFeatures(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetSubscriptionPlanFeaturesMutationResult = NonNullable<Awaited<ReturnType<typeof setSubscriptionPlanFeatures>>>
+    export type SetSubscriptionPlanFeaturesMutationBody = BodyType<PlanFeaturesInput>
+    export type SetSubscriptionPlanFeaturesMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Assign features to a plan (admin)
+ */
+export const useSetSubscriptionPlanFeatures = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setSubscriptionPlanFeatures>>, TError,{id: number;data: BodyType<PlanFeaturesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setSubscriptionPlanFeatures>>,
+        TError,
+        {id: number;data: BodyType<PlanFeaturesInput>},
+        TContext
+      > => {
+      return useMutation(getSetSubscriptionPlanFeaturesMutationOptions(options));
+    }
+
+export const getListSubscriptionFeaturesUrl = () => {
+
+
+
+
+  return `/api/admin/subscription-features`
+}
+
+/**
+ * @summary List subscription features (admin)
+ */
+export const listSubscriptionFeatures = async ( options?: RequestInit): Promise<SubscriptionFeature[]> => {
+
+  return customFetch<SubscriptionFeature[]>(getListSubscriptionFeaturesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSubscriptionFeaturesQueryKey = () => {
+    return [
+    `/api/admin/subscription-features`
+    ] as const;
+    }
+
+
+export const getListSubscriptionFeaturesQueryOptions = <TData = Awaited<ReturnType<typeof listSubscriptionFeatures>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubscriptionFeatures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSubscriptionFeaturesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSubscriptionFeatures>>> = ({ signal }) => listSubscriptionFeatures({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSubscriptionFeatures>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSubscriptionFeaturesQueryResult = NonNullable<Awaited<ReturnType<typeof listSubscriptionFeatures>>>
+export type ListSubscriptionFeaturesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List subscription features (admin)
+ */
+
+export function useListSubscriptionFeatures<TData = Awaited<ReturnType<typeof listSubscriptionFeatures>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubscriptionFeatures>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSubscriptionFeaturesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateSubscriptionFeatureUrl = () => {
+
+
+
+
+  return `/api/admin/subscription-features`
+}
+
+/**
+ * @summary Create a subscription feature (admin)
+ */
+export const createSubscriptionFeature = async (subscriptionFeatureInput: SubscriptionFeatureInput, options?: RequestInit): Promise<SubscriptionFeature> => {
+
+  return customFetch<SubscriptionFeature>(getCreateSubscriptionFeatureUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subscriptionFeatureInput,)
+  }
+);}
+
+
+
+
+export const getCreateSubscriptionFeatureMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscriptionFeature>>, TError,{data: BodyType<SubscriptionFeatureInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSubscriptionFeature>>, TError,{data: BodyType<SubscriptionFeatureInput>}, TContext> => {
+
+const mutationKey = ['createSubscriptionFeature'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSubscriptionFeature>>, {data: BodyType<SubscriptionFeatureInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSubscriptionFeature(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSubscriptionFeatureMutationResult = NonNullable<Awaited<ReturnType<typeof createSubscriptionFeature>>>
+    export type CreateSubscriptionFeatureMutationBody = BodyType<SubscriptionFeatureInput>
+    export type CreateSubscriptionFeatureMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a subscription feature (admin)
+ */
+export const useCreateSubscriptionFeature = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscriptionFeature>>, TError,{data: BodyType<SubscriptionFeatureInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSubscriptionFeature>>,
+        TError,
+        {data: BodyType<SubscriptionFeatureInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSubscriptionFeatureMutationOptions(options));
+    }
+
+export const getUpdateSubscriptionFeatureUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/subscription-features/${id}`
+}
+
+/**
+ * @summary Update a subscription feature (admin)
+ */
+export const updateSubscriptionFeature = async (id: number,
+    subscriptionFeatureInput: SubscriptionFeatureInput, options?: RequestInit): Promise<SubscriptionFeature> => {
+
+  return customFetch<SubscriptionFeature>(getUpdateSubscriptionFeatureUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      subscriptionFeatureInput,)
+  }
+);}
+
+
+
+
+export const getUpdateSubscriptionFeatureMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubscriptionFeature>>, TError,{id: number;data: BodyType<SubscriptionFeatureInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSubscriptionFeature>>, TError,{id: number;data: BodyType<SubscriptionFeatureInput>}, TContext> => {
+
+const mutationKey = ['updateSubscriptionFeature'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSubscriptionFeature>>, {id: number;data: BodyType<SubscriptionFeatureInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateSubscriptionFeature(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSubscriptionFeatureMutationResult = NonNullable<Awaited<ReturnType<typeof updateSubscriptionFeature>>>
+    export type UpdateSubscriptionFeatureMutationBody = BodyType<SubscriptionFeatureInput>
+    export type UpdateSubscriptionFeatureMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a subscription feature (admin)
+ */
+export const useUpdateSubscriptionFeature = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubscriptionFeature>>, TError,{id: number;data: BodyType<SubscriptionFeatureInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateSubscriptionFeature>>,
+        TError,
+        {id: number;data: BodyType<SubscriptionFeatureInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateSubscriptionFeatureMutationOptions(options));
+    }
+
+export const getDeleteSubscriptionFeatureUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/subscription-features/${id}`
+}
+
+/**
+ * @summary Delete a subscription feature (admin)
+ */
+export const deleteSubscriptionFeature = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteSubscriptionFeatureUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteSubscriptionFeatureMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubscriptionFeature>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSubscriptionFeature>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteSubscriptionFeature'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSubscriptionFeature>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteSubscriptionFeature(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSubscriptionFeatureMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSubscriptionFeature>>>
+
+    export type DeleteSubscriptionFeatureMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a subscription feature (admin)
+ */
+export const useDeleteSubscriptionFeature = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubscriptionFeature>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSubscriptionFeature>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSubscriptionFeatureMutationOptions(options));
+    }
+
+export const getListPublicPricingPlansUrl = () => {
+
+
+
+
+  return `/api/pricing/plans`
+}
+
+/**
+ * @summary List public pricing plans for the marketing page
+ */
+export const listPublicPricingPlans = async ( options?: RequestInit): Promise<PublicPricingPlan[]> => {
+
+  return customFetch<PublicPricingPlan[]>(getListPublicPricingPlansUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPublicPricingPlansQueryKey = () => {
+    return [
+    `/api/pricing/plans`
+    ] as const;
+    }
+
+
+export const getListPublicPricingPlansQueryOptions = <TData = Awaited<ReturnType<typeof listPublicPricingPlans>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPublicPricingPlans>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPublicPricingPlansQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPublicPricingPlans>>> = ({ signal }) => listPublicPricingPlans({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPublicPricingPlans>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListPublicPricingPlansQueryResult = NonNullable<Awaited<ReturnType<typeof listPublicPricingPlans>>>
+export type ListPublicPricingPlansQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List public pricing plans for the marketing page
+ */
+
+export function useListPublicPricingPlans<TData = Awaited<ReturnType<typeof listPublicPricingPlans>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listPublicPricingPlans>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListPublicPricingPlansQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getGetBusinessSubscriptionUrl = (id: number,) => {
 
 
@@ -4567,6 +5386,83 @@ export function useGetMySubscription<TData = Awaited<ReturnType<typeof getMySubs
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMySubscriptionQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetBusinessFeatureAccessUrl = (id: number,) => {
+
+
+
+
+  return `/api/businesses/${id}/feature-access`
+}
+
+/**
+ * @summary Get subscription feature access for a business (owner UI)
+ */
+export const getBusinessFeatureAccess = async (id: number, options?: RequestInit): Promise<BusinessFeatureAccess> => {
+
+  return customFetch<BusinessFeatureAccess>(getGetBusinessFeatureAccessUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBusinessFeatureAccessQueryKey = (id: number,) => {
+    return [
+    `/api/businesses/${id}/feature-access`
+    ] as const;
+    }
+
+
+export const getGetBusinessFeatureAccessQueryOptions = <TData = Awaited<ReturnType<typeof getBusinessFeatureAccess>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBusinessFeatureAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBusinessFeatureAccessQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBusinessFeatureAccess>>> = ({ signal }) => getBusinessFeatureAccess(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBusinessFeatureAccess>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBusinessFeatureAccessQueryResult = NonNullable<Awaited<ReturnType<typeof getBusinessFeatureAccess>>>
+export type GetBusinessFeatureAccessQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get subscription feature access for a business (owner UI)
+ */
+
+export function useGetBusinessFeatureAccess<TData = Awaited<ReturnType<typeof getBusinessFeatureAccess>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBusinessFeatureAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBusinessFeatureAccessQueryOptions(id,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

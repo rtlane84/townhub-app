@@ -9,6 +9,8 @@ import { ShoppingBag, Clock, DollarSign, TrendingUp, Loader2 } from "lucide-reac
 import { OrderRow, orderStatusHighlightClass } from "@/components/order-row";
 import { useOrderHighlight } from "@/hooks/order-dashboard-refresh-context";
 import { cn } from "@/lib/utils";
+import { LockedFeatureSection } from "@/components/locked-feature-section";
+import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-700",
@@ -48,6 +50,8 @@ export default function BusinessOverview() {
   });
 
   const showInitialSkeleton = (selectionLoading && !businessId) || (summaryPending && !summary);
+  const { hasFeature, openLockedFeature } = useBusinessFeatureAccess();
+  const ordersLocked = !hasFeature("online_ordering");
 
   return (
     <BusinessDashboardLayout>
@@ -67,6 +71,7 @@ export default function BusinessOverview() {
           )}
         </div>
 
+        <LockedFeatureSection featureKey="online_ordering">
         {/* Stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {showInitialSkeleton ? (
@@ -127,9 +132,19 @@ export default function BusinessOverview() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-serif text-xl">Recent Orders</CardTitle>
-            <Link href="/dashboard/business/orders">
-              <span className="text-sm text-primary font-medium hover:underline cursor-pointer">View all</span>
-            </Link>
+            {ordersLocked ? (
+              <button
+                type="button"
+                className="text-sm text-muted-foreground font-medium cursor-not-allowed"
+                onClick={() => openLockedFeature("online_ordering")}
+              >
+                View all
+              </button>
+            ) : (
+              <Link href="/dashboard/business/orders">
+                <span className="text-sm text-primary font-medium hover:underline cursor-pointer">View all</span>
+              </Link>
+            )}
           </CardHeader>
           <CardContent>
             {showInitialSkeleton ? (
@@ -164,6 +179,7 @@ export default function BusinessOverview() {
             )}
           </CardContent>
         </Card>
+        </LockedFeatureSection>
       </div>
     </BusinessDashboardLayout>
   );

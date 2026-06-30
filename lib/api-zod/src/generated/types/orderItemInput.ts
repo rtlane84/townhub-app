@@ -10,4 +10,5 @@ export interface OrderItemInput {
   productId: number;
   /** @minimum 1 */
   quantity: number;
+  selectedOptionIds?: number[];
 }

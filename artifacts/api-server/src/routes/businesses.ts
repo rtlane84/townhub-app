@@ -23,6 +23,14 @@ import { nullsToUndefinedTopLevel } from "../lib/request-body";
 import { parseStructuredHours } from "@workspace/api-zod";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import { allowsOnlinePayment, resolvePaymentMode } from "@workspace/api-zod";
+import {
+  loadOptionGroupsByProductIds,
+  loadAssignedModifierGroupsByProductIds,
+  assignModifierGroupsToProduct,
+  clearProductModifierGroups,
+  type SerializedProductOptionGroup,
+  type AssignedModifierGroupSummary,
+} from "../lib/product-options";
 import { businessHasOnlinePaymentsReady } from "../lib/stripe-connect";
 import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
 import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
@@ -89,7 +97,11 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
   };
 }
 
-export function serializeProduct(p: typeof productsTable.$inferSelect) {
+export function serializeProduct(
+  p: typeof productsTable.$inferSelect,
+  optionGroups: SerializedProductOptionGroup[] = [],
+  assignedModifierGroups: AssignedModifierGroupSummary[] = [],
+) {
   return {
     id: p.id,
     businessId: p.businessId,
@@ -101,6 +113,9 @@ export function serializeProduct(p: typeof productsTable.$inferSelect) {
     available: p.available,
     featured: p.featured,
     prepTimeMinutes: p.prepTimeMinutes,
+    optionGroups,
+    assignedModifierGroups,
+    modifierGroupIds: assignedModifierGroups.map((g) => g.id),
   };
 }
 
@@ -299,10 +314,17 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
     )
     .orderBy(productsTable.featured, productsTable.name);
 
+  const optionGroupsByProduct = await loadOptionGroupsByProductIds(
+    products.map((p) => p.id),
+    { activeOnly: true },
+  );
+
   res.json({
     business: serializeBusiness(business),
     categories,
-    products: products.map(serializeProduct),
+    products: products.map((p) =>
+      serializeProduct(p, optionGroupsByProduct.get(p.id) ?? []),
+    ),
   });
 });
 

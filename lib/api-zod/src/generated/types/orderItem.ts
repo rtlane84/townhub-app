@@ -5,6 +5,7 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { OrderItemOption } from './orderItemOption';
 
 export interface OrderItem {
   id?: number;
@@ -14,4 +15,5 @@ export interface OrderItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  options?: OrderItemOption[];
 }

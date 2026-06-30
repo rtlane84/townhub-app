@@ -16,4 +16,5 @@ export interface ProductInput {
   available?: boolean;
   featured?: boolean;
   prepTimeMinutes?: number;
+  modifierGroupIds?: number[];
 }

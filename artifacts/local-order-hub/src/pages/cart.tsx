@@ -90,7 +90,11 @@ export default function Cart() {
           deliveryAddress: fulfillmentType === "DELIVERY" ? deliveryAddress : undefined,
           notes,
           paymentMethod: payAtPickup ? "IN_PERSON" : "STRIPE",
-          items: cart.items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+          items: cart.items.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            selectedOptionIds: item.selectedOptionIds.length ? item.selectedOptionIds : undefined,
+          })),
         },
       });
 
@@ -339,7 +343,7 @@ export default function Cart() {
             <CardContent className="p-0">
               <div className="divide-y divide-border/50 max-h-[40vh] overflow-y-auto">
                 {cart.items.map((item) => (
-                  <div key={item.id} className="p-4 flex gap-4">
+                  <div key={item.lineKey} className="p-4 flex gap-4">
                     {item.imageUrl ? (
                       <img src={item.imageUrl} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
                     ) : (
@@ -350,19 +354,24 @@ export default function Cart() {
                     <div className="flex-1">
                       <div className="flex justify-between">
                         <h4 className="font-medium text-sm">{item.name}</h4>
-                        <span className="font-medium text-sm">${(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium text-sm">${(item.unitPrice * item.quantity).toFixed(2)}</span>
                       </div>
+                      {item.selectedOptions.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {item.selectedOptions.map((o) => o.optionName).join(", ")}
+                        </p>
+                      )}
                       <div className="flex items-center gap-3 mt-3">
                         <div className="flex items-center border rounded-md">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-none" onClick={() => updateQuantity(item.id, item.quantity - 1)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-none" onClick={() => updateQuantity(item.lineKey, item.quantity - 1)}>
                             <Minus className="h-3 w-3" />
                           </Button>
                           <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-none" onClick={() => updateQuantity(item.id, item.quantity + 1)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-none" onClick={() => updateQuantity(item.lineKey, item.quantity + 1)}>
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => removeFromCart(item.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => removeFromCart(item.lineKey)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

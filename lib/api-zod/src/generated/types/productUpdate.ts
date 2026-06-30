@@ -15,4 +15,5 @@ export interface ProductUpdate {
   available?: boolean;
   featured?: boolean;
   prepTimeMinutes?: number;
+  modifierGroupIds?: number[];
 }

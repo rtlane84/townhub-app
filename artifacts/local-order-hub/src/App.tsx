@@ -30,10 +30,12 @@ import BusinessOrders from "@/pages/dashboard/business/orders";
 import BusinessKitchen from "@/pages/dashboard/business/kitchen";
 import BusinessOrderDetail from "@/pages/dashboard/business/order-detail";
 import BusinessProducts from "@/pages/dashboard/business/products";
+import BusinessProductOptions from "@/pages/dashboard/business/product-options";
 import BusinessCategories from "@/pages/dashboard/business/categories";
 import BusinessSettings from "@/pages/dashboard/business/settings";
 import BusinessAppointments from "@/pages/dashboard/business/appointments";
 import BusinessBilling from "@/pages/dashboard/business/billing";
+import BusinessSubscription from "@/pages/dashboard/business/subscription";
 import BusinessLocations from "@/pages/dashboard/business/locations";
 
 import AdminOverview from "@/pages/dashboard/admin/overview";
@@ -44,13 +46,16 @@ import AdminUsers from "@/pages/dashboard/admin/users";
 import AdminEvents from "@/pages/dashboard/admin/events";
 import AdminHighlights from "@/pages/dashboard/admin/highlights";
 import AdminPlans from "@/pages/dashboard/admin/plans";
+import AdminFeatures from "@/pages/dashboard/admin/features";
 import AdminSettings from "@/pages/dashboard/admin/settings";
 import AdminSystemStatus from "@/pages/dashboard/admin/system-status";
 
 import Setup from "@/pages/setup";
 import ListYourBusiness from "@/pages/list-your-business";
 import Help from "@/pages/help";
+import Pricing from "@/pages/pricing";
 import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
+import { BusinessFeatureAccessProvider } from "@/hooks/business-feature-access";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -138,7 +143,7 @@ function ClerkApiTokenBridge() {
   return null;
 }
 
-const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/sign-in", "/sign-up", "/setup", "/list-your-business"];
+const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/pricing", "/sign-in", "/sign-up", "/setup", "/list-your-business", "/help"];
 
 function PostSignInRedirector() {
   const { isSignedIn, isLoaded } = useUser();
@@ -193,7 +198,9 @@ function BusinessDashboardRoute({
         <>
           <Show when="signed-in">
             <SelectedBusinessProvider>
-              <Component params={params as Record<string, string>} />
+              <BusinessFeatureAccessProvider>
+                <Component params={params as Record<string, string>} />
+              </BusinessFeatureAccessProvider>
             </SelectedBusinessProvider>
           </Show>
           <Show when="signed-out">
@@ -266,15 +273,21 @@ function ClerkProviderWithRoutes() {
                 <Route path="/setup" component={Setup} />
                 <Route path="/list-your-business" component={ListYourBusiness} />
                 <Route path="/help" component={Help} />
+                <Route path="/pricing" component={Pricing} />
 
                 {/* Business owner dashboard */}
                 <BusinessDashboardRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />
                 <BusinessDashboardRoute path="/dashboard/business/orders" component={BusinessOrders} />
                 <BusinessDashboardRoute path="/dashboard/business/kitchen" component={BusinessKitchen} />
                 <BusinessDashboardRoute path="/dashboard/business/products" component={BusinessProducts} />
+                <BusinessDashboardRoute path="/dashboard/business/product-options" component={BusinessProductOptions} />
+                <Route path="/dashboard/business/modifier-groups">
+                  <Redirect to="/dashboard/business/product-options" />
+                </Route>
                 <BusinessDashboardRoute path="/dashboard/business/categories" component={BusinessCategories} />
                 <BusinessDashboardRoute path="/dashboard/business/locations" component={BusinessLocations} />
                 <BusinessDashboardRoute path="/dashboard/business/billing" component={BusinessBilling} />
+                <BusinessDashboardRoute path="/dashboard/business/subscription" component={BusinessSubscription} />
                 <BusinessDashboardRoute path="/dashboard/business/appointments" component={BusinessAppointments} />
                 <BusinessDashboardRoute path="/dashboard/business/settings" component={BusinessSettings} />
                 <BusinessDashboardRoute path="/dashboard/business" component={BusinessOverview} />
@@ -287,6 +300,7 @@ function ClerkProviderWithRoutes() {
                 <ProtectedRoute path="/dashboard/admin/events" component={AdminEvents} />
                 <ProtectedRoute path="/dashboard/admin/highlights" component={AdminHighlights} />
                 <ProtectedRoute path="/dashboard/admin/plans" component={AdminPlans} />
+                <ProtectedRoute path="/dashboard/admin/features" component={AdminFeatures} />
                 <ProtectedRoute path="/dashboard/admin/settings" component={AdminSettings} />
                 <ProtectedRoute path="/dashboard/admin/system-status" component={AdminSystemStatus} />
                 <ProtectedRoute path="/dashboard/admin" component={AdminOverview} />

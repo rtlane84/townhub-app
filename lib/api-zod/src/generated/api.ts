@@ -231,7 +231,14 @@ export const GetPlatformStatsResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
 })).optional()
@@ -390,7 +397,29 @@ export const GetBusinessBySlugResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "available": zod.boolean(),
   "featured": zod.boolean().optional(),
-  "prepTimeMinutes": zod.number().nullish()
+  "prepTimeMinutes": zod.number().nullish(),
+  "optionGroups": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "required": zod.boolean(),
+  "minSelections": zod.number(),
+  "maxSelections": zod.number(),
+  "sortOrder": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "priceAdjustment": zod.number(),
+  "available": zod.boolean(),
+  "sortOrder": zod.number()
+}))
+})).optional(),
+  "assignedModifierGroups": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number()
+})).optional(),
+  "modifierGroupIds": zod.array(zod.number()).optional()
 }))
 })
 
@@ -707,6 +736,120 @@ export const DeleteCategoryParams = zod.object({
 
 
 /**
+ * @summary List modifier groups for a business
+ */
+export const ListModifierGroupsParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const ListModifierGroupsResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "selectionType": zod.enum(['SINGLE', 'MULTIPLE']),
+  "required": zod.boolean(),
+  "maxSelections": zod.number().nullish(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number(),
+  "choices": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "priceAdjustment": zod.number(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number()
+}))
+})
+export const ListModifierGroupsResponse = zod.array(ListModifierGroupsResponseItem)
+
+
+/**
+ * @summary Create a modifier group
+ */
+export const CreateModifierGroupParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+
+
+
+
+
+export const CreateModifierGroupBody = zod.object({
+  "name": zod.string().min(1),
+  "description": zod.string().optional(),
+  "selectionType": zod.enum(['SINGLE', 'MULTIPLE']).optional(),
+  "required": zod.boolean().optional(),
+  "maxSelections": zod.number().min(1).optional(),
+  "active": zod.boolean().optional(),
+  "sortOrder": zod.number().optional(),
+  "choices": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "priceAdjustment": zod.number().optional(),
+  "active": zod.boolean().optional(),
+  "sortOrder": zod.number().optional()
+}))
+})
+
+
+/**
+ * @summary Update a modifier group
+ */
+export const UpdateModifierGroupParams = zod.object({
+  "businessId": zod.coerce.number(),
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const UpdateModifierGroupBody = zod.object({
+  "name": zod.string().optional(),
+  "description": zod.string().optional(),
+  "selectionType": zod.enum(['SINGLE', 'MULTIPLE']).optional(),
+  "required": zod.boolean().optional(),
+  "maxSelections": zod.number().min(1).optional(),
+  "active": zod.boolean().optional(),
+  "sortOrder": zod.number().optional(),
+  "choices": zod.array(zod.object({
+  "name": zod.string().min(1),
+  "priceAdjustment": zod.number().optional(),
+  "active": zod.boolean().optional(),
+  "sortOrder": zod.number().optional()
+})).optional()
+})
+
+export const UpdateModifierGroupResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "selectionType": zod.enum(['SINGLE', 'MULTIPLE']),
+  "required": zod.boolean(),
+  "maxSelections": zod.number().nullish(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number(),
+  "choices": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "priceAdjustment": zod.number(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number()
+}))
+})
+
+
+/**
+ * @summary Delete a modifier group
+ */
+export const DeleteModifierGroupParams = zod.object({
+  "businessId": zod.coerce.number(),
+  "id": zod.coerce.number()
+})
+
+
+/**
  * @summary List products for a business
  */
 export const ListProductsParams = zod.object({
@@ -723,7 +866,29 @@ export const ListProductsResponseItem = zod.object({
   "imageUrl": zod.string().nullish(),
   "available": zod.boolean(),
   "featured": zod.boolean().optional(),
-  "prepTimeMinutes": zod.number().nullish()
+  "prepTimeMinutes": zod.number().nullish(),
+  "optionGroups": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "required": zod.boolean(),
+  "minSelections": zod.number(),
+  "maxSelections": zod.number(),
+  "sortOrder": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "priceAdjustment": zod.number(),
+  "available": zod.boolean(),
+  "sortOrder": zod.number()
+}))
+})).optional(),
+  "assignedModifierGroups": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number()
+})).optional(),
+  "modifierGroupIds": zod.array(zod.number()).optional()
 })
 export const ListProductsResponse = zod.array(ListProductsResponseItem)
 
@@ -746,7 +911,8 @@ export const CreateProductBody = zod.object({
   "imageUrl": zod.string().optional(),
   "available": zod.boolean().optional(),
   "featured": zod.boolean().optional(),
-  "prepTimeMinutes": zod.number().optional()
+  "prepTimeMinutes": zod.number().optional(),
+  "modifierGroupIds": zod.array(zod.number()).optional()
 })
 
 
@@ -766,7 +932,8 @@ export const UpdateProductBody = zod.object({
   "imageUrl": zod.string().optional(),
   "available": zod.boolean().optional(),
   "featured": zod.boolean().optional(),
-  "prepTimeMinutes": zod.number().optional()
+  "prepTimeMinutes": zod.number().optional(),
+  "modifierGroupIds": zod.array(zod.number()).optional()
 })
 
 export const UpdateProductResponse = zod.object({
@@ -779,7 +946,29 @@ export const UpdateProductResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "available": zod.boolean(),
   "featured": zod.boolean().optional(),
-  "prepTimeMinutes": zod.number().nullish()
+  "prepTimeMinutes": zod.number().nullish(),
+  "optionGroups": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "required": zod.boolean(),
+  "minSelections": zod.number(),
+  "maxSelections": zod.number(),
+  "sortOrder": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "priceAdjustment": zod.number(),
+  "available": zod.boolean(),
+  "sortOrder": zod.number()
+}))
+})).optional(),
+  "assignedModifierGroups": zod.array(zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number()
+})).optional(),
+  "modifierGroupIds": zod.array(zod.number()).optional()
 })
 
 
@@ -815,7 +1004,8 @@ export const CreateOrderBody = zod.object({
   "paymentMethod": zod.string().optional(),
   "items": zod.array(zod.object({
   "productId": zod.number(),
-  "quantity": zod.number().min(1)
+  "quantity": zod.number().min(1),
+  "selectedOptionIds": zod.array(zod.number()).optional()
 }))
 })
 
@@ -850,7 +1040,14 @@ export const ListMyOrdersResponseItem = zod.object({
   "productName": zod.string(),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -891,7 +1088,14 @@ export const GetOrderResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -935,7 +1139,14 @@ export const UpdateOrderStatusResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -975,7 +1186,14 @@ export const ListBusinessOrdersResponseItem = zod.object({
   "productName": zod.string(),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -1021,7 +1239,14 @@ export const GetBusinessOrderSummaryResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
 }))
@@ -1064,7 +1289,14 @@ export const ListAllOrdersResponseItem = zod.object({
   "productName": zod.string(),
   "quantity": zod.number(),
   "unitPrice": zod.number(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
 })
@@ -1583,11 +1815,25 @@ export const ListSubscriptionPlansResponseItem = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
   "setupFee": zod.number().nullish(),
   "transactionFeePercent": zod.number().nullish(),
   "trialDays": zod.number(),
   "isActive": zod.boolean(),
   "isDefault": zod.boolean(),
+  "isPublic": zod.boolean(),
+  "isRecommended": zod.boolean(),
+  "isBeta": zod.boolean(),
+  "sortOrder": zod.number(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
   "createdAt": zod.coerce.date().optional()
 })
 export const ListSubscriptionPlansResponse = zod.array(ListSubscriptionPlansResponseItem)
@@ -1600,11 +1846,16 @@ export const CreateSubscriptionPlanBody = zod.object({
   "name": zod.string(),
   "description": zod.string().optional(),
   "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().optional(),
   "setupFee": zod.number().optional(),
   "transactionFeePercent": zod.number().optional(),
   "trialDays": zod.number().optional(),
   "isActive": zod.boolean().optional(),
-  "isDefault": zod.boolean().optional()
+  "isDefault": zod.boolean().optional(),
+  "isPublic": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "isBeta": zod.boolean().optional(),
+  "sortOrder": zod.number().optional()
 })
 
 
@@ -1619,11 +1870,16 @@ export const UpdateSubscriptionPlanBody = zod.object({
   "name": zod.string(),
   "description": zod.string().optional(),
   "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().optional(),
   "setupFee": zod.number().optional(),
   "transactionFeePercent": zod.number().optional(),
   "trialDays": zod.number().optional(),
   "isActive": zod.boolean().optional(),
-  "isDefault": zod.boolean().optional()
+  "isDefault": zod.boolean().optional(),
+  "isPublic": zod.boolean().optional(),
+  "isRecommended": zod.boolean().optional(),
+  "isBeta": zod.boolean().optional(),
+  "sortOrder": zod.number().optional()
 })
 
 export const UpdateSubscriptionPlanResponse = zod.object({
@@ -1631,11 +1887,25 @@ export const UpdateSubscriptionPlanResponse = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
   "setupFee": zod.number().nullish(),
   "transactionFeePercent": zod.number().nullish(),
   "trialDays": zod.number(),
   "isActive": zod.boolean(),
   "isDefault": zod.boolean(),
+  "isPublic": zod.boolean(),
+  "isRecommended": zod.boolean(),
+  "isBeta": zod.boolean(),
+  "sortOrder": zod.number(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -1649,6 +1919,139 @@ export const DeleteSubscriptionPlanParams = zod.object({
 
 
 /**
+ * @summary List features enabled for a plan (admin)
+ */
+export const GetSubscriptionPlanFeaturesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetSubscriptionPlanFeaturesResponseItem = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})
+export const GetSubscriptionPlanFeaturesResponse = zod.array(GetSubscriptionPlanFeaturesResponseItem)
+
+
+/**
+ * @summary Assign features to a plan (admin)
+ */
+export const SetSubscriptionPlanFeaturesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SetSubscriptionPlanFeaturesBody = zod.object({
+  "featureIds": zod.array(zod.number())
+})
+
+export const SetSubscriptionPlanFeaturesResponseItem = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})
+export const SetSubscriptionPlanFeaturesResponse = zod.array(SetSubscriptionPlanFeaturesResponseItem)
+
+
+/**
+ * @summary List subscription features (admin)
+ */
+export const ListSubscriptionFeaturesResponseItem = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})
+export const ListSubscriptionFeaturesResponse = zod.array(ListSubscriptionFeaturesResponseItem)
+
+
+/**
+ * @summary Create a subscription feature (admin)
+ */
+export const CreateSubscriptionFeatureBody = zod.object({
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "category": zod.string().optional(),
+  "sortOrder": zod.number().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update a subscription feature (admin)
+ */
+export const UpdateSubscriptionFeatureParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateSubscriptionFeatureBody = zod.object({
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "category": zod.string().optional(),
+  "sortOrder": zod.number().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateSubscriptionFeatureResponse = zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary Delete a subscription feature (admin)
+ */
+export const DeleteSubscriptionFeatureParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List public pricing plans for the marketing page
+ */
+export const ListPublicPricingPlansResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isActive": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "isPublic": zod.boolean(),
+  "isRecommended": zod.boolean(),
+  "isBeta": zod.boolean(),
+  "sortOrder": zod.number(),
+  "features": zod.array(zod.object({
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish()
+})),
+  "createdAt": zod.coerce.date().optional()
+})
+export const ListPublicPricingPlansResponse = zod.array(ListPublicPricingPlansResponseItem)
+
+
+/**
  * @summary Get subscription for a business (admin)
  */
 export const GetBusinessSubscriptionParams = zod.object({
@@ -1659,23 +2062,49 @@ export const GetBusinessSubscriptionResponse = zod.object({
   "id": zod.number(),
   "businessId": zod.number(),
   "planId": zod.number(),
-  "status": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED']),
+  "startedAt": zod.coerce.date().nullish(),
+  "renewalAt": zod.coerce.date().nullish(),
   "trialEndsAt": zod.coerce.date().nullish(),
   "currentPeriodStart": zod.coerce.date().nullish(),
   "currentPeriodEnd": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
   "stripeSubscriptionId": zod.string().nullish(),
   "plan": zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "description": zod.string().nullish(),
   "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
   "setupFee": zod.number().nullish(),
   "transactionFeePercent": zod.number().nullish(),
   "trialDays": zod.number(),
   "isActive": zod.boolean(),
   "isDefault": zod.boolean(),
+  "isPublic": zod.boolean(),
+  "isRecommended": zod.boolean(),
+  "isBeta": zod.boolean(),
+  "sortOrder": zod.number(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
   "createdAt": zod.coerce.date().optional()
 }).optional(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -1689,31 +2118,59 @@ export const UpsertBusinessSubscriptionParams = zod.object({
 
 export const UpsertBusinessSubscriptionBody = zod.object({
   "planId": zod.number(),
-  "status": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']),
-  "trialEndsAt": zod.coerce.date().optional()
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED']),
+  "trialEndsAt": zod.coerce.date().optional(),
+  "renewalAt": zod.coerce.date().optional(),
+  "notes": zod.string().optional()
 })
 
 export const UpsertBusinessSubscriptionResponse = zod.object({
   "id": zod.number(),
   "businessId": zod.number(),
   "planId": zod.number(),
-  "status": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED']),
+  "startedAt": zod.coerce.date().nullish(),
+  "renewalAt": zod.coerce.date().nullish(),
   "trialEndsAt": zod.coerce.date().nullish(),
   "currentPeriodStart": zod.coerce.date().nullish(),
   "currentPeriodEnd": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
   "stripeSubscriptionId": zod.string().nullish(),
   "plan": zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "description": zod.string().nullish(),
   "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
   "setupFee": zod.number().nullish(),
   "transactionFeePercent": zod.number().nullish(),
   "trialDays": zod.number(),
   "isActive": zod.boolean(),
   "isDefault": zod.boolean(),
+  "isPublic": zod.boolean(),
+  "isRecommended": zod.boolean(),
+  "isBeta": zod.boolean(),
+  "sortOrder": zod.number(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
   "createdAt": zod.coerce.date().optional()
 }).optional(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -1729,24 +2186,69 @@ export const GetMySubscriptionResponse = zod.object({
   "id": zod.number(),
   "businessId": zod.number(),
   "planId": zod.number(),
-  "status": zod.enum(['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'PAUSED']),
+  "status": zod.enum(['BETA', 'TRIAL', 'ACTIVE', 'PAST_DUE', 'CANCELED', 'SUSPENDED']),
+  "startedAt": zod.coerce.date().nullish(),
+  "renewalAt": zod.coerce.date().nullish(),
   "trialEndsAt": zod.coerce.date().nullish(),
   "currentPeriodStart": zod.coerce.date().nullish(),
   "currentPeriodEnd": zod.coerce.date().nullish(),
+  "notes": zod.string().nullish(),
   "stripeSubscriptionId": zod.string().nullish(),
   "plan": zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "description": zod.string().nullish(),
   "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
   "setupFee": zod.number().nullish(),
   "transactionFeePercent": zod.number().nullish(),
   "trialDays": zod.number(),
   "isActive": zod.boolean(),
   "isDefault": zod.boolean(),
+  "isPublic": zod.boolean(),
+  "isRecommended": zod.boolean(),
+  "isBeta": zod.boolean(),
+  "sortOrder": zod.number(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
   "createdAt": zod.coerce.date().optional()
 }).optional(),
+  "features": zod.array(zod.object({
+  "id": zod.number(),
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "category": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "isActive": zod.boolean()
+})).optional(),
   "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Get subscription feature access for a business (owner UI)
+ */
+export const GetBusinessFeatureAccessParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetBusinessFeatureAccessResponse = zod.object({
+  "bypassRestrictions": zod.boolean(),
+  "planName": zod.string().nullable(),
+  "features": zod.array(zod.object({
+  "key": zod.string(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "enabled": zod.boolean()
+}))
 })
 
 
