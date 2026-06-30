@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { resolveImageSrc } from "@/lib/media-upload";
+import { IMAGE_SURFACE_GUIDANCE, type ImageSurface } from "@/lib/media-image-guidance";
 import { cn } from "@/lib/utils";
 import { ImageIcon } from "lucide-react";
 
@@ -21,9 +22,11 @@ interface MediaLibraryPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (asset: MediaAsset) => void;
+  /** When set, shows recommended dimensions for the image surface being edited. */
+  surface?: ImageSurface;
 }
 
-export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibraryPickerProps) {
+export function MediaLibraryPicker({ open, onOpenChange, onSelect, surface }: MediaLibraryPickerProps) {
   const { data: assets, isLoading, isError } = useListMediaAssets(undefined, {
     query: {
       enabled: open,
@@ -48,7 +51,19 @@ export function MediaLibraryPicker({ open, onOpenChange, onSelect }: MediaLibrar
           <DialogTitle className="font-serif">Choose from library</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground -mt-2">
-          Select a previously uploaded image. Upload new images from the form first if your library is empty.
+          Select a previously uploaded image.
+          {surface ? (
+            <>
+              {" "}
+              Best for {IMAGE_SURFACE_GUIDANCE[surface].label.toLowerCase()}:{" "}
+              <span className="font-medium text-foreground/80">
+                {IMAGE_SURFACE_GUIDANCE[surface].recommendedSize}
+              </span>
+              .
+            </>
+          ) : (
+            " Upload new images from the form first if your library is empty."
+          )}
         </p>
         {isLoading ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 py-2">

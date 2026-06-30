@@ -16,6 +16,7 @@ import {
 import { MediaLibraryPicker } from "@/components/media-library-picker";
 import {
   ACCEPTED_IMAGE_TYPES,
+  formatImageSurfaceGuidance,
   IMAGE_SURFACE_GUIDANCE,
   type ImageSurface,
 } from "@/lib/media-image-guidance";
@@ -46,6 +47,7 @@ export function ImageField({
   disabled = false,
 }: ImageFieldProps) {
   const guidance = IMAGE_SURFACE_GUIDANCE[surface];
+  const { recommendedLine, fileLine } = formatImageSurfaceGuidance(surface);
   const inputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewObjectUrlRef = useRef<string | null>(null);
@@ -125,9 +127,11 @@ export function ImageField({
         <label htmlFor={inputId} className="text-sm font-medium block">
           {fieldLabel}
         </label>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Recommended: {guidance.recommendedSize}
-          {guidance.hint ? ` · ${guidance.hint}` : ""}
+        <p className="text-xs text-muted-foreground mt-0.5" data-testid={testId ? `${testId}-guidance-recommended` : "image-guidance-recommended"}>
+          {recommendedLine}
+        </p>
+        <p className="text-xs text-muted-foreground" data-testid={testId ? `${testId}-guidance-file` : "image-guidance-file"}>
+          {fileLine}
         </p>
       </div>
 
@@ -145,9 +149,10 @@ export function ImageField({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center text-muted-foreground py-8">
+          <div className="flex flex-col items-center justify-center text-muted-foreground py-8 px-4 text-center">
             <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
             <p className="text-xs">No image selected</p>
+            <p className="text-[11px] mt-1 opacity-80">{guidance.recommendedSize}</p>
           </div>
         )}
         {isUploading && (
@@ -237,6 +242,7 @@ export function ImageField({
         open={libraryOpen}
         onOpenChange={setLibraryOpen}
         onSelect={handleLibrarySelect}
+        surface={surface}
       />
     </div>
   );

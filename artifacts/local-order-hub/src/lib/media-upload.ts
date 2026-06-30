@@ -1,3 +1,10 @@
+import {
+  ACCEPTED_IMAGE_FORMATS_LABEL,
+  isAcceptedImageMimeType,
+  MAX_IMAGE_BYTES,
+  MAX_IMAGE_SIZE_LABEL,
+} from "./media-image-guidance.ts";
+
 /** Resolve image src for preview/display (hosted uploads and external URLs). */
 export function resolveImageSrc(url: string | null | undefined): string | undefined {
   const trimmed = url?.trim();
@@ -10,11 +17,11 @@ export function readFileAsObjectUrl(file: File): string {
 }
 
 export function validateImageFile(file: File): string | null {
-  if (!file.type.startsWith("image/")) {
-    return "Please choose an image file (JPEG, PNG, WebP, or GIF).";
+  if (!isAcceptedImageMimeType(file.type)) {
+    return `Please choose an image file (${ACCEPTED_IMAGE_FORMATS_LABEL}).`;
   }
-  if (file.size > 5 * 1024 * 1024) {
-    return "Image must be 5 MB or smaller.";
+  if (file.size > MAX_IMAGE_BYTES) {
+    return `Image must be ${MAX_IMAGE_SIZE_LABEL} or smaller.`;
   }
   return null;
 }

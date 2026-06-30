@@ -59,5 +59,39 @@ export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> 
   },
 };
 
-export const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/gif";
+/** Surfaces that ship with ImageField guidance for launch. */
+export const LAUNCH_IMAGE_SURFACES = Object.keys(IMAGE_SURFACE_GUIDANCE) as ImageSurface[];
+
+export const ACCEPTED_IMAGE_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+] as const;
+
+export const ACCEPTED_IMAGE_TYPES = ACCEPTED_IMAGE_MIME_TYPES.join(",");
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_SIZE_LABEL = "5 MB";
+export const ACCEPTED_IMAGE_FORMATS_LABEL = "JPEG, PNG, WebP, or GIF";
+
+/** One-line file-type and size limits shown under every image field. */
+export const IMAGE_FILE_GUIDANCE = `${ACCEPTED_IMAGE_FORMATS_LABEL} · max ${MAX_IMAGE_SIZE_LABEL}`;
+
+export function formatImageSurfaceGuidance(surface: ImageSurface): {
+  recommendedLine: string;
+  fileLine: string;
+} {
+  const guidance = IMAGE_SURFACE_GUIDANCE[surface];
+  const recommendedLine = guidance.hint
+    ? `Recommended: ${guidance.recommendedSize} · ${guidance.hint}`
+    : `Recommended: ${guidance.recommendedSize}`;
+
+  return {
+    recommendedLine,
+    fileLine: IMAGE_FILE_GUIDANCE,
+  };
+}
+
+export function isAcceptedImageMimeType(mimeType: string): boolean {
+  return (ACCEPTED_IMAGE_MIME_TYPES as readonly string[]).includes(mimeType);
+}
