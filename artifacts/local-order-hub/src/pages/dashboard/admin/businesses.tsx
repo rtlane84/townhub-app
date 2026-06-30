@@ -15,6 +15,7 @@ import { planAssignmentLabel } from "@/lib/subscription-plans";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -74,6 +75,7 @@ export default function AdminBusinesses() {
 
   const { getToken } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [subDialogOpen, setSubDialogOpen] = useState(false);
   const [subBusinessId, setSubBusinessId] = useState<number | null>(null);
@@ -106,6 +108,8 @@ export default function AdminBusinesses() {
 
   const deleteBusiness = useDeleteBusiness({
     mutation: {
+      onMutate: (vars) => { setDeletingId(vars.id); },
+      onSettled: () => { setDeletingId(null); },
       onSuccess: () => { invalidate(); toast({ title: "Business deleted" }); },
       onError: () => toast({ title: "Failed to delete business", variant: "destructive" }),
     },
@@ -249,15 +253,17 @@ export default function AdminBusinesses() {
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(biz)} data-testid={`button-edit-business-${biz.id}`}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
+                      <LoadingButton
                         variant="ghost" size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => deleteBusiness.mutate({ id: biz.id })}
+                        loading={deletingId === biz.id}
                         disabled={deleteBusiness.isPending}
+                        aria-label="Delete business"
                         data-testid={`button-delete-business-${biz.id}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </LoadingButton>
                     </div>
                   </div>
                 ))}
@@ -345,9 +351,9 @@ export default function AdminBusinesses() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isPending || !form.name.trim() || !form.slug.trim()} data-testid="button-save-business">
-              {isPending ? "Saving..." : editingId ? "Save" : "Create"}
-            </Button>
+            <LoadingButton onClick={handleSubmit} disabled={!form.name.trim() || !form.slug.trim()} loading={isPending} loadingText="Saving…" data-testid="button-save-business">
+              {editingId ? "Save" : "Create"}
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -378,9 +384,9 @@ export default function AdminBusinesses() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSubDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSavePlan} disabled={!subPlanId || subSaving}>
-              {subSaving ? "Saving…" : "Assign Plan"}
-            </Button>
+            <LoadingButton onClick={() => void handleSavePlan()} disabled={!subPlanId} loading={subSaving} loadingText="Saving…">
+              Assign Plan
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -407,13 +413,15 @@ export default function AdminBusinesses() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>Cancel</Button>
-            <Button
-              disabled={!assignOwnerId || assignOwner.isPending}
+            <LoadingButton
+              disabled={!assignOwnerId}
+              loading={assignOwner.isPending}
+              loadingText="Assigning…"
               onClick={() => assignBusinessId && assignOwner.mutate({ id: assignBusinessId, data: { ownerId: assignOwnerId } })}
               data-testid="button-confirm-assign-owner"
             >
-              {assignOwner.isPending ? "Assigning..." : "Assign"}
-            </Button>
+              Assign
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,16 +1,18 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/components/cart-context";
 import { useGetBusinessCheckout, useCreateOrder, useCreateCheckoutSession } from "@workspace/api-client-react";
 import { FulfillmentType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Loader2, Info } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Info } from "lucide-react";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@workspace/api-zod";
@@ -68,33 +70,68 @@ export default function Cart() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [checkoutTarget, setCheckoutTarget] = useState<"card" | "pickup" | null>(null);
 
   const createOrder = useCreateOrder();
   const createCheckoutSession = useCreateCheckoutSession();
 
-  if (!cart.businessId || cart.items.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-20 max-w-lg text-center">
-        <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-          <ShoppingBag className="h-10 w-10 text-muted-foreground opacity-50" />
-        </div>
-        <h2 className="text-3xl font-serif font-bold mb-4">Your cart is empty</h2>
-        <p className="text-muted-foreground mb-8">Looks like you haven't added anything to your cart yet.</p>
-        <Link href="/businesses">
-          <Button size="lg" className="rounded-full px-8">Start Shopping</Button>
-        </Link>
-      </div>
-    );
-  }
-
-  const deliveryFee = fulfillmentType === "DELIVERY" ? (business?.deliveryFee || 0) : 0;
-  const finalTotal = total + deliveryFee;
-
   const meetsDeliveryMinimum =
     !minimumOrderForDelivery || total >= minimumOrderForDelivery;
 
-  const handleCheckout = async (payAtPickup: boolean) => {
+  const performCheckout = useCallback(
+    async (payAtPickup: boolean) => {
+      const order = await createOrder.mutateAsync({
+        data: {
+          businessId: cart.businessId!,
+          fulfillmentType,
+          customerName: customerName.trim(),
+          customerEmail: customerEmail.trim(),
+          customerPhone: customerPhone.trim(),
+          deliveryAddress: fulfillmentType === "DELIVERY" ? deliveryAddress : undefined,
+          notes,
+          paymentMethod: payAtPickup ? "IN_PERSON" : "STRIPE",
+          items: cart.items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+        },
+      });
+
+      if (payAtPickup) {
+        clearCart();
+        setLocation(user ? `/my-orders/${order.id}` : `/order/${order.id}`);
+        toast({ title: "Order placed successfully!" });
+        return;
+      }
+
+      const session = await createCheckoutSession.mutateAsync({ data: { orderId: order.id } });
+      if (session.url) {
+        window.location.href = session.url;
+        return;
+      }
+
+      clearCart();
+      setLocation(user ? `/my-orders/${order.id}` : `/order/${order.id}`);
+      toast({ title: "Order placed successfully!" });
+    },
+    [
+      cart.businessId,
+      cart.items,
+      clearCart,
+      createCheckoutSession,
+      createOrder,
+      customerEmail,
+      customerName,
+      customerPhone,
+      deliveryAddress,
+      fulfillmentType,
+      notes,
+      setLocation,
+      toast,
+      user,
+    ],
+  );
+
+  const { run: runCheckout, pending: isSubmitting } = useAsyncAction(performCheckout);
+
+  const handleCheckout = (payAtPickup: boolean) => {
     if (!customerName.trim()) {
       toast({ title: "Missing details", description: "Please provide your name.", variant: "destructive" });
       return;
@@ -116,42 +153,30 @@ export default function Cart() {
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const order = await createOrder.mutateAsync({
-        data: {
-          businessId: cart.businessId!,
-          fulfillmentType,
-          customerName: customerName.trim(),
-          customerEmail: customerEmail.trim(),
-          customerPhone: customerPhone.trim(),
-          deliveryAddress: fulfillmentType === "DELIVERY" ? deliveryAddress : undefined,
-          notes,
-          paymentMethod: payAtPickup ? "IN_PERSON" : "STRIPE",
-          items: cart.items.map((item) => ({ productId: item.id, quantity: item.quantity })),
-        },
-      });
-
-      if (payAtPickup) {
-        clearCart();
-        setLocation(user ? `/my-orders/${order.id}` : `/order/${order.id}`);
-        toast({ title: "Order placed successfully!" });
-      } else {
-        const session = await createCheckoutSession.mutateAsync({ data: { orderId: order.id } });
-        if (session.url) {
-          window.location.href = session.url;
-        } else {
-          clearCart();
-          setLocation(user ? `/my-orders/${order.id}` : `/order/${order.id}`);
-          toast({ title: "Order placed successfully!" });
-        }
-      }
-    } catch {
+    setCheckoutTarget(payAtPickup ? "pickup" : "card");
+    void runCheckout(payAtPickup).catch(() => {
       toast({ title: "Error", description: "Failed to place order. Please try again.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
+      setCheckoutTarget(null);
+    });
   };
+
+  if (!cart.businessId || cart.items.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-20 max-w-lg text-center">
+        <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+          <ShoppingBag className="h-10 w-10 text-muted-foreground opacity-50" />
+        </div>
+        <h2 className="text-3xl font-serif font-bold mb-4">Your cart is empty</h2>
+        <p className="text-muted-foreground mb-8">Looks like you haven't added anything to your cart yet.</p>
+        <Link href="/businesses">
+          <Button size="lg" className="rounded-full px-8">Start Shopping</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const deliveryFee = fulfillmentType === "DELIVERY" ? (business?.deliveryFee || 0) : 0;
+  const finalTotal = total + deliveryFee;
 
   const showPickup = business?.pickupEnabled !== false;
   const showDelivery = business?.deliveryEnabled === true;
@@ -374,26 +399,30 @@ export default function Cart() {
                 )}
 
                 {showOnlinePayment && (
-                  <Button
+                  <LoadingButton
                     className="w-full h-12 text-lg rounded-full"
                     onClick={() => handleCheckout(false)}
-                    disabled={isSubmitting || (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum)}
+                    disabled={(fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) || isSubmitting}
+                    loading={isSubmitting && checkoutTarget === "card"}
+                    loadingText="Processing…"
                   >
-                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <CreditCard className="h-5 w-5 mr-2" />}
+                    <CreditCard className="h-5 w-5 mr-2" />
                     Pay with Card
-                  </Button>
+                  </LoadingButton>
                 )}
 
                 {showPayAtPickup && (
-                  <Button
+                  <LoadingButton
                     variant={showOnlinePayment ? "outline" : "default"}
                     className="w-full h-12 text-lg rounded-full"
                     onClick={() => handleCheckout(true)}
-                    disabled={isSubmitting || (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum)}
+                    disabled={(fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) || isSubmitting}
+                    loading={isSubmitting && checkoutTarget === "pickup"}
+                    loadingText="Placing order…"
                   >
-                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Store className="h-5 w-5 mr-2" />}
+                    <Store className="h-5 w-5 mr-2" />
                     Pay at {fulfillmentType === "DELIVERY" ? "Delivery" : "Pickup"}
-                  </Button>
+                  </LoadingButton>
                 )}
               </div>
             </CardFooter>

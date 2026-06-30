@@ -3,6 +3,7 @@ import { useGetMyBusiness, useUpdateBusiness, getGetMyBusinessQueryKey, getGetBu
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -235,9 +236,9 @@ export default function BusinessSettings() {
             <h1 className="font-serif text-3xl font-bold">Settings</h1>
             <p className="text-muted-foreground mt-1">Manage your business profile</p>
           </div>
-          <Button onClick={handleSave} disabled={updateBusiness.isPending} data-testid="button-save-settings">
-            {updateBusiness.isPending ? "Saving..." : "Save Changes"}
-          </Button>
+          <LoadingButton onClick={handleSave} loading={updateBusiness.isPending} loadingText="Saving…" data-testid="button-save-settings">
+            Save Changes
+          </LoadingButton>
         </div>
 
         {isLoading ? (

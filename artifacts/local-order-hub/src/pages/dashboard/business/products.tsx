@@ -12,6 +12,7 @@ import {
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -53,6 +54,7 @@ export default function BusinessProducts() {
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
 
@@ -83,6 +85,8 @@ export default function BusinessProducts() {
 
   const deleteProduct = useDeleteProduct({
     mutation: {
+      onMutate: (vars) => { setDeletingId(vars.id); },
+      onSettled: () => { setDeletingId(null); },
       onSuccess: () => { invalidate(); toast({ title: "Product deleted" }); },
       onError: () => toast({ title: "Failed to delete product", variant: "destructive" }),
     },
@@ -181,16 +185,18 @@ export default function BusinessProducts() {
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(product)} data-testid={`button-edit-product-${product.id}`}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
+                      <LoadingButton
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => deleteProduct.mutate({ businessId, id: product.id })}
+                        loading={deletingId === product.id}
                         disabled={deleteProduct.isPending}
+                        aria-label="Delete product"
                         data-testid={`button-delete-product-${product.id}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </LoadingButton>
                     </div>
                   </div>
                 ))}
@@ -257,9 +263,9 @@ export default function BusinessProducts() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isPending || !form.name.trim() || !form.price} data-testid="button-save-product">
-              {isPending ? "Saving..." : editingId ? "Save Changes" : "Create"}
-            </Button>
+            <LoadingButton onClick={handleSubmit} disabled={!form.name.trim() || !form.price} loading={isPending} loadingText="Saving…" data-testid="button-save-product">
+              {editingId ? "Save Changes" : "Create"}
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

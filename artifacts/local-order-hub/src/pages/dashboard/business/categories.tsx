@@ -10,6 +10,7 @@ import {
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -29,6 +30,7 @@ export default function BusinessCategories() {
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<CategoryForm>({ name: "", sortOrder: 0 });
 
@@ -54,6 +56,8 @@ export default function BusinessCategories() {
 
   const deleteCategory = useDeleteCategory({
     mutation: {
+      onMutate: (vars) => { setDeletingId(vars.id); },
+      onSettled: () => { setDeletingId(null); },
       onSuccess: () => { invalidate(); toast({ title: "Category deleted" }); },
       onError: () => toast({ title: "Failed to delete category", variant: "destructive" }),
     },
@@ -119,16 +123,18 @@ export default function BusinessCategories() {
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(cat)} data-testid={`button-edit-category-${cat.id}`}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button
+                      <LoadingButton
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => deleteCategory.mutate({ businessId, id: cat.id })}
+                        loading={deletingId === cat.id}
                         disabled={deleteCategory.isPending}
+                        aria-label="Delete category"
                         data-testid={`button-delete-category-${cat.id}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      </LoadingButton>
                     </div>
                   </div>
                 ))}
@@ -165,9 +171,9 @@ export default function BusinessCategories() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={isPending || !form.name.trim()} data-testid="button-save-category">
-              {isPending ? "Saving..." : editingId ? "Save Changes" : "Create"}
-            </Button>
+            <LoadingButton onClick={handleSubmit} disabled={!form.name.trim()} loading={isPending} loadingText="Saving…" data-testid="button-save-category">
+              {editingId ? "Save Changes" : "Create"}
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -11,6 +11,7 @@ import type { Highlight, HighlightInput } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -239,9 +240,9 @@ export default function AdminHighlights() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={pending || !form.title || !form.startDate || !form.endDate}>
-              {pending ? "Saving…" : "Save"}
-            </Button>
+            <LoadingButton onClick={handleSave} disabled={!form.title || !form.startDate || !form.endDate} loading={pending} loadingText="Saving…">
+              Save
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -252,9 +253,14 @@ export default function AdminHighlights() {
           <p className="text-muted-foreground text-sm">This action cannot be undone.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => deleteId !== null && deleteHighlight.mutate({ id: deleteId })} disabled={deleteHighlight.isPending}>
+            <LoadingButton
+              variant="destructive"
+              onClick={() => deleteId !== null && deleteHighlight.mutate({ id: deleteId })}
+              loading={deleteHighlight.isPending}
+              loadingText="Deleting…"
+            >
               Delete
-            </Button>
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

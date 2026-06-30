@@ -88,7 +88,7 @@ export default function BusinessOrderDetail({ params }: Props) {
                   onValueChange={(val) => updateStatus.mutate({ id: orderId, data: { status: val as never } })}
                   disabled={updateStatus.isPending}
                 >
-                  <SelectTrigger className="w-64" data-testid="select-status">
+                  <SelectTrigger className="w-64" data-testid="select-status" aria-busy={updateStatus.isPending}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -99,6 +99,9 @@ export default function BusinessOrderDetail({ params }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
+                {updateStatus.isPending ? (
+                  <p className="text-xs text-muted-foreground mt-2" role="status">Updating status…</p>
+                ) : null}
               </CardContent>
             </Card>
 

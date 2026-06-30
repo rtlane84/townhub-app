@@ -13,6 +13,7 @@ import type { FoodTruckLocation } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -308,9 +309,9 @@ export default function BusinessLocations() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={pending || !saveEnabled}>
-              {pending ? "Saving…" : "Save"}
-            </Button>
+            <LoadingButton onClick={handleSave} disabled={!saveEnabled} loading={pending} loadingText="Saving…">
+              Save
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -320,9 +321,14 @@ export default function BusinessLocations() {
           <DialogHeader><DialogTitle>Delete this location?</DialogTitle></DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => deleteId !== null && deleteLoc.mutate({ id: business?.id ?? 0, locationId: deleteId })} disabled={deleteLoc.isPending}>
+            <LoadingButton
+              variant="destructive"
+              onClick={() => deleteId !== null && deleteLoc.mutate({ id: business?.id ?? 0, locationId: deleteId })}
+              loading={deleteLoc.isPending}
+              loadingText="Deleting…"
+            >
               Delete
-            </Button>
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

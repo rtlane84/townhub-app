@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,13 +8,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
-import { useCreateAppointmentRequest } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAsyncAction } from "@/hooks/use-async-action";
+import { useCreateAppointmentRequest } from "@workspace/api-client-react";
 import { TimePicker } from "@/components/time-picker";
 import { normalizeRequiredTime } from "@workspace/api-zod";
 
@@ -65,7 +66,7 @@ export function AppointmentBookingDialog({
     }
   }, [open, initialProductId]);
 
-  async function handleSubmit() {
+  const submitRequest = useCallback(async () => {
     const time = normalizeRequiredTime(requestedTime);
     if (!customerName.trim() || !requestedDate || !time) {
       toast({
@@ -76,33 +77,51 @@ export function AppointmentBookingDialog({
       return;
     }
 
-    try {
-      await createRequest.mutateAsync({
-        data: {
-          businessId,
-          customerName: customerName.trim(),
-          customerEmail: customerEmail.trim() || undefined,
-          customerPhone: customerPhone.trim() || undefined,
-          productId: productId ? parseInt(productId, 10) : undefined,
-          serviceName: serviceName.trim() || undefined,
-          requestedDate,
-          requestedTime: time,
-          notes: notes.trim() || undefined,
-        },
-      });
-      toast({
-        title: "Request submitted",
-        description: `${businessName} will follow up to confirm your appointment.`,
-      });
-      resetForm();
-      onOpenChange(false);
-    } catch {
+    await createRequest.mutateAsync({
+      data: {
+        businessId,
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim() || undefined,
+        customerPhone: customerPhone.trim() || undefined,
+        productId: productId ? parseInt(productId, 10) : undefined,
+        serviceName: serviceName.trim() || undefined,
+        requestedDate,
+        requestedTime: time,
+        notes: notes.trim() || undefined,
+      },
+    });
+    toast({
+      title: "Request submitted",
+      description: `${businessName} will follow up to confirm your appointment.`,
+    });
+    resetForm();
+    onOpenChange(false);
+  }, [
+    businessId,
+    businessName,
+    createRequest,
+    customerEmail,
+    customerName,
+    customerPhone,
+    notes,
+    onOpenChange,
+    productId,
+    requestedDate,
+    requestedTime,
+    serviceName,
+    toast,
+  ]);
+
+  const { run: runSubmit, pending: isSubmitting } = useAsyncAction(submitRequest);
+
+  function handleSubmit() {
+    void runSubmit().catch(() => {
       toast({
         title: "Could not submit request",
         description: "Please try again or call the business directly.",
         variant: "destructive",
       });
-    }
+    });
   }
 
   return (
@@ -176,10 +195,9 @@ export function AppointmentBookingDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={createRequest.isPending}>
-            {createRequest.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          <LoadingButton onClick={handleSubmit} loading={isSubmitting} loadingText="Submitting…">
             Submit Request
-          </Button>
+          </LoadingButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

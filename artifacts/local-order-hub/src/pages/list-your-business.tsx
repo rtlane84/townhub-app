@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useUser, useAuth, SignInButton } from "@clerk/react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { useAsyncAction } from "@/hooks/use-async-action";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -169,7 +171,6 @@ export default function ListYourBusiness() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [hoursOpen, setHoursOpen] = useState(false);
@@ -226,39 +227,40 @@ export default function ListYourBusiness() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  async function handleSubmit() {
-    setSubmitting(true);
+  const submitApplication = useCallback(async () => {
     setError("");
-    try {
-      const token = await getToken();
-      const res = await fetch("/api/businesses/apply", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          type: form.type,
-          description: form.description.trim() || undefined,
-          address: form.address.trim() || undefined,
-          phone: form.phone.trim() || undefined,
-          structuredHours: normalizeWeeklyHours(form.structuredHours),
-          planId: selectedPlanId ?? undefined,
-        }),
-      });
-      const body = await res.json();
-      if (!res.ok) {
-        setError(body.error ?? "Something went wrong. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-      setExistingApp(null);
-      setDone(true);
-    } catch {
-      setError("Network error — please try again.");
-      setSubmitting(false);
+    const token = await getToken();
+    const res = await fetch("/api/businesses/apply", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        name: form.name.trim(),
+        type: form.type,
+        description: form.description.trim() || undefined,
+        address: form.address.trim() || undefined,
+        phone: form.phone.trim() || undefined,
+        structuredHours: normalizeWeeklyHours(form.structuredHours),
+        planId: selectedPlanId ?? undefined,
+      }),
+    });
+    const body = await res.json();
+    if (!res.ok) {
+      setError(body.error ?? "Something went wrong. Please try again.");
+      throw new Error(body.error ?? "Submit failed");
     }
+    setExistingApp(null);
+    setDone(true);
+  }, [form, getToken, selectedPlanId]);
+
+  const { run: runSubmit, pending: submitting } = useAsyncAction(submitApplication);
+
+  function handleSubmit() {
+    void runSubmit().catch(() => {
+      setError((prev) => prev || "Network error — please try again.");
+    });
   }
 
   if (!isLoaded || (isSignedIn && appLoading && !reapplying)) {
@@ -659,17 +661,14 @@ export default function ListYourBusiness() {
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1" disabled={submitting}>
                   <ArrowLeft className="mr-2 h-4 w-4" /> Back
                 </Button>
-                <Button
+                <LoadingButton
                   className="flex-1"
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  loading={submitting}
+                  loadingText="Submitting…"
                 >
-                  {submitting ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting…</>
-                  ) : (
-                    <><Store className="mr-2 h-4 w-4" /> Submit application</>
-                  )}
-                </Button>
+                  <Store className="mr-2 h-4 w-4" /> Submit application
+                </LoadingButton>
               </div>
 
               <p className="text-center text-xs text-muted-foreground">

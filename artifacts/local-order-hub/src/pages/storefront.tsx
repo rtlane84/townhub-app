@@ -12,7 +12,8 @@ import { useCart } from "@/components/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { BusinessHoursDisplay } from "@/components/business-hours-display";
 import { resolveBusinessHours } from "@/lib/business-hours";
 import { resolvePaymentMode, paymentModeStorefrontNote, resolveStorefrontMode, storefrontCopy, isAppointmentStorefrontMode, isInformationStorefrontMode, showsStorefrontCatalog, informationPrimaryCtaLabel, formatTime12h, formatTimeRange12h, normalizeWebsiteUrl } from "@workspace/api-zod";
@@ -57,6 +58,8 @@ export default function Storefront() {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [appointmentProductId, setAppointmentProductId] = useState<number | null>(null);
+  const [addingProductId, setAddingProductId] = useState<number | null>(null);
+  const addToCartLockRef = useRef(false);
 
   if (isLoading) {
     return (
@@ -138,14 +141,23 @@ export default function Storefront() {
     openAppointmentDialog();
   };
 
-  const handleAddToCart = (product: { id: number; name: string; price: number; imageUrl?: string | null; available?: boolean | null }) => {
+  async function handleAddToCart(product: { id: number; name: string; price: number; imageUrl?: string | null; available?: boolean | null }) {
+    if (addToCartLockRef.current) return;
     if (isAppointmentMode) {
       openAppointmentDialog(product.id);
       return;
     }
-    addToCart(product as never, b.id, 1);
-    toast({ title: copy.addToastTitle, description: copy.addToastDescription(product.name) });
-  };
+    addToCartLockRef.current = true;
+    setAddingProductId(product.id);
+    try {
+      addToCart(product as never, b.id, 1);
+      toast({ title: copy.addToastTitle, description: copy.addToastDescription(product.name) });
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    } finally {
+      addToCartLockRef.current = false;
+      setAddingProductId(null);
+    }
+  }
 
   const accentHex = normalizeHex(b.accentColor) ?? mergePlatformTheme(theme).accentColor;
 
@@ -424,15 +436,17 @@ export default function Storefront() {
                           <span />
                         )}
                         {!isInformationMode && (
-                          <Button
+                          <LoadingButton
                             size="sm"
                             variant={isAppointmentMode ? "default" : "secondary"}
                             className="rounded-full h-8"
-                            onClick={() => handleAddToCart(product)}
-                            disabled={!product.available || !b.active}
+                            onClick={() => void handleAddToCart(product)}
+                            disabled={!product.available || !b.active || addingProductId !== null}
+                            loading={addingProductId === product.id}
+                            loadingText="Adding…"
                           >
                             <Plus className="h-4 w-4 mr-1" /> {copy.addButtonLabel}
-                          </Button>
+                          </LoadingButton>
                         )}
                       </div>
                     </CardContent>

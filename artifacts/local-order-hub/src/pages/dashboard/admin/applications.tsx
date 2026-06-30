@@ -4,6 +4,7 @@ import { useListSubscriptionPlans } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,7 +100,7 @@ export default function AdminApplications() {
   }
 
   async function handleApprove() {
-    if (!approveDialog) return;
+    if (!approveDialog || actionLoading !== null) return;
     const id = approveDialog.id;
     setActionLoading(id);
     try {
@@ -134,7 +135,7 @@ export default function AdminApplications() {
   }
 
   async function handleReject() {
-    if (!rejectDialog) return;
+    if (!rejectDialog || actionLoading !== null) return;
     setActionLoading(rejectDialog.id);
     try {
       const token = await getToken();
@@ -311,23 +312,21 @@ export default function AdminApplications() {
                   {/* Action buttons */}
                   {app.status === "PENDING" && (
                     <div className="flex sm:flex-col gap-2 shrink-0">
-                      <Button
+                      <LoadingButton
                         size="sm"
                         onClick={() => openApproveDialog(app)}
-                        disabled={actionLoading === app.id}
+                        loading={actionLoading === app.id}
+                        loadingText="Approving…"
+                        disabled={actionLoading !== null}
                         className="flex-1 sm:flex-none"
                       >
-                        {actionLoading === app.id ? (
-                          <span className="flex items-center gap-1.5"><span className="h-3 w-3 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Approving…</span>
-                        ) : (
-                          <span className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5" /> Approve</span>
-                        )}
-                      </Button>
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Approve
+                      </LoadingButton>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => { setRejectDialog({ id: app.id, name: app.name }); setRejectNote(""); }}
-                        disabled={actionLoading === app.id}
+                        disabled={actionLoading !== null}
                         className="flex-1 sm:flex-none text-destructive border-destructive/30 hover:bg-destructive/5"
                       >
                         <XCircle className="h-3.5 w-3.5 mr-1.5" /> Reject
@@ -375,12 +374,14 @@ export default function AdminApplications() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setApproveDialog(null); setApprovePlanId(""); }}>Cancel</Button>
-            <Button
-              onClick={handleApprove}
-              disabled={actionLoading === approveDialog?.id}
+            <LoadingButton
+              onClick={() => void handleApprove()}
+              loading={actionLoading === approveDialog?.id}
+              loadingText="Approving…"
+              disabled={actionLoading !== null && actionLoading !== approveDialog?.id}
             >
-              {actionLoading === approveDialog?.id ? "Approving…" : "Approve & Create Business"}
-            </Button>
+              Approve & Create Business
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -406,13 +407,15 @@ export default function AdminApplications() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectDialog(null)}>Cancel</Button>
-            <Button
+            <LoadingButton
               variant="destructive"
-              onClick={handleReject}
-              disabled={actionLoading === rejectDialog?.id}
+              onClick={() => void handleReject()}
+              loading={actionLoading === rejectDialog?.id}
+              loadingText="Rejecting…"
+              disabled={actionLoading !== null && actionLoading !== rejectDialog?.id}
             >
-              {actionLoading === rejectDialog?.id ? "Rejecting…" : "Reject Application"}
-            </Button>
+              Reject Application
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

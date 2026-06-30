@@ -6,6 +6,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import {
   Collapsible,
@@ -83,8 +84,10 @@ export function ImageField({
   const previewSrc = localPreview ?? resolveImageSrc(value);
   const isUploading = uploadMedia.isPending;
 
+  const uploadLockRef = useRef(false);
+
   async function handleFileChange(file: File | null) {
-    if (!file) return;
+    if (!file || uploadLockRef.current || uploadMedia.isPending) return;
     const validationError = validateImageFile(file);
     if (validationError) {
       toast({ title: validationError, variant: "destructive" });
@@ -95,7 +98,11 @@ export function ImageField({
     const previewUrl = readFileAsObjectUrl(file);
     previewObjectUrlRef.current = previewUrl;
     setLocalPreview(previewUrl);
-    uploadMedia.mutate({ data: { file } });
+    uploadLockRef.current = true;
+    uploadMedia.mutate(
+      { data: { file } },
+      { onSettled: () => { uploadLockRef.current = false; } },
+    );
   }
 
   function handleLibrarySelect(asset: MediaAsset) {
@@ -163,17 +170,19 @@ export function ImageField({
             e.target.value = "";
           }}
         />
-        <Button
+        <LoadingButton
           type="button"
           variant="outline"
           size="sm"
-          disabled={disabled || isUploading}
+          disabled={disabled}
+          loading={isUploading}
+          loadingText="Uploading…"
           onClick={() => fileInputRef.current?.click()}
           data-testid={testId ? `${testId}-upload` : undefined}
         >
           <Upload className="h-4 w-4 mr-1.5" />
           Upload image
-        </Button>
+        </LoadingButton>
         <Button
           type="button"
           variant="outline"

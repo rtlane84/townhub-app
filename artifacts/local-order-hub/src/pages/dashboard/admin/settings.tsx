@@ -9,6 +9,7 @@ import {
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -284,14 +285,16 @@ export default function AdminSettings() {
                 <Separator />
 
                 <div className="flex items-center gap-3">
-                  <Button
+                  <LoadingButton
                     onClick={handleSave}
-                    disabled={!isDirty || updateTheme.isPending}
+                    disabled={!isDirty}
+                    loading={updateTheme.isPending}
+                    loadingText="Saving…"
                     className="rounded-full"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    {updateTheme.isPending ? "Saving…" : "Save Theme"}
-                  </Button>
+                    Save Theme
+                  </LoadingButton>
                   <Button
                     variant="outline"
                     onClick={handleReset}
@@ -556,14 +559,16 @@ export default function AdminSettings() {
                 <Separator />
 
                 <div className="flex items-center gap-3">
-                  <Button
+                  <LoadingButton
                     onClick={handleBrandingSave}
-                    disabled={!isBrandingDirty || updateTheme.isPending}
+                    disabled={!isBrandingDirty}
+                    loading={updateTheme.isPending}
+                    loadingText="Saving…"
                     className="rounded-full"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    {updateTheme.isPending ? "Saving…" : "Save Branding"}
-                  </Button>
+                    Save Branding
+                  </LoadingButton>
                   <Button variant="outline" onClick={handleBrandingReset} className="rounded-full">
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reset to Defaults
@@ -634,14 +639,16 @@ export default function AdminSettings() {
                   </p>
                 )}
                 <div className="flex items-center gap-3">
-                  <Button
+                  <LoadingButton
                     onClick={handleWeatherSave}
-                    disabled={!isWeatherDirty || updateTheme.isPending}
+                    disabled={!isWeatherDirty}
+                    loading={updateTheme.isPending}
+                    loadingText="Saving…"
                     className="rounded-full"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    {updateTheme.isPending ? "Saving…" : "Save Weather Settings"}
-                  </Button>
+                    Save Weather Settings
+                  </LoadingButton>
                   <Button variant="outline" onClick={handleWeatherReset} className="rounded-full">
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reset

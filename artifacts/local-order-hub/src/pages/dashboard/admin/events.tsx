@@ -10,6 +10,7 @@ import type { Event, EventInput } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -264,9 +265,9 @@ export default function AdminEvents() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={pending || !form.title || !form.date}>
-              {pending ? "Saving…" : "Save"}
-            </Button>
+            <LoadingButton onClick={handleSave} disabled={!form.title || !form.date} loading={pending} loadingText="Saving…">
+              Save
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -278,9 +279,14 @@ export default function AdminEvents() {
           <p className="text-muted-foreground text-sm">This action cannot be undone.</p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => deleteId !== null && deleteEvent.mutate({ id: deleteId })} disabled={deleteEvent.isPending}>
+            <LoadingButton
+              variant="destructive"
+              onClick={() => deleteId !== null && deleteEvent.mutate({ id: deleteId })}
+              loading={deleteEvent.isPending}
+              loadingText="Deleting…"
+            >
               Delete
-            </Button>
+            </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

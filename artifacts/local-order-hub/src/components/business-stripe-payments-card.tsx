@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CreditCard, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -157,42 +158,26 @@ export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) 
 
             <div className="flex flex-wrap gap-2">
               {!connected ? (
-                <Button
+                <LoadingButton
                   onClick={handleConnect}
-                  disabled={startConnect.isPending}
+                  loading={startConnect.isPending}
+                  loadingText="Opening Stripe…"
                   data-testid="button-connect-stripe"
                 >
-                  {startConnect.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Opening Stripe…
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      {pending ? "Continue Stripe setup" : "Connect Stripe"}
-                    </>
-                  )}
-                </Button>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  {pending ? "Continue Stripe setup" : "Connect Stripe"}
+                </LoadingButton>
               ) : (
-                <Button
+                <LoadingButton
                   variant="outline"
                   onClick={handleManage}
-                  disabled={startConnect.isPending}
+                  loading={startConnect.isPending}
+                  loadingText="Opening Stripe…"
                   data-testid="button-manage-stripe"
                 >
-                  {startConnect.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Opening Stripe…
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Manage Stripe
-                    </>
-                  )}
-                </Button>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Manage Stripe
+                </LoadingButton>
               )}
 
               {pending && !connected ? (
