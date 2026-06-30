@@ -1,13 +1,25 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useGetMe, useListBusinessOrders, getListBusinessOrdersQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
+import { BusinessOrderQueueSummary } from "@/components/business-order-queue-summary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { ChevronRight, Loader2, Phone } from "lucide-react";
 import { OrderRow, orderStatusHighlightClass } from "@/components/order-row";
 import { useOrderHighlight } from "@/hooks/order-dashboard-refresh-context";
+import {
+  computeQueueCounts,
+  customerPhoneTelHref,
+  formatOrderRelativeTime,
+  fulfillmentLabel,
+  getBusinessOrderPaymentFlag,
+  PAYMENT_FLAG_BADGE_BASE,
+  PAYMENT_FLAG_DOT_STYLES,
+  PAYMENT_FLAG_LABELS,
+  type QueueSummaryStatus,
+} from "@/lib/business-order-display";
 import { cn } from "@/lib/utils";
 
 const ALL_STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
@@ -41,6 +53,29 @@ function OrderStatusBadge({ orderId, status }: { orderId: number; status: string
   );
 }
 
+function PaymentStatusBadge({
+  paymentMethod,
+  paymentStatus,
+}: {
+  paymentMethod?: string;
+  paymentStatus?: string;
+}) {
+  const flag = getBusinessOrderPaymentFlag(paymentMethod, paymentStatus);
+  return (
+    <span
+      className={PAYMENT_FLAG_BADGE_BASE}
+      aria-label={`Payment: ${PAYMENT_FLAG_LABELS[flag]}`}
+      data-testid={`payment-flag-${flag.replace(/\s+/g, "-").toLowerCase()}`}
+    >
+      <span
+        className={cn("size-1.5 shrink-0 rounded-full", PAYMENT_FLAG_DOT_STYLES[flag])}
+        aria-hidden
+      />
+      {PAYMENT_FLAG_LABELS[flag]}
+    </span>
+  );
+}
+
 export default function BusinessOrders() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const { data: me } = useGetMe();
@@ -54,11 +89,18 @@ export default function BusinessOrders() {
     },
   });
 
+  const orderList = orders ?? [];
+  const queueCounts = useMemo(() => computeQueueCounts(orderList), [orderList]);
+
   const filtered = statusFilter === "all"
-    ? (orders ?? [])
-    : (orders ?? []).filter((o) => o.status === statusFilter);
+    ? orderList
+    : orderList.filter((o) => o.status === statusFilter);
 
   const showInitialSkeleton = isPending && !orders;
+
+  const handleQueueSelect = (status: QueueSummaryStatus) => {
+    setStatusFilter((current) => (current === status ? "all" : status));
+  };
 
   return (
     <BusinessDashboardLayout>
@@ -75,6 +117,14 @@ export default function BusinessOrders() {
             </span>
           )}
         </div>
+
+        {!showInitialSkeleton && (
+          <BusinessOrderQueueSummary
+            counts={queueCounts}
+            activeStatus={statusFilter}
+            onSelectStatus={handleQueueSelect}
+          />
+        )}
 
         {/* Status filter pills */}
         <div className="flex flex-wrap gap-2">
@@ -112,28 +162,55 @@ export default function BusinessOrders() {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {filtered.map((order) => (
-                  <Link key={order.id} href={`/dashboard/business/orders/${order.id}`}>
+                {filtered.map((order) => {
+                  const phone = order.customerPhone?.trim();
+                  const telHref = phone ? customerPhoneTelHref(phone) : "";
+                  const placedAt = order.createdAt ? formatOrderRelativeTime(order.createdAt) : "";
+
+                  return (
                     <OrderRow
+                      key={order.id}
                       orderId={order.id}
-                      className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 p-3 sm:p-4 hover:bg-muted/30 transition-colors"
                     >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <p className="font-medium text-sm">{order.orderNumber}</p>
-                          <OrderStatusBadge orderId={order.id} status={order.status} />
+                      <Link
+                        href={`/dashboard/business/orders/${order.id}`}
+                        className="flex flex-1 min-w-0 items-center justify-between gap-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <p className="font-medium text-sm">{order.orderNumber}</p>
+                            <OrderStatusBadge orderId={order.id} status={order.status} />
+                            <PaymentStatusBadge
+                              paymentMethod={order.paymentMethod}
+                              paymentStatus={order.paymentStatus}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {order.customerName}
+                            {" · "}
+                            {fulfillmentLabel(order.fulfillmentType)}
+                            {placedAt ? ` · ${placedAt}` : ""}
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {order.customerName} · {order.fulfillmentType} · {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="font-semibold text-sm">${order.total.toFixed(2)}</span>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-semibold text-sm">${order.total.toFixed(2)}</span>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </Link>
+                      {phone && telHref ? (
+                        <a
+                          href={telHref}
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-background text-primary hover:bg-primary/5 hover:border-primary/30 transition-colors"
+                          aria-label={`Call ${order.customerName}`}
+                          data-testid={`call-customer-${order.id}`}
+                        >
+                          <Phone className="h-4 w-4" />
+                        </a>
+                      ) : null}
                     </OrderRow>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
