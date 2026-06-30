@@ -27,6 +27,7 @@ import MyOrderDetail from "@/pages/my-order-detail";
 
 import BusinessOverview from "@/pages/dashboard/business/overview";
 import BusinessOrders from "@/pages/dashboard/business/orders";
+import BusinessKitchen from "@/pages/dashboard/business/kitchen";
 import BusinessOrderDetail from "@/pages/dashboard/business/order-detail";
 import BusinessProducts from "@/pages/dashboard/business/products";
 import BusinessCategories from "@/pages/dashboard/business/categories";
@@ -241,6 +242,7 @@ function ClerkProviderWithRoutes() {
                 {/* Business owner dashboard */}
                 <ProtectedRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />
                 <ProtectedRoute path="/dashboard/business/orders" component={BusinessOrders} />
+                <ProtectedRoute path="/dashboard/business/kitchen" component={BusinessKitchen} />
                 <ProtectedRoute path="/dashboard/business/products" component={BusinessProducts} />
                 <ProtectedRoute path="/dashboard/business/categories" component={BusinessCategories} />
                 <ProtectedRoute path="/dashboard/business/locations" component={BusinessLocations} />

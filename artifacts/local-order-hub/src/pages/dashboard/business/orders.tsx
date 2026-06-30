@@ -34,8 +34,6 @@ import {
 } from "@/lib/business-order-filters";
 import { cn } from "@/lib/utils";
 
-const ALL_STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
-
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-700",
   CONFIRMED: "bg-indigo-100 text-indigo-700",
@@ -156,6 +154,18 @@ export default function BusinessOrders() {
     [orderList.length, searchQuery, statusFilter, datePreset],
   );
 
+  const filtersActive = hasActiveBusinessOrderFilters({
+    statusFilter,
+    datePreset,
+    searchQuery,
+    customRange,
+  });
+
+  const filterSummary = useMemo(() => {
+    const countLine = `Showing ${filtered.length} of ${orderList.length} orders${filtersActive ? " (filtered)" : ""}`;
+    return `${countLine} · ${dateSummary}`;
+  }, [filtered.length, orderList.length, filtersActive, dateSummary]);
+
   const showInitialSkeleton = isPending && !orders && !lastOrdersRef.current.length;
 
   useEffect(() => {
@@ -174,13 +184,6 @@ export default function BusinessOrders() {
     setCustomRange({});
     setSearchQuery("");
   };
-
-  const filtersActive = hasActiveBusinessOrderFilters({
-    statusFilter,
-    datePreset,
-    searchQuery,
-    customRange,
-  });
 
   const queueCountsReflectFilters = hasQueueScopeFilters({
     datePreset,
@@ -224,52 +227,13 @@ export default function BusinessOrders() {
             onDatePresetChange={setDatePreset}
             customRange={customRange}
             onCustomRangeChange={setCustomRange}
-            dateSummary={dateSummary}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            filterSummary={filterSummary}
+            filtersActive={filtersActive}
+            onClearFilters={clearFilters}
           />
         )}
-
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <p className="text-xs text-muted-foreground" data-testid="order-list-count">
-                Showing {filtered.length} of {orderList.length} orders
-                {filtersActive ? " (filtered)" : ""}
-              </p>
-              {filtersActive ? (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="text-xs font-medium text-primary hover:underline"
-                  data-testid="clear-order-filters"
-                >
-                  Clear filters
-                </button>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setStatusFilter("all")}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
-              data-testid="filter-all"
-            >
-              All
-            </button>
-            {ALL_STATUSES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
-                data-testid={`filter-${s.toLowerCase()}`}
-              >
-                {statusLabel(s)}
-              </button>
-            ))}
-          </div>
-        </div>
 
         <Card>
           <CardContent className="p-0">

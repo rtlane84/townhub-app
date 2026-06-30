@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal, ClipboardList, CalendarDays, Activity } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Tags, Settings, Store, Users, Menu, CreditCard, Calendar, Sparkles, MapPin, Layers, SlidersHorizontal, ClipboardList, CalendarDays, Activity, ChefHat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -68,6 +68,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
     const items: NavItem[] = [
       { href: "/dashboard/business", label: "Overview", icon: LayoutDashboard },
       { href: "/dashboard/business/orders", label: "Orders", icon: ShoppingBag },
+      { href: "/dashboard/business/kitchen", label: "Kitchen", icon: ChefHat },
     ];
     if (acceptsAppointmentRequests(business ?? {})) {
       items.push({ href: "/dashboard/business/appointments", label: "Appointments", icon: CalendarDays });

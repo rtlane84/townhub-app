@@ -7,67 +7,50 @@ import {
   type OrderCustomDateRange,
   type OrderDateFilterPreset,
 } from "@/lib/business-order-filters";
+import {
+  KITCHEN_FULFILLMENT_FILTER_LABELS,
+  KITCHEN_FULFILLMENT_FILTERS,
+  KITCHEN_PAYMENT_FILTER_LABELS,
+  KITCHEN_PAYMENT_FILTERS,
+  type KitchenFulfillmentFilter,
+  type KitchenPaymentFilter,
+} from "@/lib/kitchen-display";
 
 const DATE_PRESETS: OrderDateFilterPreset[] = ["today", "last7", "month", "custom", "all"];
 
-const ALL_STATUSES = [
-  "NEW",
-  "CONFIRMED",
-  "PREPARING",
-  "READY_FOR_PICKUP",
-  "OUT_FOR_DELIVERY",
-  "COMPLETED",
-  "CANCELED",
-] as const;
-
-type StatusFilter = "all" | (typeof ALL_STATUSES)[number];
-
-const STATUS_OPTIONS: readonly StatusFilter[] = ["all", ...ALL_STATUSES];
-
-const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
-  all: "All",
-  NEW: "New",
-  CONFIRMED: "Confirmed",
-  PREPARING: "Preparing",
-  READY_FOR_PICKUP: "Ready for pickup",
-  OUT_FOR_DELIVERY: "Out for delivery",
-  COMPLETED: "Completed",
-  CANCELED: "Canceled",
-};
-
-interface BusinessOrderListToolbarProps {
+interface KitchenDisplayToolbarProps {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   datePreset: OrderDateFilterPreset;
   onDatePresetChange: (preset: OrderDateFilterPreset) => void;
   customRange: OrderCustomDateRange;
   onCustomRangeChange: (range: OrderCustomDateRange) => void;
-  statusFilter: string;
-  onStatusFilterChange: (status: string) => void;
+  fulfillmentFilter: KitchenFulfillmentFilter;
+  onFulfillmentFilterChange: (filter: KitchenFulfillmentFilter) => void;
+  paymentFilter: KitchenPaymentFilter;
+  onPaymentFilterChange: (filter: KitchenPaymentFilter) => void;
   filterSummary: string;
   filtersActive: boolean;
   onClearFilters: () => void;
 }
 
-export function BusinessOrderListToolbar({
+export function KitchenDisplayToolbar({
   searchQuery,
   onSearchQueryChange,
   datePreset,
   onDatePresetChange,
   customRange,
   onCustomRangeChange,
-  statusFilter,
-  onStatusFilterChange,
+  fulfillmentFilter,
+  onFulfillmentFilterChange,
+  paymentFilter,
+  onPaymentFilterChange,
   filterSummary,
   filtersActive,
   onClearFilters,
-}: BusinessOrderListToolbarProps) {
-  const statusValue = (statusFilter === "all" || STATUS_OPTIONS.includes(statusFilter as StatusFilter)
-    ? statusFilter
-    : "all") as StatusFilter;
-
+}: KitchenDisplayToolbarProps) {
   return (
-    <div className="rounded-xl border bg-card p-4 space-y-4" data-testid="order-list-toolbar">
+    <div className="rounded-xl border bg-card p-4 space-y-4 print:hidden" data-testid="kitchen-display-toolbar">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
         <Input
@@ -75,7 +58,7 @@ export function BusinessOrderListToolbar({
           onChange={(event) => onSearchQueryChange(event.target.value)}
           placeholder="Search order #, customer, phone, or email"
           className="pl-9"
-          data-testid="order-search-input"
+          data-testid="kitchen-search-input"
         />
       </div>
 
@@ -85,7 +68,7 @@ export function BusinessOrderListToolbar({
         labels={ORDER_DATE_FILTER_LABELS}
         value={datePreset}
         onChange={onDatePresetChange}
-        testIdPrefix="date-filter"
+        testIdPrefix="kitchen-date-filter"
       />
 
       {datePreset === "custom" ? (
@@ -96,7 +79,7 @@ export function BusinessOrderListToolbar({
               type="date"
               value={customRange.from ?? ""}
               onChange={(event) => onCustomRangeChange({ ...customRange, from: event.target.value || undefined })}
-              data-testid="date-filter-custom-from"
+              data-testid="kitchen-date-filter-custom-from"
             />
           </label>
           <label className="space-y-1.5">
@@ -105,31 +88,35 @@ export function BusinessOrderListToolbar({
               type="date"
               value={customRange.to ?? ""}
               onChange={(event) => onCustomRangeChange({ ...customRange, to: event.target.value || undefined })}
-              data-testid="date-filter-custom-to"
+              data-testid="kitchen-date-filter-custom-to"
             />
           </label>
         </div>
       ) : null}
 
-      <FilterPills
-        label="Status"
-        options={STATUS_OPTIONS}
-        labels={STATUS_FILTER_LABELS}
-        value={statusValue}
-        onChange={onStatusFilterChange}
-        testIdPrefix="filter"
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <FilterPills
+          label="Fulfillment"
+          options={KITCHEN_FULFILLMENT_FILTERS}
+          labels={KITCHEN_FULFILLMENT_FILTER_LABELS}
+          value={fulfillmentFilter}
+          onChange={onFulfillmentFilterChange}
+          testIdPrefix="kitchen-fulfillment-filter"
+        />
+        <FilterPills
+          label="Payment"
+          options={KITCHEN_PAYMENT_FILTERS}
+          labels={KITCHEN_PAYMENT_FILTER_LABELS}
+          value={paymentFilter}
+          onChange={onPaymentFilterChange}
+          testIdPrefix="kitchen-payment-filter"
+        />
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-        <p data-testid="order-list-count">{filterSummary}</p>
+        <p>{filterSummary}</p>
         {filtersActive ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onClick={onClearFilters}
-            data-testid="clear-order-filters"
-          >
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={onClearFilters} data-testid="kitchen-clear-filters">
             Clear filters
           </Button>
         ) : null}
