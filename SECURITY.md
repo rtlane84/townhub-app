@@ -86,7 +86,7 @@ These gaps were identified but not fixed in this pass. Address them before handl
 | `PATCH /orders/:id/status` — auth added but no ownership check | Medium | Any authenticated user can update any order's status. Fix: fetch the order's `businessId`, verify the caller owns that business or is admin before updating. |
 | Stripe webhook signature verification | **Resolved** | Platform webhook verifies signatures; Connect direct charges on business connected accounts; orders marked paid idempotently via `checkout.session.completed` only. See [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md). |
 | `/setup` bootstrap page stays live after first use | **Resolved** | `GET /api/admin/bootstrap-status` hides nav/setup UI after the first admin exists; bootstrap POST remains locked with 403. |
-| No rate limiting on public endpoints | Medium | `/api/businesses`, `/api/orders`, and checkout endpoints are unbounded. Add `express-rate-limit` before accepting real traffic. |
+| No rate limiting on public endpoints | **Resolved** | Stricter limits on public writes (orders, checkout session, appointment requests, applications, media uploads); lighter limits on weather and food-truck reads. Stripe webhooks are excluded. Configure via `RATE_LIMIT_*` env vars. |
 | No pagination on list endpoints | Medium | All list endpoints return full DB rows. Fine at demo scale; will degrade with real data. Add `limit` + `offset` query params and a `total` count in responses. |
 | Food-truck location mutations lack ownership check | Low | `POST/PUT/DELETE /api/businesses/:id/food-truck-locations` verify auth but not that the caller owns that specific business. |
 

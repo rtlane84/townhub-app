@@ -11,11 +11,17 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
+import { createApiRateLimitMiddleware } from "./middlewares/rate-limit";
+import { shouldTrustProxyForRateLimit } from "./lib/rate-limit-config";
 
 const app: Express = express();
 
 // Dynamic API responses must not be cached — 304 empty bodies break React Query.
 app.set("etag", false);
+
+if (shouldTrustProxyForRateLimit()) {
+  app.set("trust proxy", 1);
+}
 
 app.use(
   pinoHttp({
@@ -67,6 +73,7 @@ app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
+app.use("/api", createApiRateLimitMiddleware());
 app.use("/api", router);
 
 export default app;
