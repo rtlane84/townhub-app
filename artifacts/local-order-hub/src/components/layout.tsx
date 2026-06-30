@@ -71,8 +71,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   function close() { setMobileOpen(false); }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background">
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
 
           {/* Left: logo + desktop nav */}
@@ -259,7 +259,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <footer className="border-t py-12 bg-muted/30 mt-auto">
+      <footer className="border-t py-12 bg-muted/30 mt-auto print:hidden">
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <PlatformLogo className="h-5 w-5 text-muted-foreground" />

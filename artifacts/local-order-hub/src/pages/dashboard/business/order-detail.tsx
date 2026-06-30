@@ -7,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { KitchenTicketPrint, printKitchenTicket } from "@/components/kitchen-ticket-print";
 
 const STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
 
@@ -50,7 +52,8 @@ export default function BusinessOrderDetail({ params }: Props) {
 
   return (
     <BusinessDashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-6">
+      {order ? <KitchenTicketPrint order={order} /> : null}
+      <div className="max-w-3xl mx-auto space-y-6 print:hidden">
         <Link href="/dashboard/business/orders">
           <span className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground cursor-pointer mb-4">
             <ArrowLeft className="h-3.5 w-3.5" /> Back to orders
@@ -67,16 +70,27 @@ export default function BusinessOrderDetail({ params }: Props) {
           <div className="text-center py-16 text-muted-foreground">Order not found.</div>
         ) : (
           <>
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <h1 className="font-serif text-3xl font-bold">{order.orderNumber}</h1>
                 <p className="text-muted-foreground mt-1">
                   {order.createdAt ? new Date(order.createdAt).toLocaleString() : ""} · {order.fulfillmentType}
                 </p>
               </div>
-              <span className={`text-sm px-3 py-1.5 rounded-full font-medium ${STATUS_COLORS[order.status] ?? "bg-muted"}`}>
-                {order.status.replace(/_/g, " ")}
-              </span>
+              <div className="flex flex-col items-end gap-2 shrink-0">
+                <span className={`text-sm px-3 py-1.5 rounded-full font-medium ${STATUS_COLORS[order.status] ?? "bg-muted"}`}>
+                  {order.status.replace(/_/g, " ")}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={printKitchenTicket}
+                  data-testid="button-print-kitchen-ticket"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Ticket
+                </Button>
+              </div>
             </div>
 
             {/* Status update */}

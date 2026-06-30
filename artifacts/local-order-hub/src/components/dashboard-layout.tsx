@@ -90,9 +90,9 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
     )?.label ?? "Business Hub";
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <div className="flex min-h-[calc(100vh-4rem)] print:block print:min-h-0">
       {/* Desktop sidebar */}
-      <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0">
+      <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0 print:hidden">
         <div className="p-6">
           <h2 className="font-serif font-bold text-lg mb-6">Business Hub</h2>
           <nav className="space-y-1">
@@ -105,7 +105,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
       </aside>
 
       {/* Mobile top bar with hamburger */}
-      <div className="md:hidden fixed top-16 left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-background border-b shadow-sm">
+      <div className="md:hidden fixed top-16 left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-background border-b shadow-sm print:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -127,8 +127,10 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
         <span className="text-sm font-semibold">{activeLabel}</span>
       </div>
 
-      <main className="flex-1 p-4 pt-20 md:pt-0 md:p-10">
-        <NewOrderAlertBanner />
+      <main className="flex-1 p-4 pt-20 md:pt-0 md:p-10 print:p-0">
+        <div className="print:hidden">
+          <NewOrderAlertBanner />
+        </div>
         {children}
       </main>
     </div>
