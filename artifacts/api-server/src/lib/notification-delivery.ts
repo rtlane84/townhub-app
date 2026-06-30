@@ -17,7 +17,12 @@ export type CustomerLifecycleEventType =
   | "ORDER_COMPLETED"
   | "ORDER_CANCELLED";
 
-export type NotificationEventType = OwnerEventType | CustomerLifecycleEventType;
+export type CustomerAppointmentEventType = "APPOINTMENT_CONFIRMED" | "APPOINTMENT_DECLINED";
+
+export type NotificationEventType =
+  | OwnerEventType
+  | CustomerLifecycleEventType
+  | CustomerAppointmentEventType;
 
 export { resolveNotificationStatus, type NotificationStatus };
 
@@ -163,6 +168,50 @@ export async function deliverCustomerNotification(input: {
     body: input.body,
     status,
     orderId: input.orderId,
+    errorMessage: result.error,
+  });
+}
+
+export async function deliverAppointmentCustomerNotification(input: {
+  businessId: number;
+  appointmentRequestId: number;
+  eventType: CustomerAppointmentEventType;
+  channel: NotificationChannel;
+  recipient: string;
+  subject?: string;
+  body: string;
+  html?: string;
+}): Promise<void> {
+  const result =
+    input.channel === "EMAIL"
+      ? await sendEmail(input.recipient, input.subject ?? "Appointment update", input.body, input.html)
+      : await sendSms(input.recipient, input.body);
+
+  const status = resolveNotificationStatus(result);
+
+  if (status === "FAILED") {
+    logOperationalFailure(
+      input.channel === "EMAIL"
+        ? "appointment_customer_notification_failed"
+        : "appointment_customer_notification_sms_failed",
+      {
+        eventType: input.eventType,
+        businessId: input.businessId,
+        appointmentRequestId: input.appointmentRequestId,
+      },
+    );
+  }
+
+  await logNotification({
+    businessId: input.businessId,
+    channel: input.channel,
+    eventType: input.eventType,
+    recipientEmail: input.channel === "EMAIL" ? input.recipient : undefined,
+    recipientPhone: input.channel === "SMS" ? input.recipient : undefined,
+    subject: input.subject,
+    body: input.body,
+    status,
+    appointmentRequestId: input.appointmentRequestId,
     errorMessage: result.error,
   });
 }

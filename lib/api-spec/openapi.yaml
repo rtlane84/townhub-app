@@ -759,6 +759,69 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/AppointmentRequest"
+        "403":
+          description: Forbidden
+    post:
+      operationId: createBusinessAppointmentRequest
+      tags: [appointments]
+      summary: Manually add an appointment (owner — phone or walk-in)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerAppointmentRequestInput"
+      responses:
+        "201":
+          description: Appointment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentRequest"
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/appointment-requests/{id}:
+    patch:
+      operationId: updateBusinessAppointmentRequestStatus
+      tags: [appointments]
+      summary: Confirm, decline, cancel, or complete an appointment request
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentRequestStatusUpdate"
+      responses:
+        "200":
+          description: Updated appointment request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentRequest"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "409":
+          description: Invalid status transition
 
   # ─── Admin: System Health ───────────────────────────────────────
   /admin/system/health:
@@ -2782,7 +2845,7 @@ components:
 
     AppointmentRequest:
       type: object
-      required: [id, businessId, customerName, requestedDate, requestedTime, status, createdAt]
+      required: [id, businessId, customerName, requestedDate, requestedTime, status, source, createdAt]
       properties:
         id:
           type: integer
@@ -2806,9 +2869,49 @@ components:
           type: ["string", "null"]
         status:
           type: string
+          enum: [NEW, CONFIRMED, DECLINED, CANCELLED, COMPLETED]
+        source:
+          type: string
+          enum: [CUSTOMER, MANUAL]
+        statusNote:
+          type: ["string", "null"]
         createdAt:
           type: string
           format: date-time
+
+    OwnerAppointmentRequestInput:
+      type: object
+      required: [customerName, requestedDate, requestedTime]
+      properties:
+        customerName:
+          type: string
+          minLength: 1
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        serviceName:
+          type: string
+        productId:
+          type: integer
+        requestedDate:
+          type: string
+        requestedTime:
+          type: string
+          minLength: 1
+        notes:
+          type: string
+
+    AppointmentRequestStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [CONFIRMED, DECLINED, CANCELLED, COMPLETED]
+        statusNote:
+          type: string
+          description: Optional note to the customer (especially when declining)
 
     AppointmentRequestInput:
       type: object

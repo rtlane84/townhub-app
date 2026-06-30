@@ -954,6 +954,25 @@ export interface NotificationLog {
   createdAt: string;
 }
 
+export type AppointmentRequestStatus = typeof AppointmentRequestStatus[keyof typeof AppointmentRequestStatus];
+
+
+export const AppointmentRequestStatus = {
+  NEW: 'NEW',
+  CONFIRMED: 'CONFIRMED',
+  DECLINED: 'DECLINED',
+  CANCELLED: 'CANCELLED',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export type AppointmentRequestSource = typeof AppointmentRequestSource[keyof typeof AppointmentRequestSource];
+
+
+export const AppointmentRequestSource = {
+  CUSTOMER: 'CUSTOMER',
+  MANUAL: 'MANUAL',
+} as const;
+
 export interface AppointmentRequest {
   id: number;
   businessId: number;
@@ -970,8 +989,40 @@ export interface AppointmentRequest {
   requestedTime: string;
   /** @nullable */
   notes?: string | null;
-  status: string;
+  status: AppointmentRequestStatus;
+  source: AppointmentRequestSource;
+  /** @nullable */
+  statusNote?: string | null;
   createdAt: string;
+}
+
+export interface OwnerAppointmentRequestInput {
+  /** @minLength 1 */
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  serviceName?: string;
+  productId?: number;
+  requestedDate: string;
+  /** @minLength 1 */
+  requestedTime: string;
+  notes?: string;
+}
+
+export type AppointmentRequestStatusUpdateStatus = typeof AppointmentRequestStatusUpdateStatus[keyof typeof AppointmentRequestStatusUpdateStatus];
+
+
+export const AppointmentRequestStatusUpdateStatus = {
+  CONFIRMED: 'CONFIRMED',
+  DECLINED: 'DECLINED',
+  CANCELLED: 'CANCELLED',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export interface AppointmentRequestStatusUpdate {
+  status: AppointmentRequestStatusUpdateStatus;
+  /** Optional note to the customer (especially when declining) */
+  statusNote?: string;
 }
 
 export interface AppointmentRequestInput {

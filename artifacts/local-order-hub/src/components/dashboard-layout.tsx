@@ -6,9 +6,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { acceptsAppointmentRequests } from "@workspace/api-zod";
 import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
+import { useLiveAppointmentAlerts } from "@/hooks/use-live-appointment-alerts";
 import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
 import { OrderAlertControls } from "@/components/order-alert-controls";
 import { NewOrderAlertBanner } from "@/components/new-order-alert-banner";
+import { NewAppointmentAlertBanner } from "@/components/new-appointment-alert-banner";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { BusinessSwitcher } from "@/components/business-switcher";
 
@@ -63,6 +65,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   const businessId = selectedBusinessId ?? undefined;
 
   useLiveOrderAlerts(businessId);
+  useLiveAppointmentAlerts(businessId, acceptsAppointmentRequests(business ?? {}));
 
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [
@@ -135,6 +138,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
       <main className="flex-1 p-4 pt-20 md:pt-0 md:p-10 print:p-0">
         <div className="print:hidden">
           <NewOrderAlertBanner />
+          <NewAppointmentAlertBanner />
         </div>
         {children}
       </main>

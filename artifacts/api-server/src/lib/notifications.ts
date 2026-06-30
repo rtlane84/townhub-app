@@ -6,8 +6,10 @@ import {
 import {
   buildOwnerNewAppointmentEmail,
   buildOwnerNewAppointmentSms,
+  buildCustomerAppointmentStatusEmail,
+  buildCustomerAppointmentStatusSms,
 } from "./notification-content";
-import { deliverOwnerEmail, deliverOwnerSms } from "./notification-delivery";
+import { deliverOwnerEmail, deliverOwnerSms, deliverAppointmentCustomerNotification } from "./notification-delivery";
 import { logOperationalFailure } from "./operational-log";
 import { logger } from "./logger";
 
@@ -29,6 +31,7 @@ export async function notifyOwnerNewAppointmentRequest(input: {
   business: {
     id: number;
     name: string;
+    logoUrl?: string | null;
     notificationEmail?: string | null;
     orderNotificationEmail?: string | null;
     notificationPhone?: string | null;
@@ -44,8 +47,9 @@ export async function notifyOwnerNewAppointmentRequest(input: {
   requestedTime: string;
   notes?: string | null;
 }): Promise<void> {
-  const { subject, body: emailBody } = buildOwnerNewAppointmentEmail({
+  const emailContent = buildOwnerNewAppointmentEmail({
     businessName: input.business.name,
+    businessLogoUrl: input.business.logoUrl,
     customerName: input.customerName,
     customerEmail: input.customerEmail,
     customerPhone: input.customerPhone,
@@ -62,19 +66,20 @@ export async function notifyOwnerNewAppointmentRequest(input: {
     requestedTime: input.requestedTime,
   });
 
-  const email = resolveOwnerNotificationEmail(input.business);
+  const ownerEmail = resolveOwnerNotificationEmail(input.business);
   const phone = resolveOwnerNotificationPhone(input.business);
   const tasks: Promise<void>[] = [];
 
   try {
-    if (input.business.notifyAppointmentRequestsByEmail !== false && email) {
+    if (input.business.notifyAppointmentRequestsByEmail !== false && ownerEmail) {
       tasks.push(
         deliverOwnerEmail({
           businessId: input.business.id,
           eventType: "NEW_APPOINTMENT_REQUEST",
-          to: email,
-          subject,
-          body: emailBody,
+          to: ownerEmail,
+          subject: emailContent.subject,
+          body: emailContent.text,
+          html: emailContent.html,
           appointmentRequestId: input.appointmentRequestId,
         }),
       );
@@ -102,6 +107,78 @@ export async function notifyOwnerNewAppointmentRequest(input: {
     logger.error(
       { err, appointmentRequestId: input.appointmentRequestId },
       "Owner appointment request notification failed",
+    );
+  }
+}
+
+export async function notifyCustomerAppointmentStatusUpdate(input: {
+  business: { id: number; name: string; logoUrl?: string | null };
+  appointmentRequestId: number;
+  customerName: string;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  serviceName?: string | null;
+  requestedDate: string;
+  requestedTime: string;
+  status: "CONFIRMED" | "DECLINED";
+  statusNote?: string | null;
+}): Promise<void> {
+  const eventType = input.status === "CONFIRMED" ? "APPOINTMENT_CONFIRMED" : "APPOINTMENT_DECLINED";
+  const notificationData = {
+    businessName: input.business.name,
+    businessLogoUrl: input.business.logoUrl,
+    customerName: input.customerName,
+    customerEmail: input.customerEmail,
+    customerPhone: input.customerPhone,
+    serviceName: input.serviceName,
+    requestedDate: input.requestedDate,
+    requestedTime: input.requestedTime,
+    statusNote: input.statusNote,
+    status: input.status,
+  };
+
+  const emailContent = buildCustomerAppointmentStatusEmail(notificationData);
+  const smsBody = buildCustomerAppointmentStatusSms(notificationData);
+  const tasks: Promise<void>[] = [];
+
+  const customerEmail = input.customerEmail?.trim();
+  if (customerEmail) {
+    tasks.push(
+      deliverAppointmentCustomerNotification({
+        businessId: input.business.id,
+        appointmentRequestId: input.appointmentRequestId,
+        eventType,
+        channel: "EMAIL",
+        recipient: customerEmail,
+        subject: emailContent.subject,
+        body: emailContent.text,
+        html: emailContent.html,
+      }),
+    );
+  }
+
+  const customerPhone = input.customerPhone?.trim();
+  if (customerPhone) {
+    tasks.push(
+      deliverAppointmentCustomerNotification({
+        businessId: input.business.id,
+        appointmentRequestId: input.appointmentRequestId,
+        eventType,
+        channel: "SMS",
+        recipient: customerPhone,
+        body: smsBody,
+      }),
+    );
+  }
+
+  if (!tasks.length) return;
+
+  try {
+    await Promise.all(tasks);
+  } catch (err) {
+    logger.error(
+      { err, appointmentRequestId: input.appointmentRequestId },
+      "Customer appointment status notification failed",
     );
   }
 }

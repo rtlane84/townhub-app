@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +15,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAsyncAction } from "@/hooks/use-async-action";
-import { useCreateAppointmentRequest } from "@workspace/api-client-react";
+import {
+  useCreateBusinessAppointmentRequest,
+  useListProducts,
+  getListBusinessAppointmentRequestsQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { TimePicker } from "@/components/time-picker";
 import { normalizeRequiredTime } from "@workspace/api-zod";
-import { Info } from "lucide-react";
 
 type ProductOption = { id: number; name: string };
 
@@ -27,25 +30,23 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   businessId: number;
-  businessName: string;
   services?: ProductOption[];
-  initialProductId?: number | null;
 };
 
-export function AppointmentBookingDialog({
+export function ManualAppointmentDialog({
   open,
   onOpenChange,
   businessId,
-  businessName,
   services = [],
-  initialProductId = null,
 }: Props) {
   const { toast } = useToast();
-  const createRequest = useCreateAppointmentRequest();
+  const queryClient = useQueryClient();
+  const createRequest = useCreateBusinessAppointmentRequest();
+
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [productId, setProductId] = useState<string>("");
+  const [productId, setProductId] = useState("");
   const [serviceName, setServiceName] = useState("");
   const [requestedDate, setRequestedDate] = useState("");
   const [requestedTime, setRequestedTime] = useState("");
@@ -55,33 +56,27 @@ export function AppointmentBookingDialog({
     setCustomerName("");
     setCustomerEmail("");
     setCustomerPhone("");
-    setProductId(initialProductId ? String(initialProductId) : "");
+    setProductId("");
     setServiceName("");
     setRequestedDate("");
     setRequestedTime("");
     setNotes("");
   }
 
-  useEffect(() => {
-    if (open) {
-      setProductId(initialProductId ? String(initialProductId) : "");
-    }
-  }, [open, initialProductId]);
-
-  const submitRequest = useCallback(async () => {
+  const submit = useCallback(async () => {
     const time = normalizeRequiredTime(requestedTime);
     if (!customerName.trim() || !requestedDate || !time) {
       toast({
         title: "Missing details",
-        description: "Please provide your name, preferred date, and time.",
+        description: "Customer name, date, and time are required.",
         variant: "destructive",
       });
       return;
     }
 
     await createRequest.mutateAsync({
+      businessId,
       data: {
-        businessId,
         customerName: customerName.trim(),
         customerEmail: customerEmail.trim() || undefined,
         customerPhone: customerPhone.trim() || undefined,
@@ -92,15 +87,15 @@ export function AppointmentBookingDialog({
         notes: notes.trim() || undefined,
       },
     });
-    toast({
-      title: "Request submitted — not confirmed yet",
-      description: `${businessName} will review your request and follow up. This is not a confirmed appointment.`,
+
+    void queryClient.invalidateQueries({
+      queryKey: getListBusinessAppointmentRequestsQueryKey(businessId),
     });
+    toast({ title: "Appointment added", description: "Saved as confirmed (phone or walk-in)." });
     resetForm();
     onOpenChange(false);
   }, [
     businessId,
-    businessName,
     createRequest,
     customerEmail,
     customerName,
@@ -108,54 +103,38 @@ export function AppointmentBookingDialog({
     notes,
     onOpenChange,
     productId,
+    queryClient,
     requestedDate,
     requestedTime,
     serviceName,
     toast,
   ]);
 
-  const { run: runSubmit, pending: isSubmitting } = useAsyncAction(submitRequest);
-
-  function handleSubmit() {
-    void runSubmit().catch(() => {
-      toast({
-        title: "Could not submit request",
-        description: "Please try again or call the business directly.",
-        variant: "destructive",
-      });
-    });
-  }
+  const { run: runSubmit, pending } = useAsyncAction(submit);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif">Request an Appointment</DialogTitle>
+          <DialogTitle className="font-serif">Add appointment</DialogTitle>
           <DialogDescription>
-            Send a request to {businessName}. Your preferred time is not reserved until the business confirms.
+            Record a phone or walk-in booking. It is saved as confirmed — no customer request email is sent.
           </DialogDescription>
         </DialogHeader>
 
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription className="text-sm">
-            This is a <strong>request</strong>, not instant booking. {businessName} will contact you to confirm availability.
-          </AlertDescription>
-        </Alert>
-
         <div className="space-y-4 py-2">
           <div>
-            <Label htmlFor="appt-name">Your name</Label>
-            <Input id="appt-name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+            <Label htmlFor="manual-name">Customer name</Label>
+            <Input id="manual-name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="appt-email">Email</Label>
-              <Input id="appt-email" type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+              <Label htmlFor="manual-email">Email (optional)</Label>
+              <Input id="manual-email" type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="appt-phone">Phone</Label>
-              <Input id="appt-phone" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+              <Label htmlFor="manual-phone">Phone (optional)</Label>
+              <Input id="manual-phone" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
             </div>
           </div>
           {services.length > 0 ? (
@@ -176,36 +155,30 @@ export function AppointmentBookingDialog({
             </div>
           ) : (
             <div>
-              <Label htmlFor="appt-service">Service (optional)</Label>
-              <Input id="appt-service" value={serviceName} onChange={(e) => setServiceName(e.target.value)} placeholder="Haircut, color, etc." />
+              <Label htmlFor="manual-service">Service (optional)</Label>
+              <Input id="manual-service" value={serviceName} onChange={(e) => setServiceName(e.target.value)} />
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="appt-date">Preferred date</Label>
-              <Input id="appt-date" type="date" value={requestedDate} onChange={(e) => setRequestedDate(e.target.value)} />
+              <Label htmlFor="manual-date">Date</Label>
+              <Input id="manual-date" type="date" value={requestedDate} onChange={(e) => setRequestedDate(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="appt-time">Preferred time</Label>
-              <TimePicker
-                id="appt-time"
-                value={requestedTime}
-                onChange={setRequestedTime}
-                required
-                data-testid="input-appt-time"
-              />
+              <Label htmlFor="manual-time">Time</Label>
+              <TimePicker id="manual-time" value={requestedTime} onChange={setRequestedTime} required />
             </div>
           </div>
           <div>
-            <Label htmlFor="appt-notes">Notes (optional)</Label>
-            <Textarea id="appt-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+            <Label htmlFor="manual-notes">Notes (optional)</Label>
+            <Textarea id="manual-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <LoadingButton onClick={handleSubmit} loading={isSubmitting} loadingText="Submitting…">
-            Submit Request
+          <LoadingButton onClick={() => void runSubmit()} loading={pending} loadingText="Saving…">
+            Save appointment
           </LoadingButton>
         </DialogFooter>
       </DialogContent>

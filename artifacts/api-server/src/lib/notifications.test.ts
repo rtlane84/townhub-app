@@ -102,8 +102,8 @@ describe("customer lifecycle SMS", () => {
 });
 
 describe("appointment owner notifications", () => {
-  it("builds appointment request owner email content", () => {
-    const { subject, body } = buildOwnerNewAppointmentEmail({
+  it("builds styled appointment request owner email content", () => {
+    const email = buildOwnerNewAppointmentEmail({
       businessName: "Town Salon",
       customerName: "Jamie",
       customerEmail: "jamie@example.com",
@@ -114,9 +114,12 @@ describe("appointment owner notifications", () => {
       notes: "First visit",
     });
 
-    assert.match(subject, /appointment request/i);
-    assert.match(body, /Jamie/);
-    assert.match(body, /Haircut/);
-    assert.match(body, /appointments/);
+    assert.match(email.subject, /appointment request/i);
+    assert.match(email.text, /Jamie/);
+    assert.match(email.text, /Haircut/);
+    assert.match(email.text, /appointments/);
+    assert.match(email.html, /New Appointment Request/);
+    assert.match(email.html, /Review Request/);
+    assert.match(email.html, /TownHub/);
   });
 });

@@ -5,6 +5,8 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { AppointmentRequestSource } from './appointmentRequestSource';
+import type { AppointmentRequestStatus } from './appointmentRequestStatus';
 
 export interface AppointmentRequest {
   id: number;
@@ -22,6 +24,9 @@ export interface AppointmentRequest {
   requestedTime: string;
   /** @nullable */
   notes?: string | null;
-  status: string;
+  status: AppointmentRequestStatus;
+  source: AppointmentRequestSource;
+  /** @nullable */
+  statusNote?: string | null;
   createdAt: Date;
 }

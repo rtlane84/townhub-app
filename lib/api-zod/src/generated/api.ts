@@ -1142,10 +1142,66 @@ export const ListBusinessAppointmentRequestsResponseItem = zod.object({
   "requestedDate": zod.string(),
   "requestedTime": zod.string(),
   "notes": zod.string().nullish(),
-  "status": zod.string(),
+  "status": zod.enum(['NEW', 'CONFIRMED', 'DECLINED', 'CANCELLED', 'COMPLETED']),
+  "source": zod.enum(['CUSTOMER', 'MANUAL']),
+  "statusNote": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 })
 export const ListBusinessAppointmentRequestsResponse = zod.array(ListBusinessAppointmentRequestsResponseItem)
+
+
+/**
+ * @summary Manually add an appointment (owner — phone or walk-in)
+ */
+export const CreateBusinessAppointmentRequestParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+
+
+
+
+export const CreateBusinessAppointmentRequestBody = zod.object({
+  "customerName": zod.string().min(1),
+  "customerEmail": zod.string().optional(),
+  "customerPhone": zod.string().optional(),
+  "serviceName": zod.string().optional(),
+  "productId": zod.number().optional(),
+  "requestedDate": zod.string(),
+  "requestedTime": zod.string().min(1),
+  "notes": zod.string().optional()
+})
+
+
+/**
+ * @summary Confirm, decline, cancel, or complete an appointment request
+ */
+export const UpdateBusinessAppointmentRequestStatusParams = zod.object({
+  "businessId": zod.coerce.number(),
+  "id": zod.coerce.number()
+})
+
+export const UpdateBusinessAppointmentRequestStatusBody = zod.object({
+  "status": zod.enum(['CONFIRMED', 'DECLINED', 'CANCELLED', 'COMPLETED']),
+  "statusNote": zod.string().optional().describe('Optional note to the customer (especially when declining)')
+})
+
+export const UpdateBusinessAppointmentRequestStatusResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "customerName": zod.string(),
+  "customerEmail": zod.string().nullish(),
+  "customerPhone": zod.string().nullish(),
+  "serviceName": zod.string().nullish(),
+  "productId": zod.number().nullish(),
+  "requestedDate": zod.string(),
+  "requestedTime": zod.string(),
+  "notes": zod.string().nullish(),
+  "status": zod.enum(['NEW', 'CONFIRMED', 'DECLINED', 'CANCELLED', 'COMPLETED']),
+  "source": zod.enum(['CUSTOMER', 'MANUAL']),
+  "statusNote": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
 
 
 /**

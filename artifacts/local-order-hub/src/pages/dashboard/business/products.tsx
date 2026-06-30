@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Star } from "lucide-react";
 import { ImageField } from "@/components/image-field";
+import { acceptsAppointmentRequests } from "@workspace/api-zod";
 
 interface ProductForm {
   name: string;
@@ -48,8 +49,11 @@ const EMPTY_FORM: ProductForm = {
 };
 
 export default function BusinessProducts() {
-  const { selectedBusinessId } = useSelectedBusiness();
+  const { selectedBusinessId, business } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? 0;
+  const isSalonMode = acceptsAppointmentRequests(business ?? {});
+  const itemLabel = isSalonMode ? "Service" : "Product";
+  const itemsLabel = isSalonMode ? "Services" : "Products";
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -71,8 +75,8 @@ export default function BusinessProducts() {
 
   const createProduct = useCreateProduct({
     mutation: {
-      onSuccess: () => { invalidate(); setDialogOpen(false); toast({ title: "Product created" }); },
-      onError: () => toast({ title: "Failed to create product", variant: "destructive" }),
+      onSuccess: () => { invalidate(); setDialogOpen(false); toast({ title: `${itemLabel} created` }); },
+      onError: () => toast({ title: `Failed to create ${itemLabel.toLowerCase()}`, variant: "destructive" }),
     },
   });
 
@@ -142,11 +146,13 @@ export default function BusinessProducts() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl font-bold">Products</h1>
-            <p className="text-muted-foreground mt-1">Manage what you offer</p>
+            <h1 className="font-serif text-3xl font-bold">{itemsLabel}</h1>
+            <p className="text-muted-foreground mt-1">
+              {isSalonMode ? "Manage the services customers can request" : "Manage what you offer"}
+            </p>
           </div>
           <Button onClick={openCreate} data-testid="button-add-product">
-            <Plus className="h-4 w-4 mr-2" /> Add Product
+            <Plus className="h-4 w-4 mr-2" /> Add {itemLabel}
           </Button>
         </div>
 
@@ -158,8 +164,12 @@ export default function BusinessProducts() {
               </div>
             ) : !products?.length ? (
               <div className="text-center py-16 text-muted-foreground">
-                <p className="font-serif text-lg">No products yet</p>
-                <p className="text-sm mt-1">Add your first product to start taking orders.</p>
+                <p className="font-serif text-lg">No {itemsLabel.toLowerCase()} yet</p>
+                <p className="text-sm mt-1">
+                  {isSalonMode
+                    ? "Add your first service so customers can request appointments."
+                    : "Add your first product to start taking orders."}
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -209,7 +219,7 @@ export default function BusinessProducts() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif">{editingId ? "Edit Product" : "Add Product"}</DialogTitle>
+            <DialogTitle className="font-serif">{editingId ? `Edit ${itemLabel}` : `Add ${itemLabel}`}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
             <div>

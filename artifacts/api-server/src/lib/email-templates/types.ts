@@ -30,6 +30,19 @@ export type EmailContent = {
   html: string;
 };
 
+export type AppointmentNotificationData = {
+  businessName: string;
+  businessLogoUrl?: string | null;
+  customerName: string;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  serviceName?: string | null;
+  requestedDate: string;
+  requestedTime: string;
+  notes?: string | null;
+  statusNote?: string | null;
+};
+
 export type CustomerLifecycleEvent =
   | "ORDER_RECEIVED"
   | "ORDER_ACCEPTED"

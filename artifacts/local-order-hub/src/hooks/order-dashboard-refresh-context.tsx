@@ -7,13 +7,18 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Order } from "@workspace/api-client-react";
+import type { AppointmentRequest, Order } from "@workspace/api-client-react";
 import { ORDER_HIGHLIGHT_DURATION_MS } from "@/lib/order-dashboard-sync";
 
 export type OrderHighlightKind = "new" | "updated";
+export type AppointmentHighlightKind = OrderHighlightKind;
 
 export interface PendingOrderBanner {
   order: Order;
+}
+
+export interface PendingAppointmentBanner {
+  request: AppointmentRequest;
 }
 
 interface OrderDashboardRefreshContextValue {
@@ -22,6 +27,11 @@ interface OrderDashboardRefreshContextValue {
   pendingBanners: PendingOrderBanner[];
   addNewOrderBanners: (orders: Order[]) => void;
   dismissBanner: (orderId: number) => void;
+  getAppointmentHighlight: (requestId: number) => AppointmentHighlightKind | undefined;
+  markAppointmentHighlights: (newRequestIds: number[], updatedRequestIds: number[]) => void;
+  pendingAppointmentBanners: PendingAppointmentBanner[];
+  addNewAppointmentBanners: (requests: AppointmentRequest[]) => void;
+  dismissAppointmentBanner: (requestId: number) => void;
 }
 
 const OrderDashboardRefreshContext = createContext<OrderDashboardRefreshContextValue | null>(null);
@@ -29,8 +39,14 @@ const OrderDashboardRefreshContext = createContext<OrderDashboardRefreshContextV
 export function OrderDashboardRefreshProvider({ children }: { children: ReactNode }) {
   const [highlights, setHighlights] = useState<Map<number, OrderHighlightKind>>(() => new Map());
   const [pendingBanners, setPendingBanners] = useState<PendingOrderBanner[]>([]);
+  const [appointmentHighlights, setAppointmentHighlights] = useState<Map<number, AppointmentHighlightKind>>(
+    () => new Map(),
+  );
+  const [pendingAppointmentBanners, setPendingAppointmentBanners] = useState<PendingAppointmentBanner[]>([]);
   const timeoutIdsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
   const bannerOrderIdsRef = useRef<Set<number>>(new Set());
+  const appointmentTimeoutIdsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const bannerAppointmentIdsRef = useRef<Set<number>>(new Set());
 
   const clearHighlight = useCallback((orderId: number) => {
     setHighlights((prev) => {
@@ -100,9 +116,82 @@ export function OrderDashboardRefreshProvider({ children }: { children: ReactNod
     setPendingBanners((prev) => prev.filter((b) => b.order.id !== orderId));
   }, []);
 
+  const clearAppointmentHighlight = useCallback((requestId: number) => {
+    setAppointmentHighlights((prev) => {
+      if (!prev.has(requestId)) return prev;
+      const next = new Map(prev);
+      next.delete(requestId);
+      return next;
+    });
+    const timeoutId = appointmentTimeoutIdsRef.current.get(requestId);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      appointmentTimeoutIdsRef.current.delete(requestId);
+    }
+  }, []);
+
+  const scheduleAppointmentClear = useCallback(
+    (requestId: number) => {
+      const existing = appointmentTimeoutIdsRef.current.get(requestId);
+      if (existing) clearTimeout(existing);
+
+      const timeoutId = setTimeout(() => {
+        clearAppointmentHighlight(requestId);
+      }, ORDER_HIGHLIGHT_DURATION_MS);
+      appointmentTimeoutIdsRef.current.set(requestId, timeoutId);
+    },
+    [clearAppointmentHighlight],
+  );
+
+  const markAppointmentHighlights = useCallback(
+    (newRequestIds: number[], updatedRequestIds: number[]) => {
+      if (!newRequestIds.length && !updatedRequestIds.length) return;
+
+      setAppointmentHighlights((prev) => {
+        const next = new Map(prev);
+        for (const id of newRequestIds) {
+          next.set(id, "new");
+        }
+        for (const id of updatedRequestIds) {
+          if (!next.has(id)) next.set(id, "updated");
+        }
+        return next;
+      });
+
+      for (const id of newRequestIds) scheduleAppointmentClear(id);
+      for (const id of updatedRequestIds) {
+        if (!newRequestIds.includes(id)) scheduleAppointmentClear(id);
+      }
+    },
+    [scheduleAppointmentClear],
+  );
+
+  const addNewAppointmentBanners = useCallback((requests: AppointmentRequest[]) => {
+    if (!requests.length) return;
+
+    setPendingAppointmentBanners((prev) => {
+      const next = [...prev];
+      for (const request of requests) {
+        if (bannerAppointmentIdsRef.current.has(request.id)) continue;
+        bannerAppointmentIdsRef.current.add(request.id);
+        next.push({ request });
+      }
+      return next.sort((a, b) => b.request.id - a.request.id);
+    });
+  }, []);
+
+  const dismissAppointmentBanner = useCallback((requestId: number) => {
+    setPendingAppointmentBanners((prev) => prev.filter((b) => b.request.id !== requestId));
+  }, []);
+
   const getHighlight = useCallback(
     (orderId: number) => highlights.get(orderId),
     [highlights],
+  );
+
+  const getAppointmentHighlight = useCallback(
+    (requestId: number) => appointmentHighlights.get(requestId),
+    [appointmentHighlights],
   );
 
   const value = useMemo(
@@ -112,8 +201,24 @@ export function OrderDashboardRefreshProvider({ children }: { children: ReactNod
       pendingBanners,
       addNewOrderBanners,
       dismissBanner,
+      getAppointmentHighlight,
+      markAppointmentHighlights,
+      pendingAppointmentBanners,
+      addNewAppointmentBanners,
+      dismissAppointmentBanner,
     }),
-    [getHighlight, markHighlights, pendingBanners, addNewOrderBanners, dismissBanner],
+    [
+      getHighlight,
+      markHighlights,
+      pendingBanners,
+      addNewOrderBanners,
+      dismissBanner,
+      getAppointmentHighlight,
+      markAppointmentHighlights,
+      pendingAppointmentBanners,
+      addNewAppointmentBanners,
+      dismissAppointmentBanner,
+    ],
   );
 
   return (
@@ -144,5 +249,21 @@ export function usePendingOrderBanners() {
   return {
     pendingBanners: ctx.pendingBanners,
     dismissBanner: ctx.dismissBanner,
+  };
+}
+
+export function useAppointmentHighlight(requestId: number): AppointmentHighlightKind | undefined {
+  const ctx = useContext(OrderDashboardRefreshContext);
+  return ctx?.getAppointmentHighlight(requestId);
+}
+
+export function usePendingAppointmentBanners() {
+  const ctx = useContext(OrderDashboardRefreshContext);
+  if (!ctx) {
+    throw new Error("usePendingAppointmentBanners must be used within OrderDashboardRefreshProvider");
+  }
+  return {
+    pendingBanners: ctx.pendingAppointmentBanners,
+    dismissBanner: ctx.dismissAppointmentBanner,
   };
 }

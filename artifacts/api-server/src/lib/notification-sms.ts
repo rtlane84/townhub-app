@@ -1,4 +1,5 @@
-import { customerOrderUrl, dashboardOrderUrl } from "./notification-urls";
+import { customerOrderUrl, dashboardOrderUrl, dashboardAppointmentsUrl } from "./notification-urls";
+import { formatTime12h } from "@workspace/api-zod";
 import type { CustomerLifecycleEvent, OrderNotificationData } from "./email-templates/types";
 
 export function buildCustomerOrderReceivedSms(order: OrderNotificationData): string {
@@ -59,4 +60,44 @@ export function buildOwnerNewOrderSms(order: OrderNotificationData): string {
     `${order.customerName} · $${order.total.toFixed(2)} · ${payment}`,
     dashboardOrderUrl(order.orderId),
   ].join("\n");
+}
+
+type AppointmentSmsData = {
+  businessName: string;
+  customerName: string;
+  serviceName?: string | null;
+  requestedDate: string;
+  requestedTime: string;
+  statusNote?: string | null;
+};
+
+function formatAppointmentSmsWhen(date: string, time: string): string {
+  return `${date} ${formatTime12h(time)}`;
+}
+
+export function buildOwnerNewAppointmentSms(data: AppointmentSmsData): string {
+  const service = data.serviceName ? ` · ${data.serviceName}` : "";
+  return [
+    `${data.businessName}: New appointment request`,
+    `${data.customerName}${service} · ${formatAppointmentSmsWhen(data.requestedDate, data.requestedTime)}`,
+    dashboardAppointmentsUrl(),
+  ].join("\n");
+}
+
+export function buildCustomerAppointmentConfirmedSms(data: AppointmentSmsData): string {
+  const service = data.serviceName ? ` (${data.serviceName})` : "";
+  return `${data.businessName} confirmed your appointment${service} for ${formatAppointmentSmsWhen(data.requestedDate, data.requestedTime)}. Contact them if you need to make changes.`;
+}
+
+export function buildCustomerAppointmentDeclinedSms(data: AppointmentSmsData): string {
+  const note = data.statusNote?.trim() ? ` ${data.statusNote.trim()}` : "";
+  return `${data.businessName} could not confirm your appointment request for ${formatAppointmentSmsWhen(data.requestedDate, data.requestedTime)}.${note} Please contact them to reschedule.`;
+}
+
+export function buildCustomerAppointmentStatusSms(
+  data: AppointmentSmsData & { status: "CONFIRMED" | "DECLINED" },
+): string {
+  return data.status === "CONFIRMED"
+    ? buildCustomerAppointmentConfirmedSms(data)
+    : buildCustomerAppointmentDeclinedSms(data);
 }

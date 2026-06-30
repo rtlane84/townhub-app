@@ -22,6 +22,7 @@ import type {
 import type {
   AppointmentRequest,
   AppointmentRequestInput,
+  AppointmentRequestStatusUpdate,
   Business,
   BusinessInput,
   BusinessOrderSummary,
@@ -59,6 +60,7 @@ import type {
   OrderInput,
   OrderStatusUpdate,
   OwnedBusinessSummary,
+  OwnerAppointmentRequestInput,
   PlatformStats,
   PlatformTheme,
   PlatformThemeInput,
@@ -2682,7 +2684,7 @@ export const getListBusinessAppointmentRequestsQueryKey = (businessId: number,) 
     }
 
 
-export const getListBusinessAppointmentRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError = ErrorType<unknown>>(businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListBusinessAppointmentRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError = ErrorType<void>>(businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -2701,14 +2703,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListBusinessAppointmentRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>>
-export type ListBusinessAppointmentRequestsQueryError = ErrorType<unknown>
+export type ListBusinessAppointmentRequestsQueryError = ErrorType<void>
 
 
 /**
  * @summary List appointment requests for a business (owner)
  */
 
-export function useListBusinessAppointmentRequests<TData = Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError = ErrorType<unknown>>(
+export function useListBusinessAppointmentRequests<TData = Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError = ErrorType<void>>(
  businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessAppointmentRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -2725,6 +2727,152 @@ export function useListBusinessAppointmentRequests<TData = Awaited<ReturnType<ty
 
 
 
+
+export const getCreateBusinessAppointmentRequestUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/appointment-requests`
+}
+
+/**
+ * @summary Manually add an appointment (owner — phone or walk-in)
+ */
+export const createBusinessAppointmentRequest = async (businessId: number,
+    ownerAppointmentRequestInput: OwnerAppointmentRequestInput, options?: RequestInit): Promise<AppointmentRequest> => {
+
+  return customFetch<AppointmentRequest>(getCreateBusinessAppointmentRequestUrl(businessId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      ownerAppointmentRequestInput,)
+  }
+);}
+
+
+
+
+export const getCreateBusinessAppointmentRequestMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBusinessAppointmentRequest>>, TError,{businessId: number;data: BodyType<OwnerAppointmentRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBusinessAppointmentRequest>>, TError,{businessId: number;data: BodyType<OwnerAppointmentRequestInput>}, TContext> => {
+
+const mutationKey = ['createBusinessAppointmentRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBusinessAppointmentRequest>>, {businessId: number;data: BodyType<OwnerAppointmentRequestInput>}> = (props) => {
+          const {businessId,data} = props ?? {};
+
+          return  createBusinessAppointmentRequest(businessId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBusinessAppointmentRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createBusinessAppointmentRequest>>>
+    export type CreateBusinessAppointmentRequestMutationBody = BodyType<OwnerAppointmentRequestInput>
+    export type CreateBusinessAppointmentRequestMutationError = ErrorType<void>
+
+    /**
+ * @summary Manually add an appointment (owner — phone or walk-in)
+ */
+export const useCreateBusinessAppointmentRequest = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBusinessAppointmentRequest>>, TError,{businessId: number;data: BodyType<OwnerAppointmentRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createBusinessAppointmentRequest>>,
+        TError,
+        {businessId: number;data: BodyType<OwnerAppointmentRequestInput>},
+        TContext
+      > => {
+      return useMutation(getCreateBusinessAppointmentRequestMutationOptions(options));
+    }
+
+export const getUpdateBusinessAppointmentRequestStatusUrl = (businessId: number,
+    id: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/appointment-requests/${id}`
+}
+
+/**
+ * @summary Confirm, decline, cancel, or complete an appointment request
+ */
+export const updateBusinessAppointmentRequestStatus = async (businessId: number,
+    id: number,
+    appointmentRequestStatusUpdate: AppointmentRequestStatusUpdate, options?: RequestInit): Promise<AppointmentRequest> => {
+
+  return customFetch<AppointmentRequest>(getUpdateBusinessAppointmentRequestStatusUrl(businessId,id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      appointmentRequestStatusUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateBusinessAppointmentRequestStatusMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBusinessAppointmentRequestStatus>>, TError,{businessId: number;id: number;data: BodyType<AppointmentRequestStatusUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateBusinessAppointmentRequestStatus>>, TError,{businessId: number;id: number;data: BodyType<AppointmentRequestStatusUpdate>}, TContext> => {
+
+const mutationKey = ['updateBusinessAppointmentRequestStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBusinessAppointmentRequestStatus>>, {businessId: number;id: number;data: BodyType<AppointmentRequestStatusUpdate>}> = (props) => {
+          const {businessId,id,data} = props ?? {};
+
+          return  updateBusinessAppointmentRequestStatus(businessId,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBusinessAppointmentRequestStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateBusinessAppointmentRequestStatus>>>
+    export type UpdateBusinessAppointmentRequestStatusMutationBody = BodyType<AppointmentRequestStatusUpdate>
+    export type UpdateBusinessAppointmentRequestStatusMutationError = ErrorType<void>
+
+    /**
+ * @summary Confirm, decline, cancel, or complete an appointment request
+ */
+export const useUpdateBusinessAppointmentRequestStatus = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBusinessAppointmentRequestStatus>>, TError,{businessId: number;id: number;data: BodyType<AppointmentRequestStatusUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateBusinessAppointmentRequestStatus>>,
+        TError,
+        {businessId: number;id: number;data: BodyType<AppointmentRequestStatusUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateBusinessAppointmentRequestStatusMutationOptions(options));
+    }
 
 export const getGetAdminSystemHealthUrl = () => {
 
