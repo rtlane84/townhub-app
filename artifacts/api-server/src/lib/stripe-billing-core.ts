@@ -240,6 +240,20 @@ export function subscriptionNeedsCheckout(
   return ["INCOMPLETE", "CANCELED"].includes(subscription.status);
 }
 
+const STRIPE_SUBSCRIPTION_SYNC_PRIORITY = ["trialing", "active", "past_due"] as const;
+
+/** Pick the Stripe subscription row to sync after checkout when local stripeSubscriptionId is missing. */
+export function pickStripeSubscriptionToSync<T extends { status: string; created: number }>(
+  subscriptions: T[],
+): T | null {
+  if (subscriptions.length === 0) return null;
+  for (const status of STRIPE_SUBSCRIPTION_SYNC_PRIORITY) {
+    const match = subscriptions.find((sub) => sub.status === status);
+    if (match) return match;
+  }
+  return [...subscriptions].sort((a, b) => b.created - a.created)[0] ?? null;
+}
+
 export function trialDaysRemaining(trialEndsAt: Date | null | undefined, now = new Date()): number | null {
   if (!trialEndsAt) return null;
   const diffMs = trialEndsAt.getTime() - now.getTime();

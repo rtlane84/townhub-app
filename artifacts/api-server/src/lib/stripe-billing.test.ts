@@ -14,6 +14,7 @@ import {
   trialDaysRemaining,
   validateSubscriptionCheckoutPlan,
   SUBSCRIPTION_CHECKOUT_METADATA_TYPE,
+  pickStripeSubscriptionToSync,
 } from "./stripe-billing-core";
 import { parseCheckoutSessionOrderId } from "./stripe-config";
 import { subscriptionGrantsFeaturesForPlan } from "./subscription-feature-keys";
@@ -235,5 +236,20 @@ describe("subscription entitlement helpers", () => {
     const inThreeDays = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     assert.equal(trialDaysRemaining(inThreeDays), 3);
     assert.equal(trialDaysRemaining(new Date(Date.now() - 1000)), 0);
+  });
+
+  it("prefers trialing or active subscriptions when syncing after checkout", () => {
+    const picked = pickStripeSubscriptionToSync([
+      { id: "sub_old", status: "canceled", created: 1 },
+      { id: "sub_trial", status: "trialing", created: 2 },
+      { id: "sub_new", status: "incomplete", created: 3 },
+    ]);
+    assert.equal(picked?.id, "sub_trial");
+
+    const active = pickStripeSubscriptionToSync([
+      { id: "sub_a", status: "active", created: 1 },
+      { id: "sub_b", status: "past_due", created: 2 },
+    ]);
+    assert.equal(active?.id, "sub_a");
   });
 });

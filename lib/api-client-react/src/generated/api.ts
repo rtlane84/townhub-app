@@ -25,6 +25,7 @@ import type {
   AppointmentRequest,
   AppointmentRequestInput,
   AppointmentRequestStatusUpdate,
+  ArchiveBusinessResponse,
   Business,
   BusinessFeatureAccess,
   BusinessInput,
@@ -1265,11 +1266,11 @@ export const getDeleteBusinessUrl = (id: number,) => {
 }
 
 /**
- * @summary Delete/disable a business (admin)
+ * @summary Archive/remove a business (admin)
  */
-export const deleteBusiness = async (id: number, options?: RequestInit): Promise<void> => {
+export const deleteBusiness = async (id: number, options?: RequestInit): Promise<ArchiveBusinessResponse> => {
 
-  return customFetch<void>(getDeleteBusinessUrl(id),
+  return customFetch<ArchiveBusinessResponse>(getDeleteBusinessUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -1281,7 +1282,7 @@ export const deleteBusiness = async (id: number, options?: RequestInit): Promise
 
 
 
-export const getDeleteBusinessMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteBusinessMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteBusiness>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteBusiness>>, TError,{id: number}, TContext> => {
 
@@ -1310,12 +1311,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteBusinessMutationResult = NonNullable<Awaited<ReturnType<typeof deleteBusiness>>>
 
-    export type DeleteBusinessMutationError = ErrorType<unknown>
+    export type DeleteBusinessMutationError = ErrorType<void>
 
     /**
- * @summary Delete/disable a business (admin)
+ * @summary Archive/remove a business (admin)
  */
-export const useDeleteBusiness = <TError = ErrorType<unknown>,
+export const useDeleteBusiness = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteBusiness>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteBusiness>>,

@@ -56,6 +56,7 @@ import Help from "@/pages/help";
 import Pricing from "@/pages/pricing";
 import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
 import { BusinessFeatureAccessProvider } from "@/hooks/business-feature-access";
+import { BusinessHubGate } from "@/components/business-hub-gate";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -177,7 +178,8 @@ function PostSignInRedirector() {
       if (me.role === "ADMIN") {
         setLocation("/dashboard/admin");
       } else if (me.role === "BUSINESS_OWNER") {
-        setLocation("/dashboard/business");
+        const hasBusinesses = (me.businessIds?.length ?? 0) > 0;
+        setLocation(hasBusinesses ? "/dashboard/business" : "/list-your-business");
       }
     }
   }, [redirectPending, me, setLocation]);
@@ -199,7 +201,9 @@ function BusinessDashboardRoute({
           <Show when="signed-in">
             <SelectedBusinessProvider>
               <BusinessFeatureAccessProvider>
-                <Component params={params as Record<string, string>} />
+                <BusinessHubGate>
+                  <Component params={params as Record<string, string>} />
+                </BusinessHubGate>
               </BusinessFeatureAccessProvider>
             </SelectedBusinessProvider>
           </Show>

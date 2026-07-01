@@ -8,6 +8,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { getAppBaseUrl } from "./app-base-url";
+import { logger } from "./logger";
 import { stripe } from "./stripe";
 import { findPlanById } from "./subscription-plans";
 import {
@@ -16,10 +17,15 @@ import {
   parseBillingIntervalFromMetadata,
   parseSubscriptionCheckoutBusinessId,
   parseSubscriptionCheckoutPlanId,
+  pickStripeSubscriptionToSync,
   validateSubscriptionCheckoutPlan,
   type BillingInterval,
   type SubscriptionSyncInput,
 } from "./stripe-billing-core";
+import {
+  snapshotFromSubscriptionRow,
+} from "./subscription-notification-core";
+import type { SubscriptionNotifySource } from "./subscription-notification-core";
 
 export {
   SUBSCRIPTION_CHECKOUT_METADATA_TYPE,
@@ -31,6 +37,7 @@ export {
   parseSubscriptionCheckoutBusinessId,
   parseSubscriptionCheckoutPlanId,
   planStripePriceId,
+  pickStripeSubscriptionToSync,
   requiresStripeSubscription,
   resolveSubscriptionStatusFromStripe,
   subscriptionNeedsCheckout,
@@ -54,7 +61,10 @@ export async function findPlanByStripePriceId(priceId: string) {
   return plan;
 }
 
-export async function upsertBusinessSubscriptionFromStripe(input: SubscriptionSyncInput): Promise<void> {
+export async function upsertBusinessSubscriptionFromStripe(
+  input: SubscriptionSyncInput,
+  notifySource?: SubscriptionNotifySource,
+): Promise<void> {
   const renewalAt = input.trialEndsAt ?? input.currentPeriodEnd;
   const values = {
     planId: input.planId,
@@ -71,23 +81,34 @@ export async function upsertBusinessSubscriptionFromStripe(input: SubscriptionSy
   };
 
   const [existing] = await db
-    .select({ id: businessSubscriptionsTable.id })
+    .select()
     .from(businessSubscriptionsTable)
     .where(eq(businessSubscriptionsTable.businessId, input.businessId));
+
+  const beforeSnapshot = existing ? snapshotFromSubscriptionRow(existing) : null;
 
   if (existing) {
     await db
       .update(businessSubscriptionsTable)
       .set(values)
       .where(eq(businessSubscriptionsTable.businessId, input.businessId));
-    return;
+  } else {
+    await db.insert(businessSubscriptionsTable).values({
+      businessId: input.businessId,
+      startedAt: new Date(),
+      ...values,
+    });
   }
 
-  await db.insert(businessSubscriptionsTable).values({
-    businessId: input.businessId,
-    startedAt: new Date(),
-    ...values,
-  });
+  if (notifySource) {
+    void import("./subscription-notifications")
+      .then(({ notifySubscriptionAfterUpsert }) =>
+        notifySubscriptionAfterUpsert(input.businessId, beforeSnapshot, input, notifySource),
+      )
+      .catch((err) => {
+        logger.warn({ err, businessId: input.businessId }, "Subscription notification failed");
+      });
+  }
 }
 
 async function resolveOwnerEmail(ownerId: string): Promise<string | undefined> {
@@ -282,6 +303,7 @@ async function resolveBusinessIdFromSubscription(subscription: Stripe.Subscripti
 export async function syncBusinessSubscriptionFromStripeSubscription(
   subscription: Stripe.Subscription,
   eventType?: string,
+  notifySource?: SubscriptionNotifySource,
 ): Promise<boolean> {
   if (eventType === "customer.subscription.deleted") {
     return handleSubscriptionDeleted(subscription);
@@ -301,17 +323,64 @@ export async function syncBusinessSubscriptionFromStripeSubscription(
     subscription,
     plan ?? null,
   );
-  await upsertBusinessSubscriptionFromStripe(syncInput);
+  await upsertBusinessSubscriptionFromStripe(
+    syncInput,
+    notifySource ?? {
+      type: "stripe_sync",
+      stripeEvent: eventType,
+    },
+  );
   return true;
 }
 
-export async function refreshBusinessSubscriptionFromStripe(
-  businessId: number,
-): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
-  if (!stripe) {
-    return { ok: false, status: 503, error: "Stripe is not configured" };
+export async function completeMockSubscriptionCheckout(input: {
+  businessId: number;
+  planId: number;
+  interval: BillingInterval;
+}): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+  const plan = await findPlanById(input.planId);
+  const validation = validateSubscriptionCheckoutPlan(plan, input.interval);
+  if (!validation.ok) {
+    return validation;
   }
 
+  const now = new Date();
+  const trialEndsAt =
+    plan!.trialDays > 0
+      ? new Date(now.getTime() + plan!.trialDays * 24 * 60 * 60 * 1000)
+      : null;
+  const status = plan!.trialDays > 0 ? "TRIAL" : "ACTIVE";
+
+  await upsertBusinessSubscriptionFromStripe(
+    {
+      businessId: input.businessId,
+      planId: plan!.id,
+      stripeCustomerId: `cus_mock_${input.businessId}`,
+      stripeSubscriptionId: `sub_mock_${input.businessId}`,
+      stripePriceId: validation.priceId,
+      status,
+      trialEndsAt,
+      currentPeriodStart: now,
+      currentPeriodEnd: trialEndsAt,
+      cancelAtPeriodEnd: false,
+      billingInterval: input.interval,
+    },
+    { type: "checkout_completed" },
+  );
+
+  return { ok: true };
+}
+
+export type RefreshBusinessSubscriptionOptions = {
+  mockComplete?: boolean;
+  mockPlanId?: number;
+  mockInterval?: BillingInterval;
+};
+
+export async function refreshBusinessSubscriptionFromStripe(
+  businessId: number,
+  options?: RefreshBusinessSubscriptionOptions,
+): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
   const [subscription] = await db
     .select()
     .from(businessSubscriptionsTable)
@@ -321,18 +390,60 @@ export async function refreshBusinessSubscriptionFromStripe(
     return { ok: false, status: 404, error: "No subscription found for this business" };
   }
 
-  if (!subscription.stripeSubscriptionId) {
-    return { ok: false, status: 400, error: "No Stripe subscription to sync" };
+  if (!stripe) {
+    if (
+      options?.mockComplete &&
+      options.mockPlanId != null &&
+      options.mockInterval
+    ) {
+      return completeMockSubscriptionCheckout({
+        businessId,
+        planId: options.mockPlanId,
+        interval: options.mockInterval,
+      });
+    }
+    return { ok: false, status: 503, error: "Stripe is not configured" };
   }
 
-  const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
-  await syncBusinessSubscriptionFromStripeSubscription(stripeSubscription);
+  if (subscription.stripeSubscriptionId) {
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
+    await syncBusinessSubscriptionFromStripeSubscription(stripeSubscription, undefined, {
+      type: "stripe_sync",
+      stripeEvent: "manual_sync",
+    });
+    return { ok: true };
+  }
+
+  if (!subscription.stripeCustomerId || subscription.stripeCustomerId.startsWith("cus_mock_")) {
+    return { ok: false, status: 400, error: "No Stripe subscription to sync yet" };
+  }
+
+  const listed = await stripe.subscriptions.list({
+    customer: subscription.stripeCustomerId,
+    status: "all",
+    limit: 20,
+  });
+
+  const stripeSubscription = pickStripeSubscriptionToSync(listed.data);
+  if (!stripeSubscription) {
+    return { ok: false, status: 400, error: "No Stripe subscription found for this business yet" };
+  }
+
+  await syncBusinessSubscriptionFromStripeSubscription(stripeSubscription, undefined, {
+    type: "stripe_sync",
+    stripeEvent: "checkout_return_sync",
+  });
   return { ok: true };
 }
 
 export async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<boolean> {
   const resolved = await resolveBusinessIdFromSubscription(subscription);
   if (!resolved) return false;
+
+  const [before] = await db
+    .select()
+    .from(businessSubscriptionsTable)
+    .where(eq(businessSubscriptionsTable.businessId, resolved.businessId));
 
   await db
     .update(businessSubscriptionsTable)
@@ -342,6 +453,25 @@ export async function handleSubscriptionDeleted(subscription: Stripe.Subscriptio
       renewalAt: null,
     })
     .where(eq(businessSubscriptionsTable.businessId, resolved.businessId));
+
+  if (before) {
+    const beforeSnapshot = snapshotFromSubscriptionRow(before);
+    const afterSnapshot = {
+      ...beforeSnapshot,
+      status: "CANCELED",
+      cancelAtPeriodEnd: false,
+      renewalAt: null,
+    };
+    void import("./subscription-notifications")
+      .then(({ processSubscriptionNotifications }) =>
+        processSubscriptionNotifications(resolved.businessId, beforeSnapshot, afterSnapshot, {
+          type: "subscription_deleted",
+        }),
+      )
+      .catch((err) => {
+        logger.warn({ err, businessId: resolved.businessId }, "Subscription cancellation notification failed");
+      });
+  }
 
   return true;
 }
@@ -372,7 +502,7 @@ export async function handleSubscriptionCheckoutCompleted(
     plan ?? null,
     { billingIntervalOverride: intervalOverride },
   );
-  await upsertBusinessSubscriptionFromStripe(syncInput);
+  await upsertBusinessSubscriptionFromStripe(syncInput, { type: "checkout_completed" });
   return true;
 }
 
@@ -384,7 +514,9 @@ export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promi
   if (!subscriptionId || !stripe) return false;
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  return syncBusinessSubscriptionFromStripeSubscription(subscription);
+  return syncBusinessSubscriptionFromStripeSubscription(subscription, undefined, {
+    type: "invoice_payment_failed",
+  });
 }
 
 export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<boolean> {
@@ -395,7 +527,10 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<boolea
   if (!subscriptionId || !stripe) return false;
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  return syncBusinessSubscriptionFromStripeSubscription(subscription);
+  return syncBusinessSubscriptionFromStripeSubscription(subscription, undefined, {
+    type: "invoice_paid",
+    billingReason: invoice.billing_reason ?? null,
+  });
 }
 
 export type ChangeSubscriptionPlanResult =

@@ -15,6 +15,7 @@ export * from './appointmentRequestSource';
 export * from './appointmentRequestStatus';
 export * from './appointmentRequestStatusUpdate';
 export * from './appointmentRequestStatusUpdateStatus';
+export * from './archiveBusinessResponse';
 export * from './assignedModifierGroup';
 export * from './business';
 export * from './businessDayHours';

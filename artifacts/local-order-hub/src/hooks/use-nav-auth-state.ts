@@ -1,5 +1,10 @@
 import { useUser } from "@clerk/react";
-import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import {
+  useGetMe,
+  useListMyBusinesses,
+  getGetMeQueryKey,
+  getListMyBusinessesQueryKey,
+} from "@workspace/api-client-react";
 import { resolveNavAuthState } from "@/lib/nav-auth-state";
 
 export function useNavAuthState() {
@@ -13,12 +18,21 @@ export function useNavAuthState() {
     },
   });
 
-  const meLoading = meQueryEnabled && (mePending || (meFetching && me == null));
+  const { data: ownedBusinesses = [], isPending: businessesPending } = useListMyBusinesses({
+    query: {
+      enabled: meQueryEnabled,
+      queryKey: getListMyBusinessesQueryKey(),
+    },
+  });
+
+  const meLoading =
+    meQueryEnabled && (mePending || businessesPending || (meFetching && me == null));
 
   return resolveNavAuthState({
     clerkLoaded,
     isSignedIn: !!isSignedIn,
     meLoading,
     role: me?.role,
+    activeBusinessCount: ownedBusinesses.length,
   });
 }

@@ -1,6 +1,11 @@
 import { eq, sql } from "drizzle-orm";
 import { db, usersTable, type User } from "@workspace/db";
-import { isDevClerkRelinkAllowed } from "./relink-clerk-user-shared";
+import {
+  emailFromSessionClaims,
+  fetchClerkPrimaryEmail,
+  resolveOwnerDeliverableEmail,
+} from "./owner-email";
+import { isDevClerkRelinkAllowed, isSyntheticClerkEmail } from "./relink-clerk-user-shared";
 
 export class ClerkUserDesyncError extends Error {
   readonly currentClerkUserId: string;
@@ -34,7 +39,26 @@ function sessionClaimsEmail(
   claims: Record<string, unknown> | undefined,
   userId: string,
 ): string {
-  return (claims?.email as string) ?? `${userId}@user.local`;
+  return emailFromSessionClaims(claims) ?? `${userId}@user.local`;
+}
+
+async function upgradeSyntheticUserEmail(
+  user: User,
+  sessionClaims?: Record<string, unknown>,
+): Promise<User> {
+  if (!isSyntheticClerkEmail(user.email)) return user;
+
+  const upgraded =
+    emailFromSessionClaims(sessionClaims) ?? (await fetchClerkPrimaryEmail(user.id));
+  if (!upgraded) return user;
+
+  const [updated] = await db
+    .update(usersTable)
+    .set({ email: upgraded })
+    .where(eq(usersTable.id, user.id))
+    .returning();
+
+  return updated ?? user;
 }
 
 export async function ensureDbUserForClerkSession(input: {
@@ -45,9 +69,13 @@ export async function ensureDbUserForClerkSession(input: {
   const { userId, sessionClaims, defaultRole = "CUSTOMER" } = input;
 
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-  if (existing) return existing;
+  if (existing) {
+    return upgradeSyntheticUserEmail(existing, sessionClaims);
+  }
 
-  const email = sessionClaimsEmail(sessionClaims, userId);
+  const email =
+    (await resolveOwnerDeliverableEmail({ ownerId: userId, sessionClaims })) ??
+    sessionClaimsEmail(sessionClaims, userId);
   const name = (sessionClaims?.name as string) ?? null;
 
   try {

@@ -7,7 +7,7 @@ import {
   ordersTable,
   usersTable,
 } from "@workspace/db";
-import { eq, and, ilike, count } from "drizzle-orm";
+import { eq, and, ilike, count, isNull } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import {
   CreateBusinessBody,
@@ -34,6 +34,7 @@ import {
 import { businessHasOnlinePaymentsReady } from "../lib/stripe-connect";
 import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
 import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
+import { archiveBusiness } from "../lib/business-lifecycle";
 
 function slugify(name: string): string {
   return name
@@ -125,6 +126,7 @@ router.get("/businesses", async (req, res): Promise<void> => {
 
   const conditions: ReturnType<typeof eq>[] = [
     eq(businessesTable.active, true),
+    isNull(businessesTable.archivedAt),
   ];
   if (type) conditions.push(eq(businessesTable.type, type as never));
   if (search) conditions.push(ilike(businessesTable.name, `%${search}%`));
@@ -289,6 +291,7 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
       and(
         eq(businessesTable.slug, params.data.slug),
         eq(businessesTable.active, true),
+        isNull(businessesTable.archivedAt),
       ),
     );
 
@@ -532,7 +535,7 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
   }
 });
 
-// DELETE /api/businesses/manage/:id
+// DELETE /api/businesses/manage/:id — archive business (admin)
 router.delete("/businesses/manage/:id", requireAdmin, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = DeleteBusinessParams.safeParse({ id: parseInt(raw, 10) });
@@ -541,11 +544,31 @@ router.delete("/businesses/manage/:id", requireAdmin, async (req, res): Promise<
     return;
   }
 
-  await db
-    .delete(businessesTable)
-    .where(eq(businessesTable.id, params.data.id));
+  const result = await archiveBusiness(params.data.id);
+  if (!result.ok) {
+    res.status(result.status).json({
+      error: result.error,
+      stripeError: result.stripeError,
+    });
+    return;
+  }
 
-  res.sendStatus(204);
+  req.log.info(
+    {
+      businessId: params.data.id,
+      subscriptionCanceled: result.subscriptionCanceled,
+      hadActiveSubscription: result.hadActiveSubscription,
+      alreadyArchived: result.alreadyArchived ?? false,
+    },
+    "Business archived",
+  );
+
+  res.json({
+    archived: result.archived,
+    subscriptionCanceled: result.subscriptionCanceled,
+    hadActiveSubscription: result.hadActiveSubscription,
+    alreadyArchived: result.alreadyArchived ?? false,
+  });
 });
 
 export default router;

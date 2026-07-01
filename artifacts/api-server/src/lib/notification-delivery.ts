@@ -5,8 +5,18 @@ import { logger } from "./logger";
 import { logOperationalFailure } from "./operational-log";
 import { resolveNotificationStatus, type NotificationStatus } from "./notification-content";
 
+import type {
+  SubscriptionNotificationEvent,
+  PlatformAdminSubscriptionEvent,
+} from "./email-templates/types";
+
 export type NotificationChannel = "EMAIL" | "SMS";
-export type OwnerEventType = "NEW_ORDER" | "NEW_APPOINTMENT_REQUEST";
+export type OwnerEventType =
+  | "NEW_ORDER"
+  | "NEW_APPOINTMENT_REQUEST"
+  | "APPLICATION_APPROVED"
+  | SubscriptionNotificationEvent
+  | PlatformAdminSubscriptionEvent;
 
 export type CustomerLifecycleEventType =
   | "ORDER_RECEIVED"
@@ -95,6 +105,102 @@ export async function deliverOwnerEmail(input: {
     status,
     orderId: input.orderId,
     appointmentRequestId: input.appointmentRequestId,
+    errorMessage: result.error,
+  });
+}
+
+export async function deliverOwnerApplicationEmail(input: {
+  businessId: number;
+  eventType: "APPLICATION_APPROVED";
+  to: string;
+  subject: string;
+  body: string;
+  html?: string;
+}): Promise<void> {
+  const result = await sendEmail(input.to, input.subject, input.body, input.html);
+  const status = resolveNotificationStatus(result);
+
+  if (status === "LOGGED") {
+    logger.info({ eventType: input.eventType, subject: input.subject }, `[NOTIFICATION LOG] ${input.eventType}`);
+  } else if (status === "FAILED") {
+    logOperationalFailure("application_notification_email_failed", {
+      eventType: input.eventType,
+      businessId: input.businessId,
+    });
+  }
+
+  await logNotification({
+    businessId: input.businessId,
+    channel: "EMAIL",
+    eventType: input.eventType,
+    recipientEmail: input.to,
+    subject: input.subject,
+    body: input.body,
+    status,
+    errorMessage: result.error,
+  });
+}
+
+export async function deliverOwnerSubscriptionEmail(input: {
+  businessId: number;
+  eventType: SubscriptionNotificationEvent;
+  to: string;
+  subject: string;
+  body: string;
+  html?: string;
+}): Promise<void> {
+  const result = await sendEmail(input.to, input.subject, input.body, input.html);
+  const status = resolveNotificationStatus(result);
+
+  if (status === "LOGGED") {
+    logger.info({ eventType: input.eventType, subject: input.subject }, `[NOTIFICATION LOG] ${input.eventType}`);
+  } else if (status === "FAILED") {
+    logOperationalFailure("subscription_notification_email_failed", {
+      eventType: input.eventType,
+      businessId: input.businessId,
+    });
+  }
+
+  await logNotification({
+    businessId: input.businessId,
+    channel: "EMAIL",
+    eventType: input.eventType,
+    recipientEmail: input.to,
+    subject: input.subject,
+    body: input.body,
+    status,
+    errorMessage: result.error,
+  });
+}
+
+export async function deliverPlatformAdminSubscriptionEmail(input: {
+  businessId: number;
+  eventType: PlatformAdminSubscriptionEvent;
+  to: string;
+  subject: string;
+  body: string;
+  html?: string;
+}): Promise<void> {
+  const result = await sendEmail(input.to, input.subject, input.body, input.html);
+  const status = resolveNotificationStatus(result);
+
+  if (status === "LOGGED") {
+    logger.info({ eventType: input.eventType, subject: input.subject }, `[ADMIN NOTIFICATION LOG] ${input.eventType}`);
+  } else if (status === "FAILED") {
+    logOperationalFailure("subscription_admin_notification_email_failed", {
+      eventType: input.eventType,
+      businessId: input.businessId,
+    });
+  }
+
+  await logNotification({
+    businessId: input.businessId,
+    channel: "EMAIL",
+    eventType: input.eventType,
+    recipientEmail: input.to,
+    subject: input.subject,
+    body: input.body,
+    status,
     errorMessage: result.error,
   });
 }

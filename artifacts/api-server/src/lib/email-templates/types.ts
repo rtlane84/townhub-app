@@ -30,6 +30,49 @@ export type EmailContent = {
   html: string;
 };
 
+export type SubscriptionNotificationData = {
+  businessId: number;
+  businessName: string;
+  businessLogoUrl?: string | null;
+  planName: string;
+  statusLabel: string;
+  trialEndsAt?: Date | string | null;
+  billingInterval?: "monthly" | "yearly" | null;
+  priceLabel: string;
+  amountCharged?: string | null;
+  nextBillingDate?: Date | string | null;
+  cancellationDate?: Date | string | null;
+  cancelAtPeriodEnd?: boolean;
+  gracePeriodNote?: string | null;
+  subscriptionUrl: string;
+  businessHubUrl: string;
+  manageBillingUrl: string;
+  reactivateSubscriptionUrl: string;
+  helpCenterUrl: string;
+  welcomeVideoUrl: string;
+  businessOwnerTrainingUrl: string;
+  customerTrainingUrl: string;
+};
+
+export type SubscriptionNotificationEvent =
+  | "SUBSCRIPTION_WELCOME"
+  | "SUBSCRIPTION_TRIAL_STARTED"
+  | "SUBSCRIPTION_TRIAL_ENDING_7D"
+  | "SUBSCRIPTION_TRIAL_ENDING_1D"
+  | "SUBSCRIPTION_ACTIVATED"
+  | "SUBSCRIPTION_PAYMENT_SUCCEEDED"
+  | "SUBSCRIPTION_PAYMENT_FAILED"
+  | "SUBSCRIPTION_CANCEL_SCHEDULED"
+  | "SUBSCRIPTION_CANCELED"
+  | "SUBSCRIPTION_EXPIRED";
+
+export type PlatformAdminSubscriptionEvent =
+  | "ADMIN_SUBSCRIPTION_PAID_STARTED"
+  | "ADMIN_TRIAL_STARTED"
+  | "ADMIN_PAYMENT_FAILED"
+  | "ADMIN_SUBSCRIPTION_CANCELED"
+  | "ADMIN_SUBSCRIPTION_EXPIRED";
+
 export type AppointmentNotificationData = {
   businessName: string;
   businessLogoUrl?: string | null;

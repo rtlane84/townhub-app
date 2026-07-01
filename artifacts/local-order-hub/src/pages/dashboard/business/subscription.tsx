@@ -1,28 +1,28 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import {
   useGetMySubscription,
   getGetMySubscriptionQueryKey,
   useCreateBusinessSubscriptionCheckout,
   useCreateBusinessSubscriptionPortal,
-  useSyncBusinessSubscriptionFromStripe,
 } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { ChangePlanDialog } from "@/components/subscription/change-plan-dialog";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
+import { useSubscriptionStripeSync, type SubscriptionSyncOptions } from "@/hooks/use-subscription-stripe-sync";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   CheckCircle2,
   CreditCard,
   ExternalLink,
   Layers,
+  Loader2,
   RefreshCw,
   Sparkles,
   XCircle,
@@ -38,6 +38,13 @@ import {
   subscriptionNeedsStripeCheckout,
   trialDaysRemaining,
 } from "@/lib/subscription-display";
+import { pollUntilSubscriptionReady } from "@/lib/subscription-activation";
+
+type CheckoutReturnParams = SubscriptionSyncOptions & {
+  kind: "checkout" | "portal";
+};
+
+type ActivationPhase = "idle" | "syncing" | "success" | "error";
 
 function formatDisplayDate(value?: string | Date | null) {
   if (!value) return "";
@@ -51,10 +58,16 @@ function formatDisplayDate(value?: string | Date | null) {
 export default function BusinessSubscription() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { business, isLoading: bizLoading } = useSelectedBusiness();
+  const { syncOnce, invalidateBusinessHubQueries } = useSubscriptionStripeSync(business?.id);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
   const [changePlanOpen, setChangePlanOpen] = useState(false);
+  const [syncPending, setSyncPending] = useState(false);
+  const [activationPhase, setActivationPhase] = useState<ActivationPhase>("idle");
+  const [activationAttempt, setActivationAttempt] = useState(0);
+  const [activationError, setActivationError] = useState<string | null>(null);
+  const pendingCheckoutReturn = useRef<CheckoutReturnParams | null>(null);
+  const checkoutReturnStarted = useRef(false);
 
   const subscriptionQueryKey = getGetMySubscriptionQueryKey(business?.id ?? 0);
 
@@ -71,7 +84,98 @@ export default function BusinessSubscription() {
 
   const checkoutMutation = useCreateBusinessSubscriptionCheckout();
   const portalMutation = useCreateBusinessSubscriptionPortal();
-  const syncMutation = useSyncBusinessSubscriptionFromStripe();
+
+  const runActivationSync = useCallback(
+    async (params: CheckoutReturnParams) => {
+      if (!business?.id) return;
+
+      setActivationPhase("syncing");
+      setActivationError(null);
+      setActivationAttempt(0);
+      setSyncPending(true);
+
+      try {
+        await pollUntilSubscriptionReady(
+          () =>
+            syncOnce({
+              mock: params.mock,
+              planId: params.planId,
+              interval: params.interval,
+            }),
+          {
+            maxAttempts: params.kind === "portal" ? 4 : 12,
+            intervalMs: 2500,
+            onAttempt: setActivationAttempt,
+          },
+        );
+        invalidateBusinessHubQueries(business.id);
+        setActivationPhase("success");
+        toast({
+          title: params.kind === "checkout" ? "Subscription activated" : "Billing updated",
+          description:
+            params.kind === "checkout"
+              ? "Your plan is active and features are now unlocked."
+              : "Your billing changes have been applied.",
+        });
+      } catch (err) {
+        setActivationPhase("error");
+        setActivationError(
+          err instanceof Error ? err.message : "Could not confirm subscription activation.",
+        );
+      } finally {
+        setSyncPending(false);
+      }
+    },
+    [business?.id, invalidateBusinessHubQueries, syncOnce, toast],
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    const portal = params.get("portal");
+
+    if (checkout === "canceled") {
+      toast({ title: "Checkout canceled", description: "No changes were made to your subscription." });
+      setLocation("/dashboard/business/subscription", { replace: true });
+      return;
+    }
+
+    if (checkout === "success" || portal === "return") {
+      pendingCheckoutReturn.current = {
+        kind: checkout === "success" ? "checkout" : "portal",
+        mock: params.get("mock") === "1",
+        planId: params.get("planId") ? parseInt(params.get("planId")!, 10) : undefined,
+        interval:
+          params.get("interval") === "yearly"
+            ? "yearly"
+            : params.get("interval") === "monthly"
+              ? "monthly"
+              : undefined,
+      };
+      setLocation("/dashboard/business/subscription", { replace: true });
+    }
+  }, [setLocation, toast]);
+
+  useEffect(() => {
+    if (!business?.id || !pendingCheckoutReturn.current || checkoutReturnStarted.current) return;
+    checkoutReturnStarted.current = true;
+    const params = pendingCheckoutReturn.current;
+    pendingCheckoutReturn.current = null;
+    void runActivationSync(params);
+  }, [business?.id, runActivationSync]);
+
+  const syncFromStripe = useCallback(async () => {
+    if (!business?.id) return;
+    setSyncPending(true);
+    setActivationPhase("idle");
+    setActivationError(null);
+    try {
+      await syncOnce();
+      invalidateBusinessHubQueries(business.id);
+    } finally {
+      setSyncPending(false);
+    }
+  }, [business?.id, invalidateBusinessHubQueries, syncOnce]);
 
   const isLoading = bizLoading || subLoading;
   const complimentary = subscription?.plan ? isComplimentaryPricingPlan(subscription.plan) : false;
@@ -96,48 +200,6 @@ export default function BusinessSubscription() {
       setBillingInterval(subscription.billingInterval);
     }
   }, [subscription?.billingInterval]);
-
-  const syncFromStripe = useCallback(async () => {
-    if (!business?.id) return;
-    const updated = await syncMutation.mutateAsync({ id: business.id });
-    queryClient.setQueryData(subscriptionQueryKey, updated);
-  }, [business?.id, queryClient, subscriptionQueryKey, syncMutation]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const checkout = params.get("checkout");
-    const portal = params.get("portal");
-
-    if (checkout === "success" || portal === "return") {
-      if (business?.id) {
-        void (async () => {
-          try {
-            if (portal === "return") {
-              await syncFromStripe();
-            } else {
-              await queryClient.invalidateQueries({ queryKey: subscriptionQueryKey });
-              await refetch();
-            }
-          } catch {
-            await refetch();
-          }
-        })();
-      }
-      toast({
-        title: checkout === "success" ? "Subscription updated" : "Billing synced",
-        description:
-          checkout === "success"
-            ? "Your subscription details are updating. This may take a few seconds."
-            : "Your billing changes from Stripe have been refreshed.",
-      });
-      setLocation("/dashboard/business/subscription", { replace: true });
-    }
-
-    if (checkout === "canceled") {
-      toast({ title: "Checkout canceled", description: "No changes were made to your subscription." });
-      setLocation("/dashboard/business/subscription", { replace: true });
-    }
-  }, [business?.id, queryClient, refetch, setLocation, subscriptionQueryKey, syncFromStripe, toast]);
 
   async function handleRefresh() {
     if (!business?.id) return;
@@ -183,7 +245,15 @@ export default function BusinessSubscription() {
   const accessEndDate = subscription ? subscriptionAccessEndDate(subscription) : null;
   const canManageBilling = !complimentary && !!subscription?.stripeCustomerId;
   const canChangePlan = !complimentary;
-  const isRefreshing = isFetching || syncMutation.isPending;
+  const isRefreshing = isFetching || syncPending;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("open") !== "billing" || !business?.id || !canManageBilling) return;
+    setLocation("/dashboard/business/subscription", { replace: true });
+    void handleOpenPortal();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- open billing once when linked from email
+  }, [business?.id, canManageBilling]);
 
   return (
     <BusinessDashboardLayout>
@@ -208,6 +278,56 @@ export default function BusinessSubscription() {
             </Button>
           )}
         </div>
+
+        {activationPhase === "syncing" && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4 flex items-start gap-3 text-sm">
+              <Loader2 className="h-5 w-5 text-primary shrink-0 mt-0.5 animate-spin" />
+              <div>
+                <p className="font-medium">Activating your subscription…</p>
+                <p className="text-muted-foreground mt-1">
+                  Syncing with Stripe and unlocking your plan features.
+                  {activationAttempt > 0 ? ` (check ${activationAttempt})` : ""}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activationPhase === "success" && (
+          <Card className="border-green-200 bg-green-50/80 dark:border-green-900/40 dark:bg-green-950/30">
+            <CardContent className="p-4 flex items-start gap-3 text-sm">
+              <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-green-900 dark:text-green-100">Subscription active</p>
+                <p className="text-green-800/90 dark:text-green-200/90 mt-1">
+                  Your plan features are unlocked. Explore your Business Hub menu to get started.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activationPhase === "error" && (
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent className="p-4 flex items-start gap-3 text-sm">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div className="flex-1 space-y-2">
+                <p className="font-medium text-destructive">Could not confirm activation</p>
+                <p className="text-muted-foreground">{activationError}</p>
+                <LoadingButton
+                  size="sm"
+                  variant="outline"
+                  loading={syncPending}
+                  loadingText="Retrying…"
+                  onClick={() => void syncFromStripe()}
+                >
+                  Retry Status
+                </LoadingButton>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {isLoading ? (
           <div className="space-y-4">

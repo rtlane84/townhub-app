@@ -10,10 +10,10 @@ import {
 import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
 import { requireAdmin } from "../middlewares/requireRole";
-import {
-  attachPlanToBusiness,
-  resolveApprovalPlan,
-} from "../lib/subscription-plans";
+import { attachPlanToBusiness, resolveApprovalPlan } from "../lib/subscription-plans";
+import { notifyBusinessApplicationApproved } from "../lib/application-notifications";
+import { resolveApprovalBillingInterval } from "../lib/business-lifecycle-core";
+import { resolveOwnerDeliverableEmail } from "../lib/owner-email";
 import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
 import { parseStructuredHours } from "@workspace/api-zod";
 
@@ -167,7 +167,12 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
     .limit(1);
 
   const claims = (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth?.sessionClaims;
-  const email = (claims?.email as string) ?? `${userId}@user.local`;
+  const email =
+    (await resolveOwnerDeliverableEmail({
+      ownerId: userId,
+      sessionClaims: claims,
+      syncToUserRow: true,
+    })) ?? `${userId}@user.local`;
 
   const { name, type, description, address, phone, hours, structuredHours, planId, billingInterval } = parsed.data;
 
@@ -317,18 +322,37 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
       })
       .returning();
 
-    // Promote user to BUSINESS_OWNER
+    // Promote user to BUSINESS_OWNER (sync real email from Clerk when application stored a placeholder)
+    const ownerEmail = await resolveOwnerDeliverableEmail({
+      ownerId: app.userId,
+      applicationEmail: app.userEmail,
+      syncToUserRow: true,
+    });
+
     await db
       .insert(usersTable)
-      .values({ id: app.userId, email: app.userEmail ?? `${app.userId}@user.local`, role: "BUSINESS_OWNER" })
-      .onConflictDoUpdate({ target: usersTable.id, set: { role: "BUSINESS_OWNER" } });
+      .values({
+        id: app.userId,
+        email: ownerEmail ?? app.userEmail ?? `${app.userId}@user.local`,
+        role: "BUSINESS_OWNER",
+      })
+      .onConflictDoUpdate({
+        target: usersTable.id,
+        set: {
+          role: "BUSINESS_OWNER",
+          ...(ownerEmail ? { email: ownerEmail } : {}),
+        },
+      });
 
     // Attach subscription: admin override > application plan > default active plan
     const plan = await resolveApprovalPlan(app.planId, parsedBody.data.planId);
+    const billingInterval = resolveApprovalBillingInterval(
+      parsedBody.data.billingInterval,
+      app.billingInterval,
+    );
+    let attachResult = null;
     if (plan) {
-      const billingInterval =
-        parsedBody.data.billingInterval ?? app.billingInterval ?? "monthly";
-      await attachPlanToBusiness(business.id, plan, { billingInterval });
+      attachResult = await attachPlanToBusiness(business.id, plan, { billingInterval });
     }
 
     // Mark application as approved
@@ -346,6 +370,24 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
       { adminId: userId, applicationId: id, businessId: business.id },
       "Business application approved",
     );
+
+    if (plan && attachResult) {
+      try {
+        await notifyBusinessApplicationApproved({
+          businessId: business.id,
+          businessName: business.name,
+          ownerId: app.userId,
+          ownerEmail: ownerEmail ?? app.userEmail,
+          plan,
+          billingInterval: billingInterval as "monthly" | "yearly",
+          snapshot: attachResult.snapshot,
+          requiresCheckout: attachResult.requiresCheckout,
+        });
+      } catch (err) {
+        req.log.warn({ err, businessId: business.id }, "Application approval email failed");
+      }
+    }
+
     res.json({ message: "Application approved. Business created.", businessId: business.id });
   } catch (err) {
     req.log.error({ err, applicationId: id }, "Failed to approve application");

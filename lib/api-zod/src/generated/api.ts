@@ -666,10 +666,17 @@ export const UpdateBusinessResponse = zod.object({
 
 
 /**
- * @summary Delete/disable a business (admin)
+ * @summary Archive/remove a business (admin)
  */
 export const DeleteBusinessParams = zod.object({
   "id": zod.coerce.number()
+})
+
+export const DeleteBusinessResponse = zod.object({
+  "archived": zod.boolean(),
+  "subscriptionCanceled": zod.boolean(),
+  "hadActiveSubscription": zod.boolean(),
+  "alreadyArchived": zod.boolean()
 })
 
 

@@ -15,3 +15,27 @@ export function dashboardOrderUrl(orderId: number): string {
 export function dashboardAppointmentsUrl(): string {
   return `${getAppBaseUrl()}/dashboard/business/appointments`;
 }
+
+export function dashboardSubscriptionUrl(): string {
+  return `${getAppBaseUrl()}/dashboard/business/subscription`;
+}
+
+export function dashboardBusinessHubUrl(): string {
+  return `${getAppBaseUrl()}/dashboard/business`;
+}
+
+export function helpCenterUrl(): string {
+  return `${getAppBaseUrl()}/help`;
+}
+
+export function helpCenterWelcomeVideoUrl(): string {
+  return `${helpCenterUrl()}#welcome-video`;
+}
+
+export function helpCenterBusinessOwnerTrainingUrl(): string {
+  return `${helpCenterUrl()}#business-owner-training`;
+}
+
+export function helpCenterCustomerTrainingUrl(): string {
+  return `${helpCenterUrl()}#customer-training`;
+}

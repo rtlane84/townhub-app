@@ -46,5 +46,6 @@ describe("resolveNavAuthState", () => {
     });
     assert.equal(state.isLoggedOut, true);
     assert.equal(state.isCustomer, false);
+    assert.equal(state.showListYourBusinessNav, true);
   });
 });

@@ -42,9 +42,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const {
     authResolved,
     isAdmin,
-    isBusinessOwner,
     isCustomer,
     isLoggedOut,
+    showBusinessHubNav,
+    showListYourBusinessNav,
   } = useNavAuthState();
   const { itemCount } = useCart();
   const [location] = useLocation();
@@ -118,14 +119,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Link>
               )}
 
-              {showRoleNav && (isAdmin || isBusinessOwner) && (
+              {showRoleNav && showBusinessHubNav && (
                 <Link href={dashboardHref} className={navLinkClass("/dashboard")}>
                   <DashboardIcon className="h-3.5 w-3.5" />
                   {isAdmin ? "Admin" : "Business Hub"}
                 </Link>
               )}
 
-              {showRoleNav && (isLoggedOut || isCustomer) && (
+              {showRoleNav && showListYourBusinessNav && (
                 <Link href="/list-your-business" className={navLinkClass("/list-your-business")}>
                   <PlusCircle className="h-3.5 w-3.5" />
                   List Your Business
@@ -218,7 +219,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   )}
 
-                  {showRoleNav && (isAdmin || isBusinessOwner) && (
+                  {showRoleNav && showBusinessHubNav && (
                     <Link href={dashboardHref} onClick={close}>
                       <span className={navLinkClass("/dashboard")}>
                         <DashboardIcon className="h-4 w-4" /> {dashboardLabel}
@@ -226,7 +227,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   )}
 
-                  {showRoleNav && (isLoggedOut || isCustomer) && (
+                  {showRoleNav && showListYourBusinessNav && (
                     <Link href="/list-your-business" onClick={close}>
                       <span className={navLinkClass("/list-your-business")}>
                         <PlusCircle className="h-4 w-4" /> List Your Business

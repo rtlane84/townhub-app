@@ -124,14 +124,14 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   const [open, setOpen] = useState(false);
   const { selectedBusinessId, business } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? undefined;
-  const { hasFeature, getFeature, planName, isLoading } = useBusinessFeatureAccess();
+  const { hasFeature, getFeature, planName, isLoading: featureLoading } = useBusinessFeatureAccess();
 
   useLiveOrderAlerts(businessId);
   useLiveAppointmentAlerts(businessId, hasFeature("appointment_requests"));
 
   const routeFeatureKey = useMemo(() => resolveBusinessHubFeatureKey(location), [location]);
   const routeLocked =
-    !isLoading && routeFeatureKey !== null && !hasFeature(routeFeatureKey);
+    !featureLoading && routeFeatureKey !== null && !hasFeature(routeFeatureKey);
 
   const activeLabel =
     BUSINESS_HUB_NAV_ITEMS.find(

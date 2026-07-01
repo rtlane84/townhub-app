@@ -76,6 +76,12 @@ export default function AdminBusinesses() {
   const { getToken } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [removeDialog, setRemoveDialog] = useState<{
+    id: number;
+    name: string;
+    hadActiveSubscription: boolean;
+    loading: boolean;
+  } | null>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [subDialogOpen, setSubDialogOpen] = useState(false);
   const [subBusinessId, setSubBusinessId] = useState<number | null>(null);
@@ -111,8 +117,15 @@ export default function AdminBusinesses() {
     mutation: {
       onMutate: (vars) => { setDeletingId(vars.id); },
       onSettled: () => { setDeletingId(null); },
-      onSuccess: () => { invalidate(); toast({ title: "Business deleted" }); },
-      onError: () => toast({ title: "Failed to delete business", variant: "destructive" }),
+      onSuccess: () => {
+        invalidate();
+        setRemoveDialog(null);
+        toast({ title: "Business removed" });
+      },
+      onError: (err) => {
+        const message = err instanceof Error ? err.message : "Failed to remove business";
+        toast({ title: "Failed to remove business", description: message, variant: "destructive" });
+      },
     },
   });
 
@@ -155,6 +168,29 @@ export default function AdminBusinesses() {
     setSubPlanId("");
     setSubBillingInterval("monthly");
     setSubDialogOpen(true);
+  }
+
+  async function openRemoveDialog(businessId: number, businessName: string) {
+    setRemoveDialog({ id: businessId, name: businessName, hadActiveSubscription: false, loading: true });
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/businesses/${businessId}/subscription`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      let hadActiveSubscription = false;
+      if (res.ok) {
+        const sub = (await res.json()) as { status?: string };
+        hadActiveSubscription = ["TRIAL", "TRIALING", "ACTIVE", "PAST_DUE"].includes(sub.status ?? "");
+      }
+      setRemoveDialog({ id: businessId, name: businessName, hadActiveSubscription, loading: false });
+    } catch {
+      setRemoveDialog({ id: businessId, name: businessName, hadActiveSubscription: false, loading: false });
+    }
+  }
+
+  function confirmRemoveBusiness() {
+    if (!removeDialog) return;
+    deleteBusiness.mutate({ id: removeDialog.id });
   }
 
   async function handleSavePlan() {
@@ -262,10 +298,10 @@ export default function AdminBusinesses() {
                       <LoadingButton
                         variant="ghost" size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteBusiness.mutate({ id: biz.id })}
+                        onClick={() => openRemoveDialog(biz.id, biz.name)}
                         loading={deletingId === biz.id}
                         disabled={deleteBusiness.isPending}
-                        aria-label="Delete business"
+                        aria-label="Remove business"
                         data-testid={`button-delete-business-${biz.id}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -404,6 +440,46 @@ export default function AdminBusinesses() {
             <Button variant="outline" onClick={() => setSubDialogOpen(false)}>Cancel</Button>
             <LoadingButton onClick={() => void handleSavePlan()} disabled={!subPlanId} loading={subSaving} loadingText="Saving…">
               Assign Plan
+            </LoadingButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove business dialog */}
+      <Dialog open={removeDialog != null} onOpenChange={(open) => !open && setRemoveDialog(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">Remove business</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-3 text-sm text-muted-foreground">
+            {removeDialog?.loading ? (
+              <p>Checking subscription status…</p>
+            ) : (
+              <>
+                <p>
+                  Remove <strong className="text-foreground">{removeDialog?.name}</strong> from Town Hub?
+                  The business will no longer appear publicly or in active admin lists. Order and billing history is preserved.
+                </p>
+                {removeDialog?.hadActiveSubscription ? (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+                    This business has an active subscription. Removing it will cancel the subscription and disable access.
+                  </p>
+                ) : null}
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRemoveDialog(null)} disabled={deleteBusiness.isPending}>
+              Cancel
+            </Button>
+            <LoadingButton
+              variant="destructive"
+              onClick={confirmRemoveBusiness}
+              disabled={removeDialog?.loading}
+              loading={deleteBusiness.isPending}
+              loadingText="Removing…"
+            >
+              Remove business
             </LoadingButton>
           </DialogFooter>
         </DialogContent>

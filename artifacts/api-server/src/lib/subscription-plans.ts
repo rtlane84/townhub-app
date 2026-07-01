@@ -1,7 +1,13 @@
 import { db, subscriptionPlansTable, businessSubscriptionsTable } from "@workspace/db";
 import { and, eq, ne } from "drizzle-orm";
+import { snapshotFromSubscriptionRow, type SubscriptionStateSnapshot } from "./subscription-notification-core";
 
 type Plan = typeof subscriptionPlansTable.$inferSelect;
+
+export type AttachPlanResult = {
+  snapshot: SubscriptionStateSnapshot;
+  requiresCheckout: boolean;
+};
 
 /** When marking a plan default, clear default on all other plans. */
 export async function enforceSingleDefaultPlan(keepPlanId: number): Promise<void> {
@@ -50,7 +56,7 @@ export async function attachPlanToBusiness(
   businessId: number,
   plan: Plan,
   options?: { billingInterval?: "monthly" | "yearly" | null },
-): Promise<void> {
+): Promise<AttachPlanResult> {
   const now = new Date();
   const monthly = parseFloat(plan.monthlyPrice);
   const yearly = plan.yearlyPrice ? parseFloat(plan.yearlyPrice) : 0;
@@ -65,7 +71,20 @@ export async function attachPlanToBusiness(
       startedAt: now,
       billingInterval,
     });
-    return;
+
+    return {
+      requiresCheckout: true,
+      snapshot: snapshotFromSubscriptionRow({
+        status: "INCOMPLETE",
+        planId: plan.id,
+        cancelAtPeriodEnd: false,
+        trialEndsAt: null,
+        currentPeriodEnd: null,
+        renewalAt: null,
+        billingInterval,
+        stripeSubscriptionId: null,
+      }),
+    };
   }
 
   const trialEndsAt =
@@ -84,4 +103,18 @@ export async function attachPlanToBusiness(
     renewalAt: trialEndsAt,
     billingInterval: complimentary ? null : billingInterval,
   });
+
+  return {
+    requiresCheckout: false,
+    snapshot: snapshotFromSubscriptionRow({
+      status,
+      planId: plan.id,
+      cancelAtPeriodEnd: false,
+      trialEndsAt,
+      currentPeriodEnd: null,
+      renewalAt: trialEndsAt,
+      billingInterval: complimentary ? null : billingInterval,
+      stripeSubscriptionId: null,
+    }),
+  };
 }

@@ -64,6 +64,19 @@ export function SelectedBusinessProvider({ children }: { children: ReactNode }) 
   );
 
   useEffect(() => {
+    if (ownedPending) return;
+    if (ownedIds.length === 0) {
+      if (storedBusinessId != null) {
+        writeStoredBusinessId(null);
+        setStoredBusinessId(null);
+      }
+      void queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: getListMyBusinessesQueryKey() });
+      void queryClient.removeQueries({ queryKey: getGetMyBusinessQueryKey() });
+    }
+  }, [ownedIds, ownedPending, queryClient, storedBusinessId]);
+
+  useEffect(() => {
     if (!ownedIds.length) return;
     if (storedBusinessId != null && !ownedIds.includes(storedBusinessId) && selectedBusinessId != null) {
       writeStoredBusinessId(selectedBusinessId);

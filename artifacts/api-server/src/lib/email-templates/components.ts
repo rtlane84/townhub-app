@@ -5,6 +5,14 @@ export function renderButton(label: string, url: string): string {
   return `<a href="${escapeHtml(url)}" style="display:inline-block;background:${ACCENT_COLOR};color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:14px 28px;border-radius:10px;">${escapeHtml(label)}</a>`;
 }
 
+export function renderButtonLarge(label: string, url: string): string {
+  return `<a href="${escapeHtml(url)}" style="display:inline-block;background:${ACCENT_COLOR};color:#ffffff;text-decoration:none;font-size:18px;font-weight:700;padding:18px 36px;border-radius:12px;">${escapeHtml(label)}</a>`;
+}
+
+export function renderSecondaryButton(label: string, url: string): string {
+  return `<a href="${escapeHtml(url)}" style="display:inline-block;background:#ffffff;color:${ACCENT_COLOR};text-decoration:none;font-size:16px;font-weight:700;padding:12px 26px;border-radius:10px;border:2px solid ${ACCENT_COLOR};">${escapeHtml(label)}</a>`;
+}
+
 export function renderStatusBadge(label: string, tone: "neutral" | "success" | "warning" | "danger" = "neutral"): string {
   const colors = {
     neutral: { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe" },

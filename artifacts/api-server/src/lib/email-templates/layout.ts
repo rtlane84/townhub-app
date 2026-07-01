@@ -1,4 +1,4 @@
-import { renderButton } from "./components";
+import { renderButton, renderButtonLarge, renderSecondaryButton } from "./components";
 
 const BRAND_COLOR = "#1e3a5f";
 const ACCENT_COLOR = "#2563eb";
@@ -22,6 +22,11 @@ export type EmailLayoutOptions = {
   bodyHtml: string;
   actionLabel?: string;
   actionUrl?: string;
+  secondaryActionLabel?: string;
+  secondaryActionUrl?: string;
+  /** Additional outline buttons below the primary CTA (e.g. training + help links). */
+  secondaryActions?: Array<{ label: string; url: string }>;
+  primaryButtonVariant?: "default" | "large";
   footerNote?: string;
 };
 
@@ -32,10 +37,23 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
   const logoBlock = options.businessLogoUrl
     ? `<img src="${escapeHtml(options.businessLogoUrl)}" alt="${businessName}" width="64" height="64" style="display:block;border-radius:12px;object-fit:cover;margin:0 auto 16px;" />`
     : "";
+  const renderPrimaryButton =
+    options.primaryButtonVariant === "large" ? renderButtonLarge : renderButton;
   const actionBlock =
     options.actionLabel && options.actionUrl
-      ? `<div style="text-align:center;margin:32px 0 8px;">${renderButton(options.actionLabel, options.actionUrl)}</div>`
+      ? `<div style="text-align:center;margin:32px 0 8px;">${renderPrimaryButton(options.actionLabel, options.actionUrl)}</div>`
       : "";
+  const secondaryLinks =
+    options.secondaryActions ??
+    (options.secondaryActionLabel && options.secondaryActionUrl
+      ? [{ label: options.secondaryActionLabel, url: options.secondaryActionUrl }]
+      : []);
+  const secondaryActionBlock = secondaryLinks
+    .map(
+      (link) =>
+        `<div style="text-align:center;margin:12px 0 8px;">${renderSecondaryButton(link.label, link.url)}</div>`,
+    )
+    .join("");
   const footerNote = options.footerNote
     ? `<p style="margin:24px 0 0;font-size:13px;color:${MUTED_COLOR};line-height:1.5;">${options.footerNote}</p>`
     : "";
@@ -64,6 +82,7 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
               <h1 style="margin:0 0 20px;font-size:26px;line-height:1.25;font-weight:700;color:${BRAND_COLOR};text-align:center;">${heading}</h1>
               ${options.bodyHtml}
               ${actionBlock}
+              ${secondaryActionBlock}
               ${footerNote}
             </td>
           </tr>

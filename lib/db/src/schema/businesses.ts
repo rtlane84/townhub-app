@@ -58,6 +58,7 @@ export const businessesTable = pgTable("businesses", {
   hours: text("hours"),
   structuredHours: jsonb("structured_hours").$type<StructuredHoursJson | null>(),
   active: boolean("active").notNull().default(true),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
   featured: boolean("featured").notNull().default(false),
 
   // Fulfillment options

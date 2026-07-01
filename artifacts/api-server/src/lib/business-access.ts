@@ -1,7 +1,7 @@
 import type { Request } from "express";
 import { getAuth } from "@clerk/express";
 import { db, businessesTable, ordersTable, usersTable } from "@workspace/db";
-import { count, eq, inArray } from "drizzle-orm";
+import { count, eq, inArray, and, isNull } from "drizzle-orm";
 import type { Business } from "@workspace/db";
 
 import { authorizeBusinessOwnerAccess } from "./business-owner-access";
@@ -34,7 +34,7 @@ export async function listOwnedBusinesses(ownerId: string): Promise<OwnedBusines
       active: businessesTable.active,
     })
     .from(businessesTable)
-    .where(eq(businessesTable.ownerId, ownerId))
+    .where(and(eq(businessesTable.ownerId, ownerId), isNull(businessesTable.archivedAt)))
     .orderBy(businessesTable.name);
 
   return rows;
@@ -53,7 +53,7 @@ export async function getPrimaryOwnedBusiness(ownerId: string): Promise<Business
   const owned = await db
     .select()
     .from(businessesTable)
-    .where(eq(businessesTable.ownerId, ownerId));
+    .where(and(eq(businessesTable.ownerId, ownerId), isNull(businessesTable.archivedAt)));
 
   if (owned.length === 0) return null;
   if (owned.length === 1) return owned[0]!;
@@ -93,7 +93,7 @@ export async function resolveSelectedOwnedBusiness(
       .from(businessesTable)
       .where(eq(businessesTable.id, requestedBusinessId));
 
-    if (!business || business.ownerId !== ownerId) {
+    if (!business || business.ownerId !== ownerId || business.archivedAt) {
       return null;
     }
     return business;
@@ -128,6 +128,12 @@ export async function authorizeBusinessOwnerOrAdmin(
     .select({ role: usersTable.role })
     .from(usersTable)
     .where(eq(usersTable.id, userId));
+
+  const isAdmin = user?.role === "ADMIN";
+
+  if (business.archivedAt && !isAdmin) {
+    return { ok: false, status: 404, error: "Business not found" };
+  }
 
   const access = authorizeBusinessOwnerAccess({
     userId,

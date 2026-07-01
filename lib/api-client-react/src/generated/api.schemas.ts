@@ -244,6 +244,13 @@ export interface BusinessDayHours {
   closeTime?: string | null;
 }
 
+export interface ArchiveBusinessResponse {
+  archived: boolean;
+  subscriptionCanceled: boolean;
+  hadActiveSubscription: boolean;
+  alreadyArchived: boolean;
+}
+
 export interface Business {
   id: number;
   name: string;

@@ -268,7 +268,15 @@ export default function AdminApplications() {
                       {app.planName ? (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Layers className="h-3.5 w-3.5 shrink-0" />
-                          <span>Plan: <strong className="text-foreground">{app.planName}</strong></span>
+                          <span>
+                            Selected plan: <strong className="text-foreground">{app.planName}</strong>
+                            {app.billingInterval ? (
+                              <>
+                                {" · "}
+                                Billing: <strong className="text-foreground">{app.billingInterval === "yearly" ? "Yearly" : "Monthly"}</strong>
+                              </>
+                            ) : null}
+                          </span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 text-muted-foreground">

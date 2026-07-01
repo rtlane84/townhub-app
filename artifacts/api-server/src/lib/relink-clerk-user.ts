@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, isNull } from "drizzle-orm";
 import {
   db,
   usersTable,
@@ -47,7 +47,7 @@ async function listBusinessesForOwner(ownerId: string): Promise<BusinessSummary[
       slug: businessesTable.slug,
     })
     .from(businessesTable)
-    .where(eq(businessesTable.ownerId, ownerId));
+    .where(and(eq(businessesTable.ownerId, ownerId), isNull(businessesTable.archivedAt)));
 
   return rows;
 }

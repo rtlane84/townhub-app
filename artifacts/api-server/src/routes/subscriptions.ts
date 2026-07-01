@@ -71,6 +71,12 @@ const subscriptionCheckoutSchema = z.object({
   interval: z.enum(["monthly", "yearly"]).default("monthly"),
 });
 
+const subscriptionSyncSchema = z.object({
+  mock: z.boolean().optional(),
+  planId: z.number().int().optional(),
+  interval: z.enum(["monthly", "yearly"]).optional(),
+});
+
 const featureInputSchema = z.object({
   key: z.string().min(1).regex(/^[a-z0-9_]+$/),
   name: z.string().min(1),
@@ -440,7 +446,13 @@ router.post("/businesses/:businessId/subscription/sync", async (req, res): Promi
     return;
   }
 
-  const syncResult = await refreshBusinessSubscriptionFromStripe(businessId);
+  const parsedBody = subscriptionSyncSchema.safeParse(req.body ?? {});
+
+  const syncResult = await refreshBusinessSubscriptionFromStripe(businessId, {
+    mockComplete: parsedBody.success ? parsedBody.data.mock === true : false,
+    mockPlanId: parsedBody.success ? parsedBody.data.planId : undefined,
+    mockInterval: parsedBody.success ? parsedBody.data.interval : undefined,
+  });
   if (!syncResult.ok) {
     res.status(syncResult.status).json({ error: syncResult.error });
     return;

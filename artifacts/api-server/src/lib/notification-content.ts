@@ -23,4 +23,5 @@ export {
 export { buildOwnerNewOrderEmail } from "./email-templates/business-emails";
 export { buildOwnerNewOrderSms, buildCustomerLifecycleSms } from "./notification-sms";
 export { buildCustomerLifecycleEmail } from "./email-templates/customer-emails";
+export { buildSubscriptionLifecycleEmail } from "./email-templates/subscription-emails";
 export { paymentMethodLabel } from "./email-templates/components";

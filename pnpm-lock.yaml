@@ -158,6 +158,9 @@ importers:
 
   artifacts/api-server:
     dependencies:
+      '@clerk/backend':
+        specifier: ^3.8.2
+        version: 3.8.2
       '@clerk/express':
         specifier: ^2.1.30
         version: 2.1.30(express@5.2.1)

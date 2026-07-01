@@ -17,6 +17,7 @@ import appointmentRequestsRouter from "./appointment-requests";
 import mediaRouter from "./media";
 import devRouter from "./dev";
 import stripeConnectRouter from "./stripe-connect";
+import internalJobsRouter from "./internal-jobs";
 import { requireAdmin } from "../middlewares/requireRole";
 
 const router: IRouter = Router();
@@ -50,6 +51,7 @@ router.use(mediaRouter);
 router.use(devRouter);
 router.use(businessesRouter);
 router.use(stripeConnectRouter);
+router.use(internalJobsRouter);
 router.use(productsRouter);
 router.use(modifierGroupsRouter);
 router.use(ordersRouter);

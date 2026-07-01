@@ -326,7 +326,7 @@ paths:
     delete:
       operationId: deleteBusiness
       tags: [businesses]
-      summary: Delete/disable a business (admin)
+      summary: Archive/remove a business (admin)
       parameters:
         - in: path
           name: id
@@ -334,8 +334,16 @@ paths:
           schema:
             type: integer
       responses:
-        "204":
-          description: Deleted
+        "200":
+          description: Business archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveBusinessResponse"
+        "404":
+          description: Business not found
+        "502":
+          description: Stripe subscription cancellation failed
 
   # ─── Categories ─────────────────────────────────────────────────
   /businesses/{businessId}/categories:
@@ -2146,6 +2154,19 @@ components:
         closeTime:
           type: ["string", "null"]
           description: "24-hour time HH:mm"
+
+    ArchiveBusinessResponse:
+      type: object
+      required: [archived, subscriptionCanceled, hadActiveSubscription, alreadyArchived]
+      properties:
+        archived:
+          type: boolean
+        subscriptionCanceled:
+          type: boolean
+        hadActiveSubscription:
+          type: boolean
+        alreadyArchived:
+          type: boolean
 
     Business:
       type: object
