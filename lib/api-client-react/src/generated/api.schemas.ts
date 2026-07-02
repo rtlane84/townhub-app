@@ -58,6 +58,13 @@ export interface ApiErrorLogEntry {
   endpoint: string;
   httpStatus: number;
   summary: string;
+  exceptionMessage?: string;
+  requestId?: string;
+  userId?: string;
+  userLabel?: string;
+  businessId?: number;
+  businessName?: string;
+  stackTrace?: string;
 }
 
 export interface PlatformActivityEntry {
@@ -66,12 +73,56 @@ export interface PlatformActivityEntry {
   title: string;
   detail?: string;
   timestamp: string;
+  actorLabel?: string;
+  businessId?: number;
+  businessName?: string;
+}
+
+export interface PlatformMetrics {
+  activeBusinesses: number;
+  pendingApplications: number;
+  activeSubscriptions: number;
+  trialSubscriptions: number;
+  pastDueSubscriptions: number;
+  ordersToday: number;
+  ordersThisMonth: number;
+  emailsSentToday: number;
+  failedEmailsToday: number;
+  smsSentToday: number;
+  failedSmsToday: number;
+  /** @nullable */
+  revenueToday?: number | null;
+  /** @nullable */
+  revenueThisMonth?: number | null;
+}
+
+export interface PlatformHealthSummary {
+  overallStatus: SystemHealthStatus;
+  /** @nullable */
+  activeBusinesses?: number | null;
+  /** @nullable */
+  pendingApplications?: number | null;
+  /** @nullable */
+  activeSubscriptions?: number | null;
+  /** @nullable */
+  trialSubscriptions?: number | null;
+  /** @nullable */
+  pastDueSubscriptions?: number | null;
+  /** @nullable */
+  ordersToday?: number | null;
+  /** @nullable */
+  emailsSentToday?: number | null;
+  /** @nullable */
+  failedEmailsToday?: number | null;
+  apiErrorsLast24h: number;
 }
 
 export interface SystemHealthReport {
   status: SystemHealthStatus;
   timestamp: string;
   application: ApplicationHealth;
+  summary: PlatformHealthSummary;
+  metrics?: PlatformMetrics | null;
   services: ServiceHealth[];
   apiErrors: ApiErrorLogEntry[];
   recentActivity: PlatformActivityEntry[];

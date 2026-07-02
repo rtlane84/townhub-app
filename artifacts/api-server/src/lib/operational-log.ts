@@ -46,5 +46,12 @@ export function logOperationalFailure(
     endpoint,
     httpStatus: typeof safeContext.httpStatus === "number" ? safeContext.httpStatus : 500,
     summary,
+    exceptionMessage: summary,
+    requestId: typeof safeContext.requestId === "string" ? safeContext.requestId : undefined,
+    userId: typeof safeContext.userId === "string" ? safeContext.userId : undefined,
+    userLabel: typeof safeContext.userLabel === "string" ? safeContext.userLabel : undefined,
+    businessId: typeof safeContext.businessId === "number" ? safeContext.businessId : undefined,
+    businessName: typeof safeContext.businessName === "string" ? safeContext.businessName : undefined,
+    stackTrace: typeof safeContext.stackTrace === "string" ? safeContext.stackTrace : undefined,
   });
 }

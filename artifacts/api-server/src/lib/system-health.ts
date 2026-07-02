@@ -3,21 +3,37 @@ import { isEmailConfigured } from "./email";
 import { isSmsConfigured } from "./sms";
 import { getMediaStorageBackend } from "./media-storage";
 import { getStripeKeyMode, validateStripeConfig } from "./stripe-config";
-import { getLastTrialReminderJobRun } from "./background-jobs-run-state";
+import {
+  estimateNextTrialReminderRun,
+  getLastFailedTrialReminderJobRun,
+  getLastSuccessfulTrialReminderJobRun,
+  getLastTrialReminderJobRun,
+  isSchedulerRecentlyActive,
+} from "./background-jobs-run-state";
 import {
   getLastStripeWebhookReceived,
   getLastWeatherRefresh,
   getProcessStartedAt,
   listApiErrors,
+  countApiErrorsSince,
   type ApiErrorLogEntry,
 } from "./system-runtime-state";
 import {
   queryAdminAccountCount,
   queryDatabaseSchemaVersion,
+  queryLastMigrationHint,
   queryNotificationDeliverySummary,
   queryRecentPlatformActivity,
+  queryStripeSubscriptionCounts,
   type PlatformActivityEntry,
 } from "./system-operational-queries";
+import {
+  queryDatabaseStats,
+  queryNotificationChannelCountsToday,
+  queryPlatformMetrics,
+  queryStorageUsageStats,
+  type PlatformMetrics,
+} from "./platform-metrics";
 
 export type ServiceHealthStatus =
   | "healthy"
@@ -49,10 +65,25 @@ export interface ApplicationHealth {
   appBaseUrlConfigured: boolean;
 }
 
+export interface PlatformHealthSummary {
+  overallStatus: SystemHealthStatus;
+  activeBusinesses: number | null;
+  pendingApplications: number | null;
+  activeSubscriptions: number | null;
+  trialSubscriptions: number | null;
+  pastDueSubscriptions: number | null;
+  ordersToday: number | null;
+  emailsSentToday: number | null;
+  failedEmailsToday: number | null;
+  apiErrorsLast24h: number;
+}
+
 export interface SystemHealthReport {
   status: SystemHealthStatus;
   timestamp: string;
   application: ApplicationHealth;
+  summary: PlatformHealthSummary;
+  metrics: PlatformMetrics | null;
   services: ServiceHealth[];
   apiErrors: ApiErrorLogEntry[];
   recentActivity: PlatformActivityEntry[];
@@ -83,6 +114,13 @@ const SECRET_SUBSTRINGS = [
 
 function environmentLabel(nodeEnv: string): string {
   return nodeEnv === "production" ? "Production" : "Development";
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 function safeService(name: string, build: () => ServiceHealth | Promise<ServiceHealth>): Promise<ServiceHealth> {
@@ -132,7 +170,12 @@ export async function checkDatabaseHealth(
   ping: DatabasePingFn = defaultDatabasePing,
 ): Promise<ServiceHealth> {
   const start = Date.now();
-  const schemaVersion = await queryDatabaseSchemaVersion();
+  const [schemaVersion, migrationHint, dbStats] = await Promise.all([
+    queryDatabaseSchemaVersion(),
+    queryLastMigrationHint(),
+    queryDatabaseStats(),
+  ]);
+
   try {
     await ping();
     const responseTimeMs = Date.now() - start;
@@ -145,6 +188,9 @@ export async function checkDatabaseHealth(
         connected: true,
         connectionLatencyMs: responseTimeMs,
         ...(schemaVersion ? { schemaVersion } : {}),
+        ...(migrationHint ? { lastMigration: migrationHint } : {}),
+        ...(dbStats.sizeBytes != null ? { databaseSize: formatBytes(dbStats.sizeBytes) } : {}),
+        ...(dbStats.connectionPoolHint ? { connectionPoolUsage: dbStats.connectionPoolHint } : {}),
       },
     };
   } catch {
@@ -158,6 +204,7 @@ export async function checkDatabaseHealth(
         connected: false,
         connectionLatencyMs: responseTimeMs,
         ...(schemaVersion ? { schemaVersion } : {}),
+        ...(migrationHint ? { lastMigration: migrationHint } : {}),
       },
     };
   }
@@ -172,8 +219,10 @@ export function checkApiHealth(): ServiceHealth {
   };
 }
 
-export function checkStorageHealth(): ServiceHealth {
+export async function checkStorageHealth(): Promise<ServiceHealth> {
   const backend = getMediaStorageBackend();
+  const usage = await queryStorageUsageStats();
+
   if (backend === "local") {
     const isProduction = process.env.NODE_ENV === "production";
     return {
@@ -184,6 +233,16 @@ export function checkStorageHealth(): ServiceHealth {
         : "Local filesystem storage for logos, gallery uploads, and public assets (development mode)",
       metadata: {
         mode: "local",
+        bucket: "local-filesystem",
+        ...(usage
+          ? {
+              totalFiles: usage.totalFiles,
+              storageUsed: formatBytes(usage.totalBytes),
+              logosStored: usage.logosStored,
+              galleryImages: usage.galleryImages,
+              publicAssets: usage.publicAssets,
+            }
+          : {}),
         logosSupported: true,
         galleryUploadsSupported: true,
         publicAssetsSupported: true,
@@ -218,6 +277,15 @@ export function checkStorageHealth(): ServiceHealth {
       mode: "supabase",
       supabaseConfigured: true,
       bucket,
+      ...(usage
+        ? {
+            totalFiles: usage.totalFiles,
+            storageUsed: formatBytes(usage.totalBytes),
+            logosStored: usage.logosStored,
+            galleryImages: usage.galleryImages,
+            publicAssets: usage.publicAssets,
+          }
+        : {}),
       logosSupported: true,
       galleryUploadsSupported: true,
       publicAssetsSupported: true,
@@ -226,9 +294,21 @@ export function checkStorageHealth(): ServiceHealth {
 }
 
 export async function checkEmailHealth(): Promise<ServiceHealth> {
-  const summary = await queryNotificationDeliverySummary("EMAIL");
+  const [summary, counts] = await Promise.all([
+    queryNotificationDeliverySummary("EMAIL"),
+    queryNotificationChannelCountsToday("EMAIL"),
+  ]);
   const configured = isEmailConfigured();
   const provider = process.env.RESEND_API_KEY ? "resend" : process.env.SMTP_HOST ? "smtp" : "none";
+
+  const baseMetadata: Record<string, string | number | boolean> = {
+    provider,
+    configured,
+    sentToday: counts.sentToday,
+    failedToday: counts.failedToday,
+    ...(summary.lastSuccessfulAt ? { lastSuccessfulAt: summary.lastSuccessfulAt } : {}),
+    ...(summary.lastFailedAt ? { lastFailedAt: summary.lastFailedAt } : {}),
+  };
 
   if (configured) {
     return {
@@ -236,12 +316,9 @@ export async function checkEmailHealth(): Promise<ServiceHealth> {
       status: "healthy",
       message: "Email provider configured",
       metadata: {
-        provider,
-        configured: true,
+        ...baseMetadata,
         resendConfigured: Boolean(process.env.RESEND_API_KEY),
         smtpConfigured: Boolean(process.env.SMTP_HOST),
-        ...(summary.lastSuccessfulAt ? { lastSuccessfulAt: summary.lastSuccessfulAt } : {}),
-        ...(summary.lastFailedAt ? { lastFailedAt: summary.lastFailedAt } : {}),
       },
     };
   }
@@ -250,30 +327,32 @@ export async function checkEmailHealth(): Promise<ServiceHealth> {
     name: "Email",
     status: "not_configured",
     message: "Email provider not configured — notifications will be logged only until Resend or SMTP is set.",
-    metadata: {
-      provider: "none",
-      configured: false,
-      ...(summary.lastSuccessfulAt ? { lastSuccessfulAt: summary.lastSuccessfulAt } : {}),
-      ...(summary.lastFailedAt ? { lastFailedAt: summary.lastFailedAt } : {}),
-    },
+    metadata: baseMetadata,
   };
 }
 
 export async function checkSmsHealth(): Promise<ServiceHealth> {
-  const summary = await queryNotificationDeliverySummary("SMS");
+  const [summary, counts] = await Promise.all([
+    queryNotificationDeliverySummary("SMS"),
+    queryNotificationChannelCountsToday("SMS"),
+  ]);
   const configured = isSmsConfigured();
+
+  const baseMetadata: Record<string, string | number | boolean> = {
+    provider: configured ? "twilio" : "none",
+    configured,
+    sentToday: counts.sentToday,
+    failedToday: counts.failedToday,
+    ...(summary.lastSuccessfulAt ? { lastSuccessfulAt: summary.lastSuccessfulAt } : {}),
+    ...(summary.lastFailedAt ? { lastFailedAt: summary.lastFailedAt } : {}),
+  };
 
   if (configured) {
     return {
       name: "SMS",
       status: "healthy",
       message: "Twilio SMS configured",
-      metadata: {
-        provider: "twilio",
-        configured: true,
-        ...(summary.lastSuccessfulAt ? { lastSuccessfulAt: summary.lastSuccessfulAt } : {}),
-        ...(summary.lastFailedAt ? { lastFailedAt: summary.lastFailedAt } : {}),
-      },
+      metadata: baseMetadata,
     };
   }
 
@@ -281,22 +360,18 @@ export async function checkSmsHealth(): Promise<ServiceHealth> {
     name: "SMS",
     status: "not_configured",
     message: "Twilio SMS not configured",
-    metadata: {
-      provider: "none",
-      configured: false,
-      ...(summary.lastSuccessfulAt ? { lastSuccessfulAt: summary.lastSuccessfulAt } : {}),
-      ...(summary.lastFailedAt ? { lastFailedAt: summary.lastFailedAt } : {}),
-    },
+    metadata: baseMetadata,
   };
 }
 
-export function checkStripeHealth(): ServiceHealth {
+export async function checkStripeHealth(): Promise<ServiceHealth> {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   const mode = getStripeKeyMode(key);
   const validation = validateStripeConfig();
   const webhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim());
   const billingConfigured = mode !== "mock";
   const lastWebhook = getLastStripeWebhookReceived();
+  const subscriptionCounts = await queryStripeSubscriptionCounts();
 
   if (mode === "mock") {
     return {
@@ -310,6 +385,13 @@ export function checkStripeHealth(): ServiceHealth {
         webhookConfigured,
         ...(lastWebhook
           ? { lastWebhookReceivedAt: lastWebhook.at, lastWebhookEventType: lastWebhook.eventType }
+          : {}),
+        ...(subscriptionCounts
+          ? {
+              activeSubscriptions: subscriptionCounts.active,
+              trialSubscriptions: subscriptionCounts.trial,
+              pastDueSubscriptions: subscriptionCounts.pastDue,
+            }
           : {}),
       },
     };
@@ -334,6 +416,13 @@ export function checkStripeHealth(): ServiceHealth {
       ...(lastWebhook
         ? { lastWebhookReceivedAt: lastWebhook.at, lastWebhookEventType: lastWebhook.eventType }
         : {}),
+      ...(subscriptionCounts
+        ? {
+            activeSubscriptions: subscriptionCounts.active,
+            trialSubscriptions: subscriptionCounts.trial,
+            pastDueSubscriptions: subscriptionCounts.pastDue,
+          }
+        : {}),
     },
   };
 }
@@ -355,6 +444,7 @@ export async function checkAuthHealth(): Promise<ServiceHealth> {
         jwtConfigured: true,
         supabaseConfigured: supabaseUrl,
         ...(adminAccountCount != null ? { adminAccountCount } : {}),
+        activeSessions: "Managed by Clerk (not available locally)",
       },
     };
   }
@@ -379,6 +469,10 @@ export function checkBackgroundJobsHealth(): ServiceHealth {
   const jobSecretConfigured = Boolean(process.env.JOB_SECRET?.trim());
   const schedulerConfigured = Boolean(process.env.JOB_CRON_CONFIGURED?.trim());
   const lastRun = getLastTrialReminderJobRun();
+  const lastSuccess = getLastSuccessfulTrialReminderJobRun();
+  const lastFailed = getLastFailedTrialReminderJobRun();
+  const schedulerRunning = schedulerConfigured && jobSecretConfigured && isSchedulerRecentlyActive();
+  const nextRun = estimateNextTrialReminderRun();
 
   let status: ServiceHealthStatus = "healthy";
   let message = "Background jobs are configured and the trial reminder endpoint is available.";
@@ -393,12 +487,20 @@ export function checkBackgroundJobsHealth(): ServiceHealth {
     status = "not_configured";
     message =
       "External cron scheduler is not confirmed. Schedule POST /api/internal/jobs/subscription-trial-reminders daily.";
+  } else if (!lastRun) {
+    status = "warning";
+    message = "Scheduler is configured but no job has run yet — the external cron may not have executed yet.";
+  } else if (!schedulerRunning) {
+    status = "warning";
+    message = "Scheduler has not run recently — verify the external cron is active.";
   }
 
   const metadata: Record<string, string | number | boolean> = {
     schedulerConfigured,
+    schedulerRunning,
     jobSecretConfigured,
     trialReminderEndpointAvailable: true,
+    neverRun: !lastRun,
   };
 
   if (!jobSecretConfigured && process.env.NODE_ENV !== "production") {
@@ -407,18 +509,32 @@ export function checkBackgroundJobsHealth(): ServiceHealth {
   }
 
   if (lastRun) {
-    metadata.lastSuccessfulRunAt = lastRun.ok ? lastRun.finishedAt : "";
     metadata.lastRunAt = lastRun.finishedAt;
     metadata.lastRunOk = lastRun.ok;
+    if (lastRun.errorMessage) {
+      metadata.lastRunError = lastRun.errorMessage;
+    }
     if (lastRun.result) {
       metadata.lastRunScanned = lastRun.result.scanned;
       metadata.lastRunSent7Day = lastRun.result.sent7Day;
       metadata.lastRunSent1Day = lastRun.result.sent1Day;
       metadata.lastRunSkipped = lastRun.result.skipped;
     }
-    if (lastRun.errorMessage) {
-      metadata.lastRunError = lastRun.errorMessage;
+  }
+
+  if (lastSuccess) {
+    metadata.lastSuccessfulRunAt = lastSuccess.finishedAt;
+  }
+
+  if (lastFailed) {
+    metadata.lastFailedRunAt = lastFailed.finishedAt;
+    if (lastFailed.errorMessage) {
+      metadata.lastFailedRunError = lastFailed.errorMessage;
     }
+  }
+
+  if (nextRun) {
+    metadata.nextScheduledRun = nextRun;
   }
 
   return {
@@ -448,9 +564,9 @@ export async function checkWeatherHealth(): Promise<ServiceHealth> {
 
   const baseMetadata = {
     enabled: weatherEnabled,
-    configuredLocation: weatherLocation,
+    location: weatherLocation || "Not set",
+    provider: "open-meteo,nominatim",
     geocodeUserAgentConfigured: hasUserAgent,
-    providers: "open-meteo,nominatim",
     ...(lastRefresh
       ? { lastSuccessfulRefreshAt: lastRefresh.at, lastRefreshLocation: lastRefresh.location }
       : {}),
@@ -507,14 +623,36 @@ export function deriveOverallStatus(services: ServiceHealth[]): SystemHealthStat
   return "healthy";
 }
 
+function buildHealthSummary(
+  status: SystemHealthStatus,
+  metrics: PlatformMetrics | null,
+): PlatformHealthSummary {
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  return {
+    overallStatus: status,
+    activeBusinesses: metrics?.activeBusinesses ?? null,
+    pendingApplications: metrics?.pendingApplications ?? null,
+    activeSubscriptions: metrics?.activeSubscriptions ?? null,
+    trialSubscriptions: metrics?.trialSubscriptions ?? null,
+    pastDueSubscriptions: metrics?.pastDueSubscriptions ?? null,
+    ordersToday: metrics?.ordersToday ?? null,
+    emailsSentToday: metrics?.emailsSentToday ?? null,
+    failedEmailsToday: metrics?.failedEmailsToday ?? null,
+    apiErrorsLast24h: countApiErrorsSince(since24h),
+  };
+}
+
 export function buildFallbackHealthReport(
   reason: string,
   now = new Date(),
 ): SystemHealthReport {
+  const status: SystemHealthStatus = "warning";
   return {
-    status: "warning",
+    status,
     timestamp: now.toISOString(),
     application: buildApplicationHealth(now),
+    summary: buildHealthSummary(status, null),
+    metrics: null,
     services: [
       {
         name: "API",
@@ -537,21 +675,24 @@ export async function buildSystemHealthReport(
 ): Promise<SystemHealthReport> {
   const now = options.now ?? new Date();
 
-  const [database, email, sms, auth, weather] = await Promise.all([
+  const [database, email, sms, auth, weather, stripe, storage, metrics] = await Promise.all([
     safeService("Database", () => checkDatabaseHealth(options.databasePing)),
     safeService("Email", () => checkEmailHealth()),
     safeService("SMS", () => checkSmsHealth()),
     safeService("Authentication", () => checkAuthHealth()),
     safeService("Weather", () => checkWeatherHealth()),
+    safeService("Stripe", () => checkStripeHealth()),
+    safeService("Storage", () => checkStorageHealth()),
+    queryPlatformMetrics().catch(() => null),
   ]);
 
   const services: ServiceHealth[] = [
     checkApiHealth(),
     database,
-    await safeService("Storage", () => checkStorageHealth()),
+    storage,
     email,
     sms,
-    await safeService("Stripe", () => checkStripeHealth()),
+    stripe,
     auth,
     weather,
     await safeService("Background Jobs", () => checkBackgroundJobsHealth()),
@@ -561,10 +702,14 @@ export async function buildSystemHealthReport(
     queryRecentPlatformActivity(50).catch(() => [] as PlatformActivityEntry[]),
   ]);
 
+  const status = deriveOverallStatus(services);
+
   return {
-    status: deriveOverallStatus(services),
+    status,
     timestamp: now.toISOString(),
     application: buildApplicationHealth(now),
+    summary: buildHealthSummary(status, metrics),
+    metrics,
     services,
     apiErrors: listApiErrors(50),
     recentActivity,
@@ -580,3 +725,6 @@ export function assertHealthPayloadSafe(payload: unknown): void {
     }
   }
 }
+
+// Re-export types used by other modules
+export type { ApiErrorLogEntry, PlatformActivityEntry, PlatformMetrics };

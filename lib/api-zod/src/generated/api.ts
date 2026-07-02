@@ -1480,6 +1480,33 @@ export const GetAdminSystemHealthResponse = zod.object({
   "timestamp": zod.coerce.date(),
   "startTime": zod.coerce.date()
 }),
+  "summary": zod.object({
+  "overallStatus": zod.enum(['healthy', 'warning', 'error']),
+  "activeBusinesses": zod.number().nullish(),
+  "pendingApplications": zod.number().nullish(),
+  "activeSubscriptions": zod.number().nullish(),
+  "trialSubscriptions": zod.number().nullish(),
+  "pastDueSubscriptions": zod.number().nullish(),
+  "ordersToday": zod.number().nullish(),
+  "emailsSentToday": zod.number().nullish(),
+  "failedEmailsToday": zod.number().nullish(),
+  "apiErrorsLast24h": zod.number()
+}),
+  "metrics": zod.union([zod.object({
+  "activeBusinesses": zod.number(),
+  "pendingApplications": zod.number(),
+  "activeSubscriptions": zod.number(),
+  "trialSubscriptions": zod.number(),
+  "pastDueSubscriptions": zod.number(),
+  "ordersToday": zod.number(),
+  "ordersThisMonth": zod.number(),
+  "emailsSentToday": zod.number(),
+  "failedEmailsToday": zod.number(),
+  "smsSentToday": zod.number(),
+  "failedSmsToday": zod.number(),
+  "revenueToday": zod.number().nullish(),
+  "revenueThisMonth": zod.number().nullish()
+}),zod.null()]).optional(),
   "services": zod.array(zod.object({
   "name": zod.string(),
   "status": zod.enum(['healthy', 'warning', 'unavailable', 'not_configured']),
@@ -1492,14 +1519,24 @@ export const GetAdminSystemHealthResponse = zod.object({
   "timestamp": zod.coerce.date(),
   "endpoint": zod.string(),
   "httpStatus": zod.number(),
-  "summary": zod.string()
+  "summary": zod.string(),
+  "exceptionMessage": zod.string().optional(),
+  "requestId": zod.string().optional(),
+  "userId": zod.string().optional(),
+  "userLabel": zod.string().optional(),
+  "businessId": zod.number().optional(),
+  "businessName": zod.string().optional(),
+  "stackTrace": zod.string().optional()
 })),
   "recentActivity": zod.array(zod.object({
   "id": zod.string(),
   "type": zod.string(),
   "title": zod.string(),
   "detail": zod.string().optional(),
-  "timestamp": zod.coerce.date()
+  "timestamp": zod.coerce.date(),
+  "actorLabel": zod.string().optional(),
+  "businessId": zod.number().optional(),
+  "businessName": zod.string().optional()
 }))
 })
 

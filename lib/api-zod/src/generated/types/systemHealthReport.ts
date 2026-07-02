@@ -8,6 +8,8 @@
 import type { ApiErrorLogEntry } from './apiErrorLogEntry';
 import type { ApplicationHealth } from './applicationHealth';
 import type { PlatformActivityEntry } from './platformActivityEntry';
+import type { PlatformHealthSummary } from './platformHealthSummary';
+import type { PlatformMetrics } from './platformMetrics';
 import type { ServiceHealth } from './serviceHealth';
 import type { SystemHealthStatus } from './systemHealthStatus';
 
@@ -15,6 +17,8 @@ export interface SystemHealthReport {
   status: SystemHealthStatus;
   timestamp: Date;
   application: ApplicationHealth;
+  summary: PlatformHealthSummary;
+  metrics?: PlatformMetrics | null;
   services: ServiceHealth[];
   apiErrors: ApiErrorLogEntry[];
   recentActivity: PlatformActivityEntry[];

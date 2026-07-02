@@ -12,4 +12,11 @@ export interface ApiErrorLogEntry {
   endpoint: string;
   httpStatus: number;
   summary: string;
+  exceptionMessage?: string;
+  requestId?: string;
+  userId?: string;
+  userLabel?: string;
+  businessId?: number;
+  businessName?: string;
+  stackTrace?: string;
 }

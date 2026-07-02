@@ -12,4 +12,7 @@ export interface PlatformActivityEntry {
   title: string;
   detail?: string;
   timestamp: Date;
+  actorLabel?: string;
+  businessId?: number;
+  businessName?: string;
 }

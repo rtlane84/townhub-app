@@ -4,6 +4,13 @@ export type ApiErrorLogEntry = {
   endpoint: string;
   httpStatus: number;
   summary: string;
+  exceptionMessage?: string;
+  requestId?: string;
+  userId?: string;
+  userLabel?: string;
+  businessId?: number;
+  businessName?: string;
+  stackTrace?: string;
 };
 
 const MAX_API_ERRORS = 100;
@@ -44,14 +51,29 @@ export function recordApiError(input: {
   endpoint: string;
   httpStatus: number;
   summary: string;
+  exceptionMessage?: string;
+  requestId?: string;
+  userId?: string;
+  userLabel?: string;
+  businessId?: number;
+  businessName?: string;
+  stackTrace?: string;
   now?: Date;
 }): void {
+  const isProduction = process.env.NODE_ENV === "production";
   const entry: ApiErrorLogEntry = {
     id: `err_${++apiErrorCounter}`,
     timestamp: (input.now ?? new Date()).toISOString(),
     endpoint: input.endpoint,
     httpStatus: input.httpStatus,
     summary: input.summary.slice(0, 500),
+    ...(input.exceptionMessage ? { exceptionMessage: input.exceptionMessage.slice(0, 1000) } : {}),
+    ...(input.requestId ? { requestId: input.requestId } : {}),
+    ...(input.userId ? { userId: input.userId } : {}),
+    ...(input.userLabel ? { userLabel: input.userLabel } : {}),
+    ...(input.businessId != null ? { businessId: input.businessId } : {}),
+    ...(input.businessName ? { businessName: input.businessName } : {}),
+    ...(!isProduction && input.stackTrace ? { stackTrace: input.stackTrace.slice(0, 4000) } : {}),
   };
   apiErrors.unshift(entry);
   if (apiErrors.length > MAX_API_ERRORS) {
@@ -61,6 +83,11 @@ export function recordApiError(input: {
 
 export function listApiErrors(limit = 50): ApiErrorLogEntry[] {
   return apiErrors.slice(0, Math.min(limit, MAX_API_ERRORS));
+}
+
+export function countApiErrorsSince(since: Date): number {
+  const sinceMs = since.getTime();
+  return apiErrors.filter((entry) => new Date(entry.timestamp).getTime() >= sinceMs).length;
 }
 
 export function resetSystemRuntimeStateForTests(): void {

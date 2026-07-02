@@ -81,6 +81,8 @@ export * from './ownerAppointmentRequestInput';
 export * from './paymentMode';
 export * from './planFeaturesInput';
 export * from './platformActivityEntry';
+export * from './platformHealthSummary';
+export * from './platformMetrics';
 export * from './platformStats';
 export * from './platformTheme';
 export * from './platformThemeInput';

@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 
 describe("admin system status UI", () => {
-  it("renders notification logs on system status instead of settings", () => {
+  it("renders operations center sections on system status page", () => {
     const systemStatus = readFileSync(
       join(root, "artifacts/local-order-hub/src/pages/dashboard/admin/system-status.tsx"),
       "utf8",
@@ -21,16 +21,24 @@ describe("admin system status UI", () => {
     assert.match(systemStatus, /Background Jobs/);
     assert.match(systemStatus, /ApiErrorLogPanel/);
     assert.match(systemStatus, /RecentActivityPanel/);
+    assert.match(systemStatus, /PlatformSummaryCards/);
+    assert.match(systemStatus, /BusinessMetricsSection/);
+    assert.match(systemStatus, /Platform Health/);
+    assert.match(systemStatus, /Operational Monitoring/);
+    assert.match(systemStatus, /Business Metrics/);
+    assert.match(systemStatus, /handleAttentionAction/);
     assert.doesNotMatch(settings, /Notification History/);
     assert.doesNotMatch(settings, /useListNotificationLogs/);
   });
 });
 
 describe("admin system health API contract", () => {
-  it("uses warning/error statuses instead of degraded/unhealthy", () => {
+  it("uses warning/error statuses and includes summary metrics", () => {
     const openapi = readFileSync(join(root, "lib/api-spec/openapi.yaml"), "utf8");
     assert.match(openapi, /enum: \[healthy, warning, unavailable, not_configured\]/);
     assert.match(openapi, /enum: \[healthy, warning, error\]/);
+    assert.match(openapi, /PlatformHealthSummary/);
+    assert.match(openapi, /PlatformMetrics/);
     assert.doesNotMatch(openapi, /enum: \[healthy, degraded, unhealthy/);
   });
 });

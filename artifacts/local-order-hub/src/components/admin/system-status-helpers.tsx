@@ -12,37 +12,57 @@ export const STATUS_LABEL: Record<ServiceStatus, string> = {
 };
 
 const METADATA_LABELS: Record<string, string> = {
-  connected: "Connected",
-  connectionLatencyMs: "Connection latency",
-  schemaVersion: "Schema management",
-  apiVersion: "API version",
+  connected: "Connection status",
+  connectionLatencyMs: "Query latency",
+  schemaVersion: "Schema version",
+  lastMigration: "Last migration",
+  databaseSize: "Database size",
+  connectionPoolUsage: "Connection pool",
   provider: "Provider",
   configured: "Configured",
   resendConfigured: "Resend configured",
   smtpConfigured: "SMTP configured",
-  lastSuccessfulAt: "Last successful",
-  lastFailedAt: "Last failed",
+  sentToday: "Sent today",
+  failedToday: "Failed today",
+  lastSuccessfulAt: "Last successful send",
+  lastFailedAt: "Last failed send",
   mode: "Mode",
-  billingConfigured: "Platform billing configured",
-  connectConfigured: "Stripe Connect configured",
+  billingConfigured: "Platform billing",
+  connectConfigured: "Stripe Connect",
   webhookConfigured: "Webhook configured",
   lastWebhookReceivedAt: "Last webhook received",
   lastWebhookEventType: "Last webhook event",
+  activeSubscriptions: "Active subscriptions",
+  trialSubscriptions: "Trial subscriptions",
+  pastDueSubscriptions: "Past due subscriptions",
   authProvider: "Auth provider",
   clerkConfigured: "Clerk configured",
   jwtConfigured: "JWT configured",
   supabaseConfigured: "Supabase configured",
   adminAccountCount: "Admin accounts",
+  activeSessions: "Active sessions",
   enabled: "Enabled",
+  location: "Location",
   configuredLocation: "Configured location",
   lastSuccessfulRefreshAt: "Last successful refresh",
   schedulerConfigured: "Scheduler configured",
+  schedulerRunning: "Scheduler running",
   jobSecretConfigured: "JOB_SECRET configured",
+  neverRun: "Has run",
   trialReminderEndpointAvailable: "Trial reminder endpoint",
   lastSuccessfulRunAt: "Last successful run",
-  lastRunAt: "Last run",
+  lastFailedRunAt: "Last failed run",
+  lastFailedRunError: "Last failed run error",
+  lastRunAt: "Last execution",
   lastRunOk: "Last run succeeded",
-  bucket: "Bucket",
+  lastRunError: "Last run error",
+  nextScheduledRun: "Next scheduled run",
+  bucket: "Bucket name",
+  storageUsed: "Storage used",
+  totalFiles: "Total files",
+  logosStored: "Logos stored",
+  galleryImages: "Gallery images",
+  publicAssets: "Public assets",
   logosSupported: "Logos supported",
   galleryUploadsSupported: "Gallery uploads supported",
   publicAssetsSupported: "Public assets supported",
@@ -87,8 +107,10 @@ export function formatUptime(seconds: number): string {
 }
 
 function formatMetadataValue(key: string, value: string | number | boolean): string {
+  if (key === "neverRun") return value ? "Never" : "Yes";
+  if (key === "connected") return value ? "Connected" : "Disconnected";
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "string" && (key.endsWith("At") || key.includes("Time"))) {
+  if (typeof value === "string" && (key.endsWith("At") || key.includes("Time") || key === "nextScheduledRun")) {
     const date = new Date(value);
     if (!Number.isNaN(date.getTime())) return date.toLocaleString();
   }
@@ -97,53 +119,66 @@ function formatMetadataValue(key: string, value: string | number | boolean): str
   return String(value);
 }
 
-export function formatMetadata(metadata: ServiceHealth["metadata"]): string[] {
+export function formatMetadata(metadata: ServiceHealth["metadata"]): Array<{ key: string; label: string; value: string }> {
   if (!metadata) return [];
   return Object.entries(metadata)
     .filter(([key, value]) => value !== "" && value !== false && !key.endsWith("Hint"))
-    .map(([key, value]) => {
-      const label = METADATA_LABELS[key] ?? key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()).trim();
-      return `${label}: ${formatMetadataValue(key, value)}`;
-    });
+    .map(([key, value]) => ({
+      key,
+      label: METADATA_LABELS[key] ?? key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()).trim(),
+      value: formatMetadataValue(key, value),
+    }));
 }
 
 export function pickService(services: ServiceHealth[], name: string): ServiceHealth | undefined {
   return services.find((service) => service.name === name);
 }
 
-export function ServiceCard({ service }: { service: ServiceHealth }) {
+export function ServiceCard({ service, compact = true }: { service: ServiceHealth; compact?: boolean }) {
   const Icon = statusIcon(service.status);
-  const metadataLines = formatMetadata(service.metadata);
+  const metadataItems = formatMetadata(service.metadata);
 
   return (
     <div
-      className={cn("rounded-lg border p-4 space-y-2", statusColor(service.status))}
+      className={cn(
+        "rounded-lg border",
+        compact ? "p-3 space-y-2" : "p-4 space-y-2",
+        statusColor(service.status),
+      )}
       data-testid={`service-${service.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="font-medium text-sm">{service.name}</p>
-        <Icon className="h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-2 min-w-0">
+          <Icon className="h-3.5 w-3.5 shrink-0" />
+          <p className="font-medium text-sm truncate">{service.name}</p>
+          <span className="text-[11px] opacity-80 shrink-0">{STATUS_LABEL[service.status]}</span>
+        </div>
+        {service.responseTimeMs != null && (
+          <span className="text-[11px] opacity-70 shrink-0">{service.responseTimeMs} ms</span>
+        )}
       </div>
-      <p className="text-xs opacity-90">{STATUS_LABEL[service.status]}</p>
-      <p className="text-xs leading-relaxed">{service.message}</p>
-      {metadataLines.length > 0 && (
-        <ul className="text-xs leading-relaxed space-y-0.5 opacity-90">
-          {metadataLines.map((line) => (
-            <li key={line}>{line}</li>
+      <p className="text-xs leading-snug opacity-90">{service.message}</p>
+      {metadataItems.length > 0 && (
+        <dl className={cn("grid gap-x-4 gap-y-1", compact ? "grid-cols-1 sm:grid-cols-2 text-[11px]" : "grid-cols-1 text-xs")}>
+          {metadataItems.map((item) => (
+            <div key={item.key} className="flex justify-between gap-2 sm:block">
+              <dt className="text-muted-foreground/90">{item.label}</dt>
+              <dd className="font-medium sm:mt-0 text-right sm:text-left break-words">{item.value}</dd>
+            </div>
           ))}
-        </ul>
+        </dl>
       )}
     </div>
   );
 }
 
-export function DetailGrid({ items }: { items: Array<{ label: string; value: string }> }) {
+export function DetailGrid({ items, compact = true }: { items: Array<{ label: string; value: string }>; compact?: boolean }) {
   return (
-    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+    <dl className={cn("grid gap-x-6", compact ? "grid-cols-1 sm:grid-cols-2 gap-y-2 text-xs" : "grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm")}>
       {items.map((item) => (
-        <div key={item.label}>
+        <div key={item.label} className="flex justify-between gap-2 sm:block">
           <dt className="text-muted-foreground">{item.label}</dt>
-          <dd className="font-medium break-words">{item.value}</dd>
+          <dd className="font-medium break-words sm:mt-0">{item.value}</dd>
         </div>
       ))}
     </dl>

@@ -47,6 +47,8 @@ describe("buildSystemHealthReport", () => {
     assert.equal(typeof report.application.startTime, "string");
     assert.ok(Array.isArray(report.apiErrors));
     assert.ok(Array.isArray(report.recentActivity));
+    assert.ok(report.summary);
+    assert.equal(typeof report.summary.apiErrorsLast24h, "number");
   });
 
   it("marks database failure as unavailable with overall error", async () => {
@@ -104,21 +106,21 @@ describe("buildFallbackHealthReport", () => {
 });
 
 describe("service health checks", () => {
-  it("checkStripeHealth reports mode without exposing the key", () => {
+  it("checkStripeHealth reports mode without exposing the key", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_abc123";
-    const health = checkStripeHealth();
+    const health = await checkStripeHealth();
     assert.equal(health.metadata?.mode, "test");
     assert.equal(health.metadata?.billingConfigured, true);
     assertHealthPayloadSafe(health);
   });
 
-  it("checkStorageHealth reports supabase metadata without secrets", () => {
+  it("checkStorageHealth reports supabase metadata without secrets", async () => {
     process.env.MEDIA_STORAGE = "supabase";
     process.env.SUPABASE_URL = "https://example.supabase.co";
     process.env.SUPABASE_STORAGE_BUCKET = "media";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "secret-key-value";
 
-    const health = checkStorageHealth();
+    const health = await checkStorageHealth();
     assert.equal(health.status, "healthy");
     assert.equal(health.metadata?.bucket, "media");
     assertHealthPayloadSafe(health);

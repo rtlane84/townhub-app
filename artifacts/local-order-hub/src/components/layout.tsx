@@ -64,8 +64,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   });
   const hideCart = !!storefrontSlug && hidesStorefrontCart(storefrontData?.business ?? {});
 
-  const setupAvailable = authResolved && !bootstrapPending && bootstrapStatus?.setupComplete === false;
+  const hideFooter =
+    location === "/dashboard/admin/system-status" || location.startsWith("/dashboard/admin/system-status/");
 
+  const setupAvailable = authResolved && !bootstrapPending && bootstrapStatus?.setupComplete === false;
   const dashboardHref = isAdmin ? "/dashboard/admin" : "/dashboard/business";
   const dashboardLabel = isAdmin ? "Admin Dashboard" : "Business Hub";
   const DashboardIcon = isAdmin ? ShieldCheck : LayoutDashboard;
@@ -285,7 +287,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <footer className="border-t py-12 bg-muted/30 mt-auto print:hidden">
+      <footer className={cn("border-t py-12 bg-muted/30 mt-auto print:hidden", hideFooter && "hidden")}>
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <PlatformLogo className="h-5 w-5 text-muted-foreground" />

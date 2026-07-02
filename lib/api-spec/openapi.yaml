@@ -1990,6 +1990,20 @@ components:
           type: integer
         summary:
           type: string
+        exceptionMessage:
+          type: string
+        requestId:
+          type: string
+        userId:
+          type: string
+        userLabel:
+          type: string
+        businessId:
+          type: integer
+        businessName:
+          type: string
+        stackTrace:
+          type: string
 
     PlatformActivityEntry:
       type: object
@@ -2006,10 +2020,85 @@ components:
         timestamp:
           type: string
           format: date-time
+        actorLabel:
+          type: string
+        businessId:
+          type: integer
+        businessName:
+          type: string
+
+    PlatformMetrics:
+      type: object
+      required:
+        - activeBusinesses
+        - pendingApplications
+        - activeSubscriptions
+        - trialSubscriptions
+        - pastDueSubscriptions
+        - ordersToday
+        - ordersThisMonth
+        - emailsSentToday
+        - failedEmailsToday
+        - smsSentToday
+        - failedSmsToday
+      properties:
+        activeBusinesses:
+          type: integer
+        pendingApplications:
+          type: integer
+        activeSubscriptions:
+          type: integer
+        trialSubscriptions:
+          type: integer
+        pastDueSubscriptions:
+          type: integer
+        ordersToday:
+          type: integer
+        ordersThisMonth:
+          type: integer
+        emailsSentToday:
+          type: integer
+        failedEmailsToday:
+          type: integer
+        smsSentToday:
+          type: integer
+        failedSmsToday:
+          type: integer
+        revenueToday:
+          type: ["number", "null"]
+        revenueThisMonth:
+          type: ["number", "null"]
+
+    PlatformHealthSummary:
+      type: object
+      required:
+        - overallStatus
+        - apiErrorsLast24h
+      properties:
+        overallStatus:
+          $ref: "#/components/schemas/SystemHealthStatus"
+        activeBusinesses:
+          type: ["integer", "null"]
+        pendingApplications:
+          type: ["integer", "null"]
+        activeSubscriptions:
+          type: ["integer", "null"]
+        trialSubscriptions:
+          type: ["integer", "null"]
+        pastDueSubscriptions:
+          type: ["integer", "null"]
+        ordersToday:
+          type: ["integer", "null"]
+        emailsSentToday:
+          type: ["integer", "null"]
+        failedEmailsToday:
+          type: ["integer", "null"]
+        apiErrorsLast24h:
+          type: integer
 
     SystemHealthReport:
       type: object
-      required: [status, timestamp, application, services, apiErrors, recentActivity]
+      required: [status, timestamp, application, summary, services, apiErrors, recentActivity]
       properties:
         status:
           $ref: "#/components/schemas/SystemHealthStatus"
@@ -2018,6 +2107,12 @@ components:
           format: date-time
         application:
           $ref: "#/components/schemas/ApplicationHealth"
+        summary:
+          $ref: "#/components/schemas/PlatformHealthSummary"
+        metrics:
+          oneOf:
+            - $ref: "#/components/schemas/PlatformMetrics"
+            - type: "null"
         services:
           type: array
           items:
