@@ -1465,23 +1465,41 @@ export const UpdateBusinessAppointmentRequestStatusResponse = zod.object({
  * @summary Detailed system health (admin only)
  */
 export const GetAdminSystemHealthResponse = zod.object({
-  "status": zod.enum(['healthy', 'degraded', 'unhealthy']),
+  "status": zod.enum(['healthy', 'warning', 'error']),
   "timestamp": zod.coerce.date(),
   "application": zod.object({
   "name": zod.string(),
   "environment": zod.string(),
+  "environmentLabel": zod.string(),
   "version": zod.string().optional(),
+  "apiVersion": zod.string(),
   "buildDate": zod.string().optional(),
   "commitSha": zod.string().optional(),
+  "appBaseUrlConfigured": zod.boolean(),
   "uptimeSeconds": zod.number(),
-  "timestamp": zod.coerce.date()
+  "timestamp": zod.coerce.date(),
+  "startTime": zod.coerce.date()
 }),
   "services": zod.array(zod.object({
   "name": zod.string(),
-  "status": zod.enum(['healthy', 'degraded', 'unhealthy', 'not_configured']),
+  "status": zod.enum(['healthy', 'warning', 'unavailable', 'not_configured']),
   "message": zod.string(),
   "responseTimeMs": zod.number().optional(),
   "metadata": zod.record(zod.string(), zod.union([zod.string(),zod.number(),zod.boolean()])).optional()
+})),
+  "apiErrors": zod.array(zod.object({
+  "id": zod.string(),
+  "timestamp": zod.coerce.date(),
+  "endpoint": zod.string(),
+  "httpStatus": zod.number(),
+  "summary": zod.string()
+})),
+  "recentActivity": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.string(),
+  "title": zod.string(),
+  "detail": zod.string().optional(),
+  "timestamp": zod.coerce.date()
 }))
 })
 
@@ -2738,7 +2756,10 @@ export const GetWeatherResponse = zod.object({
  */
 export const ListNotificationLogsQueryParams = zod.object({
   "orderId": zod.coerce.number().optional(),
-  "limit": zod.coerce.number().optional()
+  "limit": zod.coerce.number().optional(),
+  "status": zod.enum(['SENT', 'LOGGED', 'FAILED']).optional(),
+  "channel": zod.enum(['EMAIL', 'SMS']).optional(),
+  "eventType": zod.coerce.string().optional()
 })
 
 export const ListNotificationLogsResponseItem = zod.object({

@@ -1,4 +1,5 @@
 import { logger } from "./logger";
+import { recordApiError } from "./system-runtime-state";
 
 const SENSITIVE_KEY_PATTERN =
   /(?:password|secret|token|api[_-]?key|authorization|credential|private|service[_-]?role)/i;
@@ -22,8 +23,28 @@ export function logOperationalFailure(
   event: string,
   context: Record<string, unknown> = {},
 ): void {
+  const safeContext = sanitizeOperationalContext(context);
   logger.error(
-    { operationalEvent: event, ...sanitizeOperationalContext(context) },
+    { operationalEvent: event, ...safeContext },
     `[operational] ${event}`,
   );
+
+  const endpoint =
+    typeof safeContext.endpoint === "string"
+      ? safeContext.endpoint
+      : typeof safeContext.scope === "string"
+        ? safeContext.scope
+        : event;
+  const summary =
+    typeof safeContext.reason === "string"
+      ? safeContext.reason
+      : typeof safeContext.message === "string"
+        ? safeContext.message
+        : event.replace(/_/g, " ");
+
+  recordApiError({
+    endpoint,
+    httpStatus: typeof safeContext.httpStatus === "number" ? safeContext.httpStatus : 500,
+    summary,
+  });
 }

@@ -8,6 +8,7 @@
 
 export * from './adminBootstrapResult';
 export * from './adminBootstrapStatus';
+export * from './apiErrorLogEntry';
 export * from './applicationHealth';
 export * from './appointmentRequest';
 export * from './appointmentRequestInput';
@@ -54,7 +55,9 @@ export * from './listAllOrdersParams';
 export * from './listBusinessesParams';
 export * from './listEventsParams';
 export * from './listMediaAssetsParams';
+export * from './listNotificationLogsChannel';
 export * from './listNotificationLogsParams';
+export * from './listNotificationLogsStatus';
 export * from './marketplaceStats';
 export * from './mediaAsset';
 export * from './mediaUploadForm';
@@ -77,6 +80,7 @@ export * from './ownedBusinessSummary';
 export * from './ownerAppointmentRequestInput';
 export * from './paymentMode';
 export * from './planFeaturesInput';
+export * from './platformActivityEntry';
 export * from './platformStats';
 export * from './platformTheme';
 export * from './platformThemeInput';

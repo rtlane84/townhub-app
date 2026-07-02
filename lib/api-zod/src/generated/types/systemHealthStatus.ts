@@ -11,6 +11,6 @@ export type SystemHealthStatus = typeof SystemHealthStatus[keyof typeof SystemHe
 
 export const SystemHealthStatus = {
   healthy: 'healthy',
-  degraded: 'degraded',
-  unhealthy: 'unhealthy',
+  warning: 'warning',
+  error: 'error',
 } as const;

@@ -11,7 +11,7 @@ export type ServiceHealthStatus = typeof ServiceHealthStatus[keyof typeof Servic
 
 export const ServiceHealthStatus = {
   healthy: 'healthy',
-  degraded: 'degraded',
-  unhealthy: 'unhealthy',
+  warning: 'warning',
+  unavailable: 'unavailable',
   not_configured: 'not_configured',
 } as const;

@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, platformSettingsTable, notificationLogsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { serializeNotificationLog } from "../lib/notifications";
 
@@ -175,22 +175,32 @@ router.get("/admin/notification-logs", async (req, res): Promise<void> => {
   const limitRaw = req.query.limit;
   const limit = limitRaw ? Math.min(parseInt(String(limitRaw), 10), 200) : 50;
   const orderIdRaw = req.query.orderId;
+  const statusRaw = req.query.status;
+  const channelRaw = req.query.channel;
+  const eventTypeRaw = req.query.eventType;
 
-  let rows;
+  const conditions = [];
   if (orderIdRaw) {
-    rows = await db
-      .select()
-      .from(notificationLogsTable)
-      .where(eq(notificationLogsTable.orderId, parseInt(String(orderIdRaw), 10)))
-      .orderBy(desc(notificationLogsTable.createdAt))
-      .limit(limit);
-  } else {
-    rows = await db
-      .select()
-      .from(notificationLogsTable)
-      .orderBy(desc(notificationLogsTable.createdAt))
-      .limit(limit);
+    conditions.push(eq(notificationLogsTable.orderId, parseInt(String(orderIdRaw), 10)));
   }
+  if (statusRaw && typeof statusRaw === "string") {
+    conditions.push(eq(notificationLogsTable.status, statusRaw));
+  }
+  if (channelRaw && typeof channelRaw === "string") {
+    conditions.push(eq(notificationLogsTable.channel, channelRaw));
+  }
+  if (eventTypeRaw && typeof eventTypeRaw === "string") {
+    conditions.push(eq(notificationLogsTable.eventType, eventTypeRaw));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const rows = await db
+    .select()
+    .from(notificationLogsTable)
+    .where(whereClause)
+    .orderBy(desc(notificationLogsTable.createdAt))
+    .limit(limit);
 
   res.json(rows.map(serializeNotificationLog));
 });

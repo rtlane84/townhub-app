@@ -14,8 +14,8 @@ export type ServiceHealthStatus = typeof ServiceHealthStatus[keyof typeof Servic
 
 export const ServiceHealthStatus = {
   healthy: 'healthy',
-  degraded: 'degraded',
-  unhealthy: 'unhealthy',
+  warning: 'warning',
+  unavailable: 'unavailable',
   not_configured: 'not_configured',
 } as const;
 
@@ -24,8 +24,8 @@ export type SystemHealthStatus = typeof SystemHealthStatus[keyof typeof SystemHe
 
 export const SystemHealthStatus = {
   healthy: 'healthy',
-  degraded: 'degraded',
-  unhealthy: 'unhealthy',
+  warning: 'warning',
+  error: 'error',
 } as const;
 
 export type ServiceHealthMetadata = {[key: string]: string | number | boolean};
@@ -41,10 +41,30 @@ export interface ServiceHealth {
 export interface ApplicationHealth {
   name: string;
   environment: string;
+  environmentLabel: string;
   version?: string;
+  apiVersion: string;
   buildDate?: string;
   commitSha?: string;
+  appBaseUrlConfigured: boolean;
   uptimeSeconds: number;
+  timestamp: string;
+  startTime: string;
+}
+
+export interface ApiErrorLogEntry {
+  id: string;
+  timestamp: string;
+  endpoint: string;
+  httpStatus: number;
+  summary: string;
+}
+
+export interface PlatformActivityEntry {
+  id: string;
+  type: string;
+  title: string;
+  detail?: string;
   timestamp: string;
 }
 
@@ -53,6 +73,8 @@ export interface SystemHealthReport {
   timestamp: string;
   application: ApplicationHealth;
   services: ServiceHealth[];
+  apiErrors: ApiErrorLogEntry[];
+  recentActivity: PlatformActivityEntry[];
 }
 
 export type BusinessType = typeof BusinessType[keyof typeof BusinessType];
@@ -1374,7 +1396,27 @@ upcoming?: boolean;
 export type ListNotificationLogsParams = {
 orderId?: number;
 limit?: number;
+status?: ListNotificationLogsStatus;
+channel?: ListNotificationLogsChannel;
+eventType?: string;
 };
+
+export type ListNotificationLogsStatus = typeof ListNotificationLogsStatus[keyof typeof ListNotificationLogsStatus];
+
+
+export const ListNotificationLogsStatus = {
+  SENT: 'SENT',
+  LOGGED: 'LOGGED',
+  FAILED: 'FAILED',
+} as const;
+
+export type ListNotificationLogsChannel = typeof ListNotificationLogsChannel[keyof typeof ListNotificationLogsChannel];
+
+
+export const ListNotificationLogsChannel = {
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+} as const;
 
 export type ListMediaAssetsParams = {
 /**

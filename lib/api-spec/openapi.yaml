@@ -973,7 +973,7 @@ paths:
         "403":
           description: Forbidden
         "503":
-          description: Health check failed
+          description: Deprecated — health reports are returned with HTTP 200 even when degraded
 
   # ─── Admin: Users ───────────────────────────────────────────────
   /admin/users:
@@ -1810,6 +1810,20 @@ paths:
           name: limit
           schema:
             type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [SENT, LOGGED, FAILED]
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum: [EMAIL, SMS]
+        - in: query
+          name: eventType
+          schema:
+            type: string
       responses:
         "200":
           description: Notification log entries
@@ -1906,11 +1920,11 @@ components:
 
     ServiceHealthStatus:
       type: string
-      enum: [healthy, degraded, unhealthy, not_configured]
+      enum: [healthy, warning, unavailable, not_configured]
 
     SystemHealthStatus:
       type: string
-      enum: [healthy, degraded, unhealthy]
+      enum: [healthy, warning, error]
 
     ServiceHealth:
       type: object
@@ -1934,27 +1948,68 @@ components:
 
     ApplicationHealth:
       type: object
-      required: [name, environment, uptimeSeconds, timestamp]
+      required: [name, environment, environmentLabel, apiVersion, uptimeSeconds, timestamp, startTime, appBaseUrlConfigured]
       properties:
         name:
           type: string
         environment:
           type: string
+        environmentLabel:
+          type: string
         version:
+          type: string
+        apiVersion:
           type: string
         buildDate:
           type: string
         commitSha:
           type: string
+        appBaseUrlConfigured:
+          type: boolean
         uptimeSeconds:
           type: number
+        timestamp:
+          type: string
+          format: date-time
+        startTime:
+          type: string
+          format: date-time
+
+    ApiErrorLogEntry:
+      type: object
+      required: [id, timestamp, endpoint, httpStatus, summary]
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        endpoint:
+          type: string
+        httpStatus:
+          type: integer
+        summary:
+          type: string
+
+    PlatformActivityEntry:
+      type: object
+      required: [id, type, title, timestamp]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
         timestamp:
           type: string
           format: date-time
 
     SystemHealthReport:
       type: object
-      required: [status, timestamp, application, services]
+      required: [status, timestamp, application, services, apiErrors, recentActivity]
       properties:
         status:
           $ref: "#/components/schemas/SystemHealthStatus"
@@ -1967,6 +2022,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ServiceHealth"
+        apiErrors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiErrorLogEntry"
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlatformActivityEntry"
 
     # ─── Enums (as strings, validated on server) ────────────────
     BusinessType:

@@ -5,7 +5,9 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { ApiErrorLogEntry } from './apiErrorLogEntry';
 import type { ApplicationHealth } from './applicationHealth';
+import type { PlatformActivityEntry } from './platformActivityEntry';
 import type { ServiceHealth } from './serviceHealth';
 import type { SystemHealthStatus } from './systemHealthStatus';
 
@@ -14,4 +16,6 @@ export interface SystemHealthReport {
   timestamp: Date;
   application: ApplicationHealth;
   services: ServiceHealth[];
+  apiErrors: ApiErrorLogEntry[];
+  recentActivity: PlatformActivityEntry[];
 }

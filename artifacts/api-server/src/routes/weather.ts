@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, platformSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { recordWeatherRefresh } from "../lib/system-runtime-state";
 import {
   buildDemoWeatherForecast,
   fetchWeatherForecast,
@@ -78,6 +79,7 @@ router.get("/weather", async (req, res): Promise<void> => {
     }
 
     res.json(result.forecast);
+    recordWeatherRefresh(locationQuery);
   } catch (err) {
     logger.error({ err }, "Unexpected weather route failure");
     res.status(500).json({

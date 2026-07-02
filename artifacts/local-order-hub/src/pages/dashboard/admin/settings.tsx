@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import {
   useGetPlatformTheme,
   useUpdatePlatformTheme,
-  useListNotificationLogs,
   getGetPlatformThemeQueryKey,
   getGetWeatherQueryKey,
 } from "@workspace/api-client-react";
@@ -12,11 +11,10 @@ import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Palette, Save, RotateCcw, Bell, CheckCircle, AlertCircle, Clock, Type, CloudSun } from "lucide-react";
+import { Palette, Save, RotateCcw, CheckCircle, Type, CloudSun } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -122,10 +120,6 @@ export default function AdminSettings() {
   const [weatherSettings, setWeatherSettings] = useState<WeatherFields>(WEATHER_DEFAULTS);
   const [isWeatherDirty, setIsWeatherDirty] = useState(false);
   const lastBrandingSyncAt = useRef<string | null>(null);
-
-  const { data: notifLogs = [] } = useListNotificationLogs({}, {
-    query: { queryKey: ["/api/admin/notification-logs"] },
-  });
 
   useEffect(() => {
     if (!theme) return;
@@ -241,7 +235,7 @@ export default function AdminSettings() {
       <div className="max-w-4xl space-y-8">
         <div>
           <h1 className="text-3xl font-serif font-bold mb-1">Platform Settings</h1>
-          <p className="text-muted-foreground">Control the marketplace appearance and inspect notification logs.</p>
+          <p className="text-muted-foreground">Control the marketplace appearance, branding, and weather widget.</p>
         </div>
 
         {/* Theme Editor */}
@@ -659,84 +653,6 @@ export default function AdminSettings() {
                     </span>
                   )}
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Notification Logs */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-primary" />
-              <CardTitle className="font-serif">Notification Log</CardTitle>
-            </div>
-            <CardDescription>
-              Owner and customer notifications (sent, logged, or failed). When no provider is configured,
-              notifications are logged here instead of delivered. Email:{" "}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">RESEND_API_KEY</code> or{" "}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">SMTP_*</code>. SMS:{" "}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">TWILIO_*</code>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {notifLogs.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                <Bell className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No notifications yet. Place a test order to see logs here.</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-                {notifLogs.map((log) => (
-                  <div key={log.id} className="border rounded-lg p-4 text-sm space-y-2">
-                    <div className="flex items-start justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge
-                          variant={log.status === "SENT" ? "default" : log.status === "FAILED" ? "destructive" : "secondary"}
-                          className="text-xs"
-                        >
-                          {log.status === "SENT" ? (
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                          ) : log.status === "FAILED" ? (
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                          ) : (
-                            <Clock className="h-3 w-3 mr-1" />
-                          )}
-                          {log.status}
-                        </Badge>
-                        <Badge variant="outline" className="text-xs font-mono">
-                          {(log.eventType ?? log.type ?? "UNKNOWN").replace(/_/g, " ")}
-                        </Badge>
-                        {log.channel && (
-                          <Badge variant="outline" className="text-xs">
-                            {log.channel}
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {log.orderId != null && `Order #${log.orderId}`}
-                        {log.appointmentRequestId != null && `Appt #${log.appointmentRequestId}`}
-                        {(log.orderId != null || log.appointmentRequestId != null) && " · "}
-                        {new Date(log.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <div>
-                      {log.subject && <span className="font-medium">{log.subject}</span>}
-                      {(log.recipientEmail || log.recipientPhone) && (
-                        <span className="text-muted-foreground">
-                          {log.subject ? " → " : ""}
-                          {log.recipientEmail ?? log.recipientPhone}
-                        </span>
-                      )}
-                    </div>
-                    {log.errorMessage && (
-                      <p className="text-xs text-destructive">{log.errorMessage}</p>
-                    )}
-                    <pre className="text-xs bg-muted/50 rounded p-2 whitespace-pre-wrap font-mono leading-relaxed max-h-32 overflow-y-auto">
-                      {log.body}
-                    </pre>
-                  </div>
-                ))}
               </div>
             )}
           </CardContent>

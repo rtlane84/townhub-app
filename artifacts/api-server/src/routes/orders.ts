@@ -22,6 +22,7 @@ import {
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession, stripe, isMockMode } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
+import { recordStripeWebhookReceived } from "../lib/system-runtime-state";
 import { handleStripeWebhookEvent, verifyStripeWebhookSignature } from "../lib/stripe-webhook";
 import { validatePaymentMethodForBusiness } from "../lib/payment-mode";
 import { validateOnlineCardPaymentReady } from "../lib/stripe-connect";
@@ -717,6 +718,10 @@ router.post("/checkout/webhook", async (req, res): Promise<void> => {
 
   try {
     const { handled, result } = await handleStripeWebhookEvent(event);
+
+    if (handled) {
+      recordStripeWebhookReceived(event.type);
+    }
 
     if (handled && result && !result.ok) {
       req.log.warn(

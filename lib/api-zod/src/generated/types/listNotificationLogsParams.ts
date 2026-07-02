@@ -5,8 +5,13 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListNotificationLogsChannel } from './listNotificationLogsChannel';
+import type { ListNotificationLogsStatus } from './listNotificationLogsStatus';
 
 export type ListNotificationLogsParams = {
 orderId?: number;
 limit?: number;
+status?: ListNotificationLogsStatus;
+channel?: ListNotificationLogsChannel;
+eventType?: string;
 };

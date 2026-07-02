@@ -9,9 +9,13 @@
 export interface ApplicationHealth {
   name: string;
   environment: string;
+  environmentLabel: string;
   version?: string;
+  apiVersion: string;
   buildDate?: string;
   commitSha?: string;
+  appBaseUrlConfigured: boolean;
   uptimeSeconds: number;
   timestamp: Date;
+  startTime: Date;
 }

@@ -9,7 +9,7 @@ import {
   GetAdminSystemHealthResponse,
 } from "@workspace/api-zod";
 import { serializeBusiness } from "./businesses";
-import { buildSystemHealthReport } from "../lib/system-health";
+import { buildSystemHealthReport, buildFallbackHealthReport } from "../lib/system-health";
 import { logOperationalFailure } from "../lib/operational-log";
 
 const router: IRouter = Router();
@@ -22,22 +22,26 @@ function parseId(raw: string | string[]): number {
 router.get("/admin/system/health", async (req, res): Promise<void> => {
   try {
     const report = await buildSystemHealthReport();
-    const data = GetAdminSystemHealthResponse.parse(report);
+    const parsed = GetAdminSystemHealthResponse.safeParse(report);
+    const data = parsed.success ? parsed.data : report;
 
-    if (data.status === "unhealthy") {
+    if (data.status === "error") {
       logOperationalFailure("health_check_unhealthy", {
         overallStatus: data.status,
-        unhealthyServices: data.services
-          .filter((s) => s.status === "unhealthy")
+        unavailableServices: data.services
+          .filter((s) => s.status === "unavailable")
           .map((s) => s.name),
       });
     }
 
-    res.json(data);
+    res.status(200).json(data);
   } catch (err) {
     logOperationalFailure("health_check_failed", { scope: "admin_system_health" });
     req.log.error({ err }, "Admin system health check failed");
-    res.status(503).json({ error: "Health check failed" });
+    const fallback = buildFallbackHealthReport(
+      err instanceof Error ? err.message : "Health report could not be fully assembled",
+    );
+    res.status(200).json(fallback);
   }
 });
 

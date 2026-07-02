@@ -12,6 +12,7 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import { createApiRateLimitMiddleware } from "./middlewares/rate-limit";
+import { createApiErrorRecorderMiddleware } from "./middlewares/api-error-recorder";
 import { shouldTrustProxyForRateLimit } from "./lib/rate-limit-config";
 
 const app: Express = express();
@@ -74,6 +75,7 @@ app.use("/api", (_req, res, next) => {
   next();
 });
 app.use("/api", createApiRateLimitMiddleware());
+app.use("/api", createApiErrorRecorderMiddleware());
 app.use("/api", router);
 
 export default app;
