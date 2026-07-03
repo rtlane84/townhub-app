@@ -11,6 +11,7 @@ import { useOrderHighlight } from "@/hooks/order-dashboard-refresh-context";
 import { cn } from "@/lib/utils";
 import { LockedFeatureSection } from "@/components/locked-feature-section";
 import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
+import { AddAnotherBusinessLink } from "@/components/add-another-business-link";
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-700",
@@ -56,12 +57,13 @@ export default function BusinessOverview() {
   return (
     <BusinessDashboardLayout>
       <div className="max-w-5xl mx-auto space-y-8">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="font-serif text-3xl font-bold text-foreground">Overview</h1>
             <p className="text-muted-foreground mt-1">
               {business?.name ? `${business.name} at a glance` : "Your business at a glance"}
             </p>
+            <AddAnotherBusinessLink className="mt-3" />
           </div>
           {isFetching && summary && (
             <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 pt-1">

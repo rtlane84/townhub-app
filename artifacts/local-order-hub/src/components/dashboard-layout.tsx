@@ -191,7 +191,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
               <SheetTitle className="font-serif text-left">Business Hub</SheetTitle>
             </SheetHeader>
             <div className="px-6 pb-4">
-              <BusinessSwitcher compact />
+              <BusinessSwitcher compact onNavigate={() => setOpen(false)} />
             </div>
             <nav className="px-3 space-y-1">
               <BusinessNavLinks

@@ -11,19 +11,23 @@ import {
 import { cn } from "@/lib/utils";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { formatBusinessTypeLabel } from "@workspace/api-zod";
+import { AddAnotherBusinessMenuItem } from "@/components/add-another-business-link";
 
-export function BusinessSwitcher({ compact }: { compact?: boolean }) {
+export function BusinessSwitcher({
+  compact,
+  onNavigate,
+}: {
+  compact?: boolean;
+  /** Called when the user picks a menu item (e.g. close mobile sheet). */
+  onNavigate?: () => void;
+}) {
   const { selectedBusinessId, ownedBusinesses, business, selectBusiness } = useSelectedBusiness();
 
-  if (ownedBusinesses.length <= 1) {
-    if (!business) return null;
-    return (
-      <div className={cn("rounded-lg border bg-background px-3 py-2", compact ? "text-xs" : "text-sm")}>
-        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Current business</p>
-        <p className="font-semibold truncate">{business.name}</p>
-      </div>
-    );
+  if (ownedBusinesses.length === 0 && !business) {
+    return null;
   }
+
+  const currentName = business?.name ?? ownedBusinesses[0]?.name ?? "Select business";
 
   return (
     <DropdownMenu>
@@ -32,6 +36,7 @@ export function BusinessSwitcher({ compact }: { compact?: boolean }) {
           variant="outline"
           className={cn("w-full justify-between gap-2 h-auto py-2", compact ? "text-xs" : "text-sm")}
           aria-label="Switch business"
+          data-testid="button-business-switcher"
         >
           <span className="flex items-center gap-2 min-w-0 text-left">
             <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -39,7 +44,7 @@ export function BusinessSwitcher({ compact }: { compact?: boolean }) {
               <span className="block text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
                 Current business
               </span>
-              <span className="block font-semibold truncate">{business?.name ?? "Select business"}</span>
+              <span className="block font-semibold truncate">{currentName}</span>
             </span>
           </span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -52,7 +57,10 @@ export function BusinessSwitcher({ compact }: { compact?: boolean }) {
           <DropdownMenuItem
             key={item.id}
             className="flex items-start gap-2 cursor-pointer"
-            onClick={() => selectBusiness(item.id)}
+            onClick={() => {
+              selectBusiness(item.id);
+              onNavigate?.();
+            }}
           >
             <Check
               className={cn(
@@ -66,6 +74,8 @@ export function BusinessSwitcher({ compact }: { compact?: boolean }) {
             </span>
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <AddAnotherBusinessMenuItem onNavigate={onNavigate} />
       </DropdownMenuContent>
     </DropdownMenu>
   );

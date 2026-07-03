@@ -35,6 +35,7 @@ import { StorefrontModeSelector } from "@/components/storefront-mode-selector";
 import { TimePicker, coerceFormTime } from "@/components/time-picker";
 import { ImageField } from "@/components/image-field";
 import { StorefrontUrlField } from "@/components/storefront-url-field";
+import { AddAnotherBusinessButton } from "@/components/add-another-business-link";
 
 type FormState = {
   name: string; type: BusinessType; description: string; address: string; phone: string;
@@ -73,7 +74,7 @@ const EMPTY: FormState = {
 };
 
 export default function BusinessSettings() {
-  const { selectedBusinessId, business, isLoading } = useSelectedBusiness();
+  const { selectedBusinessId, business, ownedBusinesses, isLoading } = useSelectedBusiness();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>({ ...EMPTY });
@@ -262,6 +263,25 @@ export default function BusinessSettings() {
           <div className="space-y-4">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
         ) : (
           <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Your businesses</CardTitle>
+                <CardDescription>
+                  Run multiple locations or brands from one account. Each business has its own storefront and settings.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  You currently manage{" "}
+                  <span className="font-medium text-foreground">
+                    {ownedBusinesses.length} business{ownedBusinesses.length === 1 ? "" : "es"}
+                  </span>
+                  . Approved applications are added here automatically.
+                </p>
+                <AddAnotherBusinessButton />
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader><CardTitle className="text-base">Business Info</CardTitle></CardHeader>
               <CardContent className="space-y-4">
