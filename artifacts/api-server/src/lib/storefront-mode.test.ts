@@ -6,10 +6,13 @@ import {
   defaultStorefrontModeForBusinessType,
   hidesStorefrontCart,
   informationPrimaryCtaLabel,
+  isBusinessHubNavVisibleForStorefrontMode,
   isInformationStorefrontMode,
   normalizeWebsiteUrl,
   resolveStorefrontMode,
   showsStorefrontCatalog,
+  storefrontModePublicBadge,
+  storefrontCopy,
 } from "@workspace/api-zod";
 
 describe("storefront mode", () => {
@@ -82,5 +85,61 @@ describe("storefront mode", () => {
     assert.equal(normalizeWebsiteUrl("example.com"), "https://example.com");
     assert.equal(normalizeWebsiteUrl("https://example.com"), "https://example.com");
     assert.equal(normalizeWebsiteUrl(""), null);
+  });
+
+  it("limits business hub nav by storefront mode", () => {
+    const orderingBusiness = { type: "SALON", storefrontMode: "ORDERING" as const };
+    assert.equal(
+      isBusinessHubNavVisibleForStorefrontMode("/dashboard/business/appointments", orderingBusiness),
+      false,
+    );
+    assert.equal(
+      isBusinessHubNavVisibleForStorefrontMode("/dashboard/business/orders", orderingBusiness),
+      true,
+    );
+
+    const appointmentBusiness = { type: "SERVICE_PROVIDER", storefrontMode: "APPOINTMENT" as const };
+    assert.equal(
+      isBusinessHubNavVisibleForStorefrontMode("/dashboard/business/appointments", appointmentBusiness),
+      true,
+    );
+    assert.equal(
+      isBusinessHubNavVisibleForStorefrontMode("/dashboard/business/kitchen", appointmentBusiness),
+      false,
+    );
+  });
+
+  it("maps public storefront badges to resolved mode", () => {
+    assert.deepEqual(storefrontModePublicBadge("ORDERING"), {
+      label: "Online Ordering",
+      icon: "ordering",
+    });
+    assert.deepEqual(storefrontModePublicBadge("APPOINTMENT"), {
+      label: "Appointments",
+      icon: "appointment",
+    });
+    assert.deepEqual(storefrontModePublicBadge("INFORMATION"), {
+      label: "No Online Ordering",
+      icon: "information",
+    });
+  });
+
+  it("uses universal shop copy for all storefront modes", () => {
+    assert.equal(storefrontCopy("ORDERING").catalogHeading, "Shop");
+    assert.equal(
+      storefrontCopy("ORDERING").catalogSubtitle,
+      "Browse available items and add them to your cart.",
+    );
+    assert.equal(
+      storefrontCopy("APPOINTMENT").catalogSubtitle,
+      "Browse available services and request an appointment.",
+    );
+    assert.equal(
+      storefrontCopy("INFORMATION").catalogSubtitle,
+      "Browse available items below. Online ordering is not available—please contact the business directly.",
+    );
+    assert.equal(storefrontCopy("ORDERING").emptyTitle, "Nothing has been added yet.");
+    assert.match(storefrontCopy("ORDERING").emptyDescription, /current offerings/i);
+    assert.equal(storefrontCopy("ORDERING").allItemsLabel, "All Items");
   });
 });

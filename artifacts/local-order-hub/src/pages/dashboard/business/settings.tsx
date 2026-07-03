@@ -34,6 +34,7 @@ import { BusinessStripePaymentsCard } from "@/components/business-stripe-payment
 import { StorefrontModeSelector } from "@/components/storefront-mode-selector";
 import { TimePicker, coerceFormTime } from "@/components/time-picker";
 import { ImageField } from "@/components/image-field";
+import { StorefrontUrlField } from "@/components/storefront-url-field";
 
 type FormState = {
   name: string; type: BusinessType; description: string; address: string; phone: string;
@@ -265,6 +266,7 @@ export default function BusinessSettings() {
               <CardHeader><CardTitle className="text-base">Business Info</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 {field("Business Name", "name")}
+                {business?.slug ? <StorefrontUrlField slug={business.slug} /> : null}
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Business Type</label>
                   <Select value={form.type} onValueChange={(type) => setForm((f) => ({ ...f, type: type as BusinessType }))}>

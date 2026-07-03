@@ -6,3 +6,4 @@ export * from "./payment-mode";
 export * from "./business-types";
 export * from "./storefront-mode";
 export * from "./appointment-status";
+export * from "./business-slug";

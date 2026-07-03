@@ -30,7 +30,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Star } from "lucide-react";
 import { ImageField } from "@/components/image-field";
-import { acceptsAppointmentRequests } from "@workspace/api-zod";
 import { ProductOptionsSection } from "@/components/product-options/product-options-section";
 
 interface ProductForm {
@@ -56,11 +55,8 @@ const EMPTY_FORM: ProductForm = {
 };
 
 export default function BusinessProducts() {
-  const { selectedBusinessId, business } = useSelectedBusiness();
+  const { selectedBusinessId } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? 0;
-  const isSalonMode = acceptsAppointmentRequests(business ?? {});
-  const itemLabel = isSalonMode ? "Service" : "Product";
-  const itemsLabel = isSalonMode ? "Services" : "Products";
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -83,15 +79,15 @@ export default function BusinessProducts() {
 
   const createProduct = useCreateProduct({
     mutation: {
-      onSuccess: () => { invalidate(); setSheetOpen(false); toast({ title: `${itemLabel} created` }); },
-      onError: () => toast({ title: `Failed to create ${itemLabel.toLowerCase()}`, variant: "destructive" }),
+      onSuccess: () => { invalidate(); setSheetOpen(false); toast({ title: "Item created" }); },
+      onError: () => toast({ title: "Failed to create item", variant: "destructive" }),
     },
   });
 
   const updateProduct = useUpdateProduct({
     mutation: {
-      onSuccess: () => { invalidate(); setSheetOpen(false); toast({ title: "Product updated" }); },
-      onError: () => toast({ title: "Failed to update product", variant: "destructive" }),
+      onSuccess: () => { invalidate(); setSheetOpen(false); toast({ title: "Item updated" }); },
+      onError: () => toast({ title: "Failed to update item", variant: "destructive" }),
     },
   });
 
@@ -99,8 +95,8 @@ export default function BusinessProducts() {
     mutation: {
       onMutate: (vars) => { setDeletingId(vars.id); },
       onSettled: () => { setDeletingId(null); },
-      onSuccess: () => { invalidate(); toast({ title: "Product deleted" }); },
-      onError: () => toast({ title: "Failed to delete product", variant: "destructive" }),
+      onSuccess: () => { invalidate(); toast({ title: "Item deleted" }); },
+      onError: () => toast({ title: "Failed to delete item", variant: "destructive" }),
     },
   });
 
@@ -157,13 +153,11 @@ export default function BusinessProducts() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl font-bold">{itemsLabel}</h1>
-            <p className="text-muted-foreground mt-1">
-              {isSalonMode ? "Manage the services customers can request" : "Manage what you offer"}
-            </p>
+            <h1 className="font-serif text-3xl font-bold">Items</h1>
+            <p className="text-muted-foreground mt-1">Manage what you offer on your storefront</p>
           </div>
           <Button onClick={openCreate} data-testid="button-add-product">
-            <Plus className="h-4 w-4 mr-2" /> Add {itemLabel}
+            <Plus className="h-4 w-4 mr-2" /> Add Item
           </Button>
         </div>
 
@@ -175,12 +169,8 @@ export default function BusinessProducts() {
               </div>
             ) : !products?.length ? (
               <div className="text-center py-16 text-muted-foreground">
-                <p className="font-serif text-lg">No {itemsLabel.toLowerCase()} yet</p>
-                <p className="text-sm mt-1">
-                  {isSalonMode
-                    ? "Add your first service so customers can request appointments."
-                    : "Add your first product to start taking orders."}
-                </p>
+                <p className="font-serif text-lg">No items yet</p>
+                <p className="text-sm mt-1">Add your first item to start building your shop.</p>
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -237,7 +227,7 @@ export default function BusinessProducts() {
           <div className="flex flex-col min-h-full">
             <SheetHeader className="px-6 pt-6 pb-4 border-b">
               <SheetTitle className="font-serif text-2xl">
-                {editingId ? `Edit ${itemLabel}` : `Add ${itemLabel}`}
+                {editingId ? "Edit Item" : "Add Item"}
               </SheetTitle>
             </SheetHeader>
 
@@ -246,11 +236,11 @@ export default function BusinessProducts() {
                 <h3 className="font-serif text-lg font-semibold">Details</h3>
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Name *</label>
-                  <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Product name" data-testid="input-product-name" />
+                  <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Item name" data-testid="input-product-name" />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1.5 block">Description</label>
-                  <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe this product…" rows={3} data-testid="input-product-description" />
+                  <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Describe this item…" rows={3} data-testid="input-product-description" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>

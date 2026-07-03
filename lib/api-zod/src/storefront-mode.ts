@@ -15,7 +15,7 @@ export const STOREFRONT_MODE_OPTIONS: Array<{ value: StorefrontMode; label: stri
   {
     value: "INFORMATION",
     label: "Display only",
-    description: "Show your menu or products with prices, but no online cart or checkout. Customers contact you directly.",
+    description: "Show available items with prices, but no online cart or checkout. Customers contact you directly.",
   },
 ];
 
@@ -79,6 +79,45 @@ export function acceptsAppointmentRequests(business: {
   return isAppointmentStorefrontMode(business);
 }
 
+export type StorefrontModeBusiness = {
+  type?: string | null;
+  storefrontMode?: StorefrontMode | null;
+};
+
+const ORDERING_BUSINESS_HUB_PATHS = new Set([
+  "/dashboard/business/orders",
+  "/dashboard/business/kitchen",
+]);
+
+const APPOINTMENT_BUSINESS_HUB_PATHS = new Set([
+  "/dashboard/business/appointments",
+]);
+
+/** Whether a Business Hub nav route matches the business storefront mode. */
+export function isBusinessHubNavVisibleForStorefrontMode(
+  href: string,
+  business: StorefrontModeBusiness,
+): boolean {
+  const mode = resolveStorefrontMode(business);
+  if (ORDERING_BUSINESS_HUB_PATHS.has(href)) return mode === "ORDERING";
+  if (APPOINTMENT_BUSINESS_HUB_PATHS.has(href)) return mode === "APPOINTMENT";
+  return true;
+}
+
+/** Public directory / storefront capability badge for the resolved storefront mode. */
+export function storefrontModePublicBadge(mode: StorefrontMode): {
+  label: string;
+  icon: "ordering" | "appointment" | "information";
+} {
+  if (mode === "APPOINTMENT") {
+    return { label: "Appointments", icon: "appointment" };
+  }
+  if (mode === "INFORMATION") {
+    return { label: "No Online Ordering", icon: "information" };
+  }
+  return { label: "Online Ordering", icon: "ordering" };
+}
+
 export function normalizeWebsiteUrl(url: string | null | undefined): string | null {
   const trimmed = url?.trim();
   if (!trimmed) return null;
@@ -98,19 +137,17 @@ export function storefrontCopy(mode: StorefrontMode) {
   const isAppointment = mode === "APPOINTMENT";
   const isInformation = mode === "INFORMATION";
   return {
-    catalogHeading: isAppointment ? "Services" : isInformation ? "Menu & Products" : "Products",
+    catalogHeading: "Shop",
     catalogSubtitle: isAppointment
-      ? "Browse available services and request an appointment. The business will follow up to confirm availability."
+      ? "Browse available services and request an appointment."
       : isInformation
-        ? "Browse items and prices below. Online ordering is not available — please contact the business directly."
-        : null,
-    allItemsLabel: isAppointment ? "All Services" : isInformation ? "All Items" : "All Items",
-    emptyTitle: isAppointment ? "No services listed" : isInformation ? "Nothing listed yet" : "No products found",
-    emptyDescription: isAppointment
-      ? "Check back soon for available services."
-      : isInformation
-        ? "This business has not published a menu or product list yet."
-        : "This category is empty.",
+        ? "Browse available items below. Online ordering is not available—please contact the business directly."
+        : "Browse available items and add them to your cart.",
+    allItemsLabel: "All Items",
+    emptyTitle: "Nothing has been added yet.",
+    emptyDescription: "Please contact the business directly for current offerings.",
+    emptyCategoryTitle: "No items in this category",
+    emptyCategoryDescription: "This category is empty.",
     addButtonLabel: isAppointment ? "Request Service" : "Add",
     addToastTitle: isAppointment ? "Opening request form" : "Added to cart",
     addToastDescription: (name: string) =>

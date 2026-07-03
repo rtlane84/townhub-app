@@ -16,16 +16,14 @@ import { resolveApprovalBillingInterval } from "../lib/business-lifecycle-core";
 import { resolveOwnerDeliverableEmail } from "../lib/owner-email";
 import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
 import { parseStructuredHours } from "@workspace/api-zod";
+import {
+  checkBusinessSlugAvailability,
+  isPostgresUniqueViolation,
+  resolveUniqueBusinessSlug,
+  slugifyFromBusinessName,
+} from "../lib/business-slug";
 
 const router: IRouter = Router();
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
 
 function serializeApplication(
   a: typeof businessApplicationsTable.$inferSelect,
@@ -96,6 +94,18 @@ router.get("/subscription-plans", async (_req, res): Promise<void> => {
       isDefault: p.isDefault,
     })),
   );
+});
+
+// GET /api/businesses/slug-availability — public storefront URL availability check
+router.get("/businesses/slug-availability", async (req, res): Promise<void> => {
+  const raw = typeof req.query.slug === "string" ? req.query.slug : "";
+  const result = await checkBusinessSlugAvailability(raw);
+  if (!result) {
+    res.status(400).json({ error: "A valid storefront URL is required." });
+    return;
+  }
+
+  res.json(result);
 });
 
 // GET /api/businesses/my-application — current user's application status (for apply flow)
@@ -287,40 +297,38 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
     ];
     const safeType = VALID_TYPES.includes(app.type) ? app.type : "GENERAL";
 
-    // Generate a unique slug
-    let baseSlug = slugify(app.name);
-    if (!baseSlug) baseSlug = "business";
-    let slug = baseSlug;
-    let suffix = 2;
-    while (true) {
-      const [conflict] = await db
-        .select({ id: businessesTable.id })
-        .from(businessesTable)
-        .where(eq(businessesTable.slug, slug));
-      if (!conflict) break;
-      slug = `${baseSlug}-${suffix}`;
-      suffix++;
-    }
+    const slug = await resolveUniqueBusinessSlug(slugifyFromBusinessName(app.name));
 
     // Create the business
-    const [business] = await db
-      .insert(businessesTable)
-      .values({
-        name: app.name,
-        slug,
-        type: safeType as never,
-        description: app.description,
-        address: app.address,
-        phone: app.phone,
-        hours: app.hours,
-        structuredHours: app.structuredHours,
-        ownerId: app.userId,
-        pickupEnabled: true,
-        payAtPickupEnabled: true,
-        paymentMode: "BOTH",
-        active: true,
-      })
-      .returning();
+    let business;
+    try {
+      [business] = await db
+        .insert(businessesTable)
+        .values({
+          name: app.name,
+          slug,
+          type: safeType as never,
+          description: app.description,
+          address: app.address,
+          phone: app.phone,
+          hours: app.hours,
+          structuredHours: app.structuredHours,
+          ownerId: app.userId,
+          pickupEnabled: true,
+          payAtPickupEnabled: true,
+          paymentMode: "BOTH",
+          active: true,
+        })
+        .returning();
+    } catch (err) {
+      if (isPostgresUniqueViolation(err)) {
+        res.status(409).json({
+          error: "That storefront URL was just taken. Please try approving again.",
+        });
+        return;
+      }
+      throw err;
+    }
 
     // Promote user to BUSINESS_OWNER (sync real email from Clerk when application stored a placeholder)
     const ownerEmail = await resolveOwnerDeliverableEmail({

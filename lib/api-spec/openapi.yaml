@@ -200,6 +200,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/MarketplaceStats"
 
+  /businesses/slug-availability:
+    get:
+      operationId: checkBusinessSlugAvailability
+      tags: [businesses]
+      summary: Check whether a storefront URL is available (public)
+      parameters:
+        - in: query
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Storefront URL availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSlugAvailability"
+        "400":
+          description: Invalid slug
+
   /businesses/checkout/{businessId}:
     get:
       operationId: getBusinessCheckout
@@ -3083,6 +3104,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Order"
+
+    BusinessSlugAvailability:
+      type: object
+      required: [slug, available]
+      properties:
+        slug:
+          type: string
+          description: Normalized storefront URL segment that was checked
+        available:
+          type: boolean
+        suggestedSlug:
+          type: string
+          description: Next available storefront URL when unavailable
 
     MarketplaceStats:
       type: object

@@ -1,6 +1,7 @@
-import express, { type Express } from "express";
+import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import * as Sentry from "@sentry/node";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
@@ -77,5 +78,20 @@ app.use("/api", (_req, res, next) => {
 app.use("/api", createApiRateLimitMiddleware());
 app.use("/api", createApiErrorRecorderMiddleware());
 app.use("/api", router);
+
+// Sentry Express error handler must be registered after all routes/controllers
+// and before any other error-handling middleware. Request context for errors is
+// established by the Http integration during Sentry.init() in instrument.ts.
+Sentry.setupExpressErrorHandler(app);
+
+app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+
+  logger.error({ err, method: req.method, url: req.originalUrl }, "Unhandled request error");
+  res.status(500).json({ error: "Internal server error" });
+});
 
 export default app;

@@ -60,7 +60,7 @@ export function ProductOptionsSection({
     <section className="space-y-4 rounded-xl border bg-muted/10 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-serif text-lg font-semibold">Product Options</h3>
+          <h3 className="font-serif text-lg font-semibold">Item Options</h3>
           <p className="text-sm text-muted-foreground mt-1">
             Attach option groups customers can pick when ordering this item.
           </p>
@@ -78,7 +78,7 @@ export function ProductOptionsSection({
           <p className="text-xs text-muted-foreground mt-2">
             Create groups on the{" "}
             <Link href="/dashboard/business/product-options" className="text-primary underline-offset-2 hover:underline">
-              Product Options
+              Item Options
             </Link>{" "}
             page, then attach them here.
           </p>
@@ -121,7 +121,7 @@ export function ProductOptionsSection({
       <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="font-serif">Attach product options</SheetTitle>
+            <SheetTitle className="font-serif">Attach item options</SheetTitle>
           </SheetHeader>
           <div className="space-y-2 py-4">
             {!allGroups?.length ? (

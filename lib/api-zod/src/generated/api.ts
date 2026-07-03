@@ -255,6 +255,20 @@ export const GetMarketplaceStatsResponse = zod.object({
 
 
 /**
+ * @summary Check whether a storefront URL is available (public)
+ */
+export const CheckBusinessSlugAvailabilityQueryParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const CheckBusinessSlugAvailabilityResponse = zod.object({
+  "slug": zod.string().describe('Normalized storefront URL segment that was checked'),
+  "available": zod.boolean(),
+  "suggestedSlug": zod.string().optional().describe('Next available storefront URL when unavailable')
+})
+
+
+/**
  * @summary Public business checkout context (no auth)
  */
 export const GetBusinessCheckoutParams = zod.object({

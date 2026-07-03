@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   BUSINESS_HUB_NAV_ITEMS,
+  getVisibleBusinessHubNavItems,
+  isBusinessHubRouteHiddenByStorefrontMode,
   resolveBusinessHubFeatureKey,
 } from "./business-hub-features.ts";
 
@@ -25,10 +27,45 @@ describe("business-hub-features", () => {
     assert.equal(resolveBusinessHubFeatureKey("/dashboard/business/settings"), null);
   });
 
-  it("lists all primary hub sections in nav", () => {
+  it("lists all primary hub sections in nav catalog", () => {
     const hrefs = BUSINESS_HUB_NAV_ITEMS.map((item) => item.href);
     assert.ok(hrefs.includes("/dashboard/business/orders"));
     assert.ok(hrefs.includes("/dashboard/business/appointments"));
     assert.ok(hrefs.includes("/dashboard/business/locations"));
+  });
+
+  it("shows ordering tabs only for ORDERING storefront mode", () => {
+    const ordering = getVisibleBusinessHubNavItems("ORDERING");
+    const hrefs = ordering.map((item) => item.href);
+    assert.ok(hrefs.includes("/dashboard/business/orders"));
+    assert.ok(hrefs.includes("/dashboard/business/kitchen"));
+    assert.ok(!hrefs.includes("/dashboard/business/appointments"));
+  });
+
+  it("shows appointments only for APPOINTMENT storefront mode", () => {
+    const appointment = getVisibleBusinessHubNavItems("APPOINTMENT");
+    const hrefs = appointment.map((item) => item.href);
+    assert.ok(hrefs.includes("/dashboard/business/appointments"));
+    assert.ok(!hrefs.includes("/dashboard/business/orders"));
+    assert.ok(hrefs.includes("/dashboard/business/products"));
+  });
+
+  it("hides commerce tabs for INFORMATION storefront mode", () => {
+    const information = getVisibleBusinessHubNavItems("INFORMATION");
+    const hrefs = information.map((item) => item.href);
+    assert.ok(!hrefs.includes("/dashboard/business/orders"));
+    assert.ok(!hrefs.includes("/dashboard/business/appointments"));
+    assert.ok(hrefs.includes("/dashboard/business/products"));
+  });
+
+  it("hides appointments route when storefront mode is online ordering", () => {
+    assert.equal(
+      isBusinessHubRouteHiddenByStorefrontMode("/dashboard/business/appointments", "ORDERING"),
+      true,
+    );
+    assert.equal(
+      isBusinessHubRouteHiddenByStorefrontMode("/dashboard/business/orders", "ORDERING"),
+      false,
+    );
   });
 });

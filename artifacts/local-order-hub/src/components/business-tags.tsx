@@ -1,12 +1,18 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Truck, CalendarDays } from "lucide-react";
-import { formatBusinessTypeLabel, isSalonBusiness } from "@workspace/api-zod";
+import { Truck, CalendarDays, ShoppingBag, Info } from "lucide-react";
+import {
+  formatBusinessTypeLabel,
+  resolveStorefrontMode,
+  storefrontModePublicBadge,
+  type StorefrontMode,
+} from "@workspace/api-zod";
 import { businessServiceBadgeStyle } from "@/lib/theme-colors";
 import { cn } from "@/lib/utils";
 
 export type BusinessTagsSource = {
   type: string;
+  storefrontMode?: StorefrontMode | null;
   active?: boolean;
   pickupEnabled?: boolean;
   deliveryEnabled?: boolean;
@@ -52,6 +58,31 @@ function ServiceTag({
   );
 }
 
+function StorefrontModeBadge({
+  mode,
+  accentColor,
+}: {
+  mode: StorefrontMode;
+  accentColor?: string | null;
+}) {
+  const badge = storefrontModePublicBadge(mode);
+  const icon =
+    badge.icon === "appointment" ? (
+      <CalendarDays className="mr-1 h-3 w-3" />
+    ) : badge.icon === "information" ? (
+      <Info className="mr-1 h-3 w-3" />
+    ) : (
+      <ShoppingBag className="mr-1 h-3 w-3" />
+    );
+
+  return (
+    <ServiceTag accentColor={accentColor}>
+      {icon}
+      {badge.label}
+    </ServiceTag>
+  );
+}
+
 function BusinessServiceTags({
   business,
   accentColor,
@@ -61,25 +92,24 @@ function BusinessServiceTags({
   accentColor?: string | null;
   showClosedInTags?: boolean;
 }) {
-  const isSalon = isSalonBusiness(business.type);
+  const storefrontMode = resolveStorefrontMode(business);
 
   return (
     <>
       {showClosedInTags && business.active === false && (
         <Badge variant="secondary">Closed</Badge>
       )}
-      {business.pickupEnabled && <ServiceTag accentColor={accentColor}>Pickup</ServiceTag>}
-      {business.deliveryEnabled && <ServiceTag accentColor={accentColor}>Delivery</ServiceTag>}
+      <StorefrontModeBadge mode={storefrontMode} accentColor={accentColor} />
+      {storefrontMode === "ORDERING" && business.pickupEnabled && (
+        <ServiceTag accentColor={accentColor}>Pickup</ServiceTag>
+      )}
+      {storefrontMode === "ORDERING" && business.deliveryEnabled && (
+        <ServiceTag accentColor={accentColor}>Delivery</ServiceTag>
+      )}
       {business.eventLocationEnabled && (
         <ServiceTag accentColor={accentColor}>
           <Truck className="mr-1 h-3 w-3" />
           Food Truck
-        </ServiceTag>
-      )}
-      {isSalon && (
-        <ServiceTag accentColor={accentColor}>
-          <CalendarDays className="mr-1 h-3 w-3" />
-          Appointments
         </ServiceTag>
       )}
     </>

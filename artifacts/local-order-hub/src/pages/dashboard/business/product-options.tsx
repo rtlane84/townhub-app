@@ -148,9 +148,9 @@ export default function BusinessProductOptions() {
       <div className="max-w-6xl mx-auto space-y-8 px-1">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-serif text-3xl font-bold">Product Options</h1>
+            <h1 className="font-serif text-3xl font-bold">Item Options</h1>
             <p className="text-muted-foreground mt-1 max-w-xl">
-              Create reusable option groups — sizes, toppings, sauces — then attach them to products.
+              Create reusable option groups — sizes, add-ons, customizations — then attach them to items.
             </p>
           </div>
           <Button onClick={openCreate} className="shrink-0" data-testid="button-add-option-group">
@@ -168,7 +168,7 @@ export default function BusinessProductOptions() {
           <div className="text-center py-20 rounded-xl border border-dashed bg-muted/20">
             <p className="font-serif text-xl font-semibold">No option groups yet</p>
             <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-              Start with common groups like Size or Toppings. You can reuse them across many products.
+              Start with common groups like Size or Add-ons. You can reuse them across many items.
             </p>
             <Button onClick={openCreate} className="mt-6">
               <Plus className="h-4 w-4 mr-2" /> Create your first group

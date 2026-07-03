@@ -28,9 +28,14 @@ import { BusinessSwitcher } from "@/components/business-switcher";
 import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
 import {
   BUSINESS_HUB_NAV_ITEMS,
+  getVisibleBusinessHubNavItems,
+  isBusinessHubRouteHiddenByStorefrontMode,
   resolveBusinessHubFeatureKey,
+  resolveBusinessHubNavItem,
+  type BusinessHubNavItem,
 } from "@/lib/business-hub-features";
-import { FeatureLockedPage } from "@/components/locked-feature-modal";
+import { FeatureLockedPage, StorefrontModeRestrictedPage } from "@/components/locked-feature-modal";
+import { isAppointmentStorefrontMode, isOrderingStorefrontMode, resolveStorefrontMode } from "@workspace/api-zod";
 
 const NAV_ICONS = {
   "/dashboard/business": LayoutDashboard,
@@ -50,15 +55,17 @@ type NavIconHref = keyof typeof NAV_ICONS;
 function BusinessNavLinks({
   location,
   onNavigate,
+  navItems,
 }: {
   location: string;
   onNavigate?: () => void;
+  navItems: BusinessHubNavItem[];
 }) {
   const { hasFeature, openLockedFeature } = useBusinessFeatureAccess();
 
   return (
     <>
-      {BUSINESS_HUB_NAV_ITEMS.map((item) => {
+      {navItems.map((item) => {
         const Icon = NAV_ICONS[item.href as NavIconHref] ?? LayoutDashboard;
         const active =
           location === item.href ||
@@ -126,19 +133,36 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   const businessId = selectedBusinessId ?? undefined;
   const { hasFeature, getFeature, planName, isLoading: featureLoading } = useBusinessFeatureAccess();
 
-  useLiveOrderAlerts(businessId);
-  useLiveAppointmentAlerts(businessId, hasFeature("appointment_requests"));
+  const storefrontMode = resolveStorefrontMode(business ?? {});
+  const visibleNavItems = useMemo(
+    () => getVisibleBusinessHubNavItems(storefrontMode),
+    [storefrontMode],
+  );
+  const appointmentsEnabled =
+    hasFeature("appointment_requests") && isAppointmentStorefrontMode(business ?? {});
+  const orderingEnabled =
+    hasFeature("online_ordering") && isOrderingStorefrontMode(business ?? {});
+
+  useLiveOrderAlerts(orderingEnabled ? businessId : undefined);
+  useLiveAppointmentAlerts(businessId, appointmentsEnabled);
 
   const routeFeatureKey = useMemo(() => resolveBusinessHubFeatureKey(location), [location]);
+  const routeNavItem = useMemo(() => resolveBusinessHubNavItem(location), [location]);
+  const routeHiddenByStorefrontMode = useMemo(
+    () => isBusinessHubRouteHiddenByStorefrontMode(location, storefrontMode),
+    [location, storefrontMode],
+  );
   const routeLocked =
     !featureLoading && routeFeatureKey !== null && !hasFeature(routeFeatureKey);
 
   const activeLabel =
+    routeNavItem?.label ??
     BUSINESS_HUB_NAV_ITEMS.find(
       (item) =>
         location === item.href ||
         (item.href !== "/dashboard/business" && location.startsWith(item.href + "/")),
-    )?.label ?? "Business Hub";
+    )?.label ??
+    "Business Hub";
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] print:block print:min-h-0">
@@ -147,7 +171,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
           <h2 className="font-serif font-bold text-lg mb-4">Business Hub</h2>
           <BusinessSwitcher />
           <nav className="space-y-1 mt-6">
-            <BusinessNavLinks location={location} />
+            <BusinessNavLinks location={location} navItems={visibleNavItems} />
           </nav>
           <div className="mt-8">
             <OrderAlertControls />
@@ -170,7 +194,11 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
               <BusinessSwitcher compact />
             </div>
             <nav className="px-3 space-y-1">
-              <BusinessNavLinks location={location} onNavigate={() => setOpen(false)} />
+              <BusinessNavLinks
+                location={location}
+                navItems={visibleNavItems}
+                onNavigate={() => setOpen(false)}
+              />
             </nav>
             <div className="px-3 mt-6 pb-6">
               <OrderAlertControls compact />
@@ -182,10 +210,15 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
 
       <main className="flex-1 p-4 pt-20 md:pt-0 md:p-10 print:p-0">
         <div className="print:hidden">
-          <NewOrderAlertBanner />
-          <NewAppointmentAlertBanner />
+          {orderingEnabled && <NewOrderAlertBanner />}
+          {appointmentsEnabled && <NewAppointmentAlertBanner />}
         </div>
-        {routeLocked && routeFeatureKey ? (
+        {routeHiddenByStorefrontMode && routeNavItem ? (
+          <StorefrontModeRestrictedPage
+            sectionLabel={routeNavItem.label}
+            currentMode={storefrontMode}
+          />
+        ) : routeLocked && routeFeatureKey ? (
           <FeatureLockedPage
             featureKey={routeFeatureKey}
             feature={getFeature(routeFeatureKey)}

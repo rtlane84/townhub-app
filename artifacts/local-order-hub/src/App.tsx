@@ -57,6 +57,9 @@ import Pricing from "@/pages/pricing";
 import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
 import { BusinessFeatureAccessProvider } from "@/hooks/business-feature-access";
 import { BusinessHubGate } from "@/components/business-hub-gate";
+import { SentryErrorBoundary } from "@/components/sentry-error-boundary";
+import { SentryContextBridge } from "@/components/sentry-context-bridge";
+import DebugSentryPage from "@/pages/debug-sentry";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -253,6 +256,7 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
+        <SentryContextBridge />
         <ClerkQueryClientCacheInvalidator />
         <ClerkApiTokenBridge />
         <PostSignInRedirector />
@@ -278,6 +282,9 @@ function ClerkProviderWithRoutes() {
                 <Route path="/list-your-business" component={ListYourBusiness} />
                 <Route path="/help" component={Help} />
                 <Route path="/pricing" component={Pricing} />
+                {import.meta.env.DEV ? (
+                  <Route path="/debug/sentry" component={DebugSentryPage} />
+                ) : null}
 
                 {/* Business owner dashboard */}
                 <BusinessDashboardRoute path="/dashboard/business/orders/:id" component={BusinessOrderDetail} />
@@ -323,8 +330,10 @@ function ClerkProviderWithRoutes() {
 
 export default function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
-    </WouterRouter>
+    <SentryErrorBoundary>
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
+    </SentryErrorBoundary>
   );
 }

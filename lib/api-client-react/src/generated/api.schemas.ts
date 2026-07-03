@@ -769,6 +769,14 @@ export interface BusinessOrderSummary {
   recentOrders: Order[];
 }
 
+export interface BusinessSlugAvailability {
+  /** Normalized storefront URL segment that was checked */
+  slug: string;
+  available: boolean;
+  /** Next available storefront URL when unavailable */
+  suggestedSlug?: string;
+}
+
 export interface MarketplaceStats {
   /** Number of active local businesses */
   localShopsCount: number;
@@ -1431,6 +1439,10 @@ search?: string;
  * Filter featured businesses only
  */
 featured?: boolean;
+};
+
+export type CheckBusinessSlugAvailabilityParams = {
+slug: string;
 };
 
 export type ListAllOrdersParams = {

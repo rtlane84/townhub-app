@@ -32,6 +32,7 @@ import type {
   BusinessOrderSummary,
   BusinessOwnerAssignment,
   BusinessRegistrationInput,
+  BusinessSlugAvailability,
   BusinessStorefront,
   BusinessSubscription,
   BusinessSubscriptionInput,
@@ -40,6 +41,7 @@ import type {
   CategoryInput,
   CategoryUpdate,
   ChangeSubscriptionPlanResponse,
+  CheckBusinessSlugAvailabilityParams,
   CheckoutSessionInput,
   CheckoutSessionResult,
   Event,
@@ -800,6 +802,90 @@ export function useGetMarketplaceStats<TData = Awaited<ReturnType<typeof getMark
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMarketplaceStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCheckBusinessSlugAvailabilityUrl = (params: CheckBusinessSlugAvailabilityParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/businesses/slug-availability?${stringifiedParams}` : `/api/businesses/slug-availability`
+}
+
+/**
+ * @summary Check whether a storefront URL is available (public)
+ */
+export const checkBusinessSlugAvailability = async (params: CheckBusinessSlugAvailabilityParams, options?: RequestInit): Promise<BusinessSlugAvailability> => {
+
+  return customFetch<BusinessSlugAvailability>(getCheckBusinessSlugAvailabilityUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCheckBusinessSlugAvailabilityQueryKey = (params?: CheckBusinessSlugAvailabilityParams,) => {
+    return [
+    `/api/businesses/slug-availability`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCheckBusinessSlugAvailabilityQueryOptions = <TData = Awaited<ReturnType<typeof checkBusinessSlugAvailability>>, TError = ErrorType<void>>(params: CheckBusinessSlugAvailabilityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof checkBusinessSlugAvailability>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCheckBusinessSlugAvailabilityQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof checkBusinessSlugAvailability>>> = ({ signal }) => checkBusinessSlugAvailability(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof checkBusinessSlugAvailability>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type CheckBusinessSlugAvailabilityQueryResult = NonNullable<Awaited<ReturnType<typeof checkBusinessSlugAvailability>>>
+export type CheckBusinessSlugAvailabilityQueryError = ErrorType<void>
+
+
+/**
+ * @summary Check whether a storefront URL is available (public)
+ */
+
+export function useCheckBusinessSlugAvailability<TData = Awaited<ReturnType<typeof checkBusinessSlugAvailability>>, TError = ErrorType<void>>(
+ params: CheckBusinessSlugAvailabilityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof checkBusinessSlugAvailability>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getCheckBusinessSlugAvailabilityQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

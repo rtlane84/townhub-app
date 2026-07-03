@@ -6,16 +6,17 @@
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps --env-file=../../.env ./dist/index.mjs",
+    "start": "node --enable-source-maps --import ./dist/instrument.mjs --env-file=../../.env ./dist/index.mjs",
     "test": "node --import tsx/esm --test src/**/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "relink-clerk-user": "node --import tsx/esm --env-file=../../.env ./scripts/relink-clerk-user.ts",
     "assign-dev-clerk-accounts": "node --import tsx/esm --env-file=../../.env ./scripts/assign-dev-clerk-accounts.ts"
   },
   "dependencies": {
-    "@clerk/express": "^2.1.30",
     "@clerk/backend": "^3.8.2",
+    "@clerk/express": "^2.1.30",
     "@clerk/shared": "^4.20.0",
+    "@sentry/node": "^10.63.0",
     "@supabase/supabase-js": "^2.86.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",

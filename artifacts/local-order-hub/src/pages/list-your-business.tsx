@@ -36,9 +36,15 @@ import {
   normalizeWeeklyHours,
   BUSINESS_TYPE_OPTIONS,
   formatBusinessTypeLabel,
+  slugifyBusinessName,
 } from "@workspace/api-zod";
-import type { BusinessDayHours } from "@workspace/api-client-react";
+import type { BusinessDayHours, BusinessSlugAvailability } from "@workspace/api-client-react";
 import { useListMyBusinesses, getListMyBusinessesQueryKey } from "@workspace/api-client-react";
+import { buildPublicStorefrontDisplayUrl } from "@/lib/storefront-url";
+import {
+  STOREFRONT_URL_APPLY_HELP,
+  STOREFRONT_URL_SUPPORT_NOTE,
+} from "@/components/storefront-url-field";
 
 const BUSINESS_TYPES = BUSINESS_TYPE_OPTIONS;
 
@@ -88,9 +94,10 @@ const EMPTY: FormState = {
   structuredHours: defaultWeeklyHours(),
 };
 
-function slugPreview(name: string) {
-  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
+type SlugAvailabilityState =
+  | { status: "idle" }
+  | { status: "checking"; slug: string }
+  | { status: "ready"; slug: string; result: BusinessSlugAvailability };
 
 function formatPrice(price: number, interval: "month" | "year" = "month") {
   if (price === 0) return "Free";
@@ -186,13 +193,31 @@ export default function ListYourBusiness() {
   const [existingApp, setExistingApp] = useState<MyApplication | null>(null);
   const [appLoading, setAppLoading] = useState(false);
   const [reapplying, setReapplying] = useState(false);
+  const [slugAvailability, setSlugAvailability] = useState<SlugAvailabilityState>({ status: "idle" });
+
+  const previewSlug = slugifyBusinessName(form.name);
+
+  function effectiveStorefrontSlug() {
+    if (slugAvailability.status === "ready" && !slugAvailability.result.available) {
+      return slugAvailability.result.suggestedSlug ?? slugAvailability.slug;
+    }
+    return previewSlug || "business";
+  }
 
   function set(key: keyof Omit<FormState, "structuredHours">, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
   function canProceedStep1() {
-    return form.name.trim().length > 0 && form.type.length > 0;
+    if (!form.name.trim() || !form.type) return false;
+    if (!previewSlug) return false;
+    if (slugAvailability.status === "checking") return false;
+    if (slugAvailability.status === "idle") return false;
+    return true;
+  }
+
+  function canSubmitApplication() {
+    return canProceedStep1();
   }
 
   const loadExistingApplication = useCallback(async () => {
@@ -219,6 +244,35 @@ export default function ListYourBusiness() {
   useEffect(() => {
     if (isSignedIn) void loadExistingApplication();
   }, [isSignedIn, loadExistingApplication]);
+
+  useEffect(() => {
+    if (!previewSlug) {
+      setSlugAvailability({ status: "idle" });
+      return;
+    }
+
+    setSlugAvailability({ status: "checking", slug: previewSlug });
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      void fetch(`/api/businesses/slug-availability?slug=${encodeURIComponent(previewSlug)}`, {
+        signal: controller.signal,
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error("availability check failed");
+          const result = (await res.json()) as BusinessSlugAvailability;
+          setSlugAvailability({ status: "ready", slug: previewSlug, result });
+        })
+        .catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          setSlugAvailability({ status: "ready", slug: previewSlug, result: { slug: previewSlug, available: true } });
+        });
+    }, 300);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [previewSlug]);
 
   useEffect(() => {
     if (step === 3) {
@@ -451,10 +505,43 @@ export default function ListYourBusiness() {
                   autoComplete="organization"
                 />
                 {form.name.trim() && (
-                  <p className="text-xs text-muted-foreground">
-                    Your page address:{" "}
-                    <span className="font-mono text-foreground">/{slugPreview(form.name)}</span>
-                  </p>
+                  <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+                    <div>
+                      <p className="text-xs font-medium text-foreground">Storefront URL</p>
+                      <p className="font-mono text-sm text-foreground mt-1 break-all">
+                        {buildPublicStorefrontDisplayUrl(
+                          slugAvailability.status === "ready" && !slugAvailability.result.available
+                            ? slugAvailability.result.suggestedSlug ?? previewSlug
+                            : previewSlug || "business",
+                        )}
+                      </p>
+                    </div>
+                    {slugAvailability.status === "checking" && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Checking availability…
+                      </p>
+                    )}
+                    {slugAvailability.status === "ready" && slugAvailability.result.available && (
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        URL available
+                      </p>
+                    )}
+                    {slugAvailability.status === "ready" && !slugAvailability.result.available && (
+                      <p className="text-xs text-amber-800 dark:text-amber-300">
+                        URL already taken — if approved, your storefront will use{" "}
+                        <span className="font-mono">{slugAvailability.result.suggestedSlug}</span>.
+                      </p>
+                    )}
+                    {!previewSlug && (
+                      <p className="text-xs text-destructive">
+                        Enter a business name that can be used for a storefront URL.
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">{STOREFRONT_URL_APPLY_HELP}</p>
+                    <p className="text-xs text-muted-foreground/80">{STOREFRONT_URL_SUPPORT_NOTE}</p>
+                  </div>
                 )}
               </div>
 
@@ -597,6 +684,10 @@ export default function ListYourBusiness() {
                 <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground">Your application</p>
                 <p><span className="text-muted-foreground">Business:</span> {form.name.trim()}</p>
                 <p><span className="text-muted-foreground">Category:</span> {typeLabel}</p>
+                <p className="break-all">
+                  <span className="text-muted-foreground">Storefront URL:</span>{" "}
+                  <span className="font-mono">{buildPublicStorefrontDisplayUrl(effectiveStorefrontSlug())}</span>
+                </p>
                 {form.description.trim() && (
                   <p className="text-muted-foreground line-clamp-2">{form.description.trim()}</p>
                 )}
@@ -714,6 +805,7 @@ export default function ListYourBusiness() {
                   onClick={handleSubmit}
                   loading={submitting}
                   loadingText="Submitting…"
+                  disabled={!canSubmitApplication()}
                 >
                   <Store className="mr-2 h-4 w-4" /> Submit application
                 </LoadingButton>

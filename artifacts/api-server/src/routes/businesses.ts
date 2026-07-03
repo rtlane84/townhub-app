@@ -35,14 +35,11 @@ import { businessHasOnlinePaymentsReady } from "../lib/stripe-connect";
 import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
 import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
 import { archiveBusiness } from "../lib/business-lifecycle";
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+import {
+  isPostgresUniqueViolation,
+  resolveUniqueBusinessSlug,
+  slugifyFromBusinessName,
+} from "../lib/business-slug";
 
 const router: IRouter = Router();
 
@@ -165,27 +162,16 @@ router.post("/businesses/register", async (req, res): Promise<void> => {
     return;
   }
 
-  // Generate a unique slug
-  let baseSlug = slugify(name);
-  if (!baseSlug) baseSlug = "business";
-  let slug = baseSlug;
-  let suffix = 2;
-  while (true) {
-    const [conflict] = await db
-      .select({ id: businessesTable.id })
-      .from(businessesTable)
-      .where(eq(businessesTable.slug, slug));
-    if (!conflict) break;
-    slug = `${baseSlug}-${suffix}`;
-    suffix++;
-  }
+  const slug = await resolveUniqueBusinessSlug(slugifyFromBusinessName(name));
 
   // Create the business
-  const [business] = await db
-    .insert(businessesTable)
-    .values({
-      name: name.trim(),
-      slug,
+  let business;
+  try {
+    [business] = await db
+      .insert(businessesTable)
+      .values({
+        name: name.trim(),
+        slug,
       type: type as never,
       description: description?.trim() || null,
       address: address?.trim() || null,
@@ -199,6 +185,15 @@ router.post("/businesses/register", async (req, res): Promise<void> => {
       storefrontMode: defaultStorefrontModeForBusinessType(type),
     })
     .returning();
+  } catch (err) {
+    if (isPostgresUniqueViolation(err)) {
+      res.status(409).json({
+        error: "That storefront URL is already in use. Please try a different business name.",
+      });
+      return;
+    }
+    throw err;
+  }
 
   // Promote user to BUSINESS_OWNER (upsert in case row doesn't exist yet)
   const claims = (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth?.sessionClaims;
@@ -350,33 +345,44 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
     payAtPickupEnabled: parsed.data.payAtPickupEnabled,
   });
 
-  const [business] = await db
-    .insert(businessesTable)
-    .values({
-      name: parsed.data.name,
-      slug: parsed.data.slug,
-      type: parsed.data.type as never,
-      description: parsed.data.description,
-      logoUrl: parsed.data.logoUrl,
-      heroImageUrl: parsed.data.heroImageUrl,
-      address: parsed.data.address,
-      phone: parsed.data.phone,
-      structuredHours: resolveStructuredHoursInput(parsed.data.structuredHours) ?? null,
-      hours: legacyHoursFromStructured(parsed.data.structuredHours) ?? parsed.data.hours ?? null,
-      pickupEnabled: parsed.data.pickupEnabled ?? true,
-      deliveryEnabled: parsed.data.deliveryEnabled ?? false,
-      deliveryFee: parsed.data.deliveryFee
-        ? String(parsed.data.deliveryFee)
-        : null,
-      minimumOrder: parsed.data.minimumOrder
-        ? String(parsed.data.minimumOrder)
-        : null,
-      payAtPickupEnabled: paymentFields.payAtPickupEnabled,
-      paymentMode: paymentFields.paymentMode,
-      orderCutoffTime: parsed.data.orderCutoffTime,
-      ownerId: parsed.data.ownerId,
-    })
-    .returning();
+  let business;
+  try {
+    [business] = await db
+      .insert(businessesTable)
+      .values({
+        name: parsed.data.name,
+        slug: parsed.data.slug,
+        type: parsed.data.type as never,
+        description: parsed.data.description,
+        logoUrl: parsed.data.logoUrl,
+        heroImageUrl: parsed.data.heroImageUrl,
+        address: parsed.data.address,
+        phone: parsed.data.phone,
+        structuredHours: resolveStructuredHoursInput(parsed.data.structuredHours) ?? null,
+        hours: legacyHoursFromStructured(parsed.data.structuredHours) ?? parsed.data.hours ?? null,
+        pickupEnabled: parsed.data.pickupEnabled ?? true,
+        deliveryEnabled: parsed.data.deliveryEnabled ?? false,
+        deliveryFee: parsed.data.deliveryFee
+          ? String(parsed.data.deliveryFee)
+          : null,
+        minimumOrder: parsed.data.minimumOrder
+          ? String(parsed.data.minimumOrder)
+          : null,
+        payAtPickupEnabled: paymentFields.payAtPickupEnabled,
+        paymentMode: paymentFields.paymentMode,
+        orderCutoffTime: parsed.data.orderCutoffTime,
+        ownerId: parsed.data.ownerId,
+      })
+      .returning();
+  } catch (err) {
+    if (isPostgresUniqueViolation(err)) {
+      res.status(409).json({
+        error: "That storefront URL is already in use. Please choose a different one.",
+      });
+      return;
+    }
+    throw err;
+  }
 
   res.status(201).json(serializeBusiness(business));
 });

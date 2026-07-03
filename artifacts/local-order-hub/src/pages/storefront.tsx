@@ -127,6 +127,8 @@ export default function Storefront() {
   const displayedProducts = activeCategory
     ? products.filter((p) => p.categoryId === activeCategory)
     : products;
+  const catalogFullyEmpty = products.length === 0;
+  const categoryFilterEmpty = !catalogFullyEmpty && displayedProducts.length === 0;
 
   const paymentNote = paymentModeStorefrontNote(resolvePaymentMode(b));
   const storefrontMode = resolveStorefrontMode(b);
@@ -137,6 +139,8 @@ export default function Storefront() {
   const contactCtaLabel = informationPrimaryCtaLabel(!!b.phone?.trim());
   const websiteUrl = normalizeWebsiteUrl(bx.websiteUrl as string | undefined);
   const showWebsiteCard = bx.showWebsiteCard === true && !!websiteUrl;
+  const informationCatalogEmpty = isInformationMode && products.length === 0;
+  const showCatalogColumn = showCatalog && !informationCatalogEmpty;
 
   const openAppointmentDialog = (productId?: number) => {
     setAppointmentProductId(productId ?? null);
@@ -224,9 +228,15 @@ export default function Storefront() {
         </div>
 
         <div className="relative z-10 -mt-[6.125rem] md:-mt-[7.125rem]">
-          <div className={cn("flex flex-col gap-8", showCatalog && "md:flex-row")}>
+          <div className={cn("flex flex-col gap-8", showCatalogColumn && "md:flex-row")}>
           {/* Business details */}
-          <div className={cn(showCatalog && "md:w-1/3 lg:w-1/4 flex-shrink-0")}>
+          <div
+            className={cn(
+              "order-1",
+              informationCatalogEmpty && "mx-auto w-full max-w-md",
+              showCatalogColumn && "md:w-1/3 lg:w-1/4 flex-shrink-0",
+            )}
+          >
             <Card className="sticky top-24 overflow-visible border-border/40 shadow-xl">
               <div className="flex flex-col items-center rounded-t-xl border-b bg-white p-6 pt-12 text-center">
                 <BusinessLogoBadge
@@ -396,18 +406,16 @@ export default function Storefront() {
           </div>
 
           {/* Catalog grid */}
-          {showCatalog && (
-          <div className="md:mt-[3.25rem] md:w-2/3 lg:w-3/4">
-            {(isAppointmentMode || isInformationMode) && copy.catalogHeading && (
-              <div className="mb-4 md:pt-20">
-                <h2 className="text-2xl font-serif font-bold text-foreground">{copy.catalogHeading}</h2>
-                {copy.catalogSubtitle && (
-                  <p className="mt-1 text-sm text-muted-foreground max-w-2xl">{copy.catalogSubtitle}</p>
-                )}
-              </div>
-            )}
+          {showCatalogColumn && (
+          <div className="order-2 md:mt-[3.25rem] md:w-2/3 lg:w-3/4">
+            <div className="mb-4 md:pt-20">
+              <h2 className="text-2xl font-serif font-bold text-foreground">{copy.catalogHeading}</h2>
+              {copy.catalogSubtitle && (
+                <p className="mt-1 text-sm text-muted-foreground max-w-2xl">{copy.catalogSubtitle}</p>
+              )}
+            </div>
             {categories.length > 0 && (
-              <div className={`mb-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar ${!isAppointmentMode && !isInformationMode ? "md:pt-20" : ""}`}>
+              <div className="mb-4 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
                 <Button
                   variant="ghost"
                   onClick={() => setActiveCategory(null)}
@@ -429,15 +437,24 @@ export default function Storefront() {
                 ))}
               </div>
             )}
-            {!isAppointmentMode && !isInformationMode && categories.length === 0 && (
-              <div className="md:pt-20" />
-            )}
 
             {displayedProducts.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-xl border border-dashed border-border">
                 <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-30" />
-                <h3 className="text-lg font-medium text-foreground">{copy.emptyTitle}</h3>
-                <p className="text-muted-foreground text-sm mt-1">{copy.emptyDescription}</p>
+                <h3 className="text-lg font-medium text-foreground">
+                  {categoryFilterEmpty ? copy.emptyCategoryTitle : copy.emptyTitle}
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  {categoryFilterEmpty ? copy.emptyCategoryDescription : copy.emptyDescription}
+                </p>
+                {!isInformationMode && !categoryFilterEmpty && b.phone?.trim() ? (
+                  <Button asChild size="sm" className={cn("mt-6 h-8", storefrontPrimaryButtonClass)}>
+                    <a href={`tel:${b.phone.replace(/\s/g, "")}`} data-testid="button-call-empty-shop">
+                      <Phone className="h-4 w-4 mr-1" />
+                      {contactCtaLabel}
+                    </a>
+                  </Button>
+                ) : null}
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">

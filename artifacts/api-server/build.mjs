@@ -15,7 +15,10 @@ async function buildAll() {
   await rm(distDir, { recursive: true, force: true });
 
   await esbuild({
-    entryPoints: [path.resolve(artifactDir, "src/index.ts")],
+    entryPoints: [
+      path.resolve(artifactDir, "src/instrument.ts"),
+      path.resolve(artifactDir, "src/index.ts"),
+    ],
     platform: "node",
     bundle: true,
     format: "esm",
@@ -28,6 +31,8 @@ async function buildAll() {
     // - uses native modules and loads them dynamically (e.g. sharp)
     // - use path traversal to read files (e.g. @google-cloud/secret-manager loads sibling .proto files)
     external: [
+      "@sentry/node",
+      "@sentry/core",
       "*.node",
       "sharp",
       "better-sqlite3",
