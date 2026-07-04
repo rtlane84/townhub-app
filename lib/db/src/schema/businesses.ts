@@ -71,6 +71,12 @@ export const businessesTable = pgTable("businesses", {
   deliveryNotes: text("delivery_notes"),
   pickupInstructions: text("pickup_instructions"),
   deliveryInstructions: text("delivery_instructions"),
+
+  // Sales tax (business-configured rate; no jurisdiction automation)
+  taxEnabled: boolean("tax_enabled").notNull().default(false),
+  taxRatePercent: numeric("tax_rate_percent", { precision: 5, scale: 2 }),
+  taxLabel: text("tax_label").notNull().default("Sales Tax"),
+
   payAtPickupEnabled: boolean("pay_at_pickup_enabled").notNull().default(false),
   paymentMode: paymentModeEnum("payment_mode"),
   orderCutoffTime: text("order_cutoff_time"),

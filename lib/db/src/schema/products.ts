@@ -45,6 +45,7 @@ export const productsTable = pgTable("products", {
   available: boolean("available").notNull().default(true),
   featured: boolean("featured").notNull().default(false),
   prepTimeMinutes: integer("prep_time_minutes"),
+  taxable: boolean("taxable").notNull().default(true),
   itemType: productItemTypeEnum("item_type").notNull().default("PRODUCT"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

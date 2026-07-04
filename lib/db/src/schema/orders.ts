@@ -44,6 +44,10 @@ export const ordersTable = pgTable("orders", {
   estimatedWindowEnd: timestamp("estimated_window_end", { withTimezone: true }),
   notes: text("notes"),
   specialFields: text("special_fields"), // JSON string
+  subtotalCents: integer("subtotal_cents"),
+  taxCents: integer("tax_cents").notNull().default(0),
+  taxRatePercent: numeric("tax_rate_percent", { precision: 5, scale: 2 }),
+  taxLabel: text("tax_label"),
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),
   deliveryFee: numeric("delivery_fee", { precision: 10, scale: 2 }),
   paymentStatus: text("payment_status").notNull().default("PENDING"),
