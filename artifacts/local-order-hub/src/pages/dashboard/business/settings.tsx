@@ -48,6 +48,7 @@ type FormState = {
   deliveryRadiusMiles: string; deliveryNotes: string;
   pickupInstructions: string; deliveryInstructions: string;
   orderCutoffTime: string;
+  defaultPrepMinutes: string;
   notificationEmail: string;
   notificationPhone: string;
   notifyNewOrdersByEmail: boolean;
@@ -67,7 +68,7 @@ const EMPTY: FormState = {
   deliveryFee: "", minimumOrder: "", minimumOrderForDelivery: "",
   deliveryRadiusMiles: "", deliveryNotes: "",
   pickupInstructions: "", deliveryInstructions: "",
-  orderCutoffTime: "", notificationEmail: "", notificationPhone: "",
+  orderCutoffTime: "", defaultPrepMinutes: "15", notificationEmail: "", notificationPhone: "",
   notifyNewOrdersByEmail: true, notifyNewOrdersBySms: false,
   notifyAppointmentRequestsByEmail: true, notifyAppointmentRequestsBySms: false,
   accentColor: "", buttonColor: "", bannerText: "",
@@ -110,6 +111,8 @@ export default function BusinessSettings() {
         paymentMode: resolvePaymentMode(business),
         storefrontMode: resolveStorefrontMode(business),
         orderCutoffTime: coerceFormTime(business.orderCutoffTime),
+        defaultPrepMinutes:
+          business.defaultPrepMinutes != null ? String(business.defaultPrepMinutes) : "15",
         notificationEmail: String(b.notificationEmail ?? b.orderNotificationEmail ?? ""),
         notificationPhone: String(b.notificationPhone ?? ""),
         notifyNewOrdersByEmail: b.notifyNewOrdersByEmail !== false,
@@ -181,6 +184,7 @@ export default function BusinessSettings() {
               minimumOrder: optNum(form.minimumOrder),
               paymentMode,
               orderCutoffTime: normalizeOptionalTime(form.orderCutoffTime) || undefined,
+              defaultPrepMinutes: optNum(form.defaultPrepMinutes),
               minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
               deliveryRadiusMiles: optNum(form.deliveryRadiusMiles),
               deliveryNotes: opt(form.deliveryNotes),
@@ -461,6 +465,20 @@ export default function BusinessSettings() {
                       onChange={(orderCutoffTime) => setForm((f) => ({ ...f, orderCutoffTime }))}
                       optional
                       data-testid="input-orderCutoffTime"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">Default prep time (minutes)</label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Used for ASAP estimates when items do not specify their own prep time.
+                    </p>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={form.defaultPrepMinutes}
+                      onChange={(e) => setForm((f) => ({ ...f, defaultPrepMinutes: e.target.value }))}
+                      placeholder="15"
+                      data-testid="input-defaultPrepMinutes"
                     />
                   </div>
                   {field("Pickup instructions", "pickupInstructions", { multiline: true, placeholder: "Come to the side entrance on Oak St." })}

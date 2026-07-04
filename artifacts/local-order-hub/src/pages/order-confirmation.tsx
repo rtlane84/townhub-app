@@ -15,6 +15,7 @@ import {
   shouldClearCartForStripeSuccess,
   stripePaymentPendingMessage,
 } from "@/lib/stripe-checkout-return";
+import { getCustomerEstimatedWindowLabel } from "@/lib/order-prep-timing";
 
 export default function OrderConfirmation() {
   const [, params] = useRoute("/order/:id");
@@ -47,6 +48,8 @@ export default function OrderConfirmation() {
   const paymentPendingMessage = order
     ? stripePaymentPendingMessage(stripeReturn, order.paymentMethod, order.paymentStatus)
     : null;
+
+  const estimatedWindowLabel = order ? getCustomerEstimatedWindowLabel(order) : null;
 
   if (isLoading) {
     return (
@@ -128,7 +131,9 @@ export default function OrderConfirmation() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">Estimated Time</p>
-                    <p className="text-sm text-muted-foreground">{order.pickupTime || "ASAP"}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {estimatedWindowLabel}
+                    </p>
                   </div>
                 </div>
               </div>

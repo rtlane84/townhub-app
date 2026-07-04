@@ -78,6 +78,7 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     onlinePaymentsAvailable,
     stripeConnectStatus: b.stripeConnectStatus,
     orderCutoffTime: b.orderCutoffTime,
+    defaultPrepMinutes: b.defaultPrepMinutes,
     orderNotificationEmail: b.orderNotificationEmail,
     notificationEmail: b.notificationEmail ?? b.orderNotificationEmail,
     notificationPhone: b.notificationPhone,
@@ -457,6 +458,8 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
   });
   if (d.orderCutoffTime !== undefined)
     updateData.orderCutoffTime = d.orderCutoffTime;
+  if ((d as Record<string, unknown>).defaultPrepMinutes !== undefined)
+    updateData.defaultPrepMinutes = (d as Record<string, unknown>).defaultPrepMinutes;
   if ((d as Record<string, unknown>).minimumOrderForDelivery !== undefined)
     updateData.minimumOrderForDelivery = (d as Record<string, unknown>).minimumOrderForDelivery
       ? String((d as Record<string, unknown>).minimumOrderForDelivery)

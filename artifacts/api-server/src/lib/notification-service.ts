@@ -61,6 +61,8 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
     })),
     orderedAt: order.createdAt ?? new Date(),
     notes: order.notes,
+    estimatedWindowStart: order.estimatedWindowStart,
+    estimatedWindowEnd: order.estimatedWindowEnd,
   };
 }
 

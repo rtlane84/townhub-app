@@ -23,6 +23,10 @@ import {
   type QueueSummaryStatus,
 } from "@/lib/business-order-display";
 import {
+  getBusinessOrderTimingLabel,
+  getBusinessReadyWindowLabel,
+} from "@/lib/order-prep-timing";
+import {
   applyBusinessOrderListFilters,
   filterOrdersForQueueSummary,
   getOrderListDateSummary,
@@ -263,6 +267,8 @@ export default function BusinessOrders() {
                   const phone = order.customerPhone?.trim();
                   const telHref = phone ? customerPhoneTelHref(phone) : "";
                   const placedAt = order.createdAt ? formatOrderRelativeTime(order.createdAt) : "";
+                  const readyWindow = getBusinessReadyWindowLabel(order);
+                  const timingLabel = getBusinessOrderTimingLabel(order);
 
                   return (
                     <OrderRow
@@ -288,6 +294,10 @@ export default function BusinessOrders() {
                             {" · "}
                             {fulfillmentLabel(order.fulfillmentType)}
                             {placedAt ? ` · ${placedAt}` : ""}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {readyWindow}
+                            {timingLabel ? ` · ${timingLabel}` : ""}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">

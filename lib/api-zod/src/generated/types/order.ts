@@ -29,6 +29,16 @@ export interface Order {
   deliveryAddress?: string | null;
   /** @nullable */
   pickupTime?: string | null;
+  /**
+     * Start of the server-calculated ASAP ready window.
+     * @nullable
+     */
+  estimatedWindowStart?: Date | null;
+  /**
+     * End of the server-calculated ASAP ready window.
+     * @nullable
+     */
+  estimatedWindowEnd?: Date | null;
   /** @nullable */
   notes?: string | null;
   /**

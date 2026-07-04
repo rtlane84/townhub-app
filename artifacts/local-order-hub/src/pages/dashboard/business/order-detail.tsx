@@ -11,6 +11,10 @@ import { ArrowLeft, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KitchenTicketPrint, printKitchenTicket } from "@/components/kitchen-ticket-print";
+import {
+  getBusinessOrderTimingLabel,
+  getBusinessReadyWindowLabel,
+} from "@/lib/order-prep-timing";
 
 const STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
 
@@ -75,6 +79,19 @@ export default function BusinessOrderDetail({ params }: Props) {
                 <h1 className="font-serif text-3xl font-bold">{order.orderNumber}</h1>
                 <p className="text-muted-foreground mt-1">
                   {order.createdAt ? new Date(order.createdAt).toLocaleString() : ""} · {order.fulfillmentType}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {getBusinessReadyWindowLabel(order)}
+                  {(() => {
+                    const timingLabel = getBusinessOrderTimingLabel(order);
+                    if (!timingLabel) return null;
+                    return (
+                      <span className={timingLabel.startsWith("Overdue") ? " text-destructive font-medium" : ""}>
+                        {" · "}
+                        {timingLabel}
+                      </span>
+                    );
+                  })()}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
@@ -154,12 +171,19 @@ export default function BusinessOrderDetail({ params }: Props) {
                     <span className="font-medium text-right">{order.deliveryAddress}</span>
                   </div>
                 )}
-                {order.pickupTime && (
+                {order.estimatedWindowStart && order.estimatedWindowEnd ? (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Estimated ready</span>
+                    <span className="font-medium text-right">
+                      {getBusinessReadyWindowLabel(order).replace(/^ASAP · Ready around /, "")}
+                    </span>
+                  </div>
+                ) : order.pickupTime ? (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Pickup time</span>
                     <span className="font-medium">{order.pickupTime}</span>
                   </div>
-                )}
+                ) : null}
                 {order.notes && (
                   <div className="pt-2 border-t">
                     <p className="text-muted-foreground mb-1">Notes</p>

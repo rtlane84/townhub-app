@@ -365,6 +365,11 @@ export interface Business {
   stripeConnectStatus?: StripeConnectPaymentStatus;
   /** @nullable */
   orderCutoffTime?: string | null;
+  /**
+     * Default prep time in minutes when items do not specify their own.
+     * @minimum 1
+     */
+  defaultPrepMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */
@@ -487,6 +492,8 @@ export interface BusinessInput {
   payAtPickupEnabled?: boolean;
   paymentMode?: PaymentMode;
   orderCutoffTime?: string;
+  /** @minimum 1 */
+  defaultPrepMinutes?: number;
   ownerId?: string;
 }
 
@@ -702,6 +709,16 @@ export interface Order {
   deliveryAddress?: string | null;
   /** @nullable */
   pickupTime?: string | null;
+  /**
+     * Start of the server-calculated ASAP ready window.
+     * @nullable
+     */
+  estimatedWindowStart?: string | null;
+  /**
+     * End of the server-calculated ASAP ready window.
+     * @nullable
+     */
+  estimatedWindowEnd?: string | null;
   /** @nullable */
   notes?: string | null;
   /**
@@ -743,6 +760,21 @@ export interface OrderInput {
   specialFields?: string;
   paymentMethod?: string;
   items: OrderItemInput[];
+}
+
+export interface PrepEstimateInput {
+  businessId: number;
+  fulfillmentType: FulfillmentType;
+  /** @minItems 1 */
+  items: OrderItemInput[];
+}
+
+export interface PrepEstimate {
+  centerMinutes: number;
+  minMinutes: number;
+  maxMinutes: number;
+  estimatedWindowStart: string;
+  estimatedWindowEnd: string;
 }
 
 export interface OrderStatusUpdate {

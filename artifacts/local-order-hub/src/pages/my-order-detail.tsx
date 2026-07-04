@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingBag, Store, MapPin } from "lucide-react";
 import { formatOrderPaymentLabel } from "@/lib/stripe-checkout-return";
+import { getCustomerEstimatedWindowLabel } from "@/lib/order-prep-timing";
 
 export default function MyOrderDetail() {
   const [, params] = useRoute("/my-orders/:id");
@@ -83,6 +84,10 @@ export default function MyOrderDetail() {
               <span className="font-medium text-right">{order.deliveryAddress}</span>
             </div>
           ) : null}
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">Estimated time</span>
+            <span className="font-medium text-right">{getCustomerEstimatedWindowLabel(order)}</span>
+          </div>
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Payment</span>
             <span className="font-medium">

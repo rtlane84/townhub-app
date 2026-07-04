@@ -1,4 +1,5 @@
 import { dashboardOrderUrl } from "../notification-urls";
+import { formatNotificationEstimatedWindow } from "@workspace/api-zod";
 import {
   formatOrderDateTime,
   fulfillmentLabel,
@@ -24,6 +25,17 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
     { label: "Order placed", value: formatOrderDateTime(order.orderedAt) },
   ];
 
+  if (order.estimatedWindowStart && order.estimatedWindowEnd) {
+    detailRows.push({
+      label: "Estimated ready",
+      value: formatNotificationEstimatedWindow(
+        order.fulfillmentType,
+        order.estimatedWindowStart,
+        order.estimatedWindowEnd,
+      ),
+    });
+  }
+
   const bodyHtml = `${renderDetailTable(detailRows)}${renderOrderItems(order.items, order.total)}`;
 
   const html = renderEmailLayout({
@@ -47,6 +59,13 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
     order.customerEmail ? `Email: ${order.customerEmail}` : "",
     `Payment: ${paymentMethodLabel(order.paymentMethod)} (${paymentStatusLabel(order.paymentMethod, order.paymentStatus)})`,
     `Fulfillment: ${fulfillmentLabel(order.fulfillmentType)}`,
+    order.estimatedWindowStart && order.estimatedWindowEnd
+      ? formatNotificationEstimatedWindow(
+          order.fulfillmentType,
+          order.estimatedWindowStart,
+          order.estimatedWindowEnd,
+        )
+      : "",
     `Total: $${order.total.toFixed(2)}`,
     "",
     "Items:",

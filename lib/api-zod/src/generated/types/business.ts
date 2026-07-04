@@ -52,6 +52,11 @@ export interface Business {
   stripeConnectStatus?: StripeConnectPaymentStatus;
   /** @nullable */
   orderCutoffTime?: string | null;
+  /**
+     * Default prep time in minutes when items do not specify their own.
+     * @minimum 1
+     */
+  defaultPrepMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */

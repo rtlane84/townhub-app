@@ -22,6 +22,8 @@ export type OrderNotificationData = {
   items: OrderItemLine[];
   orderedAt: Date | string;
   notes?: string | null;
+  estimatedWindowStart?: Date | string | null;
+  estimatedWindowEnd?: Date | string | null;
 };
 
 export type EmailContent = {
