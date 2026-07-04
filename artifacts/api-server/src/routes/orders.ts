@@ -19,6 +19,8 @@ import {
   GetBusinessOrderSummaryParams,
   ListAllOrdersQueryParams,
   CreateCheckoutSessionBody,
+  RefundOrderParams,
+  RefundOrderBody,
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession, stripe, isMockMode } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
@@ -38,6 +40,17 @@ import { authorizeOrderStatusUpdate } from "../lib/order-access";
 import { authorizeOrderView } from "../lib/order-customer-access";
 import { validateGuestOrderContact } from "../lib/guest-checkout";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
+import {
+  createOrderRefund,
+  loadOrderRefunds,
+  orderTotalCents,
+  serializeOrderRefunds,
+  authorizeOrderRefund,
+} from "../lib/order-refund";
+import {
+  notifyCustomerOrderRefund,
+  notifyOwnerRefundFailed,
+} from "../lib/notification-service";
 import {
   loadOptionGroupsByProductIds,
   validateOrderItemSelections,
@@ -77,16 +90,20 @@ async function loadOptionsByOrderItemIds(itemIds: number[]) {
 async function serializeOrderWithLoadedItems(
   order: typeof ordersTable.$inferSelect,
   businessName: string,
+  viewer: OrderViewerContext = { includeRefundDetails: false },
 ) {
   const items = await db
     .select()
     .from(orderItemsTable)
     .where(eq(orderItemsTable.orderId, order.id));
   const optionsByItemId = await loadOptionsByOrderItemIds(items.map((i) => i.id));
-  return serializeOrder(order, items, businessName, optionsByItemId);
+  return serializeOrder(order, items, businessName, optionsByItemId, viewer);
 }
 
-async function getOrderWithItems(orderId: number) {
+async function getOrderWithItems(
+  orderId: number,
+  viewer: OrderViewerContext = { includeRefundDetails: false },
+) {
   const [order] = await db
     .select()
     .from(ordersTable)
@@ -106,16 +123,34 @@ async function getOrderWithItems(orderId: number) {
     .from(businessesTable)
     .where(eq(businessesTable.id, order.businessId));
 
-  return serializeOrder(order, items, business?.name ?? "Unknown", optionsByItemId);
+  return serializeOrder(order, items, business?.name ?? "Unknown", optionsByItemId, viewer);
 }
 
-function serializeOrder(
+function canViewRefundDetails(
+  viewerRole: (typeof usersTable.$inferSelect)["role"] | null,
+  viewerUserId: string | null | undefined,
+  businessOwnerId: string | null,
+): boolean {
+  if (viewerRole === "ADMIN") return true;
+  return viewerRole === "BUSINESS_OWNER" && !!viewerUserId && viewerUserId === businessOwnerId;
+}
+
+type OrderViewerContext = {
+  includeRefundDetails: boolean;
+};
+
+async function serializeOrder(
   order: typeof ordersTable.$inferSelect,
   items: typeof orderItemsTable.$inferSelect[],
   businessName: string,
   optionsByItemId: Map<number, (typeof orderItemOptionsTable.$inferSelect)[]> = new Map(),
+  viewer: OrderViewerContext = { includeRefundDetails: false },
 ) {
-  return {
+  const totalCents = orderTotalCents(order);
+  const refundedCents = order.refundedAmountCents ?? 0;
+  const remainingCents = Math.max(0, totalCents - refundedCents);
+
+  const base = {
     id: order.id,
     businessId: order.businessId,
     businessName,
@@ -135,6 +170,8 @@ function serializeOrder(
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
     stripeSessionId: order.stripeSessionId,
+    refundStatus: order.refundStatus ?? "NONE",
+    refundedAmount: refundedCents / 100,
     items: items.map((item) => ({
       id: item.id,
       orderId: item.orderId,
@@ -155,6 +192,22 @@ function serializeOrder(
       order.createdAt instanceof Date
         ? order.createdAt.toISOString()
         : order.createdAt,
+  };
+
+  if (!viewer.includeRefundDetails) {
+    return base;
+  }
+
+  const refunds = await loadOrderRefunds(order.id);
+  return {
+    ...base,
+    refundableAmount: remainingCents / 100,
+    lastRefundedAt: order.lastRefundedAt
+      ? order.lastRefundedAt instanceof Date
+        ? order.lastRefundedAt.toISOString()
+        : String(order.lastRefundedAt)
+      : null,
+    refunds: await serializeOrderRefunds(refunds),
   };
 }
 
@@ -395,7 +448,9 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const result = await getOrderWithItems(params.data.id);
+  const result = await getOrderWithItems(params.data.id, {
+    includeRefundDetails: canViewRefundDetails(viewerRole, userId, businessOwnerId),
+  });
   if (!result) {
     res.status(404).json({ error: "Order not found" });
     return;
@@ -473,6 +528,88 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
   // ── Notify customer of meaningful status changes (fire-and-forget) ────────
   if (parsed.data.status !== order.status) {
     notifyCustomerOrderStatusChange(result.id, parsed.data.status).catch(() => {});
+  }
+});
+
+// POST /api/orders/:id/refund — business owner or admin issues a Stripe refund
+router.post("/orders/:id/refund", requireAuth, async (req, res): Promise<void> => {
+  const params = RefundOrderParams.safeParse({ id: parseId(req.params.id) });
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const parsed = RefundOrderBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, params.data.id));
+
+  if (!order) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  const [user] = await db
+    .select({ role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId!));
+
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [business] = await db
+    .select({ ownerId: businessesTable.ownerId })
+    .from(businessesTable)
+    .where(eq(businessesTable.id, order.businessId));
+
+  const auth = authorizeOrderRefund({
+    userId: userId!,
+    userRole: user.role,
+    businessOwnerId: business?.ownerId,
+  });
+
+  if (!auth.allowed) {
+    res.status(auth.statusCode).json({ error: auth.error });
+    return;
+  }
+
+  const result = await createOrderRefund({
+    orderId: order.id,
+    amountCents: parsed.data.amountCents,
+    reason: parsed.data.reason,
+    createdByUserId: userId!,
+  });
+
+  if (!result.ok) {
+    if (result.statusCode >= 500) {
+      notifyOwnerRefundFailed(order.id, parsed.data.amountCents).catch(() => {});
+    }
+    res.status(result.statusCode).json({ error: result.error });
+    return;
+  }
+
+  const serializedOrder = await getOrderWithItems(order.id, { includeRefundDetails: true });
+  const serializedRefunds = await serializeOrderRefunds([result.refund]);
+  const refundRecord = serializedRefunds[0];
+
+  if (!serializedOrder || !refundRecord) {
+    res.status(500).json({ error: "Refund processed but failed to load updated order." });
+    return;
+  }
+
+  res.json({ order: serializedOrder, refund: refundRecord });
+
+  if (result.refund.status === "SUCCEEDED") {
+    notifyCustomerOrderRefund(order.id, result.refund.amountCents).catch(() => {});
   }
 });
 

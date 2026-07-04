@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useGetOrder, useUpdateOrderStatus, getGetOrderQueryKey, getListBusinessOrdersQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,15 @@ import { ArrowLeft, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KitchenTicketPrint, printKitchenTicket } from "@/components/kitchen-ticket-print";
+import { OrderRefundDialog } from "@/components/order-refund-dialog";
+import {
+  canIssueRefund,
+  formatRefundAmount,
+  formatRefundAmountCents,
+  orderPaymentDisplayStatus,
+  refundRecordStatusLabel,
+  refundStatusLabel,
+} from "@/lib/order-refund-display";
 
 const STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
 
@@ -32,6 +42,7 @@ export default function BusinessOrderDetail({ params }: Props) {
   const orderId = parseInt(params.id, 10);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [refundOpen, setRefundOpen] = useState(false);
 
   const { data: order, isLoading } = useGetOrder(orderId, {
     query: { enabled: !!orderId, queryKey: getGetOrderQueryKey(orderId) },
@@ -203,15 +214,65 @@ export default function BusinessOrderDetail({ params }: Props) {
                     <span className="text-primary">${order.total.toFixed(2)}</span>
                   </div>
                 </div>
-                <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
-                  <span>Payment: <span className="font-medium text-foreground">{order.paymentMethod}</span></span>
-                  <span>Status: <span className="font-medium text-foreground">{order.paymentStatus}</span></span>
+                <div className="mt-4 space-y-3">
+                  <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                    <span>Payment: <span className="font-medium text-foreground">{order.paymentMethod}</span></span>
+                    <span>Status: <span className="font-medium text-foreground">{orderPaymentDisplayStatus(order)}</span></span>
+                  </div>
+                  {(order.refundedAmount ?? 0) > 0 ? (
+                    <div className="text-xs text-muted-foreground">
+                      Refunded so far: <span className="font-medium text-foreground">{formatRefundAmount(order.refundedAmount ?? 0)}</span>
+                    </div>
+                  ) : null}
+                  {canIssueRefund(order) ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRefundOpen(true)}
+                      data-testid="button-issue-refund"
+                    >
+                      Issue refund
+                    </Button>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
+
+            {order.refunds?.length ? (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Refund history</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {order.refunds.map((refund) => (
+                    <div key={refund.id} className="rounded-md border p-3 text-sm space-y-1" data-testid={`refund-${refund.id}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium">{formatRefundAmountCents(refund.amountCents)}</span>
+                        <Badge variant="outline">{refundRecordStatusLabel(refund.status)}</Badge>
+                      </div>
+                      <p className="text-muted-foreground">
+                        {refund.createdAt ? new Date(refund.createdAt).toLocaleString() : ""}
+                        {refund.createdByName ? ` · ${refund.createdByName}` : ""}
+                      </p>
+                      {refund.reason ? <p>{refund.reason}</p> : null}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {order.refundStatus && order.refundStatus !== "NONE" ? (
+              <Card>
+                <CardHeader><CardTitle className="text-base">Refund status</CardTitle></CardHeader>
+                <CardContent>
+                  <Badge variant="secondary">{refundStatusLabel(order.refundStatus)}</Badge>
+                </CardContent>
+              </Card>
+            ) : null}
           </>
         )}
       </div>
+      {order ? (
+        <OrderRefundDialog order={order} open={refundOpen} onOpenChange={setRefundOpen} />
+      ) : null}
     </BusinessDashboardLayout>
   );
 }

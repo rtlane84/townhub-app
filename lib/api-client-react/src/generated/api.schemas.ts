@@ -682,6 +682,40 @@ export interface OrderItem {
   options?: OrderItemOption[];
 }
 
+export type RefundStatus = typeof RefundStatus[keyof typeof RefundStatus];
+
+
+export const RefundStatus = {
+  NONE: 'NONE',
+  PARTIAL: 'PARTIAL',
+  FULL: 'FULL',
+  FAILED: 'FAILED',
+} as const;
+
+export type OrderRefundRecordStatus = typeof OrderRefundRecordStatus[keyof typeof OrderRefundRecordStatus];
+
+
+export const OrderRefundRecordStatus = {
+  PENDING: 'PENDING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED',
+  CANCELED: 'CANCELED',
+} as const;
+
+export interface OrderRefundRecord {
+  id: number;
+  amountCents: number;
+  /** @nullable */
+  reason?: string | null;
+  status: OrderRefundRecordStatus;
+  /** @nullable */
+  stripeRefundId?: string | null;
+  createdByUserId: string;
+  /** @nullable */
+  createdByName?: string | null;
+  createdAt: string;
+}
+
 export interface Order {
   id: number;
   businessId: number;
@@ -716,8 +750,29 @@ export interface Order {
   paymentMethod?: string;
   /** @nullable */
   stripeSessionId?: string | null;
+  refundStatus?: RefundStatus;
+  /** Total amount refunded in dollars */
+  refundedAmount?: number;
+  /** Remaining refundable amount in dollars (owner/admin views) */
+  refundableAmount?: number;
+  /** @nullable */
+  lastRefundedAt?: string | null;
+  /** Refund history with details (owner/admin only) */
+  refunds?: OrderRefundRecord[];
   items?: OrderItem[];
   createdAt?: string;
+}
+
+export interface OrderRefundInput {
+  /** @minimum 1 */
+  amountCents: number;
+  /** @minLength 1 */
+  reason: string;
+}
+
+export interface OrderRefundResult {
+  order: Order;
+  refund: OrderRefundRecord;
 }
 
 export interface OrderItemInput {

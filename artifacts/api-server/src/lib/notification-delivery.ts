@@ -16,6 +16,7 @@ export type OwnerEventType =
   | "NEW_APPOINTMENT_REQUEST"
   | "APPLICATION_APPROVED"
   | "APPLICATION_REJECTED"
+  | "REFUND_FAILED"
   | SubscriptionNotificationEvent
   | PlatformAdminEvent;
 
@@ -26,7 +27,8 @@ export type CustomerLifecycleEventType =
   | "ORDER_READY_FOR_PICKUP"
   | "ORDER_OUT_FOR_DELIVERY"
   | "ORDER_COMPLETED"
-  | "ORDER_CANCELLED";
+  | "ORDER_CANCELLED"
+  | "ORDER_REFUND";
 
 export type CustomerAppointmentEventType = "APPOINTMENT_CONFIRMED" | "APPOINTMENT_DECLINED";
 

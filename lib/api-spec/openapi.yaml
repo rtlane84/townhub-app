@@ -730,6 +730,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
 
+  /orders/{id}/refund:
+    post:
+      operationId: refundOrder
+      tags: [orders]
+      summary: Issue a full or partial refund for a paid online order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderRefundInput"
+      responses:
+        "200":
+          description: Refund processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderRefundResult"
+        "400":
+          description: Invalid refund request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Order not found
+        "409":
+          description: Refund already in progress
+        "502":
+          description: Stripe refund failed
+
   /businesses/{businessId}/orders:
     get:
       operationId: listBusinessOrders
@@ -3007,6 +3044,22 @@ components:
           type: string
         stripeSessionId:
           type: ["string", "null"]
+        refundStatus:
+          $ref: "#/components/schemas/RefundStatus"
+        refundedAmount:
+          type: number
+          description: Total amount refunded in dollars
+        refundableAmount:
+          type: number
+          description: Remaining refundable amount in dollars (owner/admin views)
+        lastRefundedAt:
+          type: ["string", "null"]
+          format: date-time
+        refunds:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderRefundRecord"
+          description: Refund history with details (owner/admin only)
         items:
           type: array
           items:
@@ -3014,6 +3067,56 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    RefundStatus:
+      type: string
+      enum: [NONE, PARTIAL, FULL, FAILED]
+
+    OrderRefundRecordStatus:
+      type: string
+      enum: [PENDING, SUCCEEDED, FAILED, CANCELED]
+
+    OrderRefundRecord:
+      type: object
+      required: [id, amountCents, status, createdByUserId, createdAt]
+      properties:
+        id:
+          type: integer
+        amountCents:
+          type: integer
+        reason:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/OrderRefundRecordStatus"
+        stripeRefundId:
+          type: ["string", "null"]
+        createdByUserId:
+          type: string
+        createdByName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    OrderRefundInput:
+      type: object
+      required: [amountCents, reason]
+      properties:
+        amountCents:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          minLength: 1
+
+    OrderRefundResult:
+      type: object
+      required: [order, refund]
+      properties:
+        order:
+          $ref: "#/components/schemas/Order"
+        refund:
+          $ref: "#/components/schemas/OrderRefundRecord"
 
     OrderInput:
       type: object

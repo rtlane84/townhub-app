@@ -59,6 +59,17 @@ describe("customer lifecycle emails", () => {
   });
 });
 
+describe("customer refund email", () => {
+  it("includes refund amount and bank timing note", async () => {
+    const { buildCustomerOrderRefundEmail } = await import("./email-templates/customer-emails");
+    const email = buildCustomerOrderRefundEmail(sampleOrder, 850);
+    assert.match(email.subject, /Refund issued/);
+    assert.match(email.text, /\$8\.50/);
+    assert.match(email.text, /5–10 business days/);
+    assert.doesNotMatch(email.text, /internal/i);
+  });
+});
+
 describe("owner new order notifications", () => {
   it("builds professional HTML owner email with dashboard link", () => {
     const previous = process.env.APP_BASE_URL;

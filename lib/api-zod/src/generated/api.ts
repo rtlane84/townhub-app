@@ -224,6 +224,20 @@ export const GetPlatformStatsResponse = zod.object({
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1054,6 +1068,20 @@ export const ListMyOrdersResponseItem = zod.object({
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1102,6 +1130,20 @@ export const GetOrderResponse = zod.object({
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1153,6 +1195,20 @@ export const UpdateOrderStatusResponse = zod.object({
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1170,6 +1226,88 @@ export const UpdateOrderStatusResponse = zod.object({
 })).optional()
 })).optional(),
   "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Issue a full or partial refund for a paid online order
+ */
+export const RefundOrderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const RefundOrderBody = zod.object({
+  "amountCents": zod.number().min(1),
+  "reason": zod.string().min(1)
+})
+
+export const RefundOrderResponse = zod.object({
+  "order": zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "businessName": zod.string(),
+  "orderNumber": zod.string().optional(),
+  "status": zod.enum(['NEW', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELED']),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "customerName": zod.string(),
+  "customerEmail": zod.string(),
+  "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
+  "deliveryAddress": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "total": zod.number(),
+  "deliveryFee": zod.number().nullish(),
+  "paymentStatus": zod.string().optional(),
+  "paymentMethod": zod.string().optional(),
+  "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "orderId": zod.number().optional(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
+})).optional(),
+  "createdAt": zod.coerce.date().optional()
+}),
+  "refund": zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
 })
 
 
@@ -1200,6 +1338,20 @@ export const ListBusinessOrdersResponseItem = zod.object({
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1253,6 +1405,20 @@ export const GetBusinessOrderSummaryResponse = zod.object({
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1303,6 +1469,20 @@ export const ListAllOrdersResponseItem = zod.object({
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),

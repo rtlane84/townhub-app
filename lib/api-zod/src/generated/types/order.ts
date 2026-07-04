@@ -7,7 +7,9 @@
  */
 import type { FulfillmentType } from './fulfillmentType';
 import type { OrderItem } from './orderItem';
+import type { OrderRefundRecord } from './orderRefundRecord';
 import type { OrderStatus } from './orderStatus';
+import type { RefundStatus } from './refundStatus';
 
 export interface Order {
   id: number;
@@ -43,6 +45,15 @@ export interface Order {
   paymentMethod?: string;
   /** @nullable */
   stripeSessionId?: string | null;
+  refundStatus?: RefundStatus;
+  /** Total amount refunded in dollars */
+  refundedAmount?: number;
+  /** Remaining refundable amount in dollars (owner/admin views) */
+  refundableAmount?: number;
+  /** @nullable */
+  lastRefundedAt?: Date | null;
+  /** Refund history with details (owner/admin only) */
+  refunds?: OrderRefundRecord[];
   items?: OrderItem[];
   createdAt?: Date;
 }

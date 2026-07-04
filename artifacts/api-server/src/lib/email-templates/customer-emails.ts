@@ -175,6 +175,28 @@ export function buildCustomerOrderCompletedEmail(order: OrderNotificationData): 
   });
 }
 
+export function buildCustomerOrderRefundEmail(
+  order: OrderNotificationData,
+  refundAmountCents: number,
+): EmailContent {
+  const refundAmount = (refundAmountCents / 100).toFixed(2);
+  const timingNote =
+    "Refunds are returned to your original payment method. Depending on your bank, it may take 5–10 business days to appear on your statement.";
+
+  return buildEmail(order, {
+    subject: `Refund issued for order ${order.orderNumber}`,
+    preheader: `${order.businessName} issued a $${refundAmount} refund for order ${order.orderNumber}.`,
+    heading: "Your refund is on the way",
+    introParagraphs: [
+      `${escapeHtml(order.businessName)} issued a refund of $${refundAmount} for order ${order.orderNumber}.`,
+      timingNote,
+    ],
+    includeItems: false,
+    badge: { label: "Refund issued", tone: "success" },
+    footerNote: timingNote,
+  });
+}
+
 export function buildCustomerOrderCancelledEmail(order: OrderNotificationData): EmailContent {
   const refundNote =
     order.paymentMethod === "STRIPE" && order.paymentStatus === "PAID"

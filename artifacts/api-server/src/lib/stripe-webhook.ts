@@ -20,6 +20,12 @@ import {
   isSubscriptionCheckoutSession,
   syncBusinessSubscriptionFromStripeSubscription,
 } from "./stripe-billing";
+import {
+  extractPaymentIntentIdFromStripeObject,
+  mapStripeRefundStatus,
+  persistPaymentIntentFromCheckoutSession,
+  syncRefundFromStripe,
+} from "./order-refund";
 
 export {
   evaluateCheckoutSessionPayment,
@@ -74,8 +80,14 @@ export async function markOrderPaidFromCheckoutSession(
   }
 
   if (evaluation.action === "already_paid") {
+    const paymentIntentId = extractPaymentIntentIdFromStripeObject(session.payment_intent);
+    if (paymentIntentId) {
+      await persistPaymentIntentFromCheckoutSession(evaluation.orderId, paymentIntentId);
+    }
     return { ok: true, orderId: evaluation.orderId, alreadyPaid: true };
   }
+
+  const paymentIntentId = extractPaymentIntentIdFromStripeObject(session.payment_intent);
 
   await db
     .update(ordersTable)
@@ -83,6 +95,7 @@ export async function markOrderPaidFromCheckoutSession(
       paymentStatus: "PAID",
       stripeSessionId: evaluation.sessionId,
       stripeConnectedAccountId: evaluation.connectedAccountId,
+      ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
     })
     .where(eq(ordersTable.id, evaluation.orderId));
 
@@ -139,5 +152,46 @@ export async function handleStripeWebhookEvent(event: Stripe.Event): Promise<{
     return { handled: true, kind: "subscription" };
   }
 
+  if (
+    event.type === "refund.created" ||
+    event.type === "refund.updated" ||
+    event.type === "charge.refunded" ||
+    event.type === "charge.refund.updated"
+  ) {
+    const handled = await handleOrderRefundWebhookEvent(event);
+    return { handled, kind: handled ? "order" : undefined };
+  }
+
   return { handled: false };
+}
+
+async function handleOrderRefundWebhookEvent(event: Stripe.Event): Promise<boolean> {
+  if (event.type === "refund.created" || event.type === "refund.updated") {
+    const refund = event.data.object as Stripe.Refund;
+    const result = await syncRefundFromStripe({
+      stripeRefundId: refund.id,
+      status: mapStripeRefundStatus(refund.status),
+      amountCents: refund.amount ?? undefined,
+    });
+    return result.updated;
+  }
+
+  if (event.type === "charge.refunded" || event.type === "charge.refund.updated") {
+    const charge = event.data.object as Stripe.Charge;
+    const refunds = charge.refunds?.data ?? [];
+    let updated = false;
+
+    for (const refund of refunds) {
+      const result = await syncRefundFromStripe({
+        stripeRefundId: refund.id,
+        status: mapStripeRefundStatus(refund.status),
+        amountCents: refund.amount ?? undefined,
+      });
+      updated = updated || result.updated;
+    }
+
+    return updated;
+  }
+
+  return false;
 }

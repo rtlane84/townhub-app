@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingBag, Store, MapPin } from "lucide-react";
-import { formatOrderPaymentLabel } from "@/lib/stripe-checkout-return";
+import { customerRefundSummary, orderPaymentDisplayStatus } from "@/lib/order-refund-display";
 
 export default function MyOrderDetail() {
   const [, params] = useRoute("/my-orders/:id");
@@ -86,9 +86,15 @@ export default function MyOrderDetail() {
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Payment</span>
             <span className="font-medium">
-              {formatOrderPaymentLabel(order.paymentMethod, order.paymentStatus)}
+              {orderPaymentDisplayStatus(order)}
             </span>
           </div>
+          {customerRefundSummary(order) ? (
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Refund</span>
+              <span className="font-medium text-right">{customerRefundSummary(order)}</span>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

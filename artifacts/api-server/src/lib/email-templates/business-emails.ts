@@ -63,3 +63,44 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
     html,
   };
 }
+
+export function buildOwnerRefundFailedEmail(
+  order: OrderNotificationData,
+  refundAmountCents: number,
+): EmailContent {
+  const openUrl = dashboardOrderUrl(order.orderId);
+  const refundAmount = (refundAmountCents / 100).toFixed(2);
+
+  const bodyHtml = renderDetailTable([
+    { label: "Order number", value: order.orderNumber },
+    { label: "Customer", value: order.customerName },
+    { label: "Refund amount", value: `$${refundAmount}` },
+  ]);
+
+  const html = renderEmailLayout({
+    preheader: `Refund failed for order ${order.orderNumber}.`,
+    businessName: order.businessName,
+    businessLogoUrl: order.businessLogoUrl,
+    heading: "Refund failed",
+    bodyHtml,
+    actionLabel: "Review Order",
+    actionUrl: openUrl,
+    footerNote: "Stripe could not process this refund. Review the order in your dashboard and try again, or contact support.",
+  });
+
+  const text = [
+    "Refund failed",
+    "",
+    `Order #: ${order.orderNumber}`,
+    `Customer: ${order.customerName}`,
+    `Refund amount: $${refundAmount}`,
+    "",
+    `Review Order: ${openUrl}`,
+  ].join("\n");
+
+  return {
+    subject: `Refund failed for order ${order.orderNumber}`,
+    text,
+    html,
+  };
+}
