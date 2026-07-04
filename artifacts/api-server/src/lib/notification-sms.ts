@@ -1,6 +1,10 @@
 import { customerOrderUrl, dashboardOrderUrl, dashboardAppointmentsUrl } from "./notification-urls";
 import { formatNotificationEstimatedWindow, formatTime12h } from "@workspace/api-zod";
 import type { CustomerLifecycleEvent, OrderNotificationData } from "./email-templates/types";
+import {
+  formatOrderTotalsTextLines,
+  orderTotalsSummaryFromNotification,
+} from "./email-templates/types";
 
 export function buildCustomerOrderReceivedSms(order: OrderNotificationData): string {
   const timing =
@@ -70,6 +74,7 @@ export function buildOwnerNewOrderSms(order: OrderNotificationData): string {
   return [
     `${order.businessName}: New order #${order.orderNumber}`,
     `${order.customerName} · $${order.total.toFixed(2)} · ${payment}`,
+    ...formatOrderTotalsTextLines(orderTotalsSummaryFromNotification(order)),
     timing,
     dashboardOrderUrl(order.orderId),
   ].join("\n");

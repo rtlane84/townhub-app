@@ -380,6 +380,15 @@ export interface Business {
   pickupInstructions?: string | null;
   /** @nullable */
   deliveryInstructions?: string | null;
+  /** When true, apply the configured sales tax rate to taxable items at checkout. */
+  taxEnabled?: boolean;
+  /**
+     * Sales tax rate as a percentage (e.g. 6.00 for 6%).
+     * @nullable
+     */
+  taxRatePercent?: number | null;
+  /** Label shown on receipts and checkout (default "Sales Tax"). */
+  taxLabel?: string;
   /** @nullable */
   orderNotificationEmail?: string | null;
   /** @nullable */
@@ -450,6 +459,8 @@ export interface Product {
   featured?: boolean;
   /** @nullable */
   prepTimeMinutes?: number | null;
+  /** When true, this item is included in the taxable subtotal. */
+  taxable?: boolean;
   optionGroups?: ProductOptionGroup[];
   assignedModifierGroups?: AssignedModifierGroup[];
   modifierGroupIds?: number[];
@@ -528,6 +539,9 @@ export interface BusinessUpdate {
   pickupInstructions?: string | null;
   /** @nullable */
   deliveryInstructions?: string | null;
+  taxEnabled?: boolean;
+  taxRatePercent?: number;
+  taxLabel?: string;
   /** @nullable */
   orderNotificationEmail?: string | null;
   /** @nullable */
@@ -654,6 +668,7 @@ export interface ProductInput {
   available?: boolean;
   featured?: boolean;
   prepTimeMinutes?: number;
+  taxable?: boolean;
   modifierGroupIds?: number[];
 }
 
@@ -666,6 +681,7 @@ export interface ProductUpdate {
   available?: boolean;
   featured?: boolean;
   prepTimeMinutes?: number;
+  taxable?: boolean;
   modifierGroupIds?: number[];
 }
 
@@ -760,6 +776,20 @@ export interface Order {
      * @nullable
      */
   specialFields?: string | null;
+  /** Item subtotal in dollars (excludes tax and delivery). */
+  subtotal?: number;
+  /** Sales tax amount in dollars. */
+  tax?: number;
+  /**
+     * Tax rate applied at order time, if any.
+     * @nullable
+     */
+  taxRatePercent?: number | null;
+  /**
+     * Tax line label shown at checkout (e.g. Sales Tax).
+     * @nullable
+     */
+  taxLabel?: string | null;
   total: number;
   /** @nullable */
   deliveryFee?: number | null;

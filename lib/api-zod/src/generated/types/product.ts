@@ -23,6 +23,8 @@ export interface Product {
   featured?: boolean;
   /** @nullable */
   prepTimeMinutes?: number | null;
+  /** When true, this item is included in the taxable subtotal. */
+  taxable?: boolean;
   optionGroups?: ProductOptionGroup[];
   assignedModifierGroups?: AssignedModifierGroup[];
   modifierGroupIds?: number[];

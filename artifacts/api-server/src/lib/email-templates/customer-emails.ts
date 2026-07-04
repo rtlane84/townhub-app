@@ -10,6 +10,7 @@ import {
 import { formatNotificationEstimatedWindow } from "@workspace/api-zod";
 import { escapeHtml, renderEmailLayout, renderParagraph } from "./layout";
 import type { CustomerLifecycleEvent, EmailContent, OrderNotificationData } from "./types";
+import { formatOrderTotalsTextLines, orderTotalsSummaryFromNotification } from "./types";
 
 function orderSummaryRows(order: OrderNotificationData): Array<{ label: string; value: string }> {
   const rows: Array<{ label: string; value: string }> = [
@@ -34,7 +35,9 @@ function orderSummaryRows(order: OrderNotificationData): Array<{ label: string; 
 }
 
 function orderSummaryHtml(order: OrderNotificationData, includeItems = true): string {
-  const itemsBlock = includeItems ? renderOrderItems(order.items, order.total) : "";
+  const itemsBlock = includeItems
+    ? renderOrderItems(order.items, orderTotalsSummaryFromNotification(order))
+    : "";
   return `${renderDetailTable(orderSummaryRows(order))}${itemsBlock}`;
 }
 
@@ -94,7 +97,7 @@ function buildEmail(
   }
 
   textLines.push(
-    `Total: $${order.total.toFixed(2)}`,
+    ...formatOrderTotalsTextLines(orderTotalsSummaryFromNotification(order)),
     "",
     `${config.actionLabel ?? "View Order"}: ${orderUrl}`,
   );

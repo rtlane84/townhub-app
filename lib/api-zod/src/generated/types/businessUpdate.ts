@@ -41,6 +41,9 @@ export interface BusinessUpdate {
   pickupInstructions?: string | null;
   /** @nullable */
   deliveryInstructions?: string | null;
+  taxEnabled?: boolean;
+  taxRatePercent?: number;
+  taxLabel?: string;
   /** @nullable */
   orderNotificationEmail?: string | null;
   /** @nullable */

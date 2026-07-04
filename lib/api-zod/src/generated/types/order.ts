@@ -48,6 +48,20 @@ export interface Order {
      * @nullable
      */
   specialFields?: string | null;
+  /** Item subtotal in dollars (excludes tax and delivery). */
+  subtotal?: number;
+  /** Sales tax amount in dollars. */
+  tax?: number;
+  /**
+     * Tax rate applied at order time, if any.
+     * @nullable
+     */
+  taxRatePercent?: number | null;
+  /**
+     * Tax line label shown at checkout (e.g. Sales Tax).
+     * @nullable
+     */
+  taxLabel?: string | null;
   total: number;
   /** @nullable */
   deliveryFee?: number | null;

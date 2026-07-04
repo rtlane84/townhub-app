@@ -1,5 +1,5 @@
 import { escapeHtml, BORDER_COLOR, MUTED_COLOR, ACCENT_COLOR } from "./layout";
-import type { OrderItemLine } from "./types";
+import type { OrderItemLine, OrderTotalsSummary } from "./types";
 
 export function renderButton(label: string, url: string): string {
   return `<a href="${escapeHtml(url)}" style="display:inline-block;background:${ACCENT_COLOR};color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:14px 28px;border-radius:10px;">${escapeHtml(label)}</a>`;
@@ -38,7 +38,37 @@ export function renderDetailTable(rows: Array<{ label: string; value: string }>)
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:24px 0;border-collapse:collapse;">${rowHtml}</table>`;
 }
 
-export function renderOrderItems(items: OrderItemLine[], total: number): string {
+export function renderOrderTotalsSummary(totals: OrderTotalsSummary): string {
+  const rows: Array<{ label: string; value: string; bold?: boolean }> = [
+    { label: "Subtotal", value: `$${totals.subtotal.toFixed(2)}` },
+  ];
+
+  if (totals.tax > 0) {
+    rows.push({
+      label: totals.taxLabel?.trim() || "Sales Tax",
+      value: `$${totals.tax.toFixed(2)}`,
+    });
+  }
+
+  if (totals.deliveryFee != null && totals.deliveryFee > 0) {
+    rows.push({ label: "Delivery Fee", value: `$${totals.deliveryFee.toFixed(2)}` });
+  }
+
+  rows.push({ label: "Total", value: `$${totals.total.toFixed(2)}`, bold: true });
+
+  const rowHtml = rows
+    .map(
+      (row) => `<tr>
+        <td colspan="2" style="padding:${row.bold ? "16px 0 0" : "8px 0 0"};font-size:${row.bold ? "15px" : "14px"};font-weight:${row.bold ? "700" : "500"};color:${row.bold ? "#0f172a" : MUTED_COLOR};">${escapeHtml(row.label)}</td>
+        <td style="padding:${row.bold ? "16px 0 0" : "8px 0 0"};font-size:${row.bold ? "18px" : "15px"};font-weight:700;color:#0f172a;text-align:right;">${escapeHtml(row.value)}</td>
+      </tr>`,
+    )
+    .join("");
+
+  return rowHtml;
+}
+
+export function renderOrderItems(items: OrderItemLine[], totals: OrderTotalsSummary): string {
   const lines = items
     .map(
       (item) => `<tr>
@@ -53,10 +83,7 @@ export function renderOrderItems(items: OrderItemLine[], total: number): string 
     <div style="font-size:13px;font-weight:700;color:${MUTED_COLOR};text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">Order Items</div>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
       ${lines}
-      <tr>
-        <td colspan="2" style="padding:16px 0 0;font-size:15px;font-weight:700;color:#0f172a;">Total</td>
-        <td style="padding:16px 0 0;font-size:18px;font-weight:700;color:#0f172a;text-align:right;">$${total.toFixed(2)}</td>
-      </tr>
+      ${renderOrderTotalsSummary(totals)}
     </table>
   </div>`;
 }

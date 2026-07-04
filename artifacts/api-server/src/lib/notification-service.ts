@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, businessesTable } from "@workspace/db";
+import { resolveOrderTotalsDisplay } from "@workspace/api-zod";
 import { buildOwnerNewOrderEmail, buildOwnerRefundFailedEmail } from "./email-templates/business-emails";
 import { buildCustomerLifecycleEmail, buildCustomerOrderRefundEmail } from "./email-templates/customer-emails";
 import {
@@ -39,6 +40,22 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
     .from(businessesTable)
     .where(eq(businessesTable.id, order.businessId));
 
+  const mappedItems = items.map((item) => ({
+    productName: item.productName,
+    quantity: item.quantity,
+    unitPrice: parseFloat(item.unitPrice),
+    subtotal: parseFloat(item.subtotal),
+  }));
+  const deliveryFee = order.deliveryFee ? parseFloat(order.deliveryFee) : null;
+  const totals = resolveOrderTotalsDisplay({
+    subtotalCents: order.subtotalCents,
+    taxCents: order.taxCents,
+    taxLabel: order.taxLabel,
+    deliveryFee,
+    total: parseFloat(order.total),
+    items: mappedItems,
+  });
+
   return {
     orderId: order.id,
     orderNumber: order.orderNumber,
@@ -53,11 +70,15 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
     fulfillmentType: order.fulfillmentType,
     paymentMethod: order.paymentMethod ?? "STRIPE",
     paymentStatus: order.paymentStatus ?? "PENDING",
-    total: parseFloat(order.total),
-    items: items.map((item) => ({
+    subtotal: totals.subtotal,
+    tax: totals.tax,
+    taxLabel: totals.taxLabel,
+    deliveryFee: totals.deliveryFee,
+    total: totals.total,
+    items: mappedItems.map((item) => ({
       productName: item.productName,
       quantity: item.quantity,
-      unitPrice: parseFloat(item.unitPrice),
+      unitPrice: item.unitPrice,
     })),
     orderedAt: order.createdAt ?? new Date(),
     notes: order.notes,

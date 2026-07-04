@@ -10,6 +10,7 @@ import {
 } from "./components";
 import { renderEmailLayout } from "./layout";
 import type { EmailContent, OrderNotificationData } from "./types";
+import { formatOrderTotalsTextLines, orderTotalsSummaryFromNotification } from "./types";
 
 export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailContent {
   const openUrl = dashboardOrderUrl(order.orderId);
@@ -36,7 +37,7 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
     });
   }
 
-  const bodyHtml = `${renderDetailTable(detailRows)}${renderOrderItems(order.items, order.total)}`;
+  const bodyHtml = `${renderDetailTable(detailRows)}${renderOrderItems(order.items, orderTotalsSummaryFromNotification(order))}`;
 
   const html = renderEmailLayout({
     preheader: `New order ${order.orderNumber} from ${order.customerName}.`,
@@ -66,7 +67,7 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
           order.estimatedWindowEnd,
         )
       : "",
-    `Total: $${order.total.toFixed(2)}`,
+    ...formatOrderTotalsTextLines(orderTotalsSummaryFromNotification(order)),
     "",
     "Items:",
     itemLines,

@@ -22,6 +22,10 @@ const sampleOrder = {
   fulfillmentType: "PICKUP",
   paymentMethod: "STRIPE",
   paymentStatus: "PAID",
+  subtotal: 23,
+  tax: 1.5,
+  taxLabel: "Sales Tax",
+  deliveryFee: null,
   total: 24.5,
   items: [{ productName: "Latte", quantity: 2, unitPrice: 12.25 }],
   orderedAt: new Date("2026-06-24T14:30:00Z"),
@@ -95,8 +99,24 @@ describe("owner new order notifications", () => {
     const body = buildOwnerNewOrderSms(sampleOrder);
     assert.match(body, /Clay Diner/);
     assert.match(body, /ORD-1001/);
+    assert.match(body, /Sales Tax/);
     assert.match(body, /Estimated pickup:/i);
     assert.match(body, /dashboard\/business\/orders\/42/);
+  });
+});
+
+describe("order tax in notifications", () => {
+  it("shows subtotal and tax in customer order received email", () => {
+    const email = buildCustomerLifecycleEmail("ORDER_RECEIVED", sampleOrder);
+    assert.match(email.text, /Subtotal: \$23\.00/);
+    assert.match(email.text, /Sales Tax: \$1\.50/);
+    assert.match(email.text, /Total: \$24\.50/);
+  });
+
+  it("shows subtotal and tax in owner new order email", () => {
+    const email = buildOwnerNewOrderEmail(sampleOrder);
+    assert.match(email.html, /Subtotal/);
+    assert.match(email.html, /Sales Tax/);
   });
 });
 

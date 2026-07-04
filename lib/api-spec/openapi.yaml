@@ -2478,6 +2478,15 @@ components:
           type: ["string", "null"]
         deliveryInstructions:
           type: ["string", "null"]
+        taxEnabled:
+          type: boolean
+          description: When true, apply the configured sales tax rate to taxable items at checkout.
+        taxRatePercent:
+          type: ["number", "null"]
+          description: Sales tax rate as a percentage (e.g. 6.00 for 6%).
+        taxLabel:
+          type: string
+          description: Label shown on receipts and checkout (default "Sales Tax").
         orderNotificationEmail:
           type: ["string", "null"]
         notificationEmail:
@@ -2650,6 +2659,12 @@ components:
           type: ["string", "null"]
         deliveryInstructions:
           type: ["string", "null"]
+        taxEnabled:
+          type: boolean
+        taxRatePercent:
+          type: number
+        taxLabel:
+          type: string
         orderNotificationEmail:
           type: ["string", "null"]
         notificationEmail:
@@ -2734,6 +2749,9 @@ components:
           type: boolean
         prepTimeMinutes:
           type: ["integer", "null"]
+        taxable:
+          type: boolean
+          description: When true, this item is included in the taxable subtotal.
         optionGroups:
           type: array
           items:
@@ -2961,6 +2979,8 @@ components:
           type: boolean
         prepTimeMinutes:
           type: integer
+        taxable:
+          type: boolean
         modifierGroupIds:
           type: array
           items:
@@ -2985,6 +3005,8 @@ components:
           type: boolean
         prepTimeMinutes:
           type: integer
+        taxable:
+          type: boolean
         modifierGroupIds:
           type: array
           items:
@@ -3070,6 +3092,18 @@ components:
         specialFields:
           type: ["string", "null"]
           description: JSON blob for business-type-specific fields
+        subtotal:
+          type: number
+          description: Item subtotal in dollars (excludes tax and delivery).
+        tax:
+          type: number
+          description: Sales tax amount in dollars.
+        taxRatePercent:
+          type: ["number", "null"]
+          description: Tax rate applied at order time, if any.
+        taxLabel:
+          type: ["string", "null"]
+          description: Tax line label shown at checkout (e.g. Sales Tax).
         total:
           type: number
         deliveryFee:

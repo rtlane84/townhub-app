@@ -22,9 +22,13 @@ import {
   resolvePaymentMode,
   allowsOnlinePayment,
   allowsPayAtPickup,
+  calculateOrderTotals,
+  centsToDollars,
+  dollarsToCents,
 } from "@workspace/api-zod";
 import { parseStripeCheckoutReturn } from "@/lib/stripe-checkout-return";
 import { getCheckoutAsapLabel } from "@/lib/order-prep-timing";
+import { CheckoutTotalsSummary } from "@/components/order-totals-summary";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
@@ -208,7 +212,31 @@ export default function Cart() {
   }
 
   const deliveryFee = fulfillmentType === "DELIVERY" ? (business?.deliveryFee || 0) : 0;
-  const finalTotal = total + deliveryFee;
+  const checkoutTotals = useMemo(() => {
+    const bx = business as unknown as {
+      taxEnabled?: boolean;
+      taxRatePercent?: number | null;
+      taxLabel?: string | null;
+    } | undefined;
+    const totals = calculateOrderTotals({
+      items: cart.items.map((item) => ({
+        lineSubtotalCents: dollarsToCents(item.unitPrice * item.quantity),
+        taxable: item.taxable !== false,
+      })),
+      taxEnabled: bx?.taxEnabled === true,
+      taxRatePercent: bx?.taxRatePercent ?? 0,
+      taxLabel: bx?.taxLabel ?? undefined,
+      deliveryFeeCents: dollarsToCents(deliveryFee),
+    });
+    return {
+      subtotal: centsToDollars(totals.subtotalCents),
+      tax: centsToDollars(totals.taxCents),
+      taxLabel: totals.taxLabel,
+      deliveryFee: deliveryFee > 0 ? deliveryFee : null,
+      total: centsToDollars(totals.totalCents),
+    };
+  }, [business, cart.items, deliveryFee]);
+  const finalTotal = checkoutTotals.total;
 
   const showPickup = business?.pickupEnabled !== false;
   const showDelivery = business?.deliveryEnabled === true;
@@ -415,21 +443,7 @@ export default function Cart() {
                     <p className="font-medium text-foreground">{asapEstimateLabel}</p>
                   </div>
                 ) : null}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                {fulfillmentType === "DELIVERY" && deliveryFee > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Delivery Fee</span>
-                    <span>${deliveryFee.toFixed(2)}</span>
-                  </div>
-                )}
-                <Separator />
-                <div className="flex justify-between font-serif font-bold text-lg">
-                  <span>Total</span>
-                  <span className="text-primary">${finalTotal.toFixed(2)}</span>
-                </div>
+                <CheckoutTotalsSummary totals={checkoutTotals} />
               </div>
 
               <div className="w-full space-y-3 pt-4">

@@ -73,6 +73,9 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     deliveryNotes: b.deliveryNotes,
     pickupInstructions: b.pickupInstructions,
     deliveryInstructions: b.deliveryInstructions,
+    taxEnabled: b.taxEnabled,
+    taxRatePercent: b.taxRatePercent ? parseFloat(b.taxRatePercent) : null,
+    taxLabel: b.taxLabel,
     payAtPickupEnabled: b.payAtPickupEnabled,
     paymentMode: b.paymentMode,
     onlinePaymentsAvailable,
@@ -112,6 +115,7 @@ export function serializeProduct(
     available: p.available,
     featured: p.featured,
     prepTimeMinutes: p.prepTimeMinutes,
+    taxable: p.taxable,
     optionGroups,
     assignedModifierGroups,
     modifierGroupIds: assignedModifierGroups.map((g) => g.id),
@@ -474,6 +478,12 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.pickupInstructions = (d as Record<string, unknown>).pickupInstructions;
   if ((d as Record<string, unknown>).deliveryInstructions !== undefined)
     updateData.deliveryInstructions = (d as Record<string, unknown>).deliveryInstructions;
+  if (d.taxEnabled !== undefined) updateData.taxEnabled = d.taxEnabled;
+  if (d.taxRatePercent !== undefined) {
+    updateData.taxRatePercent =
+      d.taxRatePercent != null ? String(d.taxRatePercent) : null;
+  }
+  if (d.taxLabel !== undefined) updateData.taxLabel = d.taxLabel?.trim() || "Sales Tax";
   if ((d as Record<string, unknown>).orderNotificationEmail !== undefined) {
     updateData.orderNotificationEmail = (d as Record<string, unknown>).orderNotificationEmail;
     if ((d as Record<string, unknown>).notificationEmail === undefined) {

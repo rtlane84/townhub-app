@@ -41,6 +41,7 @@ interface ProductForm {
   available: boolean;
   featured: boolean;
   prepTimeMinutes: string;
+  taxable: boolean;
 }
 
 const EMPTY_FORM: ProductForm = {
@@ -52,6 +53,7 @@ const EMPTY_FORM: ProductForm = {
   available: true,
   featured: false,
   prepTimeMinutes: "",
+  taxable: true,
 };
 
 export default function BusinessProducts() {
@@ -118,6 +120,7 @@ export default function BusinessProducts() {
       available: p.available ?? true,
       featured: p.featured ?? false,
       prepTimeMinutes: p.prepTimeMinutes ? String(p.prepTimeMinutes) : "",
+      taxable: p.taxable !== false,
     });
     setModifierGroupIds(p.modifierGroupIds ?? p.assignedModifierGroups?.map((g) => g.id) ?? []);
     setSheetOpen(true);
@@ -133,6 +136,7 @@ export default function BusinessProducts() {
       available: form.available,
       featured: form.featured,
       prepTimeMinutes: form.prepTimeMinutes ? parseInt(form.prepTimeMinutes) : undefined,
+      taxable: form.taxable,
       modifierGroupIds,
     };
   }
@@ -281,6 +285,10 @@ export default function BusinessProducts() {
                     <Switch checked={form.featured} onCheckedChange={(v) => setForm((f) => ({ ...f, featured: v }))} data-testid="switch-product-featured" />
                     <label className="text-sm font-medium">Featured</label>
                   </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={form.taxable} onCheckedChange={(v) => setForm((f) => ({ ...f, taxable: v }))} data-testid="switch-product-taxable" />
+                  <label className="text-sm font-medium">Charge sales tax on this item</label>
                 </div>
               </section>
 

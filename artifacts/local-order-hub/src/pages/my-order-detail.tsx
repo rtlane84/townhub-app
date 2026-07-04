@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingBag, Store, MapPin } from "lucide-react";
 import { customerRefundSummary, orderPaymentDisplayStatus } from "@/lib/order-refund-display";
 import { getCustomerEstimatedWindowLabel } from "@/lib/order-prep-timing";
+import { OrderTotalsSummary } from "@/components/order-totals-summary";
 
 export default function MyOrderDetail() {
   const [, params] = useRoute("/my-orders/:id");
@@ -120,10 +121,7 @@ export default function MyOrderDetail() {
             </div>
           ))}
           <Separator />
-          <div className="flex justify-between font-serif font-bold text-lg">
-            <span>Total</span>
-            <span className="text-primary">${order.total.toFixed(2)}</span>
-          </div>
+          {order ? <OrderTotalsSummary order={order} /> : null}
         </CardContent>
       </Card>
     </div>

@@ -61,6 +61,13 @@ import {
   calculateOrderPrepEstimate,
   serializePrepEstimate,
 } from "../lib/order-prep-estimate";
+import {
+  buildStripeCheckoutLineItems,
+  calculateOrderTotals,
+  centsToDollars,
+  dollarsToCents,
+  resolveOrderTotalsDisplay,
+} from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -153,6 +160,31 @@ async function serializeOrder(
   const totalCents = orderTotalCents(order);
   const refundedCents = order.refundedAmountCents ?? 0;
   const remainingCents = Math.max(0, totalCents - refundedCents);
+  const deliveryFee = order.deliveryFee ? parseFloat(order.deliveryFee) : null;
+  const mappedItems = items.map((item) => ({
+    id: item.id,
+    orderId: item.orderId,
+    productId: item.productId,
+    productName: item.productName,
+    quantity: item.quantity,
+    unitPrice: parseFloat(item.unitPrice),
+    subtotal: parseFloat(item.subtotal),
+    options: (optionsByItemId.get(item.id) ?? []).map((o) => ({
+      id: o.id,
+      optionId: o.optionId,
+      groupName: o.groupName,
+      optionName: o.optionName,
+      priceAdjustment: parseFloat(o.priceAdjustment),
+    })),
+  }));
+  const totals = resolveOrderTotalsDisplay({
+    subtotalCents: order.subtotalCents,
+    taxCents: order.taxCents,
+    taxLabel: order.taxLabel,
+    deliveryFee,
+    total: parseFloat(order.total),
+    items: mappedItems,
+  });
 
   const base = {
     id: order.id,
@@ -177,30 +209,19 @@ async function serializeOrder(
         : order.estimatedWindowEnd,
     notes: order.notes,
     specialFields: order.specialFields,
-    total: parseFloat(order.total),
-    deliveryFee: order.deliveryFee ? parseFloat(order.deliveryFee) : null,
+    subtotal: totals.subtotal,
+    tax: totals.tax,
+    taxRatePercent: order.taxRatePercent ? parseFloat(order.taxRatePercent) : null,
+    taxLabel: totals.taxLabel,
+    total: totals.total,
+    deliveryFee,
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
     stripeSessionId: order.stripeSessionId,
     refundStatus: order.refundStatus ?? "NONE",
     refundedAmount: refundedCents / 100,
     refundableAmount: remainingCents / 100,
-    items: items.map((item) => ({
-      id: item.id,
-      orderId: item.orderId,
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unitPrice: parseFloat(item.unitPrice),
-      subtotal: parseFloat(item.subtotal),
-      options: (optionsByItemId.get(item.id) ?? []).map((o) => ({
-        id: o.id,
-        optionId: o.optionId,
-        groupName: o.groupName,
-        optionName: o.optionName,
-        priceAdjustment: parseFloat(o.priceAdjustment),
-      })),
-    })),
+    items: mappedItems,
     createdAt:
       order.createdAt instanceof Date
         ? order.createdAt.toISOString()
@@ -307,13 +328,13 @@ router.post("/orders", async (req, res): Promise<void> => {
   const productMap = new Map(products.map((p) => [p.id, p]));
   const optionGroupsByProduct = await loadOptionGroupsByProductIds(products.map((p) => p.id));
 
-  let subtotal = 0;
   const orderItems: Array<{
     productId: number;
     productName: string;
     quantity: number;
     unitPrice: number;
     subtotal: number;
+    taxable: boolean;
     options: OrderOptionSnapshot[];
   }> = [];
 
@@ -334,13 +355,13 @@ router.post("/orders", async (req, res): Promise<void> => {
       res.status(400).json({ error: priced.error });
       return;
     }
-    subtotal += priced.subtotal;
     orderItems.push({
       productId: item.productId,
       productName: priced.productName,
       quantity: item.quantity,
       unitPrice: priced.unitPrice,
       subtotal: priced.subtotal,
+      taxable: product.taxable !== false,
       options: priced.options,
     });
   }
@@ -375,7 +396,18 @@ router.post("/orders", async (req, res): Promise<void> => {
       ? parseFloat(business.deliveryFee)
       : null;
 
-  const total = subtotal + (deliveryFee ?? 0);
+  const orderTotals = calculateOrderTotals({
+    items: orderItems.map((item) => ({
+      lineSubtotalCents: dollarsToCents(item.subtotal),
+      taxable: item.taxable,
+    })),
+    taxEnabled: business.taxEnabled === true,
+    taxRatePercent: business.taxRatePercent ? parseFloat(business.taxRatePercent) : 0,
+    taxLabel: business.taxLabel ?? undefined,
+    deliveryFeeCents: deliveryFee ? dollarsToCents(deliveryFee) : 0,
+  });
+
+  const total = centsToDollars(orderTotals.totalCents);
 
   const prepEstimate = calculateOrderPrepEstimate({
     defaultPrepMinutes: business.defaultPrepMinutes,
@@ -403,6 +435,11 @@ router.post("/orders", async (req, res): Promise<void> => {
       estimatedWindowEnd: prepEstimate.estimatedWindowEnd,
       notes: d.notes,
       specialFields: d.specialFields,
+      subtotalCents: orderTotals.subtotalCents,
+      taxCents: orderTotals.taxCents,
+      taxRatePercent:
+        orderTotals.taxRatePercent != null ? String(orderTotals.taxRatePercent) : null,
+      taxLabel: orderTotals.taxLabel,
       total: String(total),
       deliveryFee: deliveryFee ? String(deliveryFee) : null,
       paymentMethod,
@@ -891,11 +928,16 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
   const result = await createStripeCheckoutSession(
     order.id,
     order.orderNumber,
-    order.items.map((i) => ({
-      name: i.productName,
-      price: i.unitPrice,
-      quantity: i.quantity,
-    })),
+    buildStripeCheckoutLineItems({
+      items: order.items.map((i) => ({
+        productName: i.productName,
+        unitPrice: i.unitPrice,
+        quantity: i.quantity,
+      })),
+      deliveryFee: order.deliveryFee,
+      tax: order.tax,
+      taxLabel: order.taxLabel,
+    }),
     business.stripeConnectedAccountId,
     `${baseUrl}/order/${order.id}?payment=success`,
     `${baseUrl}/cart?payment=canceled`,

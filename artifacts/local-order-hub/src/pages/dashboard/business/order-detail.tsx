@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KitchenTicketPrint, printKitchenTicket } from "@/components/kitchen-ticket-print";
 import { OrderRefundDialog } from "@/components/order-refund-dialog";
+import { OrderTotalsSummary } from "@/components/order-totals-summary";
 import {
   canIssueRefund,
   formatRefundAmount,
@@ -226,18 +227,7 @@ export default function BusinessOrderDetail({ params }: Props) {
                   ))}
                 </div>
                 <Separator className="my-4" />
-                <div className="space-y-2 text-sm">
-                  {order.deliveryFee ? (
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Delivery fee</span>
-                      <span>${order.deliveryFee.toFixed(2)}</span>
-                    </div>
-                  ) : null}
-                  <div className="flex justify-between font-bold font-serif text-base">
-                    <span>Total</span>
-                    <span className="text-primary">${order.total.toFixed(2)}</span>
-                  </div>
-                </div>
+                {order ? <OrderTotalsSummary order={order} totalClassName="font-bold font-serif text-base" /> : null}
                 <div className="mt-4 space-y-3">
                   <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                     <span>Payment: <span className="font-medium text-foreground">{order.paymentMethod}</span></span>

@@ -56,6 +56,7 @@ type FormState = {
   notifyAppointmentRequestsByEmail: boolean;
   notifyAppointmentRequestsBySms: boolean;
   accentColor: string; buttonColor: string; bannerText: string;
+  taxEnabled: boolean; taxRatePercent: string; taxLabel: string;
 };
 
 const EMPTY: FormState = {
@@ -72,6 +73,7 @@ const EMPTY: FormState = {
   notifyNewOrdersByEmail: true, notifyNewOrdersBySms: false,
   notifyAppointmentRequestsByEmail: true, notifyAppointmentRequestsBySms: false,
   accentColor: "", buttonColor: "", bannerText: "",
+  taxEnabled: false, taxRatePercent: "", taxLabel: "Sales Tax",
 };
 
 export default function BusinessSettings() {
@@ -122,6 +124,9 @@ export default function BusinessSettings() {
         accentColor: String(b.accentColor ?? ""),
         buttonColor: String(b.buttonColor ?? ""),
         bannerText: String(b.bannerText ?? ""),
+        taxEnabled: b.taxEnabled === true,
+        taxRatePercent: b.taxRatePercent != null ? String(b.taxRatePercent) : "",
+        taxLabel: String(b.taxLabel ?? "Sales Tax"),
       });
     }
   }, [business]);
@@ -190,6 +195,9 @@ export default function BusinessSettings() {
               deliveryNotes: opt(form.deliveryNotes),
               pickupInstructions: opt(form.pickupInstructions),
               deliveryInstructions: opt(form.deliveryInstructions),
+              taxEnabled: form.taxEnabled,
+              taxRatePercent: form.taxEnabled ? optNum(form.taxRatePercent) : undefined,
+              taxLabel: form.taxLabel.trim() || "Sales Tax",
             }
           : {}),
         notificationEmail: opt(form.notificationEmail),
@@ -446,6 +454,32 @@ export default function BusinessSettings() {
                     onChange={(paymentMode) => setForm((f) => ({ ...f, paymentMode }))}
                     idPrefix="business-settings-payment"
                   />
+                </div>
+                <Separator className="my-4" />
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium">Sales tax</p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Apply a simple sales tax rate to taxable items at checkout. Tax is calculated on the server when orders are placed.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between py-1">
+                    <div>
+                      <p className="text-sm font-medium">Enable sales tax</p>
+                      <p className="text-xs text-muted-foreground">Charge tax on taxable items using the rate below</p>
+                    </div>
+                    <Switch
+                      checked={form.taxEnabled}
+                      onCheckedChange={(taxEnabled) => setForm((f) => ({ ...f, taxEnabled }))}
+                      data-testid="switch-taxEnabled"
+                    />
+                  </div>
+                  {form.taxEnabled ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {field("Tax rate (%)", "taxRatePercent", { type: "number", placeholder: "6.00" })}
+                      {field("Tax label", "taxLabel", { placeholder: "Sales Tax" })}
+                    </div>
+                  ) : null}
                 </div>
                 <Separator className="my-4" />
                 <div className="grid grid-cols-2 gap-4">
