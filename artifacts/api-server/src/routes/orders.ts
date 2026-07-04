@@ -131,13 +131,12 @@ async function getOrderWithItems(
   return serializeOrder(order, items, business?.name ?? "Unknown", optionsByItemId, viewer);
 }
 
-function canViewRefundDetails(
-  viewerRole: (typeof usersTable.$inferSelect)["role"] | null,
-  viewerUserId: string | null | undefined,
-  businessOwnerId: string | null,
-): boolean {
-  if (viewerRole === "ADMIN") return true;
-  return viewerRole === "BUSINESS_OWNER" && !!viewerUserId && viewerUserId === businessOwnerId;
+async function resolveIncludeRefundDetails(
+  req: Parameters<typeof authorizeBusinessOwnerOrAdmin>[0],
+  businessId: number,
+): Promise<boolean> {
+  const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
+  return access.ok;
 }
 
 type OrderViewerContext = {
@@ -185,6 +184,7 @@ async function serializeOrder(
     stripeSessionId: order.stripeSessionId,
     refundStatus: order.refundStatus ?? "NONE",
     refundedAmount: refundedCents / 100,
+    refundableAmount: remainingCents / 100,
     items: items.map((item) => ({
       id: item.id,
       orderId: item.orderId,
@@ -214,7 +214,6 @@ async function serializeOrder(
   const refunds = await loadOrderRefunds(order.id);
   return {
     ...base,
-    refundableAmount: remainingCents / 100,
     lastRefundedAt: order.lastRefundedAt
       ? order.lastRefundedAt instanceof Date
         ? order.lastRefundedAt.toISOString()
@@ -526,7 +525,7 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
   }
 
   const result = await getOrderWithItems(params.data.id, {
-    includeRefundDetails: canViewRefundDetails(viewerRole, userId, businessOwnerId),
+    includeRefundDetails: await resolveIncludeRefundDetails(req, order.businessId),
   });
   if (!result) {
     res.status(404).json({ error: "Order not found" });
@@ -730,7 +729,9 @@ router.get(
 
     const ordersWithItems = await Promise.all(
       orders.map((order) =>
-        serializeOrderWithLoadedItems(order, business?.name ?? "Unknown"),
+        serializeOrderWithLoadedItems(order, business?.name ?? "Unknown", {
+          includeRefundDetails: true,
+        }),
       ),
     );
 

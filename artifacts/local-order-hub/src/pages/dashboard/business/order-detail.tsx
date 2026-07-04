@@ -257,6 +257,14 @@ export default function BusinessOrderDetail({ params }: Props) {
                     >
                       Issue refund
                     </Button>
+                  ) : order.paymentMethod === "STRIPE" && order.paymentStatus !== "PAID" ? (
+                    <p className="text-xs text-muted-foreground">
+                      Refunds are available after online payment is confirmed.
+                    </p>
+                  ) : order.paymentMethod === "IN_PERSON" ? (
+                    <p className="text-xs text-muted-foreground">
+                      Pay-at-pickup orders are not refunded through Stripe.
+                    </p>
                   ) : null}
                 </div>
               </CardContent>

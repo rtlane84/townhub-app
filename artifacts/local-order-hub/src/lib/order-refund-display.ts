@@ -48,14 +48,23 @@ export function customerRefundSummary(order: Pick<Order, "refundStatus" | "refun
   return null;
 }
 
+export function getRemainingRefundableAmount(
+  order: Pick<Order, "total" | "refundedAmount" | "refundableAmount">,
+): number {
+  if (order.refundableAmount != null) {
+    return order.refundableAmount;
+  }
+  return Math.max(0, order.total - (order.refundedAmount ?? 0));
+}
+
 export function canIssueRefund(order: Pick<
   Order,
-  "paymentMethod" | "paymentStatus" | "refundStatus" | "refundableAmount"
+  "paymentMethod" | "paymentStatus" | "refundStatus" | "refundableAmount" | "total" | "refundedAmount"
 >): boolean {
   if (order.paymentMethod !== "STRIPE") return false;
   if (order.paymentStatus !== "PAID") return false;
   if (order.refundStatus === "FULL") return false;
-  return (order.refundableAmount ?? 0) > 0;
+  return getRemainingRefundableAmount(order) > 0;
 }
 
 export function refundStatusLabel(status: RefundStatus | undefined): string {

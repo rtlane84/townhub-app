@@ -51,6 +51,18 @@ describe("order refund display", () => {
         paymentStatus: "PAID",
         refundStatus: "NONE",
         refundableAmount: 8.5,
+        total: 10,
+        refundedAmount: 0,
+      }),
+      true,
+    );
+    assert.equal(
+      canIssueRefund({
+        paymentMethod: "STRIPE",
+        paymentStatus: "PAID",
+        refundStatus: "NONE",
+        total: 10,
+        refundedAmount: 1.5,
       }),
       true,
     );
@@ -60,6 +72,8 @@ describe("order refund display", () => {
         paymentStatus: "PAID",
         refundStatus: "NONE",
         refundableAmount: 8.5,
+        total: 10,
+        refundedAmount: 0,
       }),
       false,
     );
@@ -69,6 +83,8 @@ describe("order refund display", () => {
         paymentStatus: "PAID",
         refundStatus: "FULL",
         refundableAmount: 0,
+        total: 10,
+        refundedAmount: 10,
       }),
       false,
     );

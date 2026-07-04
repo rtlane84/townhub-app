@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { formatRefundAmount, formatRefundAmountCents } from "@/lib/order-refund-display";
+import { formatRefundAmount, formatRefundAmountCents, getRemainingRefundableAmount } from "@/lib/order-refund-display";
 
 type RefundMode = "full" | "partial";
 
@@ -33,7 +33,7 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
   const [reason, setReason] = useState("Customer requested refund");
 
   const refundedAmount = order.refundedAmount ?? 0;
-  const refundableAmount = order.refundableAmount ?? Math.max(0, order.total - refundedAmount);
+  const refundableAmount = getRemainingRefundableAmount(order);
   const refundableCents = Math.round(refundableAmount * 100);
 
   const selectedAmountCents = useMemo(() => {
