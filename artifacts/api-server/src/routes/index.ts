@@ -50,7 +50,9 @@ router.use(foodTruckRouter);
 router.use(appointmentRequestsRouter);
 router.use(mediaRouter);
 router.use(devRouter);
-router.use(debugRouter);
+if (process.env.NODE_ENV !== "production") {
+  router.use(debugRouter);
+}
 router.use(businessesRouter);
 router.use(stripeConnectRouter);
 router.use(internalJobsRouter);

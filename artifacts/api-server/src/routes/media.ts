@@ -18,6 +18,12 @@ import {
   saveMediaFile,
 } from "../lib/media-storage";
 import { logOperationalFailure } from "../lib/operational-log";
+import { listOwnedBusinessIds } from "../lib/business-access";
+import {
+  mediaScopeToBusinessId,
+  resolveOwnerMediaBusinessId,
+  type ResolvedMediaScope,
+} from "../lib/media-scope";
 
 const router: IRouter = Router();
 
@@ -27,20 +33,49 @@ function parseId(raw: string | string[]): number {
   return parseInt(Array.isArray(raw) ? raw[0] : raw, 10);
 }
 
+function parseRequestedBusinessId(raw: unknown): number | undefined {
+  if (raw == null || raw === "") return undefined;
+  const id = typeof raw === "string" ? parseInt(raw, 10) : Number(raw);
+  return Number.isFinite(id) && id > 0 ? id : undefined;
+}
+
 async function resolveMediaScope(req: Request): Promise<MediaScope | null> {
   if (!req.dbUser) return null;
-  if (req.dbUser.role === "ADMIN") {
+
+  const requestedBusinessId =
+    parseRequestedBusinessId(req.query.businessId) ??
+    parseRequestedBusinessId(req.body?.businessId);
+
+  const ownedBusinessIds =
+    req.dbUser.role === "BUSINESS_OWNER"
+      ? await listOwnedBusinessIds(req.dbUser.id)
+      : [];
+
+  const resolved: ResolvedMediaScope | null = resolveOwnerMediaBusinessId({
+    role: req.dbUser.role,
+    ownedBusinessIds,
+    requestedBusinessId,
+  });
+
+  if (!resolved) return null;
+
+  if (resolved.kind === "platform") {
     return { businessId: null };
   }
-  if (req.dbUser.role === "BUSINESS_OWNER") {
-    const [business] = await db
-      .select({ id: businessesTable.id })
-      .from(businessesTable)
-      .where(eq(businessesTable.ownerId, req.dbUser.id));
-    if (!business) return null;
-    return { businessId: business.id };
-  }
-  return null;
+
+  const [business] = await db
+    .select({ archivedAt: businessesTable.archivedAt })
+    .from(businessesTable)
+    .where(
+      and(
+        eq(businessesTable.id, resolved.businessId),
+        isNull(businessesTable.archivedAt),
+      ),
+    );
+
+  if (!business) return null;
+
+  return { businessId: resolved.businessId };
 }
 
 function requireMediaAccess(
@@ -228,5 +263,7 @@ router.delete("/media/:id", requireMediaAccess, async (req, res): Promise<void> 
   await db.delete(mediaAssetsTable).where(eq(mediaAssetsTable.id, existing.id));
   res.status(204).send();
 });
+
+export { resolveMediaScope, mediaScopeToBusinessId };
 
 export default router;

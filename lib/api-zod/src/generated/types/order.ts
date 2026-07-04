@@ -45,4 +45,6 @@ export interface Order {
   stripeSessionId?: string | null;
   items?: OrderItem[];
   createdAt?: Date;
+  /** Signed guest access token; included only when an order is first created */
+  accessToken?: string;
 }

@@ -5,6 +5,7 @@ export type OrderViewAuthInput = {
   viewerRole: UserRole | null | undefined;
   businessOwnerId: string | null | undefined;
   orderCustomerUserId: string | null | undefined;
+  hasValidAccessToken?: boolean;
 };
 
 export type OrderViewAuthResult =
@@ -12,14 +13,10 @@ export type OrderViewAuthResult =
   | { allowed: false; statusCode: 403; error: string };
 
 /**
- * Guest orders (no customerUserId) remain viewable by id for the confirmation flow.
- * Account-linked orders are visible only to the owning customer, business owner, or admin.
+ * Guest orders require a valid signed access token unless the viewer is admin,
+ * the business owner, or the linked customer.
  */
 export function authorizeOrderView(input: OrderViewAuthInput): OrderViewAuthResult {
-  if (!input.orderCustomerUserId) {
-    return { allowed: true };
-  }
-
   if (input.viewerRole === "ADMIN") {
     return { allowed: true };
   }
@@ -32,13 +29,24 @@ export function authorizeOrderView(input: OrderViewAuthInput): OrderViewAuthResu
     return { allowed: true };
   }
 
-  if (input.viewerUserId && input.viewerUserId === input.orderCustomerUserId) {
+  if (input.orderCustomerUserId) {
+    if (input.viewerUserId && input.viewerUserId === input.orderCustomerUserId) {
+      return { allowed: true };
+    }
+    return {
+      allowed: false,
+      statusCode: 403,
+      error: "Forbidden: you do not have access to this order",
+    };
+  }
+
+  if (input.hasValidAccessToken) {
     return { allowed: true };
   }
 
   return {
     allowed: false,
     statusCode: 403,
-    error: "Forbidden: you do not have access to this order",
+    error: "Forbidden: valid order access token required",
   };
 }

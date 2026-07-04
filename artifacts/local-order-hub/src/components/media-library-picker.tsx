@@ -24,13 +24,21 @@ interface MediaLibraryPickerProps {
   onSelect: (asset: MediaAsset) => void;
   /** When set, shows recommended dimensions for the image surface being edited. */
   surface?: ImageSurface;
+  businessId?: number;
 }
 
-export function MediaLibraryPicker({ open, onOpenChange, onSelect, surface }: MediaLibraryPickerProps) {
-  const { data: assets, isLoading, isError } = useListMediaAssets(undefined, {
+export function MediaLibraryPicker({
+  open,
+  onOpenChange,
+  onSelect,
+  surface,
+  businessId,
+}: MediaLibraryPickerProps) {
+  const listParams = businessId != null ? { businessId } : undefined;
+  const { data: assets, isLoading, isError } = useListMediaAssets(listParams, {
     query: {
       enabled: open,
-      queryKey: getListMediaAssetsQueryKey(),
+      queryKey: getListMediaAssetsQueryKey(listParams),
     },
   });
 

@@ -1863,6 +1863,11 @@ paths:
       summary: List uploaded media for the current user scope
       parameters:
         - in: query
+          name: businessId
+          schema:
+            type: integer
+          description: Business to scope media to (required for business owners)
+        - in: query
           name: limit
           schema:
             type: integer
@@ -1887,6 +1892,12 @@ paths:
       operationId: uploadMediaAsset
       tags: [media]
       summary: Upload an image to the media library
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+          description: Business to attach the upload to (required for business owners)
       requestBody:
         required: true
         content:
@@ -3014,6 +3025,9 @@ components:
         createdAt:
           type: string
           format: date-time
+        accessToken:
+          type: string
+          description: Signed guest access token; included only when an order is first created
 
     OrderInput:
       type: object
@@ -3076,6 +3090,9 @@ components:
       properties:
         orderId:
           type: integer
+        accessToken:
+          type: string
+          description: Signed guest order access token (required for guest checkout when not authenticated)
 
     CheckoutSessionResult:
       type: object

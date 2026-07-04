@@ -271,6 +271,7 @@ export default function BusinessProducts() {
                   value={form.imageUrl}
                   onChange={(imageUrl) => setForm((f) => ({ ...f, imageUrl }))}
                   testId="product-image"
+                  businessId={businessId > 0 ? businessId : undefined}
                 />
                 <div className="flex gap-6">
                   <div className="flex items-center gap-2">

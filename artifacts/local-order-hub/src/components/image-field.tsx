@@ -36,6 +36,8 @@ interface ImageFieldProps {
   surface: ImageSurface;
   testId?: string;
   disabled?: boolean;
+  /** Required for business-owner uploads; omit for platform admin branding assets. */
+  businessId?: number;
 }
 
 export function ImageField({
@@ -45,6 +47,7 @@ export function ImageField({
   surface,
   testId,
   disabled = false,
+  businessId,
 }: ImageFieldProps) {
   const guidance = IMAGE_SURFACE_GUIDANCE[surface];
   const { recommendedLine, fileLine } = formatImageSurfaceGuidance(surface);
@@ -71,7 +74,11 @@ export function ImageField({
         clearPreviewObjectUrl();
         onChange(asset.url);
         setLocalPreview(null);
-        void queryClient.invalidateQueries({ queryKey: getListMediaAssetsQueryKey() });
+        void queryClient.invalidateQueries({
+          queryKey: getListMediaAssetsQueryKey(
+            businessId != null ? { businessId } : undefined,
+          ),
+        });
         toast({ title: "Image uploaded" });
       },
       onError: (err) => {
@@ -102,7 +109,10 @@ export function ImageField({
     setLocalPreview(previewUrl);
     uploadLockRef.current = true;
     uploadMedia.mutate(
-      { data: { file } },
+      {
+        data: { file },
+        ...(businessId != null ? { params: { businessId } } : {}),
+      },
       { onSettled: () => { uploadLockRef.current = false; } },
     );
   }
@@ -243,6 +253,7 @@ export function ImageField({
         onOpenChange={setLibraryOpen}
         onSelect={handleLibrarySelect}
         surface={surface}
+        businessId={businessId}
       />
     </div>
   );

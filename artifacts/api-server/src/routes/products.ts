@@ -22,6 +22,7 @@ import {
   assignModifierGroupsToProduct,
   clearProductModifierGroups,
 } from "../lib/product-options";
+import { requireBusinessCatalogAccess } from "../middlewares/requireBusinessCatalogAccess";
 
 const router: IRouter = Router();
 
@@ -56,6 +57,7 @@ router.get(
 // POST /api/businesses/:businessId/categories
 router.post(
   "/businesses/:businessId/categories",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = CreateCategoryParams.safeParse({
       businessId: parseId(req.params.businessId),
@@ -87,6 +89,7 @@ router.post(
 // PATCH /api/businesses/:businessId/categories/:id
 router.patch(
   "/businesses/:businessId/categories/:id",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = UpdateCategoryParams.safeParse({
       businessId: parseId(req.params.businessId),
@@ -126,6 +129,7 @@ router.patch(
 // DELETE /api/businesses/:businessId/categories/:id
 router.delete(
   "/businesses/:businessId/categories/:id",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = DeleteCategoryParams.safeParse({
       businessId: parseId(req.params.businessId),
@@ -200,6 +204,7 @@ router.get(
 // POST /api/businesses/:businessId/products
 router.post(
   "/businesses/:businessId/products",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = CreateProductParams.safeParse({
       businessId: parseId(req.params.businessId),
@@ -262,6 +267,7 @@ router.post(
 // PATCH /api/businesses/:businessId/products/:id
 router.patch(
   "/businesses/:businessId/products/:id",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = UpdateProductParams.safeParse({
       businessId: parseId(req.params.businessId),
@@ -336,6 +342,7 @@ router.patch(
 // DELETE /api/businesses/:businessId/products/:id
 router.delete(
   "/businesses/:businessId/products/:id",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = DeleteProductParams.safeParse({
       businessId: parseId(req.params.businessId),

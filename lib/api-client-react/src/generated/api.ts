@@ -89,6 +89,7 @@ import type {
   SubscriptionPlan,
   SubscriptionPlanInput,
   SystemHealthReport,
+  UploadMediaAssetParams,
   UserProfile,
   UserRoleUpdate,
   WeatherForecast
@@ -6691,22 +6692,30 @@ export function useListMediaAssets<TData = Awaited<ReturnType<typeof listMediaAs
 
 
 
-export const getUploadMediaAssetUrl = () => {
+export const getUploadMediaAssetUrl = (params?: UploadMediaAssetParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/media/upload`
+  return stringifiedParams.length > 0 ? `/api/media/upload?${stringifiedParams}` : `/api/media/upload`
 }
 
 /**
  * @summary Upload an image to the media library
  */
-export const uploadMediaAsset = async (mediaUploadForm: MediaUploadForm, options?: RequestInit): Promise<MediaAsset> => {
+export const uploadMediaAsset = async (mediaUploadForm: MediaUploadForm,
+    params?: UploadMediaAssetParams, options?: RequestInit): Promise<MediaAsset> => {
     const formData = new FormData();
 formData.append(`file`, mediaUploadForm.file);
 
-  return customFetch<MediaAsset>(getUploadMediaAssetUrl(),
+  return customFetch<MediaAsset>(getUploadMediaAssetUrl(params),
   {
     ...options,
     method: 'POST'
@@ -6720,8 +6729,8 @@ formData.append(`file`, mediaUploadForm.file);
 
 
 export const getUploadMediaAssetMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>;params?: UploadMediaAssetParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>;params?: UploadMediaAssetParams}, TContext> => {
 
 const mutationKey = ['uploadMediaAsset'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -6733,10 +6742,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadMediaAsset>>, {data: BodyType<MediaUploadForm>}> = (props) => {
-          const {data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadMediaAsset>>, {data: BodyType<MediaUploadForm>;params?: UploadMediaAssetParams}> = (props) => {
+          const {data,params} = props ?? {};
 
-          return  uploadMediaAsset(data,requestOptions)
+          return  uploadMediaAsset(data,params,requestOptions)
         }
 
 
@@ -6754,11 +6763,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Upload an image to the media library
  */
 export const useUploadMediaAsset = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadMediaAsset>>, TError,{data: BodyType<MediaUploadForm>;params?: UploadMediaAssetParams}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof uploadMediaAsset>>,
         TError,
-        {data: BodyType<MediaUploadForm>},
+        {data: BodyType<MediaUploadForm>;params?: UploadMediaAssetParams},
         TContext
       > => {
       return useMutation(getUploadMediaAssetMutationOptions(options));

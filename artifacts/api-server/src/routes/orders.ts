@@ -35,7 +35,6 @@ import {
   notifyCustomerOrderStatusChange,
 } from "../lib/notifications";
 import { authorizeOrderStatusUpdate } from "../lib/order-access";
-import { authorizeOrderView } from "../lib/order-customer-access";
 import { validateGuestOrderContact } from "../lib/guest-checkout";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import {
@@ -43,8 +42,56 @@ import {
   validateOrderItemSelections,
   type OrderOptionSnapshot,
 } from "../lib/product-options";
+import { createOrderAccessToken } from "../lib/order-access-token";
+import {
+  authorizeOrderAccess,
+  buildOrderAccessInput,
+  extractOrderAccessToken,
+} from "../lib/order-request-access";
+import {
+  BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE,
+  isBusinessOpenForPublicCommerce,
+  requireOnlineOrderingFeature,
+} from "../lib/business-commerce-guards";
+import type { Request } from "express";
+import type { UserRole } from "../lib/order-access";
 
 const router: IRouter = Router();
+
+async function loadOrderViewerContext(
+  req: Request,
+  businessId: number,
+): Promise<{
+  viewerUserId: string | null | undefined;
+  viewerRole: UserRole | null;
+  businessOwnerId: string | null;
+  accessToken: string | null;
+}> {
+  const { userId } = getAuth(req);
+  let viewerRole: UserRole | null = null;
+  let businessOwnerId: string | null = null;
+
+  if (userId) {
+    const [user] = await db
+      .select({ role: usersTable.role })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    viewerRole = user?.role ?? null;
+
+    const [business] = await db
+      .select({ ownerId: businessesTable.ownerId })
+      .from(businessesTable)
+      .where(eq(businessesTable.id, businessId));
+    businessOwnerId = business?.ownerId ?? null;
+  }
+
+  return {
+    viewerUserId: userId,
+    viewerRole,
+    businessOwnerId,
+    accessToken: extractOrderAccessToken(req),
+  };
+}
 
 function parseId(raw: string | string[]): number {
   return parseInt(Array.isArray(raw) ? raw[0] : raw, 10);
@@ -238,6 +285,17 @@ router.post("/orders", async (req, res): Promise<void> => {
     return;
   }
 
+  if (!isBusinessOpenForPublicCommerce(business)) {
+    res.status(400).json({ error: BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE });
+    return;
+  }
+
+  const featureGate = await requireOnlineOrderingFeature(d.businessId);
+  if (!featureGate.ok) {
+    res.status(featureGate.status).json({ error: featureGate.error });
+    return;
+  }
+
   const paymentMethod = d.paymentMethod ?? "STRIPE";
   const paymentError = validatePaymentMethodForBusiness(business, paymentMethod);
   if (paymentError) {
@@ -308,7 +366,8 @@ router.post("/orders", async (req, res): Promise<void> => {
   }
 
   const result = await getOrderWithItems(order.id);
-  res.status(201).json(result);
+  const accessToken = createOrderAccessToken(order.id);
+  res.status(201).json({ ...result, accessToken });
 
   // ── Fire-and-forget notifications (never block the response) ──────────────
   notifyOwnerNewOrderFromOrderId(order.id).catch(() => {});
@@ -365,30 +424,14 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const { userId } = getAuth(req);
-  let viewerRole: (typeof usersTable.$inferSelect)["role"] | null = null;
-  let businessOwnerId: string | null = null;
+  const viewer = await loadOrderViewerContext(req, order.businessId);
 
-  if (userId) {
-    const [user] = await db
-      .select({ role: usersTable.role })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId));
-    viewerRole = user?.role ?? null;
-
-    const [business] = await db
-      .select({ ownerId: businessesTable.ownerId })
-      .from(businessesTable)
-      .where(eq(businessesTable.id, order.businessId));
-    businessOwnerId = business?.ownerId ?? null;
-  }
-
-  const viewAuth = authorizeOrderView({
-    viewerUserId: userId,
-    viewerRole,
-    businessOwnerId,
-    orderCustomerUserId: order.customerUserId,
-  });
+  const viewAuth = authorizeOrderAccess(
+    buildOrderAccessInput(order.id, order.customerUserId, {
+      ...viewer,
+      orderCustomerUserId: order.customerUserId,
+    }),
+  );
 
   if (!viewAuth.allowed) {
     res.status(viewAuth.statusCode).json({ error: viewAuth.error });
@@ -634,6 +677,33 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
     return;
   }
 
+  const [orderRow] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, parsed.data.orderId));
+
+  if (!orderRow) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  const accessToken =
+    parsed.data.accessToken?.trim() || extractOrderAccessToken(req) || null;
+
+  const viewer = await loadOrderViewerContext(req, order.businessId);
+  const checkoutAuth = authorizeOrderAccess(
+    buildOrderAccessInput(orderRow.id, orderRow.customerUserId, {
+      ...viewer,
+      orderCustomerUserId: orderRow.customerUserId,
+      accessToken,
+    }),
+  );
+
+  if (!checkoutAuth.allowed) {
+    res.status(checkoutAuth.statusCode).json({ error: checkoutAuth.error });
+    return;
+  }
+
   const [business] = await db
     .select()
     .from(businessesTable)
@@ -672,6 +742,7 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
   }
 
   const baseUrl = getAppBaseUrl();
+  const orderToken = createOrderAccessToken(order.id);
 
   const result = await createStripeCheckoutSession(
     order.id,
@@ -682,7 +753,7 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
       quantity: i.quantity,
     })),
     business.stripeConnectedAccountId,
-    `${baseUrl}/order/${order.id}?payment=success`,
+    `${baseUrl}/order/${order.id}?payment=success&token=${encodeURIComponent(orderToken)}`,
     `${baseUrl}/cart?payment=canceled`,
   );
 

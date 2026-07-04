@@ -240,7 +240,8 @@ export const GetPlatformStatsResponse = zod.object({
   "priceAdjustment": zod.number()
 })).optional()
 })).optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
 })).optional()
 })
 
@@ -1070,7 +1071,8 @@ export const ListMyOrdersResponseItem = zod.object({
   "priceAdjustment": zod.number()
 })).optional()
 })).optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
 })
 export const ListMyOrdersResponse = zod.array(ListMyOrdersResponseItem)
 
@@ -1118,7 +1120,8 @@ export const GetOrderResponse = zod.object({
   "priceAdjustment": zod.number()
 })).optional()
 })).optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
 })
 
 
@@ -1169,7 +1172,8 @@ export const UpdateOrderStatusResponse = zod.object({
   "priceAdjustment": zod.number()
 })).optional()
 })).optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
 })
 
 
@@ -1216,7 +1220,8 @@ export const ListBusinessOrdersResponseItem = zod.object({
   "priceAdjustment": zod.number()
 })).optional()
 })).optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
 })
 export const ListBusinessOrdersResponse = zod.array(ListBusinessOrdersResponseItem)
 
@@ -1269,7 +1274,8 @@ export const GetBusinessOrderSummaryResponse = zod.object({
   "priceAdjustment": zod.number()
 })).optional()
 })).optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
 }))
 })
 
@@ -1319,7 +1325,8 @@ export const ListAllOrdersResponseItem = zod.object({
   "priceAdjustment": zod.number()
 })).optional()
 })).optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
 })
 export const ListAllOrdersResponse = zod.array(ListAllOrdersResponseItem)
 
@@ -1328,7 +1335,8 @@ export const ListAllOrdersResponse = zod.array(ListAllOrdersResponseItem)
  * @summary Create a Stripe checkout session
  */
 export const CreateCheckoutSessionBody = zod.object({
-  "orderId": zod.number()
+  "orderId": zod.number(),
+  "accessToken": zod.string().optional().describe('Signed guest order access token (required for guest checkout when not authenticated)')
 })
 
 export const CreateCheckoutSessionResponse = zod.object({
@@ -2840,6 +2848,7 @@ export const listMediaAssetsQueryLimitMax = 200;
 
 
 export const ListMediaAssetsQueryParams = zod.object({
+  "businessId": zod.coerce.number().optional().describe('Business to scope media to (required for business owners)'),
   "limit": zod.coerce.number().min(1).max(listMediaAssetsQueryLimitMax).optional()
 })
 
@@ -2859,6 +2868,10 @@ export const ListMediaAssetsResponse = zod.array(ListMediaAssetsResponseItem)
 /**
  * @summary Upload an image to the media library
  */
+export const UploadMediaAssetQueryParams = zod.object({
+  "businessId": zod.coerce.number().optional().describe('Business to attach the upload to (required for business owners)')
+})
+
 export const UploadMediaAssetBody = zod.object({
   "file": zod.instanceof(File).describe('Image file (JPEG, PNG, WebP, or GIF; max 5 MB)')
 })

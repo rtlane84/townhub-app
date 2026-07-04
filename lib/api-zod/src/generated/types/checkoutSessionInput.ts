@@ -8,4 +8,6 @@
 
 export interface CheckoutSessionInput {
   orderId: number;
+  /** Signed guest order access token (required for guest checkout when not authenticated) */
+  accessToken?: string;
 }

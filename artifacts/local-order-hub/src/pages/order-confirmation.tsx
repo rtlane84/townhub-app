@@ -1,6 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { useRoute, Link } from "wouter";
-import { useGetOrder } from "@workspace/api-client-react";
+import { useAuth } from "@clerk/react";
+import { useQuery } from "@tanstack/react-query";
+import { getGetOrderQueryKey } from "@workspace/api-client-react";
+import { fetchOrderById } from "@/lib/order-access";
 import { CheckCircle2, ShoppingBag, Store, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,15 +22,26 @@ import {
 export default function OrderConfirmation() {
   const [, params] = useRoute("/order/:id");
   const orderId = Number(params?.id);
+  const { getToken, isSignedIn } = useAuth();
   const { cart, clearCartForBusiness } = useCart();
+
+  const accessToken = useMemo(
+    () => new URLSearchParams(typeof window !== "undefined" ? window.location.search : "").get("token"),
+    [orderId],
+  );
 
   const stripeReturn = useMemo(
     () => parseStripeCheckoutReturn(typeof window !== "undefined" ? window.location.search : ""),
     [orderId],
   );
 
-  const { data: order, isLoading } = useGetOrder(orderId, {
-    query: { enabled: !!orderId, queryKey: ["/api/orders", orderId] },
+  const { data: order, isLoading } = useQuery({
+    queryKey: [...getGetOrderQueryKey(orderId), accessToken, isSignedIn],
+    enabled: !!orderId,
+    queryFn: async () => {
+      const authToken = isSignedIn ? await getToken() : null;
+      return fetchOrderById(orderId, accessToken, authToken);
+    },
   });
 
   useEffect(() => {

@@ -6,14 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListMediaAssetsParams = {
+export type UploadMediaAssetParams = {
 /**
- * Business to scope media to (required for business owners)
+ * Business to attach the upload to (required for business owners)
  */
 businessId?: number;
-/**
- * @minimum 1
- * @maximum 200
- */
-limit?: number;
 };

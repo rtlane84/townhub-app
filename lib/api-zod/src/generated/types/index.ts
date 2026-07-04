@@ -118,6 +118,7 @@ export * from './subscriptionPlan';
 export * from './subscriptionPlanInput';
 export * from './systemHealthReport';
 export * from './systemHealthStatus';
+export * from './uploadMediaAssetParams';
 export * from './userProfile';
 export * from './userRole';
 export * from './userRoleUpdate';

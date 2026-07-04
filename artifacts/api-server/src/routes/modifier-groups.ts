@@ -13,6 +13,7 @@ import {
   updateModifierGroupRecord,
   deleteModifierGroupRecord,
 } from "../lib/product-options";
+import { requireBusinessCatalogAccess } from "../middlewares/requireBusinessCatalogAccess";
 
 const router: IRouter = Router();
 
@@ -38,6 +39,7 @@ router.get(
 
 router.post(
   "/businesses/:businessId/modifier-groups",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = CreateModifierGroupParams.safeParse({
       businessId: parseId(req.params.businessId),
@@ -60,6 +62,7 @@ router.post(
 
 router.patch(
   "/businesses/:businessId/modifier-groups/:id",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = UpdateModifierGroupParams.safeParse({
       businessId: parseId(req.params.businessId),
@@ -93,6 +96,7 @@ router.patch(
 
 router.delete(
   "/businesses/:businessId/modifier-groups/:id",
+  requireBusinessCatalogAccess,
   async (req, res): Promise<void> => {
     const params = DeleteModifierGroupParams.safeParse({
       businessId: parseId(req.params.businessId),

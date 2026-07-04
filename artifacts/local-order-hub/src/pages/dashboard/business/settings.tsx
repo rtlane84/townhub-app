@@ -356,6 +356,7 @@ export default function BusinessSettings() {
                   value={form.logoUrl}
                   onChange={(logoUrl) => setForm((f) => ({ ...f, logoUrl }))}
                   testId="business-logo"
+                  businessId={business?.id}
                 />
                 <Separator />
                 <ImageField
@@ -363,6 +364,7 @@ export default function BusinessSettings() {
                   value={form.heroImageUrl}
                   onChange={(heroImageUrl) => setForm((f) => ({ ...f, heroImageUrl }))}
                   testId="business-hero"
+                  businessId={business?.id}
                 />
                 <Separator />
                 {field("Homepage Banner Text", "bannerText", { placeholder: "🌸 Spring hours now in effect!" })}

@@ -1,10 +1,14 @@
 import { Router, type IRouter } from "express";
 import { db, eventsTable } from "@workspace/db";
 import { eq, and, gte, sql } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { z } from "zod";
+import { requireAdmin } from "../middlewares/requireRole";
 
 const router: IRouter = Router();
+
+function parseId(raw: string | string[]): number {
+  return parseInt(Array.isArray(raw) ? raw[0] : raw, 10);
+}
 
 const eventFieldsSchema = z.object({
   title: z.string().min(1),
@@ -81,17 +85,14 @@ router.get("/events", async (req, res): Promise<void> => {
 
 // GET /api/events/:id
 router.get("/events/:id", async (req, res): Promise<void> => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseId(req.params.id);
   const [event] = await db.select().from(eventsTable).where(eq(eventsTable.id, id));
   if (!event) { res.status(404).json({ error: "Event not found" }); return; }
   res.json(serializeEvent(event));
 });
 
 // POST /api/events (admin only)
-router.post("/events", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
+router.post("/events", requireAdmin, async (req, res): Promise<void> => {
   const parsed = eventInputSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
@@ -100,11 +101,8 @@ router.post("/events", async (req, res): Promise<void> => {
 });
 
 // PUT /api/events/:id (admin only)
-router.put("/events/:id", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
-  const id = parseInt(req.params.id, 10);
+router.put("/events/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseId(req.params.id);
   const parsed = eventFieldsSchema.partial().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
@@ -124,11 +122,8 @@ router.put("/events/:id", async (req, res): Promise<void> => {
 });
 
 // DELETE /api/events/:id (admin only)
-router.delete("/events/:id", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
-  const id = parseInt(req.params.id, 10);
+router.delete("/events/:id", requireAdmin, async (req, res): Promise<void> => {
+  const id = parseId(req.params.id);
   await db.delete(eventsTable).where(eq(eventsTable.id, id));
   res.status(204).send();
 });

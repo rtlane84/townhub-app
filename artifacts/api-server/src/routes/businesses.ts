@@ -138,15 +138,14 @@ router.get("/businesses", async (req, res): Promise<void> => {
   res.json(businesses.map(serializeBusiness));
 });
 
-// POST /api/businesses/register — self-service listing
-router.post("/businesses/register", async (req, res): Promise<void> => {
+// POST /api/businesses/register — admin-only direct business creation
+router.post("/businesses/register", requireAdmin, async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  // Multi-business owners may register additional listings on the same account.
   const { name, type, description, address, phone, hours, structuredHours } = req.body as {
     name?: string;
     type?: string;
@@ -205,7 +204,7 @@ router.post("/businesses/register", async (req, res): Promise<void> => {
     .values({ id: userId, email, name: userName, role: "BUSINESS_OWNER" })
     .onConflictDoUpdate({ target: usersTable.id, set: { role: "BUSINESS_OWNER" } });
 
-  req.log.info({ userId, businessId: business.id, slug }, "Business registered via self-service");
+  req.log.info({ adminId: userId, businessId: business.id, slug }, "Business registered by admin");
   res.status(201).json(serializeBusiness(business));
 });
 

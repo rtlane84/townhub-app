@@ -20,6 +20,11 @@ import {
   notifyCustomerAppointmentStatusUpdate,
   notifyOwnerNewAppointmentRequest,
 } from "../lib/notifications";
+import {
+  BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE,
+  isBusinessOpenForPublicCommerce,
+  requireAppointmentRequestsFeature,
+} from "../lib/business-commerce-guards";
 
 const router: IRouter = Router();
 
@@ -118,6 +123,17 @@ router.post("/appointment-requests", async (req, res): Promise<void> => {
 
   if (!business || !business.active) {
     res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  if (!isBusinessOpenForPublicCommerce(business)) {
+    res.status(400).json({ error: BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE });
+    return;
+  }
+
+  const featureGate = await requireAppointmentRequestsFeature(d.businessId);
+  if (!featureGate.ok) {
+    res.status(featureGate.status).json({ error: featureGate.error });
     return;
   }
 

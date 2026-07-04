@@ -13,6 +13,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Info } from "lucide-react";
 import { useAsyncAction } from "@/hooks/use-async-action";
+import { orderConfirmationPath } from "@/lib/order-access";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@workspace/api-zod";
@@ -100,19 +101,29 @@ export default function Cart() {
 
       if (payAtPickup) {
         clearCart();
-        setLocation(user ? `/my-orders/${order.id}` : `/order/${order.id}`);
+        setLocation(
+          user
+            ? `/my-orders/${order.id}`
+            : orderConfirmationPath(order.id, order.accessToken),
+        );
         toast({ title: "Order placed successfully!" });
         return;
       }
 
-      const session = await createCheckoutSession.mutateAsync({ data: { orderId: order.id } });
+      const session = await createCheckoutSession.mutateAsync({
+        data: { orderId: order.id, accessToken: order.accessToken },
+      });
       if (session.url) {
         window.location.href = session.url;
         return;
       }
 
       clearCart();
-      setLocation(user ? `/my-orders/${order.id}` : `/order/${order.id}`);
+      setLocation(
+        user
+          ? `/my-orders/${order.id}`
+          : orderConfirmationPath(order.id, order.accessToken),
+      );
       toast({ title: "Order placed successfully!" });
     },
     [

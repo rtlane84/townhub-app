@@ -3,12 +3,28 @@ import { describe, it } from "node:test";
 import { authorizeOrderView } from "./order-customer-access";
 
 describe("authorizeOrderView", () => {
-  it("allows guest orders to be viewed without signing in", () => {
+  it("denies guest orders without a valid access token", () => {
     const result = authorizeOrderView({
       viewerUserId: null,
       viewerRole: null,
       businessOwnerId: null,
       orderCustomerUserId: null,
+      hasValidAccessToken: false,
+    });
+    assert.equal(result.allowed, false);
+    if (!result.allowed) {
+      assert.equal(result.statusCode, 403);
+      assert.match(result.error, /access token/i);
+    }
+  });
+
+  it("allows guest orders with a valid access token", () => {
+    const result = authorizeOrderView({
+      viewerUserId: null,
+      viewerRole: null,
+      businessOwnerId: null,
+      orderCustomerUserId: null,
+      hasValidAccessToken: true,
     });
     assert.equal(result.allowed, true);
   });

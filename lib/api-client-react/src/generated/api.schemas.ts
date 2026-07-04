@@ -718,6 +718,8 @@ export interface Order {
   stripeSessionId?: string | null;
   items?: OrderItem[];
   createdAt?: string;
+  /** Signed guest access token; included only when an order is first created */
+  accessToken?: string;
 }
 
 export interface OrderItemInput {
@@ -751,6 +753,8 @@ export interface OrderStatusUpdate {
 
 export interface CheckoutSessionInput {
   orderId: number;
+  /** Signed guest order access token (required for guest checkout when not authenticated) */
+  accessToken?: string;
 }
 
 export interface CheckoutSessionResult {
@@ -1483,9 +1487,20 @@ export const ListNotificationLogsChannel = {
 
 export type ListMediaAssetsParams = {
 /**
+ * Business to scope media to (required for business owners)
+ */
+businessId?: number;
+/**
  * @minimum 1
  * @maximum 200
  */
 limit?: number;
+};
+
+export type UploadMediaAssetParams = {
+/**
+ * Business to attach the upload to (required for business owners)
+ */
+businessId?: number;
 };
 

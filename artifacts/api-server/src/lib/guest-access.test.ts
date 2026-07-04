@@ -30,6 +30,6 @@ describe("guest checkout dashboard access", () => {
     assert.match(ordersSource, /authorizeBusinessOwnerOrAdmin/);
     assert.match(ordersSource, /\/businesses\/:businessId\/orders[\s\S]*requireAuth/);
     assert.match(ordersSource, /\/me\/orders[\s\S]*requireAuth/);
-    assert.match(ordersSource, /authorizeOrderView/);
+    assert.match(ordersSource, /authorizeOrderAccess/);
   });
 });
