@@ -46,6 +46,23 @@ describe("kitchen-display", () => {
     assert.equal(filterActiveKitchenOrders([order({ id: 6, status: "COMPLETED" })]).length, 0);
   });
 
+  it("prioritizes sooner estimated ready windows within a kitchen column", () => {
+    const grouped = groupOrdersByKitchenColumn([
+      order({
+        id: 1,
+        status: "NEW",
+        estimatedWindowEnd: "2026-06-24T12:45:00.000Z",
+      }),
+      order({
+        id: 2,
+        status: "NEW",
+        estimatedWindowEnd: "2026-06-24T12:20:00.000Z",
+      }),
+    ]);
+
+    assert.deepEqual(grouped.NEW.map((entry) => entry.id), [2, 1]);
+  });
+
   it("getKitchenQuickAction advances pickup and delivery orders correctly", () => {
     assert.deepEqual(getKitchenQuickAction(order({ id: 1, status: "NEW" })), {
       label: "Confirm",

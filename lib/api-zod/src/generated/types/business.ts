@@ -52,6 +52,11 @@ export interface Business {
   stripeConnectStatus?: StripeConnectPaymentStatus;
   /** @nullable */
   orderCutoffTime?: string | null;
+  /**
+     * Default prep time in minutes when items do not specify their own.
+     * @minimum 1
+     */
+  defaultPrepMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */
@@ -62,6 +67,15 @@ export interface Business {
   pickupInstructions?: string | null;
   /** @nullable */
   deliveryInstructions?: string | null;
+  /** When true, apply the configured sales tax rate to taxable items at checkout. */
+  taxEnabled?: boolean;
+  /**
+     * Sales tax rate as a percentage (e.g. 6.00 for 6%).
+     * @nullable
+     */
+  taxRatePercent?: number | null;
+  /** Label shown on receipts and checkout (default "Sales Tax"). */
+  taxLabel?: string;
   /** @nullable */
   orderNotificationEmail?: string | null;
   /** @nullable */

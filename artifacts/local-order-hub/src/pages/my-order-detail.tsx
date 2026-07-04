@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingBag, Store, MapPin } from "lucide-react";
-import { formatOrderPaymentLabel } from "@/lib/stripe-checkout-return";
+import { customerRefundSummary, orderPaymentDisplayStatus } from "@/lib/order-refund-display";
+import { getCustomerEstimatedWindowLabel } from "@/lib/order-prep-timing";
+import { OrderTotalsSummary } from "@/components/order-totals-summary";
 
 export default function MyOrderDetail() {
   const [, params] = useRoute("/my-orders/:id");
@@ -84,11 +86,21 @@ export default function MyOrderDetail() {
             </div>
           ) : null}
           <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">Estimated time</span>
+            <span className="font-medium text-right">{getCustomerEstimatedWindowLabel(order)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Payment</span>
             <span className="font-medium">
-              {formatOrderPaymentLabel(order.paymentMethod, order.paymentStatus)}
+              {orderPaymentDisplayStatus(order)}
             </span>
           </div>
+          {customerRefundSummary(order) ? (
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Refund</span>
+              <span className="font-medium text-right">{customerRefundSummary(order)}</span>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -109,10 +121,7 @@ export default function MyOrderDetail() {
             </div>
           ))}
           <Separator />
-          <div className="flex justify-between font-serif font-bold text-lg">
-            <span>Total</span>
-            <span className="text-primary">${order.total.toFixed(2)}</span>
-          </div>
+          {order ? <OrderTotalsSummary order={order} /> : null}
         </CardContent>
       </Card>
     </div>

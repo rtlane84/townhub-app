@@ -365,6 +365,11 @@ export interface Business {
   stripeConnectStatus?: StripeConnectPaymentStatus;
   /** @nullable */
   orderCutoffTime?: string | null;
+  /**
+     * Default prep time in minutes when items do not specify their own.
+     * @minimum 1
+     */
+  defaultPrepMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */
@@ -375,6 +380,15 @@ export interface Business {
   pickupInstructions?: string | null;
   /** @nullable */
   deliveryInstructions?: string | null;
+  /** When true, apply the configured sales tax rate to taxable items at checkout. */
+  taxEnabled?: boolean;
+  /**
+     * Sales tax rate as a percentage (e.g. 6.00 for 6%).
+     * @nullable
+     */
+  taxRatePercent?: number | null;
+  /** Label shown on receipts and checkout (default "Sales Tax"). */
+  taxLabel?: string;
   /** @nullable */
   orderNotificationEmail?: string | null;
   /** @nullable */
@@ -445,6 +459,8 @@ export interface Product {
   featured?: boolean;
   /** @nullable */
   prepTimeMinutes?: number | null;
+  /** When true, this item is included in the taxable subtotal. */
+  taxable?: boolean;
   optionGroups?: ProductOptionGroup[];
   assignedModifierGroups?: AssignedModifierGroup[];
   modifierGroupIds?: number[];
@@ -487,6 +503,8 @@ export interface BusinessInput {
   payAtPickupEnabled?: boolean;
   paymentMode?: PaymentMode;
   orderCutoffTime?: string;
+  /** @minimum 1 */
+  defaultPrepMinutes?: number;
   ownerId?: string;
 }
 
@@ -521,6 +539,9 @@ export interface BusinessUpdate {
   pickupInstructions?: string | null;
   /** @nullable */
   deliveryInstructions?: string | null;
+  taxEnabled?: boolean;
+  taxRatePercent?: number;
+  taxLabel?: string;
   /** @nullable */
   orderNotificationEmail?: string | null;
   /** @nullable */
@@ -647,6 +668,7 @@ export interface ProductInput {
   available?: boolean;
   featured?: boolean;
   prepTimeMinutes?: number;
+  taxable?: boolean;
   modifierGroupIds?: number[];
 }
 
@@ -659,6 +681,7 @@ export interface ProductUpdate {
   available?: boolean;
   featured?: boolean;
   prepTimeMinutes?: number;
+  taxable?: boolean;
   modifierGroupIds?: number[];
 }
 
@@ -682,6 +705,40 @@ export interface OrderItem {
   options?: OrderItemOption[];
 }
 
+export type RefundStatus = typeof RefundStatus[keyof typeof RefundStatus];
+
+
+export const RefundStatus = {
+  NONE: 'NONE',
+  PARTIAL: 'PARTIAL',
+  FULL: 'FULL',
+  FAILED: 'FAILED',
+} as const;
+
+export type OrderRefundRecordStatus = typeof OrderRefundRecordStatus[keyof typeof OrderRefundRecordStatus];
+
+
+export const OrderRefundRecordStatus = {
+  PENDING: 'PENDING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED',
+  CANCELED: 'CANCELED',
+} as const;
+
+export interface OrderRefundRecord {
+  id: number;
+  amountCents: number;
+  /** @nullable */
+  reason?: string | null;
+  status: OrderRefundRecordStatus;
+  /** @nullable */
+  stripeRefundId?: string | null;
+  createdByUserId: string;
+  /** @nullable */
+  createdByName?: string | null;
+  createdAt: string;
+}
+
 export interface Order {
   id: number;
   businessId: number;
@@ -702,6 +759,16 @@ export interface Order {
   deliveryAddress?: string | null;
   /** @nullable */
   pickupTime?: string | null;
+  /**
+     * Start of the server-calculated ASAP ready window.
+     * @nullable
+     */
+  estimatedWindowStart?: string | null;
+  /**
+     * End of the server-calculated ASAP ready window.
+     * @nullable
+     */
+  estimatedWindowEnd?: string | null;
   /** @nullable */
   notes?: string | null;
   /**
@@ -709,6 +776,20 @@ export interface Order {
      * @nullable
      */
   specialFields?: string | null;
+  /** Item subtotal in dollars (excludes tax and delivery). */
+  subtotal?: number;
+  /** Sales tax amount in dollars. */
+  tax?: number;
+  /**
+     * Tax rate applied at order time, if any.
+     * @nullable
+     */
+  taxRatePercent?: number | null;
+  /**
+     * Tax line label shown at checkout (e.g. Sales Tax).
+     * @nullable
+     */
+  taxLabel?: string | null;
   total: number;
   /** @nullable */
   deliveryFee?: number | null;
@@ -716,10 +797,31 @@ export interface Order {
   paymentMethod?: string;
   /** @nullable */
   stripeSessionId?: string | null;
+  refundStatus?: RefundStatus;
+  /** Total amount refunded in dollars */
+  refundedAmount?: number;
+  /** Remaining refundable amount in dollars (owner/admin views) */
+  refundableAmount?: number;
+  /** @nullable */
+  lastRefundedAt?: string | null;
+  /** Refund history with details (owner/admin only) */
+  refunds?: OrderRefundRecord[];
   items?: OrderItem[];
   createdAt?: string;
   /** Signed guest access token; included only when an order is first created */
   accessToken?: string;
+}
+
+export interface OrderRefundInput {
+  /** @minimum 1 */
+  amountCents: number;
+  /** @minLength 1 */
+  reason: string;
+}
+
+export interface OrderRefundResult {
+  order: Order;
+  refund: OrderRefundRecord;
 }
 
 export interface OrderItemInput {
@@ -745,6 +847,21 @@ export interface OrderInput {
   specialFields?: string;
   paymentMethod?: string;
   items: OrderItemInput[];
+}
+
+export interface PrepEstimateInput {
+  businessId: number;
+  fulfillmentType: FulfillmentType;
+  /** @minItems 1 */
+  items: OrderItemInput[];
+}
+
+export interface PrepEstimate {
+  centerMinutes: number;
+  minMinutes: number;
+  maxMinutes: number;
+  estimatedWindowStart: string;
+  estimatedWindowEnd: string;
 }
 
 export interface OrderStatusUpdate {

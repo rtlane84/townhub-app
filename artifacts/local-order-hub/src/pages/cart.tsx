@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/components/cart-context";
-import { useGetBusinessCheckout, useCreateOrder, useCreateCheckoutSession } from "@workspace/api-client-react";
+import { useGetBusinessCheckout, useCreateOrder, useCreateCheckoutSession, estimateOrderPrep } from "@workspace/api-client-react";
 import { FulfillmentType } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
@@ -22,8 +23,13 @@ import {
   resolvePaymentMode,
   allowsOnlinePayment,
   allowsPayAtPickup,
+  calculateOrderTotals,
+  centsToDollars,
+  dollarsToCents,
 } from "@workspace/api-zod";
 import { parseStripeCheckoutReturn } from "@/lib/stripe-checkout-return";
+import { getCheckoutAsapLabel } from "@/lib/order-prep-timing";
+import { CheckoutTotalsSummary } from "@/components/order-totals-summary";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
@@ -78,6 +84,32 @@ export default function Cart() {
 
   const meetsDeliveryMinimum =
     !minimumOrderForDelivery || total >= minimumOrderForDelivery;
+
+  const prepEstimateInput = useMemo(
+    () =>
+      cart.businessId && cart.items.length
+        ? {
+            businessId: cart.businessId,
+            fulfillmentType,
+            items: cart.items.map((item) => ({
+              productId: item.id,
+              quantity: item.quantity,
+            })),
+          }
+        : null,
+    [cart.businessId, cart.items, fulfillmentType],
+  );
+
+  const { data: prepEstimate } = useQuery({
+    queryKey: ["/api/orders/prep-estimate", prepEstimateInput],
+    queryFn: () => estimateOrderPrep(prepEstimateInput!),
+    enabled: !!prepEstimateInput,
+  });
+
+  const asapEstimateLabel =
+    prepEstimate != null
+      ? getCheckoutAsapLabel(fulfillmentType, prepEstimate.minMinutes, prepEstimate.maxMinutes)
+      : null;
 
   const performCheckout = useCallback(
     async (payAtPickup: boolean) => {
@@ -191,7 +223,31 @@ export default function Cart() {
   }
 
   const deliveryFee = fulfillmentType === "DELIVERY" ? (business?.deliveryFee || 0) : 0;
-  const finalTotal = total + deliveryFee;
+  const checkoutTotals = useMemo(() => {
+    const bx = business as unknown as {
+      taxEnabled?: boolean;
+      taxRatePercent?: number | null;
+      taxLabel?: string | null;
+    } | undefined;
+    const totals = calculateOrderTotals({
+      items: cart.items.map((item) => ({
+        lineSubtotalCents: dollarsToCents(item.unitPrice * item.quantity),
+        taxable: item.taxable !== false,
+      })),
+      taxEnabled: bx?.taxEnabled === true,
+      taxRatePercent: bx?.taxRatePercent ?? 0,
+      taxLabel: bx?.taxLabel ?? undefined,
+      deliveryFeeCents: dollarsToCents(deliveryFee),
+    });
+    return {
+      subtotal: centsToDollars(totals.subtotalCents),
+      tax: centsToDollars(totals.taxCents),
+      taxLabel: totals.taxLabel,
+      deliveryFee: deliveryFee > 0 ? deliveryFee : null,
+      total: centsToDollars(totals.totalCents),
+    };
+  }, [business, cart.items, deliveryFee]);
+  const finalTotal = checkoutTotals.total;
 
   const showPickup = business?.pickupEnabled !== false;
   const showDelivery = business?.deliveryEnabled === true;
@@ -393,21 +449,12 @@ export default function Cart() {
             </CardContent>
             <CardFooter className="flex-col gap-4 p-6 bg-muted/10 border-t border-border/50">
               <div className="w-full space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>${total.toFixed(2)}</span>
-                </div>
-                {fulfillmentType === "DELIVERY" && deliveryFee > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Delivery Fee</span>
-                    <span>${deliveryFee.toFixed(2)}</span>
+                {asapEstimateLabel ? (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
+                    <p className="font-medium text-foreground">{asapEstimateLabel}</p>
                   </div>
-                )}
-                <Separator />
-                <div className="flex justify-between font-serif font-bold text-lg">
-                  <span>Total</span>
-                  <span className="text-primary">${finalTotal.toFixed(2)}</span>
-                </div>
+                ) : null}
+                <CheckoutTotalsSummary totals={checkoutTotals} />
               </div>
 
               <div className="w-full space-y-3 pt-4">

@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { refundStatusEnum } from "./order-refunds";
 
 export const orderStatusEnum = pgEnum("order_status", [
   "NEW",
@@ -39,14 +40,24 @@ export const ordersTable = pgTable("orders", {
   customerUserId: text("customer_user_id"),
   deliveryAddress: text("delivery_address"),
   pickupTime: text("pickup_time"),
+  estimatedWindowStart: timestamp("estimated_window_start", { withTimezone: true }),
+  estimatedWindowEnd: timestamp("estimated_window_end", { withTimezone: true }),
   notes: text("notes"),
   specialFields: text("special_fields"), // JSON string
+  subtotalCents: integer("subtotal_cents"),
+  taxCents: integer("tax_cents").notNull().default(0),
+  taxRatePercent: numeric("tax_rate_percent", { precision: 5, scale: 2 }),
+  taxLabel: text("tax_label"),
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),
   deliveryFee: numeric("delivery_fee", { precision: 10, scale: 2 }),
   paymentStatus: text("payment_status").notNull().default("PENDING"),
   paymentMethod: text("payment_method").notNull().default("STRIPE"),
   stripeSessionId: text("stripe_session_id"),
   stripeConnectedAccountId: text("stripe_connected_account_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  refundedAmountCents: integer("refunded_amount_cents").notNull().default(0),
+  refundStatus: refundStatusEnum("refund_status").notNull().default("NONE"),
+  lastRefundedAt: timestamp("last_refunded_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

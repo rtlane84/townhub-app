@@ -68,6 +68,8 @@ import type {
   NotificationLog,
   Order,
   OrderInput,
+  OrderRefundInput,
+  OrderRefundResult,
   OrderStatusUpdate,
   OwnedBusinessSummary,
   OwnerAppointmentRequestInput,
@@ -75,6 +77,8 @@ import type {
   PlatformStats,
   PlatformTheme,
   PlatformThemeInput,
+  PrepEstimate,
+  PrepEstimateInput,
   Product,
   ProductInput,
   ProductUpdate,
@@ -2299,6 +2303,77 @@ export const useDeleteProduct = <TError = ErrorType<unknown>,
       return useMutation(getDeleteProductMutationOptions(options));
     }
 
+export const getEstimateOrderPrepUrl = () => {
+
+
+
+
+  return `/api/orders/prep-estimate`
+}
+
+/**
+ * @summary Preview ASAP prep time estimate for a cart
+ */
+export const estimateOrderPrep = async (prepEstimateInput: PrepEstimateInput, options?: RequestInit): Promise<PrepEstimate> => {
+
+  return customFetch<PrepEstimate>(getEstimateOrderPrepUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      prepEstimateInput,)
+  }
+);}
+
+
+
+
+export const getEstimateOrderPrepMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof estimateOrderPrep>>, TError,{data: BodyType<PrepEstimateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof estimateOrderPrep>>, TError,{data: BodyType<PrepEstimateInput>}, TContext> => {
+
+const mutationKey = ['estimateOrderPrep'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof estimateOrderPrep>>, {data: BodyType<PrepEstimateInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  estimateOrderPrep(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EstimateOrderPrepMutationResult = NonNullable<Awaited<ReturnType<typeof estimateOrderPrep>>>
+    export type EstimateOrderPrepMutationBody = BodyType<PrepEstimateInput>
+    export type EstimateOrderPrepMutationError = ErrorType<void>
+
+    /**
+ * @summary Preview ASAP prep time estimate for a cart
+ */
+export const useEstimateOrderPrep = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof estimateOrderPrep>>, TError,{data: BodyType<PrepEstimateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof estimateOrderPrep>>,
+        TError,
+        {data: BodyType<PrepEstimateInput>},
+        TContext
+      > => {
+      return useMutation(getEstimateOrderPrepMutationOptions(options));
+    }
+
 export const getCreateOrderUrl = () => {
 
 
@@ -2594,6 +2669,78 @@ export const useUpdateOrderStatus = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateOrderStatusMutationOptions(options));
+    }
+
+export const getRefundOrderUrl = (id: number,) => {
+
+
+
+
+  return `/api/orders/${id}/refund`
+}
+
+/**
+ * @summary Issue a full or partial refund for a paid online order
+ */
+export const refundOrder = async (id: number,
+    orderRefundInput: OrderRefundInput, options?: RequestInit): Promise<OrderRefundResult> => {
+
+  return customFetch<OrderRefundResult>(getRefundOrderUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      orderRefundInput,)
+  }
+);}
+
+
+
+
+export const getRefundOrderMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundOrder>>, TError,{id: number;data: BodyType<OrderRefundInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refundOrder>>, TError,{id: number;data: BodyType<OrderRefundInput>}, TContext> => {
+
+const mutationKey = ['refundOrder'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refundOrder>>, {id: number;data: BodyType<OrderRefundInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  refundOrder(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefundOrderMutationResult = NonNullable<Awaited<ReturnType<typeof refundOrder>>>
+    export type RefundOrderMutationBody = BodyType<OrderRefundInput>
+    export type RefundOrderMutationError = ErrorType<void>
+
+    /**
+ * @summary Issue a full or partial refund for a paid online order
+ */
+export const useRefundOrder = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundOrder>>, TError,{id: number;data: BodyType<OrderRefundInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof refundOrder>>,
+        TError,
+        {id: number;data: BodyType<OrderRefundInput>},
+        TContext
+      > => {
+      return useMutation(getRefundOrderMutationOptions(options));
     }
 
 export const getListBusinessOrdersUrl = (businessId: number,) => {

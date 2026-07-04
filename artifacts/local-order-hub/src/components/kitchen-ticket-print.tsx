@@ -5,6 +5,7 @@ import {
   formatKitchenTicketTime,
   parseKitchenSpecialFields,
 } from "@/lib/kitchen-ticket-format";
+import { resolveDisplayedOrderTotals } from "@/lib/order-totals-display";
 
 type Props = {
   order: Order;
@@ -18,6 +19,7 @@ export function KitchenTicketPrint({ order }: Props) {
   const specialLines = parseKitchenSpecialFields(order.specialFields);
   const orderTime = formatKitchenTicketTime(order.createdAt);
   const paymentStatus = formatKitchenPaymentStatus(order);
+  const totals = resolveDisplayedOrderTotals(order);
   const fulfillment = formatKitchenFulfillment(order);
 
   return (
@@ -90,21 +92,25 @@ export function KitchenTicketPrint({ order }: Props) {
 
         <section className="kitchen-ticket-section kitchen-ticket-footer">
           <div className="kitchen-ticket-total-row">
-            {order.deliveryFee ? (
-              <>
-                <div className="kitchen-ticket-subtotal-row">
-                  <span>Subtotal</span>
-                  <span>${(order.total - order.deliveryFee).toFixed(2)}</span>
-                </div>
-                <div className="kitchen-ticket-subtotal-row">
-                  <span>Delivery</span>
-                  <span>${order.deliveryFee.toFixed(2)}</span>
-                </div>
-              </>
+            <div className="kitchen-ticket-subtotal-row">
+              <span>Subtotal</span>
+              <span>${totals.subtotal.toFixed(2)}</span>
+            </div>
+            {totals.tax > 0 ? (
+              <div className="kitchen-ticket-subtotal-row">
+                <span>{totals.taxLabel?.trim() || "Sales Tax"}</span>
+                <span>${totals.tax.toFixed(2)}</span>
+              </div>
+            ) : null}
+            {totals.deliveryFee != null && totals.deliveryFee > 0 ? (
+              <div className="kitchen-ticket-subtotal-row">
+                <span>Delivery</span>
+                <span>${totals.deliveryFee.toFixed(2)}</span>
+              </div>
             ) : null}
             <div className="kitchen-ticket-total-row-main">
               <span>Total</span>
-              <span>${order.total.toFixed(2)}</span>
+              <span>${totals.total.toFixed(2)}</span>
             </div>
           </div>
           <p className="kitchen-ticket-payment">Payment: {paymentStatus}</p>

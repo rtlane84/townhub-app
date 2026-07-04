@@ -232,6 +232,7 @@ router.post(
         available: parsed.data.available ?? true,
         featured: parsed.data.featured ?? false,
         prepTimeMinutes: parsed.data.prepTimeMinutes,
+        taxable: parsed.data.taxable ?? true,
       })
       .returning();
 
@@ -294,6 +295,7 @@ router.patch(
     if (d.available !== undefined) updateData.available = d.available;
     if (d.featured !== undefined) updateData.featured = d.featured;
     if (d.prepTimeMinutes !== undefined) updateData.prepTimeMinutes = d.prepTimeMinutes;
+    if (d.taxable !== undefined) updateData.taxable = d.taxable;
 
     const [product] = await db
       .update(productsTable)

@@ -4,6 +4,36 @@ export type OrderItemLine = {
   unitPrice?: number;
 };
 
+export type OrderTotalsSummary = {
+  subtotal: number;
+  tax: number;
+  taxLabel: string | null;
+  deliveryFee: number | null;
+  total: number;
+};
+
+export function orderTotalsSummaryFromNotification(order: OrderNotificationData): OrderTotalsSummary {
+  return {
+    subtotal: order.subtotal,
+    tax: order.tax,
+    taxLabel: order.taxLabel,
+    deliveryFee: order.deliveryFee,
+    total: order.total,
+  };
+}
+
+export function formatOrderTotalsTextLines(totals: OrderTotalsSummary): string[] {
+  const lines = [`Subtotal: $${totals.subtotal.toFixed(2)}`];
+  if (totals.tax > 0) {
+    lines.push(`${totals.taxLabel?.trim() || "Sales Tax"}: $${totals.tax.toFixed(2)}`);
+  }
+  if (totals.deliveryFee != null && totals.deliveryFee > 0) {
+    lines.push(`Delivery Fee: $${totals.deliveryFee.toFixed(2)}`);
+  }
+  lines.push(`Total: $${totals.total.toFixed(2)}`);
+  return lines;
+}
+
 export type OrderNotificationData = {
   orderId: number;
   orderNumber: string;
@@ -18,10 +48,16 @@ export type OrderNotificationData = {
   fulfillmentType: string;
   paymentMethod: string;
   paymentStatus: string;
+  subtotal: number;
+  tax: number;
+  taxLabel: string | null;
+  deliveryFee: number | null;
   total: number;
   items: OrderItemLine[];
   orderedAt: Date | string;
   notes?: string | null;
+  estimatedWindowStart?: Date | string | null;
+  estimatedWindowEnd?: Date | string | null;
 };
 
 export type EmailContent = {

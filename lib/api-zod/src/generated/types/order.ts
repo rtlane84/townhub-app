@@ -7,7 +7,9 @@
  */
 import type { FulfillmentType } from './fulfillmentType';
 import type { OrderItem } from './orderItem';
+import type { OrderRefundRecord } from './orderRefundRecord';
 import type { OrderStatus } from './orderStatus';
+import type { RefundStatus } from './refundStatus';
 
 export interface Order {
   id: number;
@@ -29,6 +31,16 @@ export interface Order {
   deliveryAddress?: string | null;
   /** @nullable */
   pickupTime?: string | null;
+  /**
+     * Start of the server-calculated ASAP ready window.
+     * @nullable
+     */
+  estimatedWindowStart?: Date | null;
+  /**
+     * End of the server-calculated ASAP ready window.
+     * @nullable
+     */
+  estimatedWindowEnd?: Date | null;
   /** @nullable */
   notes?: string | null;
   /**
@@ -36,6 +48,20 @@ export interface Order {
      * @nullable
      */
   specialFields?: string | null;
+  /** Item subtotal in dollars (excludes tax and delivery). */
+  subtotal?: number;
+  /** Sales tax amount in dollars. */
+  tax?: number;
+  /**
+     * Tax rate applied at order time, if any.
+     * @nullable
+     */
+  taxRatePercent?: number | null;
+  /**
+     * Tax line label shown at checkout (e.g. Sales Tax).
+     * @nullable
+     */
+  taxLabel?: string | null;
   total: number;
   /** @nullable */
   deliveryFee?: number | null;
@@ -43,6 +69,15 @@ export interface Order {
   paymentMethod?: string;
   /** @nullable */
   stripeSessionId?: string | null;
+  refundStatus?: RefundStatus;
+  /** Total amount refunded in dollars */
+  refundedAmount?: number;
+  /** Remaining refundable amount in dollars (owner/admin views) */
+  refundableAmount?: number;
+  /** @nullable */
+  lastRefundedAt?: Date | null;
+  /** Refund history with details (owner/admin only) */
+  refunds?: OrderRefundRecord[];
   items?: OrderItem[];
   createdAt?: Date;
   /** Signed guest access token; included only when an order is first created */

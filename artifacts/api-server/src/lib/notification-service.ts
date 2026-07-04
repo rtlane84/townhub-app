@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, businessesTable } from "@workspace/db";
-import { buildOwnerNewOrderEmail } from "./email-templates/business-emails";
-import { buildCustomerLifecycleEmail } from "./email-templates/customer-emails";
+import { resolveOrderTotalsDisplay } from "@workspace/api-zod";
+import { buildOwnerNewOrderEmail, buildOwnerRefundFailedEmail } from "./email-templates/business-emails";
+import { buildCustomerLifecycleEmail, buildCustomerOrderRefundEmail } from "./email-templates/customer-emails";
 import {
   statusToCustomerEvent,
   type CustomerLifecycleEvent,
@@ -39,6 +40,22 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
     .from(businessesTable)
     .where(eq(businessesTable.id, order.businessId));
 
+  const mappedItems = items.map((item) => ({
+    productName: item.productName,
+    quantity: item.quantity,
+    unitPrice: parseFloat(item.unitPrice),
+    subtotal: parseFloat(item.subtotal),
+  }));
+  const deliveryFee = order.deliveryFee ? parseFloat(order.deliveryFee) : null;
+  const totals = resolveOrderTotalsDisplay({
+    subtotalCents: order.subtotalCents,
+    taxCents: order.taxCents,
+    taxLabel: order.taxLabel,
+    deliveryFee,
+    total: parseFloat(order.total),
+    items: mappedItems,
+  });
+
   return {
     orderId: order.id,
     orderNumber: order.orderNumber,
@@ -53,14 +70,20 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
     fulfillmentType: order.fulfillmentType,
     paymentMethod: order.paymentMethod ?? "STRIPE",
     paymentStatus: order.paymentStatus ?? "PENDING",
-    total: parseFloat(order.total),
-    items: items.map((item) => ({
+    subtotal: totals.subtotal,
+    tax: totals.tax,
+    taxLabel: totals.taxLabel,
+    deliveryFee: totals.deliveryFee,
+    total: totals.total,
+    items: mappedItems.map((item) => ({
       productName: item.productName,
       quantity: item.quantity,
-      unitPrice: parseFloat(item.unitPrice),
+      unitPrice: item.unitPrice,
     })),
     orderedAt: order.createdAt ?? new Date(),
     notes: order.notes,
+    estimatedWindowStart: order.estimatedWindowStart,
+    estimatedWindowEnd: order.estimatedWindowEnd,
   };
 }
 
@@ -172,4 +195,56 @@ export async function notifyOwnerNewOrderFromOrderId(orderId: number): Promise<v
   }
 
   await Promise.all(tasks);
+}
+
+export async function notifyCustomerOrderRefund(
+  orderId: number,
+  refundAmountCents: number,
+): Promise<void> {
+  const order = await loadOrderNotificationData(orderId);
+  if (!order || !order.customerEmail?.trim()) return;
+
+  const email = buildCustomerOrderRefundEmail(order, refundAmountCents);
+  await deliverCustomerNotification({
+    businessId: order.businessId,
+    orderId: order.orderId,
+    eventType: "ORDER_REFUND",
+    channel: "EMAIL",
+    recipient: order.customerEmail.trim(),
+    subject: email.subject,
+    body: email.text,
+    html: email.html,
+  });
+}
+
+export async function notifyOwnerRefundFailed(
+  orderId: number,
+  refundAmountCents: number,
+): Promise<void> {
+  const order = await loadOrderNotificationData(orderId);
+  if (!order) return;
+
+  const [business] = await db
+    .select()
+    .from(businessesTable)
+    .where(eq(businessesTable.id, order.businessId));
+
+  if (!business) return;
+
+  const email = buildOwnerRefundFailedEmail(order, refundAmountCents);
+
+  const ownerEmail =
+    business.notificationEmail?.trim() || business.orderNotificationEmail?.trim() || null;
+
+  if (!ownerEmail) return;
+
+  await deliverOwnerEmail({
+    businessId: business.id,
+    eventType: "REFUND_FAILED",
+    to: ownerEmail,
+    subject: email.subject,
+    body: email.text,
+    html: email.html,
+    orderId,
+  });
 }

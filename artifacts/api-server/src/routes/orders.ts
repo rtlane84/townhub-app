@@ -19,6 +19,9 @@ import {
   GetBusinessOrderSummaryParams,
   ListAllOrdersQueryParams,
   CreateCheckoutSessionBody,
+  RefundOrderParams,
+  RefundOrderBody,
+  EstimateOrderPrepBody,
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession, stripe, isMockMode } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
@@ -38,6 +41,17 @@ import { authorizeOrderStatusUpdate } from "../lib/order-access";
 import { validateGuestOrderContact } from "../lib/guest-checkout";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import {
+  createOrderRefund,
+  loadOrderRefunds,
+  orderTotalCents,
+  serializeOrderRefunds,
+  authorizeOrderRefund,
+} from "../lib/order-refund";
+import {
+  notifyCustomerOrderRefund,
+  notifyOwnerRefundFailed,
+} from "../lib/notification-service";
+import {
   loadOptionGroupsByProductIds,
   validateOrderItemSelections,
   type OrderOptionSnapshot,
@@ -53,6 +67,17 @@ import {
   isBusinessOpenForPublicCommerce,
   requireOnlineOrderingFeature,
 } from "../lib/business-commerce-guards";
+import {
+  calculateOrderPrepEstimate,
+  serializePrepEstimate,
+} from "../lib/order-prep-estimate";
+import {
+  buildStripeCheckoutLineItems,
+  calculateOrderTotals,
+  centsToDollars,
+  dollarsToCents,
+  resolveOrderTotalsDisplay,
+} from "@workspace/api-zod";
 import type { Request } from "express";
 import type { UserRole } from "../lib/order-access";
 
@@ -124,16 +149,20 @@ async function loadOptionsByOrderItemIds(itemIds: number[]) {
 async function serializeOrderWithLoadedItems(
   order: typeof ordersTable.$inferSelect,
   businessName: string,
+  viewer: OrderViewerContext = { includeRefundDetails: false },
 ) {
   const items = await db
     .select()
     .from(orderItemsTable)
     .where(eq(orderItemsTable.orderId, order.id));
   const optionsByItemId = await loadOptionsByOrderItemIds(items.map((i) => i.id));
-  return serializeOrder(order, items, businessName, optionsByItemId);
+  return serializeOrder(order, items, businessName, optionsByItemId, viewer);
 }
 
-async function getOrderWithItems(orderId: number) {
+async function getOrderWithItems(
+  orderId: number,
+  viewer: OrderViewerContext = { includeRefundDetails: false },
+) {
   const [order] = await db
     .select()
     .from(ordersTable)
@@ -153,16 +182,58 @@ async function getOrderWithItems(orderId: number) {
     .from(businessesTable)
     .where(eq(businessesTable.id, order.businessId));
 
-  return serializeOrder(order, items, business?.name ?? "Unknown", optionsByItemId);
+  return serializeOrder(order, items, business?.name ?? "Unknown", optionsByItemId, viewer);
 }
 
-function serializeOrder(
+async function resolveIncludeRefundDetails(
+  req: Parameters<typeof authorizeBusinessOwnerOrAdmin>[0],
+  businessId: number,
+): Promise<boolean> {
+  const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
+  return access.ok;
+}
+
+type OrderViewerContext = {
+  includeRefundDetails: boolean;
+};
+
+async function serializeOrder(
   order: typeof ordersTable.$inferSelect,
   items: typeof orderItemsTable.$inferSelect[],
   businessName: string,
   optionsByItemId: Map<number, (typeof orderItemOptionsTable.$inferSelect)[]> = new Map(),
+  viewer: OrderViewerContext = { includeRefundDetails: false },
 ) {
-  return {
+  const totalCents = orderTotalCents(order);
+  const refundedCents = order.refundedAmountCents ?? 0;
+  const remainingCents = Math.max(0, totalCents - refundedCents);
+  const deliveryFee = order.deliveryFee ? parseFloat(order.deliveryFee) : null;
+  const mappedItems = items.map((item) => ({
+    id: item.id,
+    orderId: item.orderId,
+    productId: item.productId,
+    productName: item.productName,
+    quantity: item.quantity,
+    unitPrice: parseFloat(item.unitPrice),
+    subtotal: parseFloat(item.subtotal),
+    options: (optionsByItemId.get(item.id) ?? []).map((o) => ({
+      id: o.id,
+      optionId: o.optionId,
+      groupName: o.groupName,
+      optionName: o.optionName,
+      priceAdjustment: parseFloat(o.priceAdjustment),
+    })),
+  }));
+  const totals = resolveOrderTotalsDisplay({
+    subtotalCents: order.subtotalCents,
+    taxCents: order.taxCents,
+    taxLabel: order.taxLabel,
+    deliveryFee,
+    total: parseFloat(order.total),
+    items: mappedItems,
+  });
+
+  const base = {
     id: order.id,
     businessId: order.businessId,
     businessName,
@@ -175,35 +246,102 @@ function serializeOrder(
     customerUserId: order.customerUserId,
     deliveryAddress: order.deliveryAddress,
     pickupTime: order.pickupTime,
+    estimatedWindowStart:
+      order.estimatedWindowStart instanceof Date
+        ? order.estimatedWindowStart.toISOString()
+        : order.estimatedWindowStart,
+    estimatedWindowEnd:
+      order.estimatedWindowEnd instanceof Date
+        ? order.estimatedWindowEnd.toISOString()
+        : order.estimatedWindowEnd,
     notes: order.notes,
     specialFields: order.specialFields,
-    total: parseFloat(order.total),
-    deliveryFee: order.deliveryFee ? parseFloat(order.deliveryFee) : null,
+    subtotal: totals.subtotal,
+    tax: totals.tax,
+    taxRatePercent: order.taxRatePercent ? parseFloat(order.taxRatePercent) : null,
+    taxLabel: totals.taxLabel,
+    total: totals.total,
+    deliveryFee,
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
     stripeSessionId: order.stripeSessionId,
-    items: items.map((item) => ({
-      id: item.id,
-      orderId: item.orderId,
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unitPrice: parseFloat(item.unitPrice),
-      subtotal: parseFloat(item.subtotal),
-      options: (optionsByItemId.get(item.id) ?? []).map((o) => ({
-        id: o.id,
-        optionId: o.optionId,
-        groupName: o.groupName,
-        optionName: o.optionName,
-        priceAdjustment: parseFloat(o.priceAdjustment),
-      })),
-    })),
+    refundStatus: order.refundStatus ?? "NONE",
+    refundedAmount: refundedCents / 100,
+    refundableAmount: remainingCents / 100,
+    items: mappedItems,
     createdAt:
       order.createdAt instanceof Date
         ? order.createdAt.toISOString()
         : order.createdAt,
   };
+
+  if (!viewer.includeRefundDetails) {
+    return base;
+  }
+
+  const refunds = await loadOrderRefunds(order.id);
+  return {
+    ...base,
+    lastRefundedAt: order.lastRefundedAt
+      ? order.lastRefundedAt instanceof Date
+        ? order.lastRefundedAt.toISOString()
+        : String(order.lastRefundedAt)
+      : null,
+    refunds: await serializeOrderRefunds(refunds),
+  };
 }
+
+// POST /api/orders/prep-estimate
+router.post("/orders/prep-estimate", async (req, res): Promise<void> => {
+  const parsed = EstimateOrderPrepBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const d = parsed.data;
+  if (!d.items.length) {
+    res.status(400).json({ error: "At least one item is required" });
+    return;
+  }
+
+  const [business] = await db
+    .select()
+    .from(businessesTable)
+    .where(eq(businessesTable.id, d.businessId));
+
+  if (!business) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  const products = await db
+    .select()
+    .from(productsTable)
+    .where(eq(productsTable.businessId, d.businessId));
+
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  for (const item of d.items) {
+    const product = productMap.get(item.productId);
+    if (!product) {
+      res.status(400).json({ error: `Product ${item.productId} not found` });
+      return;
+    }
+  }
+
+  const estimate = calculateOrderPrepEstimate({
+    defaultPrepMinutes: business.defaultPrepMinutes,
+    fulfillmentType: d.fulfillmentType,
+    lineItems: d.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    })),
+    productMap,
+  });
+
+  res.json(serializePrepEstimate(estimate));
+});
 
 // POST /api/orders
 router.post("/orders", async (req, res): Promise<void> => {
@@ -237,13 +375,13 @@ router.post("/orders", async (req, res): Promise<void> => {
   const productMap = new Map(products.map((p) => [p.id, p]));
   const optionGroupsByProduct = await loadOptionGroupsByProductIds(products.map((p) => p.id));
 
-  let subtotal = 0;
   const orderItems: Array<{
     productId: number;
     productName: string;
     quantity: number;
     unitPrice: number;
     subtotal: number;
+    taxable: boolean;
     options: OrderOptionSnapshot[];
   }> = [];
 
@@ -264,13 +402,13 @@ router.post("/orders", async (req, res): Promise<void> => {
       res.status(400).json({ error: priced.error });
       return;
     }
-    subtotal += priced.subtotal;
     orderItems.push({
       productId: item.productId,
       productName: priced.productName,
       quantity: item.quantity,
       unitPrice: priced.unitPrice,
       subtotal: priced.subtotal,
+      taxable: product.taxable !== false,
       options: priced.options,
     });
   }
@@ -316,7 +454,28 @@ router.post("/orders", async (req, res): Promise<void> => {
       ? parseFloat(business.deliveryFee)
       : null;
 
-  const total = subtotal + (deliveryFee ?? 0);
+  const orderTotals = calculateOrderTotals({
+    items: orderItems.map((item) => ({
+      lineSubtotalCents: dollarsToCents(item.subtotal),
+      taxable: item.taxable,
+    })),
+    taxEnabled: business.taxEnabled === true,
+    taxRatePercent: business.taxRatePercent ? parseFloat(business.taxRatePercent) : 0,
+    taxLabel: business.taxLabel ?? undefined,
+    deliveryFeeCents: deliveryFee ? dollarsToCents(deliveryFee) : 0,
+  });
+
+  const total = centsToDollars(orderTotals.totalCents);
+
+  const prepEstimate = calculateOrderPrepEstimate({
+    defaultPrepMinutes: business.defaultPrepMinutes,
+    fulfillmentType: d.fulfillmentType,
+    lineItems: d.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    })),
+    productMap,
+  });
 
   const [order] = await db
     .insert(ordersTable)
@@ -329,9 +488,16 @@ router.post("/orders", async (req, res): Promise<void> => {
       customerPhone: d.customerPhone?.trim() ?? null,
       customerUserId: customerUserId ?? null,
       deliveryAddress: d.deliveryAddress?.trim(),
-      pickupTime: d.pickupTime,
+      pickupTime: "ASAP",
+      estimatedWindowStart: prepEstimate.estimatedWindowStart,
+      estimatedWindowEnd: prepEstimate.estimatedWindowEnd,
       notes: d.notes,
       specialFields: d.specialFields,
+      subtotalCents: orderTotals.subtotalCents,
+      taxCents: orderTotals.taxCents,
+      taxRatePercent:
+        orderTotals.taxRatePercent != null ? String(orderTotals.taxRatePercent) : null,
+      taxLabel: orderTotals.taxLabel,
       total: String(total),
       deliveryFee: deliveryFee ? String(deliveryFee) : null,
       paymentMethod,
@@ -438,7 +604,9 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const result = await getOrderWithItems(params.data.id);
+  const result = await getOrderWithItems(params.data.id, {
+    includeRefundDetails: await resolveIncludeRefundDetails(req, order.businessId),
+  });
   if (!result) {
     res.status(404).json({ error: "Order not found" });
     return;
@@ -519,6 +687,88 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
   }
 });
 
+// POST /api/orders/:id/refund — business owner or admin issues a Stripe refund
+router.post("/orders/:id/refund", requireAuth, async (req, res): Promise<void> => {
+  const params = RefundOrderParams.safeParse({ id: parseId(req.params.id) });
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const parsed = RefundOrderBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, params.data.id));
+
+  if (!order) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  const { userId } = getAuth(req);
+  const [user] = await db
+    .select({ role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId!));
+
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [business] = await db
+    .select({ ownerId: businessesTable.ownerId })
+    .from(businessesTable)
+    .where(eq(businessesTable.id, order.businessId));
+
+  const auth = authorizeOrderRefund({
+    userId: userId!,
+    userRole: user.role,
+    businessOwnerId: business?.ownerId,
+  });
+
+  if (!auth.allowed) {
+    res.status(auth.statusCode).json({ error: auth.error });
+    return;
+  }
+
+  const result = await createOrderRefund({
+    orderId: order.id,
+    amountCents: parsed.data.amountCents,
+    reason: parsed.data.reason,
+    createdByUserId: userId!,
+  });
+
+  if (!result.ok) {
+    if (result.statusCode >= 500) {
+      notifyOwnerRefundFailed(order.id, parsed.data.amountCents).catch(() => {});
+    }
+    res.status(result.statusCode).json({ error: result.error });
+    return;
+  }
+
+  const serializedOrder = await getOrderWithItems(order.id, { includeRefundDetails: true });
+  const serializedRefunds = await serializeOrderRefunds([result.refund]);
+  const refundRecord = serializedRefunds[0];
+
+  if (!serializedOrder || !refundRecord) {
+    res.status(500).json({ error: "Refund processed but failed to load updated order." });
+    return;
+  }
+
+  res.json({ order: serializedOrder, refund: refundRecord });
+
+  if (result.refund.status === "SUCCEEDED") {
+    notifyCustomerOrderRefund(order.id, result.refund.amountCents).catch(() => {});
+  }
+});
+
 // GET /api/businesses/:businessId/orders
 router.get(
   "/businesses/:businessId/orders",
@@ -559,7 +809,9 @@ router.get(
 
     const ordersWithItems = await Promise.all(
       orders.map((order) =>
-        serializeOrderWithLoadedItems(order, business?.name ?? "Unknown"),
+        serializeOrderWithLoadedItems(order, business?.name ?? "Unknown", {
+          includeRefundDetails: true,
+        }),
       ),
     );
 
@@ -747,11 +999,16 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
   const result = await createStripeCheckoutSession(
     order.id,
     order.orderNumber,
-    order.items.map((i) => ({
-      name: i.productName,
-      price: i.unitPrice,
-      quantity: i.quantity,
-    })),
+    buildStripeCheckoutLineItems({
+      items: order.items.map((i) => ({
+        productName: i.productName,
+        unitPrice: i.unitPrice,
+        quantity: i.quantity,
+      })),
+      deliveryFee: order.deliveryFee,
+      tax: order.tax,
+      taxLabel: order.taxLabel,
+    }),
     business.stripeConnectedAccountId,
     `${baseUrl}/order/${order.id}?payment=success&token=${encodeURIComponent(orderToken)}`,
     `${baseUrl}/cart?payment=canceled`,

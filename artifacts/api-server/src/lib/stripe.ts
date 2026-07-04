@@ -9,10 +9,16 @@ export const stripe = stripeKey
 
 export const isMockMode = !stripe;
 
+export type StripeCheckoutLineItem = {
+  name: string;
+  unitAmountCents: number;
+  quantity: number;
+};
+
 export async function createStripeCheckoutSession(
   orderId: number,
   orderNumber: string,
-  items: Array<{ name: string; price: number; quantity: number }>,
+  lineItems: StripeCheckoutLineItem[],
   connectedAccountId: string,
   successUrl: string,
   cancelUrl: string,
@@ -28,11 +34,11 @@ export async function createStripeCheckoutSession(
     {
       payment_method_types: ["card"],
       mode: "payment",
-      line_items: items.map((item) => ({
+      line_items: lineItems.map((item) => ({
         price_data: {
           currency: "usd",
           product_data: { name: item.name },
-          unit_amount: Math.round(item.price * 100),
+          unit_amount: item.unitAmountCents,
         },
         quantity: item.quantity,
       })),

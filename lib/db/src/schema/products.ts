@@ -28,6 +28,12 @@ export const insertCategorySchema = createInsertSchema(categoriesTable).omit({
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categoriesTable.$inferSelect;
 
+export const productItemTypeEnum = pgEnum("product_item_type", [
+  "MENU_ITEM",
+  "PRODUCT",
+  "SERVICE",
+]);
+
 export const productsTable = pgTable("products", {
   id: serial("id").primaryKey(),
   businessId: integer("business_id").notNull(),
@@ -39,6 +45,8 @@ export const productsTable = pgTable("products", {
   available: boolean("available").notNull().default(true),
   featured: boolean("featured").notNull().default(false),
   prepTimeMinutes: integer("prep_time_minutes"),
+  taxable: boolean("taxable").notNull().default(true),
+  itemType: productItemTypeEnum("item_type").notNull().default("PRODUCT"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

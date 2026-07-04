@@ -7,20 +7,37 @@ import {
   renderOrderItems,
   renderStatusBadge,
 } from "./components";
+import { formatNotificationEstimatedWindow } from "@workspace/api-zod";
 import { escapeHtml, renderEmailLayout, renderParagraph } from "./layout";
 import type { CustomerLifecycleEvent, EmailContent, OrderNotificationData } from "./types";
+import { formatOrderTotalsTextLines, orderTotalsSummaryFromNotification } from "./types";
 
 function orderSummaryRows(order: OrderNotificationData): Array<{ label: string; value: string }> {
-  return [
+  const rows: Array<{ label: string; value: string }> = [
     { label: "Business", value: order.businessName },
     { label: "Order number", value: order.orderNumber },
     { label: "Order placed", value: formatOrderDateTime(order.orderedAt) },
     { label: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType) },
   ];
+
+  if (order.estimatedWindowStart && order.estimatedWindowEnd) {
+    rows.push({
+      label: "Timing",
+      value: formatNotificationEstimatedWindow(
+        order.fulfillmentType,
+        order.estimatedWindowStart,
+        order.estimatedWindowEnd,
+      ),
+    });
+  }
+
+  return rows;
 }
 
 function orderSummaryHtml(order: OrderNotificationData, includeItems = true): string {
-  const itemsBlock = includeItems ? renderOrderItems(order.items, order.total) : "";
+  const itemsBlock = includeItems
+    ? renderOrderItems(order.items, orderTotalsSummaryFromNotification(order))
+    : "";
   return `${renderDetailTable(orderSummaryRows(order))}${itemsBlock}`;
 }
 
@@ -67,10 +84,23 @@ function buildEmail(
     `Order #: ${order.orderNumber}`,
     `Placed: ${formatOrderDateTime(order.orderedAt)}`,
     `Fulfillment: ${fulfillmentLabel(order.fulfillmentType)}`,
-    `Total: $${order.total.toFixed(2)}`,
+  ];
+
+  if (order.estimatedWindowStart && order.estimatedWindowEnd) {
+    textLines.push(
+      formatNotificationEstimatedWindow(
+        order.fulfillmentType,
+        order.estimatedWindowStart,
+        order.estimatedWindowEnd,
+      ),
+    );
+  }
+
+  textLines.push(
+    ...formatOrderTotalsTextLines(orderTotalsSummaryFromNotification(order)),
     "",
     `${config.actionLabel ?? "View Order"}: ${orderUrl}`,
-  ];
+  );
 
   if (config.footerNote) {
     textLines.push("", config.footerNote);
@@ -172,6 +202,28 @@ export function buildCustomerOrderCompletedEmail(order: OrderNotificationData): 
     includeItems: false,
     badge: { label: "Completed", tone: "success" },
     footerNote: "Thank you for supporting local businesses through TownHub.",
+  });
+}
+
+export function buildCustomerOrderRefundEmail(
+  order: OrderNotificationData,
+  refundAmountCents: number,
+): EmailContent {
+  const refundAmount = (refundAmountCents / 100).toFixed(2);
+  const timingNote =
+    "Refunds are returned to your original payment method. Depending on your bank, it may take 5–10 business days to appear on your statement.";
+
+  return buildEmail(order, {
+    subject: `Refund issued for order ${order.orderNumber}`,
+    preheader: `${order.businessName} issued a $${refundAmount} refund for order ${order.orderNumber}.`,
+    heading: "Your refund is on the way",
+    introParagraphs: [
+      `${escapeHtml(order.businessName)} issued a refund of $${refundAmount} for order ${order.orderNumber}.`,
+      timingNote,
+    ],
+    includeItems: false,
+    badge: { label: "Refund issued", tone: "success" },
+    footerNote: timingNote,
   });
 }
 

@@ -18,6 +18,8 @@ import {
   shouldClearCartForStripeSuccess,
   stripePaymentPendingMessage,
 } from "@/lib/stripe-checkout-return";
+import { getCustomerEstimatedWindowLabel } from "@/lib/order-prep-timing";
+import { OrderTotalsSummary } from "@/components/order-totals-summary";
 
 export default function OrderConfirmation() {
   const [, params] = useRoute("/order/:id");
@@ -61,6 +63,8 @@ export default function OrderConfirmation() {
   const paymentPendingMessage = order
     ? stripePaymentPendingMessage(stripeReturn, order.paymentMethod, order.paymentStatus)
     : null;
+
+  const estimatedWindowLabel = order ? getCustomerEstimatedWindowLabel(order) : null;
 
   if (isLoading) {
     return (
@@ -142,7 +146,9 @@ export default function OrderConfirmation() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">Estimated Time</p>
-                    <p className="text-sm text-muted-foreground">{order.pickupTime || "ASAP"}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {estimatedWindowLabel}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -180,22 +186,7 @@ export default function OrderConfirmation() {
 
             <Separator className="my-4" />
 
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Subtotal</span>
-                <span>${(order.total - (order.deliveryFee || 0)).toFixed(2)}</span>
-              </div>
-              {order.deliveryFee ? (
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Delivery Fee</span>
-                  <span>${order.deliveryFee.toFixed(2)}</span>
-                </div>
-              ) : null}
-              <div className="flex justify-between font-serif font-bold text-lg pt-2">
-                <span>Total</span>
-                <span className="text-primary">${order.total.toFixed(2)}</span>
-              </div>
-            </div>
+            {order ? <OrderTotalsSummary order={order} /> : null}
           </div>
         </CardContent>
       </Card>

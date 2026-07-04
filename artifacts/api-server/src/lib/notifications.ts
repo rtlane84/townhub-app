@@ -20,6 +20,8 @@ export {
   notifyCustomerOrderReceived,
   notifyCustomerOrderStatusChange,
   notifyOwnerNewOrderFromOrderId,
+  notifyCustomerOrderRefund,
+  notifyOwnerRefundFailed,
   loadOrderNotificationData,
 } from "./notification-service";
 

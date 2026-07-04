@@ -59,6 +59,7 @@ export const getMyBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const GetMyBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -89,11 +90,15 @@ export const GetMyBusinessResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional().describe('When true, apply the configured sales tax rate to taxable items at checkout.'),
+  "taxRatePercent": zod.number().nullish().describe('Sales tax rate as a percentage (e.g. 6.00 for 6%).'),
+  "taxLabel": zod.string().optional().describe('Label shown on receipts and checkout (default \"Sales Tax\").'),
   "orderNotificationEmail": zod.string().nullish(),
   "notificationEmail": zod.string().nullish(),
   "notificationPhone": zod.string().nullish(),
@@ -143,6 +148,7 @@ export const listBusinessesResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const ListBusinessesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -173,11 +179,15 @@ export const ListBusinessesResponseItem = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional().describe('When true, apply the configured sales tax rate to taxable items at checkout.'),
+  "taxRatePercent": zod.number().nullish().describe('Sales tax rate as a percentage (e.g. 6.00 for 6%).'),
+  "taxLabel": zod.string().optional().describe('Label shown on receipts and checkout (default \"Sales Tax\").'),
   "orderNotificationEmail": zod.string().nullish(),
   "notificationEmail": zod.string().nullish(),
   "notificationPhone": zod.string().nullish(),
@@ -217,13 +227,33 @@ export const GetPlatformStatsResponse = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
   "total": zod.number(),
   "deliveryFee": zod.number().nullish(),
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -281,6 +311,7 @@ export const getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const GetBusinessCheckoutResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -311,11 +342,15 @@ export const GetBusinessCheckoutResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional().describe('When true, apply the configured sales tax rate to taxable items at checkout.'),
+  "taxRatePercent": zod.number().nullish().describe('Sales tax rate as a percentage (e.g. 6.00 for 6%).'),
+  "taxLabel": zod.string().optional().describe('Label shown on receipts and checkout (default \"Sales Tax\").'),
   "orderNotificationEmail": zod.string().nullish(),
   "notificationEmail": zod.string().nullish(),
   "notificationPhone": zod.string().nullish(),
@@ -342,6 +377,7 @@ export const GetBusinessBySlugParams = zod.object({
 
 export const getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMin = 0;
 export const getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMax = 6;
+
 
 
 
@@ -376,11 +412,15 @@ export const GetBusinessBySlugResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional().describe('When true, apply the configured sales tax rate to taxable items at checkout.'),
+  "taxRatePercent": zod.number().nullish().describe('Sales tax rate as a percentage (e.g. 6.00 for 6%).'),
+  "taxLabel": zod.string().optional().describe('Label shown on receipts and checkout (default \"Sales Tax\").'),
   "orderNotificationEmail": zod.string().nullish(),
   "notificationEmail": zod.string().nullish(),
   "notificationPhone": zod.string().nullish(),
@@ -413,6 +453,7 @@ export const GetBusinessBySlugResponse = zod.object({
   "available": zod.boolean(),
   "featured": zod.boolean().optional(),
   "prepTimeMinutes": zod.number().nullish(),
+  "taxable": zod.boolean().optional().describe('When true, this item is included in the taxable subtotal.'),
   "optionGroups": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -474,6 +515,7 @@ export const createBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const CreateBusinessBody = zod.object({
   "name": zod.string().min(1),
   "slug": zod.string().min(1),
@@ -497,6 +539,7 @@ export const CreateBusinessBody = zod.object({
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).optional(),
   "orderCutoffTime": zod.string().optional(),
+  "defaultPrepMinutes": zod.number().min(1).optional(),
   "ownerId": zod.string().optional()
 })
 
@@ -510,6 +553,7 @@ export const GetBusinessParams = zod.object({
 
 export const getBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
 export const getBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
+
 
 
 
@@ -543,11 +587,15 @@ export const GetBusinessResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional().describe('When true, apply the configured sales tax rate to taxable items at checkout.'),
+  "taxRatePercent": zod.number().nullish().describe('Sales tax rate as a percentage (e.g. 6.00 for 6%).'),
+  "taxLabel": zod.string().optional().describe('Label shown on receipts and checkout (default \"Sales Tax\").'),
   "orderNotificationEmail": zod.string().nullish(),
   "notificationEmail": zod.string().nullish(),
   "notificationPhone": zod.string().nullish(),
@@ -608,6 +656,9 @@ export const UpdateBusinessBody = zod.object({
   "deliveryNotes": zod.string().nullish(),
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional(),
+  "taxRatePercent": zod.number().optional(),
+  "taxLabel": zod.string().optional(),
   "orderNotificationEmail": zod.string().nullish(),
   "notificationEmail": zod.string().nullish(),
   "notificationPhone": zod.string().nullish(),
@@ -625,6 +676,7 @@ export const UpdateBusinessBody = zod.object({
 
 export const updateBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
 export const updateBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
+
 
 
 
@@ -658,11 +710,15 @@ export const UpdateBusinessResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional().describe('When true, apply the configured sales tax rate to taxable items at checkout.'),
+  "taxRatePercent": zod.number().nullish().describe('Sales tax rate as a percentage (e.g. 6.00 for 6%).'),
+  "taxLabel": zod.string().optional().describe('Label shown on receipts and checkout (default \"Sales Tax\").'),
   "orderNotificationEmail": zod.string().nullish(),
   "notificationEmail": zod.string().nullish(),
   "notificationPhone": zod.string().nullish(),
@@ -889,6 +945,7 @@ export const ListProductsResponseItem = zod.object({
   "available": zod.boolean(),
   "featured": zod.boolean().optional(),
   "prepTimeMinutes": zod.number().nullish(),
+  "taxable": zod.boolean().optional().describe('When true, this item is included in the taxable subtotal.'),
   "optionGroups": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -934,6 +991,7 @@ export const CreateProductBody = zod.object({
   "available": zod.boolean().optional(),
   "featured": zod.boolean().optional(),
   "prepTimeMinutes": zod.number().optional(),
+  "taxable": zod.boolean().optional(),
   "modifierGroupIds": zod.array(zod.number()).optional()
 })
 
@@ -955,6 +1013,7 @@ export const UpdateProductBody = zod.object({
   "available": zod.boolean().optional(),
   "featured": zod.boolean().optional(),
   "prepTimeMinutes": zod.number().optional(),
+  "taxable": zod.boolean().optional(),
   "modifierGroupIds": zod.array(zod.number()).optional()
 })
 
@@ -969,6 +1028,7 @@ export const UpdateProductResponse = zod.object({
   "available": zod.boolean(),
   "featured": zod.boolean().optional(),
   "prepTimeMinutes": zod.number().nullish(),
+  "taxable": zod.boolean().optional().describe('When true, this item is included in the taxable subtotal.'),
   "optionGroups": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -1000,6 +1060,32 @@ export const UpdateProductResponse = zod.object({
 export const DeleteProductParams = zod.object({
   "businessId": zod.coerce.number(),
   "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Preview ASAP prep time estimate for a cart
+ */
+
+
+
+
+export const EstimateOrderPrepBody = zod.object({
+  "businessId": zod.number(),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "quantity": zod.number().min(1),
+  "selectedOptionIds": zod.array(zod.number()).optional()
+})).min(1)
+})
+
+export const EstimateOrderPrepResponse = zod.object({
+  "centerMinutes": zod.number(),
+  "minMinutes": zod.number(),
+  "maxMinutes": zod.number(),
+  "estimatedWindowStart": zod.coerce.date(),
+  "estimatedWindowEnd": zod.coerce.date()
 })
 
 
@@ -1048,13 +1134,33 @@ export const ListMyOrdersResponseItem = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
   "total": zod.number(),
   "deliveryFee": zod.number().nullish(),
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1097,13 +1203,33 @@ export const GetOrderResponse = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
   "total": zod.number(),
   "deliveryFee": zod.number().nullish(),
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1149,13 +1275,33 @@ export const UpdateOrderStatusResponse = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
   "total": zod.number(),
   "deliveryFee": zod.number().nullish(),
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1174,6 +1320,94 @@ export const UpdateOrderStatusResponse = zod.object({
 })).optional(),
   "createdAt": zod.coerce.date().optional(),
   "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
+})
+
+
+/**
+ * @summary Issue a full or partial refund for a paid online order
+ */
+export const RefundOrderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const RefundOrderBody = zod.object({
+  "amountCents": zod.number().min(1),
+  "reason": zod.string().min(1)
+})
+
+export const RefundOrderResponse = zod.object({
+  "order": zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "businessName": zod.string(),
+  "orderNumber": zod.string().optional(),
+  "status": zod.enum(['NEW', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELED']),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "customerName": zod.string(),
+  "customerEmail": zod.string(),
+  "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
+  "deliveryAddress": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
+  "notes": zod.string().nullish(),
+  "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
+  "total": zod.number(),
+  "deliveryFee": zod.number().nullish(),
+  "paymentStatus": zod.string().optional(),
+  "paymentMethod": zod.string().optional(),
+  "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "orderId": zod.number().optional(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
+})).optional(),
+  "createdAt": zod.coerce.date().optional()
+}),
+  "refund": zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})
 })
 
 
@@ -1197,13 +1431,33 @@ export const ListBusinessOrdersResponseItem = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
   "total": zod.number(),
   "deliveryFee": zod.number().nullish(),
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1251,13 +1505,33 @@ export const GetBusinessOrderSummaryResponse = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
   "total": zod.number(),
   "deliveryFee": zod.number().nullish(),
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1302,13 +1576,33 @@ export const ListAllOrdersResponseItem = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
   "total": zod.number(),
   "deliveryFee": zod.number().nullish(),
   "paymentStatus": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
   "items": zod.array(zod.object({
   "id": zod.number().optional(),
   "orderId": zod.number().optional(),
@@ -1616,6 +1910,7 @@ export const assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const AssignBusinessOwnerResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -1646,11 +1941,15 @@ export const AssignBusinessOwnerResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
   "pickupInstructions": zod.string().nullish(),
   "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional().describe('When true, apply the configured sales tax rate to taxable items at checkout.'),
+  "taxRatePercent": zod.number().nullish().describe('Sales tax rate as a percentage (e.g. 6.00 for 6%).'),
+  "taxLabel": zod.string().optional().describe('Label shown on receipts and checkout (default \"Sales Tax\").'),
   "orderNotificationEmail": zod.string().nullish(),
   "notificationEmail": zod.string().nullish(),
   "notificationPhone": zod.string().nullish(),
