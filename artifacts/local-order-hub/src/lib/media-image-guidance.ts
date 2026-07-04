@@ -17,9 +17,9 @@ export interface ImageSurfaceGuidance {
 export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> = {
   product: {
     label: "Product image",
-    recommendedSize: "800 × 800 px (square)",
-    aspectClass: "aspect-square",
-    hint: "Shows on your storefront product cards.",
+    recommendedSize: "1200 × 900 px (4:3)",
+    aspectClass: "aspect-[4/3]",
+    hint: "Matches the photo area on your storefront product cards.",
   },
   "business-logo": {
     label: "Business logo",

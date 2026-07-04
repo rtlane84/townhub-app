@@ -22,7 +22,7 @@ describe("media-image-guidance", () => {
 
   it("formats concise recommended and file guidance lines", () => {
     const product = formatImageSurfaceGuidance("product");
-    assert.match(product.recommendedLine, /800 × 800 px/);
+    assert.match(product.recommendedLine, /1200 × 900 px \(4:3\)/);
     assert.match(product.recommendedLine, /storefront product cards/i);
     assert.equal(product.fileLine, IMAGE_FILE_GUIDANCE);
     assert.match(product.fileLine, /5 MB/);
