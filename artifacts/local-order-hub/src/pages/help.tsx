@@ -7,6 +7,7 @@ import {
   Sparkles,
   GraduationCap,
   MessageCircleQuestion,
+  Mail,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +29,7 @@ import {
   businessOwnerTopics,
   customerFaqs,
   businessOwnerFaqs,
+  platformSupportContact,
   type HelpFaq,
 } from "@/lib/help-content";
 
@@ -208,7 +210,28 @@ export default function Help() {
         </TabsContent>
       </Tabs>
 
-      <div className="mt-14 rounded-2xl border border-dashed border-border bg-muted/30 p-6 md:p-8 text-center">
+      <section className="mt-14 rounded-2xl border bg-card p-6 md:p-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-2 text-left">
+            <div className="inline-flex items-center gap-2 text-primary">
+              <Mail className="h-5 w-5" />
+              <h2 className="font-serif text-xl font-semibold text-foreground">Contact support</h2>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xl">
+              Need help beyond these guides? Reach out to {platformSupportContact.providerName} for platform support.
+            </p>
+          </div>
+          <a
+            href={`mailto:${platformSupportContact.email}`}
+            className="inline-flex items-center justify-center rounded-lg border bg-background px-4 py-2.5 text-sm font-medium hover:bg-muted/60 transition-colors shrink-0"
+            data-testid="link-platform-support-email"
+          >
+            {platformSupportContact.email}
+          </a>
+        </div>
+      </section>
+
+      <div className="mt-8 rounded-2xl border border-dashed border-border bg-muted/30 p-6 md:p-8 text-center">
         <p className="text-sm text-muted-foreground">
           Ready to explore?{" "}
           <Link href="/businesses" className="text-primary font-medium hover:underline">

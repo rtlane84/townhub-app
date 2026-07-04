@@ -11,7 +11,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
 import { requireAdmin } from "../middlewares/requireRole";
 import { attachPlanToBusiness, resolveApprovalPlan } from "../lib/subscription-plans";
-import { notifyBusinessApplicationApproved } from "../lib/application-notifications";
+import { notifyBusinessApplicationApproved, notifyBusinessApplicationRejected, notifyBusinessApplicationSubmitted } from "../lib/application-notifications";
 import { resolveApprovalBillingInterval } from "../lib/business-lifecycle-core";
 import { resolveOwnerDeliverableEmail } from "../lib/owner-email";
 import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
@@ -243,6 +243,23 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
   }
 
   req.log.info({ userId, applicationId: application.id }, "Business application submitted");
+
+  try {
+    await notifyBusinessApplicationSubmitted({
+      applicationId: application.id,
+      businessName: application.name,
+      businessType: application.type,
+      applicantEmail: application.userEmail,
+      planId: application.planId,
+      billingInterval: application.billingInterval as "monthly" | "yearly" | null,
+      description: application.description,
+      address: application.address,
+      phone: application.phone,
+    });
+  } catch (err) {
+    req.log.warn({ err, applicationId: application.id }, "Application submitted admin notification failed");
+  }
+
   res.status(201).json(serializeApplication(application));
 });
 
@@ -437,6 +454,18 @@ router.post("/admin/applications/:id/reject", requireAdmin, async (req, res): Pr
       reviewedBy: userId,
     })
     .where(eq(businessApplicationsTable.id, id));
+
+  try {
+    await notifyBusinessApplicationRejected({
+      applicationId: id,
+      ownerId: app.userId,
+      ownerEmail: app.userEmail,
+      businessName: app.name,
+      reviewNote: note?.trim() || null,
+    });
+  } catch (err) {
+    req.log.warn({ err, applicationId: id }, "Application rejected owner notification failed");
+  }
 
   req.log.info({ adminId: userId, applicationId: id }, "Business application rejected");
   res.json({ message: "Application rejected." });

@@ -361,3 +361,8 @@ export const businessOwnerWorkflows = businessOwnerTopics.map((topic) => ({
   steps: topic.highlights,
   link: topic.link,
 }));
+
+export const platformSupportContact = {
+  providerName: "LaneTech",
+  email: "Ronnie@LaneTechWV.com",
+} as const;

@@ -73,6 +73,10 @@ export type PlatformAdminSubscriptionEvent =
   | "ADMIN_SUBSCRIPTION_CANCELED"
   | "ADMIN_SUBSCRIPTION_EXPIRED";
 
+export type PlatformAdminApplicationEvent = "ADMIN_APPLICATION_SUBMITTED";
+
+export type PlatformAdminEvent = PlatformAdminSubscriptionEvent | PlatformAdminApplicationEvent;
+
 export type AppointmentNotificationData = {
   businessName: string;
   businessLogoUrl?: string | null;

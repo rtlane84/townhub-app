@@ -24,6 +24,14 @@ export function dashboardBusinessHubUrl(): string {
   return `${getAppBaseUrl()}/dashboard/business`;
 }
 
+export function dashboardAdminApplicationsUrl(): string {
+  return `${getAppBaseUrl()}/dashboard/admin/applications`;
+}
+
+export function listYourBusinessUrl(): string {
+  return `${getAppBaseUrl()}/list-your-business`;
+}
+
 export function helpCenterUrl(): string {
   return `${getAppBaseUrl()}/help`;
 }

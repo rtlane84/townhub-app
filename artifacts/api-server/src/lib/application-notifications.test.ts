@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildApplicationApprovedEmail,
+  buildApplicationRejectedEmail,
+  buildApplicationSubmittedAdminEmail,
   defaultApplicationApprovedEmailData,
+  defaultApplicationRejectedEmailData,
 } from "./email-templates/application-emails";
 
 describe("application approved emails", () => {
@@ -50,5 +53,59 @@ describe("application approved emails", () => {
     assert.match(email.html, /Business Owner Help Center/);
     assert.doesNotMatch(email.html, /Complete your subscription setup/i);
     assert.doesNotMatch(email.html, /Upload your logo/i);
+  });
+});
+
+describe("application submitted admin emails", () => {
+  it("includes review link and applicant details", () => {
+    const email = buildApplicationSubmittedAdminEmail({
+      applicationId: 42,
+      businessName: "Clay Diner",
+      businessTypeLabel: "Food Vendor",
+      applicantEmail: "owner@example.com",
+      planName: "Pro",
+      billingInterval: "monthly",
+      description: "Family restaurant on Main Street.",
+      address: "123 Main St",
+      phone: "(555) 555-0100",
+      reviewApplicationsUrl: "https://townhub.example/dashboard/admin/applications",
+    });
+
+    assert.match(email.subject, /New business application/i);
+    assert.match(email.subject, /Clay Diner/);
+    assert.match(email.html, /Review application/);
+    assert.match(email.html, /owner@example.com/);
+    assert.match(email.html, /Food Vendor/);
+    assert.match(email.text, /dashboard\/admin\/applications/);
+  });
+});
+
+describe("application rejected owner emails", () => {
+  it("includes the admin review note and reapply link", () => {
+    const email = buildApplicationRejectedEmail(
+      defaultApplicationRejectedEmailData({
+        businessName: "Clay Diner",
+        reviewNote: "We need a local phone number before approval.",
+      }),
+    );
+
+    assert.match(email.subject, /Update on your TownHub application/i);
+    assert.match(email.subject, /Clay Diner/);
+    assert.match(email.html, /Not approved/);
+    assert.match(email.html, /We need a local phone number before approval/);
+    assert.match(email.html, /Submit a new application/);
+    assert.match(email.text, /list-your-business/);
+  });
+
+  it("offers reapply guidance when no review note is provided", () => {
+    const email = buildApplicationRejectedEmail(
+      defaultApplicationRejectedEmailData({
+        businessName: "Clay Diner",
+        reviewNote: null,
+      }),
+    );
+
+    assert.match(email.html, /submit a new application/i);
+    assert.doesNotMatch(email.html, /Note from our team/);
   });
 });

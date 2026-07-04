@@ -7,7 +7,7 @@ import { resolveNotificationStatus, type NotificationStatus } from "./notificati
 
 import type {
   SubscriptionNotificationEvent,
-  PlatformAdminSubscriptionEvent,
+  PlatformAdminEvent,
 } from "./email-templates/types";
 
 export type NotificationChannel = "EMAIL" | "SMS";
@@ -15,8 +15,9 @@ export type OwnerEventType =
   | "NEW_ORDER"
   | "NEW_APPOINTMENT_REQUEST"
   | "APPLICATION_APPROVED"
+  | "APPLICATION_REJECTED"
   | SubscriptionNotificationEvent
-  | PlatformAdminSubscriptionEvent;
+  | PlatformAdminEvent;
 
 export type CustomerLifecycleEventType =
   | "ORDER_RECEIVED"
@@ -111,7 +112,7 @@ export async function deliverOwnerEmail(input: {
 
 export async function deliverOwnerApplicationEmail(input: {
   businessId: number;
-  eventType: "APPLICATION_APPROVED";
+  eventType: "APPLICATION_APPROVED" | "APPLICATION_REJECTED";
   to: string;
   subject: string;
   body: string;
@@ -175,7 +176,7 @@ export async function deliverOwnerSubscriptionEmail(input: {
 
 export async function deliverPlatformAdminSubscriptionEmail(input: {
   businessId: number;
-  eventType: PlatformAdminSubscriptionEvent;
+  eventType: Extract<PlatformAdminEvent, "ADMIN_SUBSCRIPTION_PAID_STARTED" | "ADMIN_TRIAL_STARTED" | "ADMIN_PAYMENT_FAILED" | "ADMIN_SUBSCRIPTION_CANCELED" | "ADMIN_SUBSCRIPTION_EXPIRED">;
   to: string;
   subject: string;
   body: string;
@@ -195,6 +196,38 @@ export async function deliverPlatformAdminSubscriptionEmail(input: {
 
   await logNotification({
     businessId: input.businessId,
+    channel: "EMAIL",
+    eventType: input.eventType,
+    recipientEmail: input.to,
+    subject: input.subject,
+    body: input.body,
+    status,
+    errorMessage: result.error,
+  });
+}
+
+export async function deliverPlatformAdminApplicationEmail(input: {
+  applicationId: number;
+  eventType: "ADMIN_APPLICATION_SUBMITTED";
+  to: string;
+  subject: string;
+  body: string;
+  html?: string;
+}): Promise<void> {
+  const result = await sendEmail(input.to, input.subject, input.body, input.html);
+  const status = resolveNotificationStatus(result);
+
+  if (status === "LOGGED") {
+    logger.info({ eventType: input.eventType, subject: input.subject }, `[ADMIN NOTIFICATION LOG] ${input.eventType}`);
+  } else if (status === "FAILED") {
+    logOperationalFailure("application_admin_notification_email_failed", {
+      eventType: input.eventType,
+      applicationId: input.applicationId,
+    });
+  }
+
+  await logNotification({
+    businessId: 0,
     channel: "EMAIL",
     eventType: input.eventType,
     recipientEmail: input.to,

@@ -9,6 +9,7 @@ import {
   businessOwnerFaqs,
   featuredVideos,
   whatsNewItems,
+  platformSupportContact,
 } from "./help-content.ts";
 import { parseYouTubeId, parseVimeoId, resolveVideoEmbed } from "./help-video.ts";
 
@@ -113,5 +114,13 @@ describe("help page wiring", () => {
     assert.match(helpSource, /HelpTopicCard/);
     assert.match(helpSource, /What's new|What&apos;s new/);
     assert.match(helpSource, /Search help articles/);
+    assert.match(helpSource, /platformSupportContact/);
+    assert.match(helpSource, /link-platform-support-email/);
+    assert.match(helpSource, /Contact support/);
+  });
+
+  it("defines LaneTech platform support contact", () => {
+    assert.equal(platformSupportContact.providerName, "LaneTech");
+    assert.equal(platformSupportContact.email, "Ronnie@LaneTechWV.com");
   });
 });

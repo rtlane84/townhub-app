@@ -1,12 +1,21 @@
 import { eq } from "drizzle-orm";
-import { db, businessesTable, usersTable, type subscriptionPlansTable } from "@workspace/db";
+import { db, businessesTable, subscriptionPlansTable } from "@workspace/db";
 import {
   buildApplicationApprovedEmail,
+  buildApplicationRejectedEmail,
+  buildApplicationSubmittedAdminEmail,
   defaultApplicationApprovedEmailData,
+  defaultApplicationRejectedEmailData,
 } from "./email-templates/application-emails";
 import { buildPlatformAdminSubscriptionEmail } from "./email-templates/subscription-admin-emails";
 import type { PlatformAdminSubscriptionEvent } from "./email-templates/types";
-import { deliverOwnerApplicationEmail, deliverPlatformAdminSubscriptionEmail } from "./notification-delivery";
+import {
+  deliverOwnerApplicationEmail,
+  deliverPlatformAdminApplicationEmail,
+  deliverPlatformAdminSubscriptionEmail,
+} from "./notification-delivery";
+import { dashboardAdminApplicationsUrl } from "./notification-urls";
+import { resolvePlatformAdminEmails } from "./platform-admin-recipients";
 import { resolveOwnerDeliverableEmail } from "./owner-email";
 import { logger } from "./logger";
 import {
@@ -14,26 +23,9 @@ import {
   subscriptionStatusLabel,
   type SubscriptionStateSnapshot,
 } from "./subscription-notification-core";
+import { formatBusinessTypeLabel } from "@workspace/api-zod";
 
 type Plan = typeof subscriptionPlansTable.$inferSelect;
-
-async function resolvePlatformAdminEmails(): Promise<string[]> {
-  const fromEnv =
-    process.env.PLATFORM_ADMIN_EMAIL?.split(",")
-      .map((value) => value.trim())
-      .filter(Boolean) ?? [];
-
-  if (fromEnv.length > 0) return fromEnv;
-
-  const admins = await db
-    .select({ email: usersTable.email })
-    .from(usersTable)
-    .where(eq(usersTable.role, "ADMIN"));
-
-  return admins
-    .map((row) => row.email?.trim())
-    .filter((email): email is string => !!email && !email.endsWith("@user.local"));
-}
 
 async function resolveApprovalRecipientEmail(input: {
   ownerId: string;
@@ -66,6 +58,108 @@ function mapApprovalToAdminEvent(
   if (status === "TRIAL" || status === "TRIALING") return "ADMIN_TRIAL_STARTED";
   if (status === "ACTIVE" || status === "BETA") return "ADMIN_SUBSCRIPTION_PAID_STARTED";
   return null;
+}
+
+export async function notifyBusinessApplicationSubmitted(input: {
+  applicationId: number;
+  businessName: string;
+  businessType: string;
+  applicantEmail: string | null;
+  planId: number | null;
+  billingInterval: "monthly" | "yearly" | null;
+  description: string | null;
+  address: string | null;
+  phone: string | null;
+}): Promise<void> {
+  const adminRecipients = await resolvePlatformAdminEmails();
+  if (adminRecipients.length === 0) {
+    logger.warn(
+      { applicationId: input.applicationId },
+      "Skipping application submitted admin email — no admin recipients",
+    );
+    return;
+  }
+
+  let planName: string | null = null;
+  if (input.planId) {
+    const [plan] = await db
+      .select({ name: subscriptionPlansTable.name })
+      .from(subscriptionPlansTable)
+      .where(eq(subscriptionPlansTable.id, input.planId));
+    planName = plan?.name ?? null;
+  }
+
+  const content = buildApplicationSubmittedAdminEmail({
+    applicationId: input.applicationId,
+    businessName: input.businessName,
+    businessTypeLabel: formatBusinessTypeLabel(input.businessType),
+    applicantEmail: input.applicantEmail,
+    planName,
+    billingInterval: input.billingInterval,
+    description: input.description,
+    address: input.address,
+    phone: input.phone,
+    reviewApplicationsUrl: dashboardAdminApplicationsUrl(),
+  });
+
+  for (const to of adminRecipients) {
+    await deliverPlatformAdminApplicationEmail({
+      applicationId: input.applicationId,
+      eventType: "ADMIN_APPLICATION_SUBMITTED",
+      to,
+      subject: content.subject,
+      body: content.text,
+      html: content.html,
+    });
+  }
+
+  logger.info(
+    { applicationId: input.applicationId, recipientCount: adminRecipients.length },
+    "Application submitted admin email queued",
+  );
+}
+
+export async function notifyBusinessApplicationRejected(input: {
+  applicationId: number;
+  ownerId: string;
+  ownerEmail: string | null;
+  businessName: string;
+  reviewNote: string | null;
+}): Promise<void> {
+  const recipient = await resolveOwnerDeliverableEmail({
+    ownerId: input.ownerId,
+    applicationEmail: input.ownerEmail,
+    syncToUserRow: true,
+  });
+
+  if (!recipient) {
+    logger.warn(
+      { applicationId: input.applicationId, ownerId: input.ownerId },
+      "Skipping application rejected email — no owner email",
+    );
+    return;
+  }
+
+  const content = buildApplicationRejectedEmail(
+    defaultApplicationRejectedEmailData({
+      businessName: input.businessName,
+      reviewNote: input.reviewNote,
+    }),
+  );
+
+  await deliverOwnerApplicationEmail({
+    businessId: 0,
+    eventType: "APPLICATION_REJECTED",
+    to: recipient,
+    subject: content.subject,
+    body: content.text,
+    html: content.html,
+  });
+
+  logger.info(
+    { applicationId: input.applicationId, to: recipient },
+    "Application rejected email queued",
+  );
 }
 
 export async function notifyBusinessApplicationApproved(input: {
