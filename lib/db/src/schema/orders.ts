@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { refundStatusEnum } from "./order-refunds";
 
 export const orderStatusEnum = pgEnum("order_status", [
   "NEW",
@@ -47,6 +48,10 @@ export const ordersTable = pgTable("orders", {
   paymentMethod: text("payment_method").notNull().default("STRIPE"),
   stripeSessionId: text("stripe_session_id"),
   stripeConnectedAccountId: text("stripe_connected_account_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  refundedAmountCents: integer("refunded_amount_cents").notNull().default(0),
+  refundStatus: refundStatusEnum("refund_status").notNull().default("NONE"),
+  lastRefundedAt: timestamp("last_refunded_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
