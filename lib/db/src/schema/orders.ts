@@ -40,6 +40,8 @@ export const ordersTable = pgTable("orders", {
   customerUserId: text("customer_user_id"),
   deliveryAddress: text("delivery_address"),
   pickupTime: text("pickup_time"),
+  estimatedWindowStart: timestamp("estimated_window_start", { withTimezone: true }),
+  estimatedWindowEnd: timestamp("estimated_window_end", { withTimezone: true }),
   notes: text("notes"),
   specialFields: text("special_fields"), // JSON string
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),

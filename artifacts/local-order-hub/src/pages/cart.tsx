@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/components/cart-context";
-import { useGetBusinessCheckout, useCreateOrder, useCreateCheckoutSession } from "@workspace/api-client-react";
+import { useGetBusinessCheckout, useCreateOrder, useCreateCheckoutSession, estimateOrderPrep } from "@workspace/api-client-react";
 import { FulfillmentType } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import {
   allowsPayAtPickup,
 } from "@workspace/api-zod";
 import { parseStripeCheckoutReturn } from "@/lib/stripe-checkout-return";
+import { getCheckoutAsapLabel } from "@/lib/order-prep-timing";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
@@ -77,6 +79,32 @@ export default function Cart() {
 
   const meetsDeliveryMinimum =
     !minimumOrderForDelivery || total >= minimumOrderForDelivery;
+
+  const prepEstimateInput = useMemo(
+    () =>
+      cart.businessId && cart.items.length
+        ? {
+            businessId: cart.businessId,
+            fulfillmentType,
+            items: cart.items.map((item) => ({
+              productId: item.id,
+              quantity: item.quantity,
+            })),
+          }
+        : null,
+    [cart.businessId, cart.items, fulfillmentType],
+  );
+
+  const { data: prepEstimate } = useQuery({
+    queryKey: ["/api/orders/prep-estimate", prepEstimateInput],
+    queryFn: () => estimateOrderPrep(prepEstimateInput!),
+    enabled: !!prepEstimateInput,
+  });
+
+  const asapEstimateLabel =
+    prepEstimate != null
+      ? getCheckoutAsapLabel(fulfillmentType, prepEstimate.minMinutes, prepEstimate.maxMinutes)
+      : null;
 
   const performCheckout = useCallback(
     async (payAtPickup: boolean) => {
@@ -382,6 +410,11 @@ export default function Cart() {
             </CardContent>
             <CardFooter className="flex-col gap-4 p-6 bg-muted/10 border-t border-border/50">
               <div className="w-full space-y-3">
+                {asapEstimateLabel ? (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
+                    <p className="font-medium text-foreground">{asapEstimateLabel}</p>
+                  </div>
+                ) : null}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span>${total.toFixed(2)}</span>

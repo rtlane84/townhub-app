@@ -29,5 +29,7 @@ export interface BusinessInput {
   payAtPickupEnabled?: boolean;
   paymentMode?: PaymentMode;
   orderCutoffTime?: string;
+  /** @minimum 1 */
+  defaultPrepMinutes?: number;
   ownerId?: string;
 }

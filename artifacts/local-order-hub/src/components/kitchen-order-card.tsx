@@ -10,6 +10,10 @@ import {
   PAYMENT_FLAG_LABELS,
 } from "@/lib/business-order-display";
 import { getKitchenQuickAction } from "@/lib/kitchen-display";
+import {
+  getBusinessOrderTimingLabel,
+  getBusinessReadyWindowLabel,
+} from "@/lib/order-prep-timing";
 import { cn } from "@/lib/utils";
 import { Truck, Store } from "lucide-react";
 
@@ -24,6 +28,8 @@ export function KitchenOrderCard({ order, updating, onAdvance }: Props) {
   const quickAction = getKitchenQuickAction(order);
   const paymentFlag = getBusinessOrderPaymentFlag(order.paymentMethod, order.paymentStatus);
   const timeLabel = order.createdAt ? formatOrderRelativeTime(order.createdAt) : "";
+  const readyWindow = getBusinessReadyWindowLabel(order);
+  const timingLabel = getBusinessOrderTimingLabel(order);
 
   return (
     <article
@@ -63,6 +69,16 @@ export function KitchenOrderCard({ order, updating, onAdvance }: Props) {
         )}
         <span>{fulfillmentLabel(order.fulfillmentType)}</span>
       </div>
+
+      <p className="text-xs text-muted-foreground leading-snug">
+        {readyWindow}
+        {timingLabel ? (
+          <span className={cn(timingLabel.startsWith("Overdue") && "text-destructive font-medium")}>
+            {" · "}
+            {timingLabel}
+          </span>
+        ) : null}
+      </p>
 
       <p className="text-sm font-medium truncate">{order.customerName}</p>
 

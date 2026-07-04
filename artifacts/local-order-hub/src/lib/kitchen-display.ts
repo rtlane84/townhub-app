@@ -151,6 +151,9 @@ export function groupOrdersByKitchenColumn(orders: Order[]): Record<KitchenColum
 
   for (const column of KITCHEN_COLUMN_DEFS) {
     grouped[column.id].sort((a, b) => {
+      const aEnd = a.estimatedWindowEnd ? new Date(a.estimatedWindowEnd).getTime() : Number.POSITIVE_INFINITY;
+      const bEnd = b.estimatedWindowEnd ? new Date(b.estimatedWindowEnd).getTime() : Number.POSITIVE_INFINITY;
+      if (aEnd !== bEnd) return aEnd - bEnd;
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return aTime - bTime;

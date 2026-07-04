@@ -74,6 +74,7 @@ export const businessesTable = pgTable("businesses", {
   payAtPickupEnabled: boolean("pay_at_pickup_enabled").notNull().default(false),
   paymentMode: paymentModeEnum("payment_mode"),
   orderCutoffTime: text("order_cutoff_time"),
+  defaultPrepMinutes: integer("default_prep_minutes").notNull().default(15),
 
   // Stripe Connect (per-business connected account for card payments)
   stripeConnectedAccountId: text("stripe_connected_account_id"),

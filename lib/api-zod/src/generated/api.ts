@@ -59,6 +59,7 @@ export const getMyBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const GetMyBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -89,6 +90,7 @@ export const GetMyBusinessResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -143,6 +145,7 @@ export const listBusinessesResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const ListBusinessesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -173,6 +176,7 @@ export const ListBusinessesResponseItem = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -217,6 +221,8 @@ export const GetPlatformStatsResponse = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
   "total": zod.number(),
@@ -294,6 +300,7 @@ export const getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const GetBusinessCheckoutResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -324,6 +331,7 @@ export const GetBusinessCheckoutResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -358,6 +366,7 @@ export const getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMax = 
 
 
 
+
 export const GetBusinessBySlugResponse = zod.object({
   "business": zod.object({
   "id": zod.number(),
@@ -389,6 +398,7 @@ export const GetBusinessBySlugResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -487,6 +497,7 @@ export const createBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const CreateBusinessBody = zod.object({
   "name": zod.string().min(1),
   "slug": zod.string().min(1),
@@ -510,6 +521,7 @@ export const CreateBusinessBody = zod.object({
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).optional(),
   "orderCutoffTime": zod.string().optional(),
+  "defaultPrepMinutes": zod.number().min(1).optional(),
   "ownerId": zod.string().optional()
 })
 
@@ -523,6 +535,7 @@ export const GetBusinessParams = zod.object({
 
 export const getBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
 export const getBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
+
 
 
 
@@ -556,6 +569,7 @@ export const GetBusinessResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -641,6 +655,7 @@ export const updateBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const UpdateBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -671,6 +686,7 @@ export const UpdateBusinessResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -1017,6 +1033,32 @@ export const DeleteProductParams = zod.object({
 
 
 /**
+ * @summary Preview ASAP prep time estimate for a cart
+ */
+
+
+
+
+export const EstimateOrderPrepBody = zod.object({
+  "businessId": zod.number(),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "quantity": zod.number().min(1),
+  "selectedOptionIds": zod.array(zod.number()).optional()
+})).min(1)
+})
+
+export const EstimateOrderPrepResponse = zod.object({
+  "centerMinutes": zod.number(),
+  "minMinutes": zod.number(),
+  "maxMinutes": zod.number(),
+  "estimatedWindowStart": zod.coerce.date(),
+  "estimatedWindowEnd": zod.coerce.date()
+})
+
+
+/**
  * @summary Place a new order
  */
 
@@ -1061,6 +1103,8 @@ export const ListMyOrdersResponseItem = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
   "total": zod.number(),
@@ -1123,6 +1167,8 @@ export const GetOrderResponse = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
   "total": zod.number(),
@@ -1188,6 +1234,8 @@ export const UpdateOrderStatusResponse = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
   "total": zod.number(),
@@ -1331,6 +1379,8 @@ export const ListBusinessOrdersResponseItem = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
   "total": zod.number(),
@@ -1398,6 +1448,8 @@ export const GetBusinessOrderSummaryResponse = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
   "total": zod.number(),
@@ -1462,6 +1514,8 @@ export const ListAllOrdersResponseItem = zod.object({
   "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
   "deliveryAddress": zod.string().nullish(),
   "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
   "notes": zod.string().nullish(),
   "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
   "total": zod.number(),
@@ -1788,6 +1842,7 @@ export const assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 
+
 export const AssignBusinessOwnerResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -1818,6 +1873,7 @@ export const AssignBusinessOwnerResponse = zod.object({
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),

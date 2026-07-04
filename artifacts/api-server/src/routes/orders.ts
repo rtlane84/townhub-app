@@ -21,6 +21,7 @@ import {
   CreateCheckoutSessionBody,
   RefundOrderParams,
   RefundOrderBody,
+  EstimateOrderPrepBody,
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession, stripe, isMockMode } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
@@ -56,6 +57,10 @@ import {
   validateOrderItemSelections,
   type OrderOptionSnapshot,
 } from "../lib/product-options";
+import {
+  calculateOrderPrepEstimate,
+  serializePrepEstimate,
+} from "../lib/order-prep-estimate";
 
 const router: IRouter = Router();
 
@@ -163,6 +168,14 @@ async function serializeOrder(
     customerUserId: order.customerUserId,
     deliveryAddress: order.deliveryAddress,
     pickupTime: order.pickupTime,
+    estimatedWindowStart:
+      order.estimatedWindowStart instanceof Date
+        ? order.estimatedWindowStart.toISOString()
+        : order.estimatedWindowStart,
+    estimatedWindowEnd:
+      order.estimatedWindowEnd instanceof Date
+        ? order.estimatedWindowEnd.toISOString()
+        : order.estimatedWindowEnd,
     notes: order.notes,
     specialFields: order.specialFields,
     total: parseFloat(order.total),
@@ -210,6 +223,58 @@ async function serializeOrder(
     refunds: await serializeOrderRefunds(refunds),
   };
 }
+
+// POST /api/orders/prep-estimate
+router.post("/orders/prep-estimate", async (req, res): Promise<void> => {
+  const parsed = EstimateOrderPrepBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const d = parsed.data;
+  if (!d.items.length) {
+    res.status(400).json({ error: "At least one item is required" });
+    return;
+  }
+
+  const [business] = await db
+    .select()
+    .from(businessesTable)
+    .where(eq(businessesTable.id, d.businessId));
+
+  if (!business) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  const products = await db
+    .select()
+    .from(productsTable)
+    .where(eq(productsTable.businessId, d.businessId));
+
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  for (const item of d.items) {
+    const product = productMap.get(item.productId);
+    if (!product) {
+      res.status(400).json({ error: `Product ${item.productId} not found` });
+      return;
+    }
+  }
+
+  const estimate = calculateOrderPrepEstimate({
+    defaultPrepMinutes: business.defaultPrepMinutes,
+    fulfillmentType: d.fulfillmentType,
+    lineItems: d.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    })),
+    productMap,
+  });
+
+  res.json(serializePrepEstimate(estimate));
+});
 
 // POST /api/orders
 router.post("/orders", async (req, res): Promise<void> => {
@@ -313,6 +378,16 @@ router.post("/orders", async (req, res): Promise<void> => {
 
   const total = subtotal + (deliveryFee ?? 0);
 
+  const prepEstimate = calculateOrderPrepEstimate({
+    defaultPrepMinutes: business.defaultPrepMinutes,
+    fulfillmentType: d.fulfillmentType,
+    lineItems: d.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    })),
+    productMap,
+  });
+
   const [order] = await db
     .insert(ordersTable)
     .values({
@@ -324,7 +399,9 @@ router.post("/orders", async (req, res): Promise<void> => {
       customerPhone: d.customerPhone?.trim() ?? null,
       customerUserId: customerUserId ?? null,
       deliveryAddress: d.deliveryAddress?.trim(),
-      pickupTime: d.pickupTime,
+      pickupTime: "ASAP",
+      estimatedWindowStart: prepEstimate.estimatedWindowStart,
+      estimatedWindowEnd: prepEstimate.estimatedWindowEnd,
       notes: d.notes,
       specialFields: d.specialFields,
       total: String(total),

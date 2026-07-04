@@ -25,6 +25,8 @@ const sampleOrder = {
   total: 24.5,
   items: [{ productName: "Latte", quantity: 2, unitPrice: 12.25 }],
   orderedAt: new Date("2026-06-24T14:30:00Z"),
+  estimatedWindowStart: new Date("2026-06-24T14:55:00Z"),
+  estimatedWindowEnd: new Date("2026-06-24T15:05:00Z"),
 };
 
 describe("notification delivery", () => {
@@ -93,11 +95,17 @@ describe("owner new order notifications", () => {
     const body = buildOwnerNewOrderSms(sampleOrder);
     assert.match(body, /Clay Diner/);
     assert.match(body, /ORD-1001/);
+    assert.match(body, /Estimated pickup:/i);
     assert.match(body, /dashboard\/business\/orders\/42/);
   });
 });
 
 describe("customer lifecycle SMS", () => {
+  it("includes estimated window in order received SMS", () => {
+    const sms = buildCustomerLifecycleSms("ORDER_RECEIVED", sampleOrder);
+    assert.match(sms, /Estimated pickup:/i);
+  });
+
   it("keeps SMS concise with order link", () => {
     const sms = buildCustomerLifecycleSms("ORDER_RECEIVED", sampleOrder);
     assert.match(sms, /Clay Diner received your order #ORD-1001/);

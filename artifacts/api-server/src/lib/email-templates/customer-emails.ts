@@ -7,16 +7,30 @@ import {
   renderOrderItems,
   renderStatusBadge,
 } from "./components";
+import { formatNotificationEstimatedWindow } from "@workspace/api-zod";
 import { escapeHtml, renderEmailLayout, renderParagraph } from "./layout";
 import type { CustomerLifecycleEvent, EmailContent, OrderNotificationData } from "./types";
 
 function orderSummaryRows(order: OrderNotificationData): Array<{ label: string; value: string }> {
-  return [
+  const rows: Array<{ label: string; value: string }> = [
     { label: "Business", value: order.businessName },
     { label: "Order number", value: order.orderNumber },
     { label: "Order placed", value: formatOrderDateTime(order.orderedAt) },
     { label: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType) },
   ];
+
+  if (order.estimatedWindowStart && order.estimatedWindowEnd) {
+    rows.push({
+      label: "Timing",
+      value: formatNotificationEstimatedWindow(
+        order.fulfillmentType,
+        order.estimatedWindowStart,
+        order.estimatedWindowEnd,
+      ),
+    });
+  }
+
+  return rows;
 }
 
 function orderSummaryHtml(order: OrderNotificationData, includeItems = true): string {
@@ -67,10 +81,23 @@ function buildEmail(
     `Order #: ${order.orderNumber}`,
     `Placed: ${formatOrderDateTime(order.orderedAt)}`,
     `Fulfillment: ${fulfillmentLabel(order.fulfillmentType)}`,
+  ];
+
+  if (order.estimatedWindowStart && order.estimatedWindowEnd) {
+    textLines.push(
+      formatNotificationEstimatedWindow(
+        order.fulfillmentType,
+        order.estimatedWindowStart,
+        order.estimatedWindowEnd,
+      ),
+    );
+  }
+
+  textLines.push(
     `Total: $${order.total.toFixed(2)}`,
     "",
     `${config.actionLabel ?? "View Order"}: ${orderUrl}`,
-  ];
+  );
 
   if (config.footerNote) {
     textLines.push("", config.footerNote);

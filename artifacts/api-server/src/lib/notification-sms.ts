@@ -1,9 +1,13 @@
 import { customerOrderUrl, dashboardOrderUrl, dashboardAppointmentsUrl } from "./notification-urls";
-import { formatTime12h } from "@workspace/api-zod";
+import { formatNotificationEstimatedWindow, formatTime12h } from "@workspace/api-zod";
 import type { CustomerLifecycleEvent, OrderNotificationData } from "./email-templates/types";
 
 export function buildCustomerOrderReceivedSms(order: OrderNotificationData): string {
-  return `${order.businessName} received your order #${order.orderNumber}. We'll notify you when it's accepted. ${customerOrderUrl(order.orderId)}`;
+  const timing =
+    order.estimatedWindowStart && order.estimatedWindowEnd
+      ? ` ${formatNotificationEstimatedWindow(order.fulfillmentType, order.estimatedWindowStart, order.estimatedWindowEnd)}.`
+      : "";
+  return `${order.businessName} received your order #${order.orderNumber}.${timing} We'll notify you when it's accepted. ${customerOrderUrl(order.orderId)}`;
 }
 
 export function buildCustomerOrderAcceptedSms(order: OrderNotificationData): string {
@@ -55,9 +59,18 @@ export function buildCustomerLifecycleSms(
 export function buildOwnerNewOrderSms(order: OrderNotificationData): string {
   const payment =
     order.paymentMethod === "IN_PERSON" ? "Pay at pickup" : order.paymentStatus === "PAID" ? "Paid" : "Card";
+  const timing =
+    order.estimatedWindowStart && order.estimatedWindowEnd
+      ? formatNotificationEstimatedWindow(
+          order.fulfillmentType,
+          order.estimatedWindowStart,
+          order.estimatedWindowEnd,
+        )
+      : "ASAP";
   return [
     `${order.businessName}: New order #${order.orderNumber}`,
     `${order.customerName} · $${order.total.toFixed(2)} · ${payment}`,
+    timing,
     dashboardOrderUrl(order.orderId),
   ].join("\n");
 }
