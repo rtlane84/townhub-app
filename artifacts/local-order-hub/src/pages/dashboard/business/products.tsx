@@ -157,19 +157,19 @@ export default function BusinessProducts() {
 
   return (
     <BusinessDashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
+      <div className="max-w-2xl mx-auto w-full min-w-0 space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h1 className="font-serif text-3xl font-bold">Items</h1>
             <p className="text-muted-foreground mt-1">Manage what you offer on your storefront</p>
           </div>
-          <Button onClick={openCreate} data-testid="button-add-product">
+          <Button onClick={openCreate} className="shrink-0 self-start sm:self-auto" data-testid="button-add-product">
             <Plus className="h-4 w-4 mr-2" /> Add Item
           </Button>
         </div>
 
-        <Card>
-          <CardContent className="p-0">
+        <Card className="overflow-hidden">
+          <CardContent className="p-0 overflow-hidden">
             {isLoading ? (
               <div className="p-6 space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
@@ -182,44 +182,61 @@ export default function BusinessProducts() {
             ) : (
               <div className="divide-y divide-border">
                 {products.map((product) => (
-                  <div key={product.id} className="flex items-center gap-4 px-4 py-3" data-testid={`row-product-${product.id}`}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <p className="font-medium text-sm truncate">{product.name}</p>
-                        {product.featured && <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
-                        {!product.available && (
-                          <Badge variant="secondary" className="text-xs shrink-0">Unavailable</Badge>
-                        )}
-                        {(product.assignedModifierGroups?.length ?? 0) > 0 && (
-                          <Badge variant="outline" className="text-xs shrink-0">
-                            {product.assignedModifierGroups!.length} option group{product.assignedModifierGroups!.length === 1 ? "" : "s"}
-                          </Badge>
-                        )}
-                      </div>
+                  <div
+                    key={product.id}
+                    className="flex items-start gap-3 px-4 py-3 min-w-0"
+                    data-testid={`row-product-${product.id}`}
+                  >
+                    <div className="flex-1 min-w-0 overflow-hidden">
+                      <p className="font-medium text-sm truncate">{product.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {product.description ?? "No description"}
                         {product.categoryId && categories && (
                           <> · {categories.find((c) => c.id === product.categoryId)?.name}</>
                         )}
                       </p>
+                      {(product.featured ||
+                        !product.available ||
+                        (product.assignedModifierGroups?.length ?? 0) > 0) && (
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          {product.featured && (
+                            <Star className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-label="Featured" />
+                          )}
+                          {!product.available && (
+                            <Badge variant="secondary" className="text-xs shrink-0">
+                              Unavailable
+                            </Badge>
+                          )}
+                          {(product.assignedModifierGroups?.length ?? 0) > 0 && (
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {product.assignedModifierGroups!.length} option group
+                              {product.assignedModifierGroups!.length === 1 ? "" : "s"}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <span className="font-semibold text-primary shrink-0">${product.price.toFixed(2)}</span>
-                    <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(product)} data-testid={`button-edit-product-${product.id}`}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <LoadingButton
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => setDeleteTarget({ id: product.id, name: product.name })}
-                        loading={deletingId === product.id}
-                        disabled={deleteProduct.isPending}
-                        aria-label="Delete product"
-                        data-testid={`button-delete-product-${product.id}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </LoadingButton>
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <span className="font-semibold text-primary text-sm whitespace-nowrap">
+                        ${product.price.toFixed(2)}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(product)} data-testid={`button-edit-product-${product.id}`}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <LoadingButton
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeleteTarget({ id: product.id, name: product.name })}
+                          loading={deletingId === product.id}
+                          disabled={deleteProduct.isPending}
+                          aria-label="Delete product"
+                          data-testid={`button-delete-product-${product.id}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </LoadingButton>
+                      </div>
                     </div>
                   </div>
                 ))}

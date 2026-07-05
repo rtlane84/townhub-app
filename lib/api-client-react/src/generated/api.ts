@@ -55,6 +55,7 @@ import type {
   Highlight,
   HighlightInput,
   ListAllOrdersParams,
+  ListBusinessOrdersParams,
   ListBusinessesParams,
   ListEventsParams,
   ListMediaAssetsParams,
@@ -2747,20 +2748,29 @@ export const useRefundOrder = <TError = ErrorType<void>,
       return useMutation(getRefundOrderMutationOptions(options));
     }
 
-export const getListBusinessOrdersUrl = (businessId: number,) => {
+export const getListBusinessOrdersUrl = (businessId: number,
+    params?: ListBusinessOrdersParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/businesses/${businessId}/orders`
+  return stringifiedParams.length > 0 ? `/api/businesses/${businessId}/orders?${stringifiedParams}` : `/api/businesses/${businessId}/orders`
 }
 
 /**
  * @summary List orders for a specific business
  */
-export const listBusinessOrders = async (businessId: number, options?: RequestInit): Promise<Order[]> => {
+export const listBusinessOrders = async (businessId: number,
+    params?: ListBusinessOrdersParams, options?: RequestInit): Promise<Order[]> => {
 
-  return customFetch<Order[]>(getListBusinessOrdersUrl(businessId),
+  return customFetch<Order[]>(getListBusinessOrdersUrl(businessId,params),
   {
     ...options,
     method: 'GET'
@@ -2773,23 +2783,25 @@ export const listBusinessOrders = async (businessId: number, options?: RequestIn
 
 
 
-export const getListBusinessOrdersQueryKey = (businessId: number,) => {
+export const getListBusinessOrdersQueryKey = (businessId: number,
+    params?: ListBusinessOrdersParams,) => {
     return [
-    `/api/businesses/${businessId}/orders`
+    `/api/businesses/${businessId}/orders`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListBusinessOrdersQueryOptions = <TData = Awaited<ReturnType<typeof listBusinessOrders>>, TError = ErrorType<unknown>>(businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListBusinessOrdersQueryOptions = <TData = Awaited<ReturnType<typeof listBusinessOrders>>, TError = ErrorType<unknown>>(businessId: number,
+    params?: ListBusinessOrdersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListBusinessOrdersQueryKey(businessId);
+  const queryKey =  queryOptions?.queryKey ?? getListBusinessOrdersQueryKey(businessId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBusinessOrders>>> = ({ signal }) => listBusinessOrders(businessId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBusinessOrders>>> = ({ signal }) => listBusinessOrders(businessId,params, { signal, ...requestOptions });
 
 
 
@@ -2807,11 +2819,12 @@ export type ListBusinessOrdersQueryError = ErrorType<unknown>
  */
 
 export function useListBusinessOrders<TData = Awaited<ReturnType<typeof listBusinessOrders>>, TError = ErrorType<unknown>>(
- businessId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ businessId: number,
+    params?: ListBusinessOrdersParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listBusinessOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListBusinessOrdersQueryOptions(businessId,options)
+  const queryOptions = getListBusinessOrdersQueryOptions(businessId,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -1423,6 +1423,12 @@ export const ListBusinessOrdersParams = zod.object({
   "businessId": zod.coerce.number()
 })
 
+export const ListBusinessOrdersQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "activeOnly": zod.coerce.boolean().optional().describe('When true, returns only active kitchen\/live queue statuses within a recent lookback window.'),
+  "since": zod.date().optional().describe('Optional lower bound for order createdAt. Defaults to 30 days ago when activeOnly is true.')
+})
+
 export const ListBusinessOrdersResponseItem = zod.object({
   "id": zod.number(),
   "businessId": zod.number(),
@@ -2993,7 +2999,7 @@ export const getPlatformThemeResponseHeroOverlayOpacityMin = 0;
 export const getPlatformThemeResponseHeroOverlayOpacityMax = 100;
 
 export const getPlatformThemeResponseLogoSizePxMin = 16;
-export const getPlatformThemeResponseLogoSizePxMax = 64;
+export const getPlatformThemeResponseLogoSizePxMax = 192;
 
 
 
@@ -3015,6 +3021,10 @@ export const GetPlatformThemeResponse = zod.object({
   "heroHeadlineAccentColor": zod.string().nullish(),
   "heroHeadlineLine1": zod.string().nullish(),
   "heroHeadlineLine2": zod.string().nullish(),
+  "heroImageFit": zod.enum(['cover', 'contain']).optional(),
+  "heroImagePosition": zod.enum(['center', 'top', 'bottom']).optional(),
+  "showHeroText": zod.boolean().optional(),
+  "showHeroButtons": zod.boolean().optional(),
   "logoSizePx": zod.number().min(getPlatformThemeResponseLogoSizePxMin).max(getPlatformThemeResponseLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().nullish(),
@@ -3029,7 +3039,7 @@ export const updatePlatformThemeBodyHeroOverlayOpacityMin = 0;
 export const updatePlatformThemeBodyHeroOverlayOpacityMax = 100;
 
 export const updatePlatformThemeBodyLogoSizePxMin = 16;
-export const updatePlatformThemeBodyLogoSizePxMax = 64;
+export const updatePlatformThemeBodyLogoSizePxMax = 192;
 
 
 
@@ -3050,6 +3060,10 @@ export const UpdatePlatformThemeBody = zod.object({
   "heroHeadlineAccentColor": zod.string().nullish(),
   "heroHeadlineLine1": zod.string().nullish(),
   "heroHeadlineLine2": zod.string().nullish(),
+  "heroImageFit": zod.enum(['cover', 'contain']).optional(),
+  "heroImagePosition": zod.enum(['center', 'top', 'bottom']).optional(),
+  "showHeroText": zod.boolean().optional(),
+  "showHeroButtons": zod.boolean().optional(),
   "logoSizePx": zod.number().min(updatePlatformThemeBodyLogoSizePxMin).max(updatePlatformThemeBodyLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().optional()
@@ -3059,7 +3073,7 @@ export const updatePlatformThemeResponseHeroOverlayOpacityMin = 0;
 export const updatePlatformThemeResponseHeroOverlayOpacityMax = 100;
 
 export const updatePlatformThemeResponseLogoSizePxMin = 16;
-export const updatePlatformThemeResponseLogoSizePxMax = 64;
+export const updatePlatformThemeResponseLogoSizePxMax = 192;
 
 
 
@@ -3081,6 +3095,10 @@ export const UpdatePlatformThemeResponse = zod.object({
   "heroHeadlineAccentColor": zod.string().nullish(),
   "heroHeadlineLine1": zod.string().nullish(),
   "heroHeadlineLine2": zod.string().nullish(),
+  "heroImageFit": zod.enum(['cover', 'contain']).optional(),
+  "heroImagePosition": zod.enum(['center', 'top', 'bottom']).optional(),
+  "showHeroText": zod.boolean().optional(),
+  "showHeroButtons": zod.boolean().optional(),
   "logoSizePx": zod.number().min(updatePlatformThemeResponseLogoSizePxMin).max(updatePlatformThemeResponseLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().nullish(),

@@ -1285,6 +1285,23 @@ export interface FoodTruckLocationWithBusiness {
   isActive: boolean;
 }
 
+export type PlatformThemeHeroImageFit = typeof PlatformThemeHeroImageFit[keyof typeof PlatformThemeHeroImageFit];
+
+
+export const PlatformThemeHeroImageFit = {
+  cover: 'cover',
+  contain: 'contain',
+} as const;
+
+export type PlatformThemeHeroImagePosition = typeof PlatformThemeHeroImagePosition[keyof typeof PlatformThemeHeroImagePosition];
+
+
+export const PlatformThemeHeroImagePosition = {
+  center: 'center',
+  top: 'top',
+  bottom: 'bottom',
+} as const;
+
 export interface PlatformTheme {
   id: number;
   primaryColor: string;
@@ -1318,9 +1335,13 @@ export interface PlatformTheme {
   heroHeadlineLine1?: string | null;
   /** @nullable */
   heroHeadlineLine2?: string | null;
+  heroImageFit?: PlatformThemeHeroImageFit;
+  heroImagePosition?: PlatformThemeHeroImagePosition;
+  showHeroText?: boolean;
+  showHeroButtons?: boolean;
   /**
      * @minimum 16
-     * @maximum 64
+     * @maximum 192
      */
   logoSizePx?: number;
   weatherEnabled?: boolean;
@@ -1328,6 +1349,23 @@ export interface PlatformTheme {
   weatherLocation?: string | null;
   updatedAt?: string;
 }
+
+export type PlatformThemeInputHeroImageFit = typeof PlatformThemeInputHeroImageFit[keyof typeof PlatformThemeInputHeroImageFit];
+
+
+export const PlatformThemeInputHeroImageFit = {
+  cover: 'cover',
+  contain: 'contain',
+} as const;
+
+export type PlatformThemeInputHeroImagePosition = typeof PlatformThemeInputHeroImagePosition[keyof typeof PlatformThemeInputHeroImagePosition];
+
+
+export const PlatformThemeInputHeroImagePosition = {
+  center: 'center',
+  top: 'top',
+  bottom: 'bottom',
+} as const;
 
 export interface PlatformThemeInput {
   primaryColor?: string;
@@ -1354,9 +1392,13 @@ export interface PlatformThemeInput {
   heroHeadlineLine1?: string | null;
   /** @nullable */
   heroHeadlineLine2?: string | null;
+  heroImageFit?: PlatformThemeInputHeroImageFit;
+  heroImagePosition?: PlatformThemeInputHeroImagePosition;
+  showHeroText?: boolean;
+  showHeroButtons?: boolean;
   /**
      * @minimum 16
-     * @maximum 64
+     * @maximum 192
      */
   logoSizePx?: number;
   weatherEnabled?: boolean;
@@ -1564,6 +1606,18 @@ featured?: boolean;
 
 export type CheckBusinessSlugAvailabilityParams = {
 slug: string;
+};
+
+export type ListBusinessOrdersParams = {
+status?: string;
+/**
+ * When true, returns only active kitchen/live queue statuses within a recent lookback window.
+ */
+activeOnly?: boolean;
+/**
+ * Optional lower bound for order createdAt. Defaults to 30 days ago when activeOnly is true.
+ */
+since?: string;
 };
 
 export type ListAllOrdersParams = {

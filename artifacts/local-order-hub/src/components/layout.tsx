@@ -14,6 +14,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { usePlatformBranding } from "@/components/theme-provider";
+import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR } from "@/lib/platform-branding";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 
 function PlatformLogo({ className }: { className?: string }) {
@@ -46,7 +47,8 @@ function isDashboardRoute(location: string): boolean {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { platformName, footerTagline } = usePlatformBranding();
+  const { platformName, footerTagline, logoSizePx } = usePlatformBranding();
+  const headerMinHeightPx = resolveHeaderMinHeightPx(logoSizePx);
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
   const {
     authResolved,
@@ -130,9 +132,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const listYourBusinessActive = isNavActive("/list-your-business");
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0">
+    <div
+      className="min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0"
+      style={{ [SITE_HEADER_HEIGHT_CSS_VAR]: `${headerMinHeightPx}px` }}
+    >
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div
+          className="container mx-auto px-4 flex items-center justify-between py-0.5"
+          style={{ minHeight: headerMinHeightPx }}
+        >
 
           {/* Left: logo + desktop nav */}
           <div className="flex items-center gap-6 min-w-0">

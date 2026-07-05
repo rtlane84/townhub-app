@@ -20,26 +20,35 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { ImageField } from "@/components/image-field";
+import { HeroPreviewFrame } from "@/components/hero-preview-frame";
 import { PLATFORM_THEME_DEFAULTS } from "@/lib/theme-colors";
 
 import {
   DEFAULT_HERO_BUTTON_COLOR,
   DEFAULT_HERO_HEADLINE_LINE1,
   DEFAULT_HERO_HEADLINE_LINE2,
+  DEFAULT_HERO_IMAGE_FIT,
+  DEFAULT_HERO_IMAGE_POSITION,
   DEFAULT_HERO_OVERLAY_COLOR,
   DEFAULT_HERO_OVERLAY_OPACITY,
   DEFAULT_PLATFORM_NAME,
+  DEFAULT_SHOW_HERO_BUTTONS,
+  DEFAULT_SHOW_HERO_TEXT,
   buildBrandingPayload,
   DEFAULT_LOGO_SIZE_PX,
+  HERO_IMAGE_FIT_OPTIONS,
+  heroImageFitHelperText,
   heroOverlayBackgroundStyle,
   heroPrimaryButtonStyle,
-  LOGO_SIZE_OPTIONS,
+  LOGO_SIZE_PRESETS,
   resolveFooterTagline,
   resolveHeroHeadline,
   resolveShopCtaLabel,
   resolveTagline,
   resolveWeatherLocation,
   themeToBrandingFields,
+  type HeroImageFit,
+  type HeroImagePosition,
 } from "@/lib/platform-branding";
 
 const DEFAULTS: Record<ColorKey, string> = {
@@ -72,6 +81,10 @@ type BrandingFields = {
   heroHeadlineAccentColor: string;
   heroHeadlineLine1: string;
   heroHeadlineLine2: string;
+  heroImageFit: HeroImageFit;
+  heroImagePosition: HeroImagePosition;
+  showHeroText: boolean;
+  showHeroButtons: boolean;
   logoSizePx: number;
 };
 
@@ -87,6 +100,10 @@ const BRANDING_DEFAULTS: BrandingFields = {
   heroHeadlineAccentColor: PLATFORM_THEME_DEFAULTS.primaryColor,
   heroHeadlineLine1: "",
   heroHeadlineLine2: "",
+  heroImageFit: DEFAULT_HERO_IMAGE_FIT,
+  heroImagePosition: DEFAULT_HERO_IMAGE_POSITION,
+  showHeroText: DEFAULT_SHOW_HERO_TEXT,
+  showHeroButtons: DEFAULT_SHOW_HERO_BUTTONS,
   logoSizePx: DEFAULT_LOGO_SIZE_PX,
 };
 
@@ -105,6 +122,17 @@ function brandingHeadlinePreview(branding: BrandingFields) {
     heroHeadlineLine1: branding.heroHeadlineLine1 || null,
     heroHeadlineLine2: branding.heroHeadlineLine2 || null,
   });
+}
+
+function logoSizeOptions(currentPx: number): Array<{ value: number; label: string }> {
+  const presets: Array<{ value: number; label: string }> = LOGO_SIZE_PRESETS.map((p) => ({
+    value: p.value,
+    label: p.label,
+  }));
+  if (!presets.some((p) => p.value === currentPx)) {
+    presets.push({ value: currentPx, label: `${currentPx}px` });
+  }
+  return presets;
 }
 
 export default function AdminSettings() {
@@ -172,7 +200,7 @@ export default function AdminSettings() {
     setIsDirty(true);
   };
 
-  const handleBrandingChange = (key: keyof BrandingFields, value: string | number) => {
+  const handleBrandingChange = (key: keyof BrandingFields, value: string | number | boolean) => {
     setBranding((prev) => ({ ...prev, [key]: value }));
     setIsBrandingDirty(true);
   };
@@ -341,6 +369,84 @@ export default function AdminSettings() {
                   onChange={(heroImageUrl) => handleBrandingChange("heroImageUrl", heroImageUrl)}
                   testId="homepage-hero"
                 />
+                <p className="text-xs text-muted-foreground -mt-4">
+                  Recommended: 1920 × 800 px (wide banner). Recommended size helps image quality, but
+                  Fill banner can still crop depending on screen size.
+                </p>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="heroImageFit">Hero image fit</Label>
+                    <Select
+                      value={branding.heroImageFit}
+                      onValueChange={(value) =>
+                        handleBrandingChange("heroImageFit", value as HeroImageFit)
+                      }
+                    >
+                      <SelectTrigger id="heroImageFit">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {HERO_IMAGE_FIT_OPTIONS.map(({ value, label }) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {heroImageFitHelperText(branding.heroImageFit)}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="heroImagePosition">Hero image position</Label>
+                    <Select
+                      value={branding.heroImagePosition}
+                      onValueChange={(value) =>
+                        handleBrandingChange("heroImagePosition", value as HeroImagePosition)
+                      }
+                    >
+                      <SelectTrigger id="heroImagePosition">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="center">Center</SelectItem>
+                        <SelectItem value="top">Top</SelectItem>
+                        <SelectItem value="bottom">Bottom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+                    <div>
+                      <p className="font-medium text-foreground">Show hero text</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Headline and tagline on the homepage hero.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={branding.showHeroText}
+                      onCheckedChange={(value) => handleBrandingChange("showHeroText", value)}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+                    <div>
+                      <p className="font-medium text-foreground">Show hero buttons</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Shop and List Your Business CTAs.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={branding.showHeroButtons}
+                      onCheckedChange={(value) => handleBrandingChange("showHeroButtons", value)}
+                    />
+                  </div>
+                </div>
+                {!branding.showHeroText && !branding.showHeroButtons ? (
+                  <p className="text-xs text-muted-foreground rounded-lg bg-muted/40 border border-border/60 px-3 py-2">
+                    Use image-only mode if your hero image already contains text.
+                  </p>
+                ) : null}
                 <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
                   <div>
                     <p className="text-sm font-medium">Hero overlay</p>
@@ -387,36 +493,38 @@ export default function AdminSettings() {
                     />
                   </div>
                   {branding.heroImageUrl ? (
-                    <div className="relative aspect-[21/9] overflow-hidden rounded-lg border">
-                      <img
-                        src={branding.heroImageUrl}
-                        alt=""
-                        className="absolute inset-0 h-full w-full object-cover"
-                        aria-hidden
-                      />
-                      <div
-                        className="absolute inset-0"
-                        style={heroOverlayBackgroundStyle(
-                          branding.heroOverlayColor,
-                          branding.heroOverlayOpacity,
-                        )}
-                        aria-hidden
-                      />
-                      <div className="relative z-10 flex h-full flex-col items-center justify-center gap-4 p-6">
+                    <>
+                    <p className="text-xs text-muted-foreground">
+                      The preview uses the same crop behavior as the live homepage.
+                    </p>
+                    <HeroPreviewFrame
+                      heroImageUrl={branding.heroImageUrl}
+                      heroImageFit={branding.heroImageFit}
+                      heroImagePosition={branding.heroImagePosition}
+                      overlayStyle={heroOverlayBackgroundStyle(
+                        branding.heroOverlayColor,
+                        branding.heroOverlayOpacity,
+                      )}
+                      showHeroText={branding.showHeroText}
+                      showHeroButtons={branding.showHeroButtons}
+                      heroText={
                         <p className="text-center font-serif text-lg font-semibold text-white drop-shadow-sm">
                           {brandingHeadlinePreview(branding).line1}{" "}
                           <span style={{ color: branding.heroHeadlineAccentColor }}>
                             {brandingHeadlinePreview(branding).line2}
                           </span>
                         </p>
+                      }
+                      heroButtons={
                         <span
                           className="inline-flex items-center rounded-full px-8 py-3 text-sm font-semibold shadow-lg"
                           style={heroPrimaryButtonStyle(branding.heroButtonColor)}
                         >
                           {resolveShopCtaLabel({ townName: branding.townName || null })}
                         </span>
-                      </div>
-                    </div>
+                      }
+                    />
+                    </>
                   ) : null}
                 </div>
                 <Separator />
@@ -474,7 +582,7 @@ export default function AdminSettings() {
                     testId="platform-logo"
                   />
                   <div className="space-y-2">
-                    <Label htmlFor="logoSizePx">Logo Size</Label>
+                    <Label htmlFor="logoSizePx">Logo size</Label>
                     <Select
                       value={String(branding.logoSizePx)}
                       onValueChange={(value) => {
@@ -486,15 +594,18 @@ export default function AdminSettings() {
                         <SelectValue placeholder="Select size" />
                       </SelectTrigger>
                       <SelectContent>
-                        {LOGO_SIZE_OPTIONS.map((size) => (
-                          <SelectItem key={size} value={String(size)}>
-                            {size}px {size === DEFAULT_LOGO_SIZE_PX ? "(default)" : ""}
+                        {logoSizeOptions(branding.logoSizePx).map(({ value, label }) => (
+                          <SelectItem key={value} value={String(value)}>
+                            {label}
+                            {value === DEFAULT_LOGO_SIZE_PX ? " (default)" : ""}
+                            {" — "}
+                            {value}px
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Header and footer logo height/width in pixels.
+                      Header and footer logo size. Logo aspect ratio is preserved.
                     </p>
                   </div>
                   <div className="space-y-2 md:col-span-2">

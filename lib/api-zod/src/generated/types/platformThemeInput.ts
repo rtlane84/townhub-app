@@ -5,6 +5,8 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { PlatformThemeInputHeroImageFit } from './platformThemeInputHeroImageFit';
+import type { PlatformThemeInputHeroImagePosition } from './platformThemeInputHeroImagePosition';
 
 export interface PlatformThemeInput {
   primaryColor?: string;
@@ -31,9 +33,13 @@ export interface PlatformThemeInput {
   heroHeadlineLine1?: string | null;
   /** @nullable */
   heroHeadlineLine2?: string | null;
+  heroImageFit?: PlatformThemeInputHeroImageFit;
+  heroImagePosition?: PlatformThemeInputHeroImagePosition;
+  showHeroText?: boolean;
+  showHeroButtons?: boolean;
   /**
      * @minimum 16
-     * @maximum 64
+     * @maximum 192
      */
   logoSizePx?: number;
   weatherEnabled?: boolean;

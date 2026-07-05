@@ -148,7 +148,7 @@ export default function BusinessProductOptions() {
 
   return (
     <BusinessDashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-8 px-1">
+      <div className="max-w-2xl mx-auto space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="font-serif text-3xl font-bold">Item Options</h1>

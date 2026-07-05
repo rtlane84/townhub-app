@@ -48,12 +48,17 @@ describe("frontend load performance wiring", () => {
       new URL("../components/home-hero-section.tsx", import.meta.url),
       "utf8",
     );
+    const layers = await readFile(
+      new URL("../components/hero-image-layers.tsx", import.meta.url),
+      "utf8",
+    );
     const responsive = await readFile(
       new URL("../components/responsive-hero-image.tsx", import.meta.url),
       "utf8",
     );
-    assert.match(hero, /ResponsiveHeroImage/);
-    assert.match(hero, /buildOptimizedSrcSet/);
+    assert.match(hero, /HeroImageLayers/);
+    assert.doesNotMatch(hero, /link\.rel = "preload"/);
+    assert.match(layers, /ResponsiveHeroImage/);
     assert.match(responsive, /<picture>/);
     assert.match(responsive, /image\/avif/);
     assert.match(responsive, /image\/webp/);

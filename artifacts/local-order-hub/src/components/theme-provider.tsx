@@ -9,14 +9,20 @@ import {
   resolveHeroHeadline,
   resolveHeroButtonColor,
   resolveHeroHeadlineAccentColor,
+  resolveHeroImageFit,
+  resolveHeroImagePosition,
   resolveHeroOverlayColor,
   resolveHeroOverlayOpacity,
   resolveLogoSizePx,
   resolvePlatformName,
   resolveShopCtaLabel,
+  resolveShowHeroButtons,
+  resolveShowHeroText,
   resolveTagline,
   resolveWeatherEnabled,
   resolveWeatherLocation,
+  type HeroImageFit,
+  type HeroImagePosition,
 } from "@/lib/platform-branding";
 import { applyPlatformThemeToRoot } from "@/lib/theme-colors";
 
@@ -27,6 +33,10 @@ export type PlatformBranding = {
   heroHeadlineAccentColor: string;
   heroTagline: string;
   heroImageUrl: string | null;
+  heroImageFit: HeroImageFit;
+  heroImagePosition: HeroImagePosition;
+  showHeroText: boolean;
+  showHeroButtons: boolean;
   heroOverlayStyle: CSSProperties | null;
   heroPrimaryButtonStyle: CSSProperties | null;
   footerTagline: string;
@@ -46,6 +56,10 @@ const PlatformBrandingContext = createContext<PlatformBranding>({
   heroHeadlineAccentColor: resolveHeroHeadlineAccentColor(null),
   heroTagline: resolveTagline(null),
   heroImageUrl: null,
+  heroImageFit: "cover",
+  heroImagePosition: "center",
+  showHeroText: true,
+  showHeroButtons: true,
   heroOverlayStyle: null,
   heroPrimaryButtonStyle: null,
   footerTagline: resolveFooterTagline(null),
@@ -84,6 +98,10 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
       heroHeadlineAccentColor: resolveHeroHeadlineAccentColor(theme),
       heroTagline: resolveTagline(theme),
       heroImageUrl: heroImage,
+      heroImageFit: resolveHeroImageFit(theme),
+      heroImagePosition: resolveHeroImagePosition(theme),
+      showHeroText: resolveShowHeroText(theme),
+      showHeroButtons: resolveShowHeroButtons(theme),
       heroOverlayStyle: heroImage
         ? heroOverlayBackgroundStyle(overlayColor, overlayOpacity)
         : null,

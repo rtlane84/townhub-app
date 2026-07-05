@@ -23,6 +23,10 @@ const THEME_DEFAULTS = {
   heroHeadlineAccentColor: null as string | null,
   heroHeadlineLine1: null as string | null,
   heroHeadlineLine2: null as string | null,
+  heroImageFit: "cover" as "cover" | "contain",
+  heroImagePosition: "center" as "center" | "top" | "bottom",
+  showHeroText: true,
+  showHeroButtons: true,
   logoSizePx: 24,
   weatherEnabled: false,
   weatherLocation: null as string | null,
@@ -31,13 +35,22 @@ const THEME_DEFAULTS = {
 function clampLogoSize(value: unknown): number {
   const n = typeof value === "number" ? value : parseInt(String(value), 10);
   if (Number.isNaN(n)) return THEME_DEFAULTS.logoSizePx;
-  return Math.min(64, Math.max(16, Math.round(n)));
+  return Math.min(192, Math.max(16, Math.round(n)));
 }
 
 function clampHeroOverlayOpacity(value: unknown): number {
   const n = typeof value === "number" ? value : parseInt(String(value), 10);
   if (Number.isNaN(n)) return THEME_DEFAULTS.heroOverlayOpacity;
   return Math.min(100, Math.max(0, Math.round(n)));
+}
+
+function normalizeHeroImageFit(value: unknown): "cover" | "contain" {
+  return value === "contain" ? "contain" : THEME_DEFAULTS.heroImageFit;
+}
+
+function normalizeHeroImagePosition(value: unknown): "center" | "top" | "bottom" {
+  if (value === "top" || value === "bottom") return value;
+  return THEME_DEFAULTS.heroImagePosition;
 }
 
 function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelect) {
@@ -59,6 +72,10 @@ function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelec
     heroHeadlineAccentColor: row.heroHeadlineAccentColor,
     heroHeadlineLine1: row.heroHeadlineLine1,
     heroHeadlineLine2: row.heroHeadlineLine2,
+    heroImageFit: normalizeHeroImageFit(row.heroImageFit),
+    heroImagePosition: normalizeHeroImagePosition(row.heroImagePosition),
+    showHeroText: row.showHeroText ?? THEME_DEFAULTS.showHeroText,
+    showHeroButtons: row.showHeroButtons ?? THEME_DEFAULTS.showHeroButtons,
     logoSizePx: row.logoSizePx ?? THEME_DEFAULTS.logoSizePx,
     weatherEnabled: row.weatherEnabled ?? THEME_DEFAULTS.weatherEnabled,
     weatherLocation: row.weatherLocation,
@@ -111,6 +128,10 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     "heroHeadlineAccentColor",
     "heroHeadlineLine1",
     "heroHeadlineLine2",
+    "heroImageFit",
+    "heroImagePosition",
+    "showHeroText",
+    "showHeroButtons",
     "logoSizePx",
     "weatherEnabled",
     "weatherLocation",
@@ -138,6 +159,18 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
       }
       if (key === "weatherEnabled") {
         updates[key] = Boolean(value);
+        continue;
+      }
+      if (key === "showHeroText" || key === "showHeroButtons") {
+        updates[key] = Boolean(value);
+        continue;
+      }
+      if (key === "heroImageFit") {
+        updates[key] = normalizeHeroImageFit(value);
+        continue;
+      }
+      if (key === "heroImagePosition") {
+        updates[key] = normalizeHeroImagePosition(value);
         continue;
       }
       if (value === "" || value === undefined) {

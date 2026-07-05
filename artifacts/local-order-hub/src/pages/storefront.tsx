@@ -211,8 +211,15 @@ export default function Storefront() {
         </div>
       )}
 
-      <div className="container mx-auto max-w-[1400px] px-4 pt-4 sm:pt-5 md:pt-6">
-        <div className="relative mx-auto aspect-video w-[84%] overflow-hidden rounded-xl bg-muted shadow-lg shadow-black/[0.08] ring-1 ring-black/[0.05] sm:w-[86%] md:rounded-2xl">
+      <div className="container mx-auto max-w-[1400px] px-4 md:pt-6">
+        {/* Hero — full-bleed banner on mobile; centered overlap style from md up */}
+        <div
+          className={cn(
+            "relative aspect-video overflow-hidden bg-muted",
+            "-mx-4 w-auto rounded-none shadow-none ring-0",
+            "md:mx-auto md:w-[86%] md:rounded-2xl md:shadow-lg md:shadow-black/[0.08] md:ring-1 md:ring-black/[0.05]",
+          )}
+        >
           {b.heroImageUrl ? (
             <img
               src={b.heroImageUrl}
@@ -229,24 +236,24 @@ export default function Storefront() {
           )}
         </div>
 
-        <div className="relative z-10 -mt-[6.125rem] md:-mt-[7.125rem]">
+        <div className="relative z-10 -mt-14 md:-mt-[7.125rem]">
           <div className={cn("flex flex-col gap-8", showCatalogColumn && "md:flex-row")}>
           {/* Business details */}
           <div
             className={cn(
-              "order-1",
-              informationCatalogEmpty && "mx-auto w-full max-w-md",
+              "order-1 w-full",
+              informationCatalogEmpty && "md:mx-auto md:max-w-md",
               showCatalogColumn && "md:w-1/3 lg:w-1/4 flex-shrink-0",
             )}
           >
             <Card className="sticky top-24 overflow-visible border-border/40 shadow-xl">
-              <div className="flex flex-col items-center rounded-t-xl border-b bg-white p-6 pt-12 text-center">
+              <div className="flex flex-col items-center rounded-t-xl border-b bg-white p-6 pt-10 text-center md:pt-12">
                 <BusinessLogoBadge
                   src={b.logoUrl}
                   alt={`${b.name} logo`}
                   size="lg"
                   ringClassName="ring-4"
-                  className="-mt-[4.5rem] relative z-20 mb-4 shadow-md"
+                  className="-mt-12 md:-mt-[4.5rem] relative z-20 mb-4 shadow-md"
                 />
                 <h1 className="text-2xl font-serif font-bold text-foreground mb-1">{b.name}</h1>
                 <BusinessTags business={b} accentColor={b.accentColor} variant="storefront" />

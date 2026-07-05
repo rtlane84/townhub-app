@@ -1,18 +1,25 @@
 import { shadcn } from "@clerk/themes";
 
+const clerkForeground = "hsl(20, 20%, 15%)";
+const clerkMutedForeground = "hsl(20, 10%, 45%)";
+const clerkBorder = "hsl(214, 20%, 88%)";
+const clerkPrimary = "hsl(221, 64%, 33%)";
+const clerkPrimaryForeground = "#ffffff";
+
 /** Sign-in / sign-up card styling (ClerkProvider). */
 export const clerkAuthAppearance = {
   theme: shadcn,
   cssLayerName: "clerk",
   variables: {
-    colorPrimary: "hsl(25, 80%, 45%)",
-    colorForeground: "hsl(20, 20%, 15%)",
-    colorMutedForeground: "hsl(20, 10%, 45%)",
+    colorPrimary: clerkPrimary,
+    colorPrimaryForeground: clerkPrimaryForeground,
+    colorForeground: clerkForeground,
+    colorMutedForeground: clerkMutedForeground,
     colorDanger: "hsl(0, 70%, 50%)",
     colorBackground: "hsl(0, 0%, 100%)",
-    colorInput: "hsl(30, 15%, 85%)",
-    colorInputForeground: "hsl(20, 20%, 15%)",
-    colorNeutral: "hsl(30, 15%, 85%)",
+    colorInput: "hsl(214, 20%, 88%)",
+    colorInputForeground: clerkForeground,
+    colorNeutral: "hsl(214, 20%, 96%)",
     fontFamily: "'Outfit', sans-serif",
     borderRadius: "0.75rem",
   },
@@ -23,7 +30,36 @@ export const clerkAuthAppearance = {
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-2xl font-serif text-foreground font-semibold tracking-tight",
     headerSubtitle: "text-muted-foreground",
-    socialButtonsBlockButtonText: "font-medium text-foreground",
+    socialButtonsBlockButton: {
+      backgroundColor: "#ffffff",
+      border: `1px solid ${clerkBorder}`,
+      color: clerkForeground,
+      boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)",
+      "&:hover": {
+        backgroundColor: "hsl(214, 20%, 96%)",
+        borderColor: "hsl(214, 20%, 80%)",
+      },
+    },
+    socialButtonsBlockButtonText: {
+      color: clerkForeground,
+      fontWeight: 500,
+      fontSize: "0.875rem",
+    },
+    formButtonPrimary: {
+      backgroundColor: clerkPrimary,
+      color: clerkPrimaryForeground,
+      fontWeight: 500,
+      "&:hover": {
+        backgroundColor: "hsl(221, 64%, 28%)",
+      },
+      "&:focus": {
+        backgroundColor: "hsl(221, 64%, 28%)",
+      },
+    },
+    formButtonPrimaryText: {
+      color: clerkPrimaryForeground,
+      fontWeight: 500,
+    },
     formFieldLabel: "text-foreground font-medium",
     footerActionLink: "text-primary font-medium hover:underline",
     footerActionText: "text-muted-foreground",

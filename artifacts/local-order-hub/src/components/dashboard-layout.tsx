@@ -35,6 +35,10 @@ import {
   type BusinessHubNavItem,
 } from "@/lib/business-hub-features";
 import { FeatureLockedPage, StorefrontModeRestrictedPage } from "@/components/locked-feature-modal";
+import {
+  DASHBOARD_MOBILE_MAIN_TOP_CLASS,
+  DASHBOARD_MOBILE_NAV_TOP_CLASS,
+} from "@/lib/platform-branding";
 import { isAppointmentStorefrontMode, isOrderingStorefrontMode, resolveStorefrontMode } from "@workspace/api-zod";
 
 const NAV_ICONS = {
@@ -165,7 +169,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
     "Business Hub";
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] print:block print:min-h-0">
+    <div className="flex min-h-[calc(100vh-var(--site-header-height,4rem))] print:block print:min-h-0">
       <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0 print:hidden">
         <div className="p-6">
           <h2 className="font-serif font-bold text-lg mb-4">Business Hub</h2>
@@ -179,11 +183,17 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      <div className="md:hidden fixed top-16 left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-background border-b shadow-sm print:hidden">
+      <div
+        className={cn(
+          "md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-background border-b shadow-sm print:hidden",
+          DASHBOARD_MOBILE_NAV_TOP_CLASS,
+        )}
+      >
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 shrink-0">
               <Menu className="h-4 w-4" />
+              <span className="text-xs font-medium">Sections</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
@@ -208,7 +218,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
         <span className="text-sm font-semibold truncate">{business?.name ?? activeLabel}</span>
       </div>
 
-      <main className="flex-1 p-4 pt-20 md:pt-0 md:p-10 print:p-0">
+      <main className={cn("flex-1 p-4 md:p-10 print:p-0 overflow-x-hidden", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
         <div className="print:hidden">
           {orderingEnabled && <NewOrderAlertBanner />}
           {appointmentsEnabled && <NewAppointmentAlertBanner />}

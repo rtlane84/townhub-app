@@ -208,6 +208,40 @@
   }
 }
 
+@layer clerk {
+  .cl-socialButtonsBlockButton {
+    background-color: #ffffff !important;
+    border: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+
+  .cl-socialButtonsBlockButton:hover {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  .cl-socialButtonsBlockButtonText {
+    color: hsl(var(--foreground)) !important;
+    font-weight: 500;
+  }
+
+  .cl-formButtonPrimary {
+    background-color: hsl(var(--primary)) !important;
+    color: #ffffff !important;
+  }
+
+  .cl-formButtonPrimary:hover,
+  .cl-formButtonPrimary:focus {
+    background-color: hsl(221 64% 28%) !important;
+    color: #ffffff !important;
+  }
+
+  .cl-formButtonPrimaryText {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+}
+
 .food-truck-map .leaflet-container {
   z-index: 0;
   font-family: inherit;

@@ -4048,10 +4048,20 @@ components:
           type: ["string", "null"]
         heroHeadlineLine2:
           type: ["string", "null"]
+        heroImageFit:
+          type: string
+          enum: [cover, contain]
+        heroImagePosition:
+          type: string
+          enum: [center, top, bottom]
+        showHeroText:
+          type: boolean
+        showHeroButtons:
+          type: boolean
         logoSizePx:
           type: integer
           minimum: 16
-          maximum: 64
+          maximum: 192
         weatherEnabled:
           type: boolean
         weatherLocation:
@@ -4097,10 +4107,20 @@ components:
           type: ["string", "null"]
         heroHeadlineLine2:
           type: ["string", "null"]
+        heroImageFit:
+          type: string
+          enum: [cover, contain]
+        heroImagePosition:
+          type: string
+          enum: [center, top, bottom]
+        showHeroText:
+          type: boolean
+        showHeroButtons:
+          type: boolean
         logoSizePx:
           type: integer
           minimum: 16
-          maximum: 64
+          maximum: 192
         weatherEnabled:
           type: boolean
         weatherLocation:
