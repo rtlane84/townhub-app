@@ -54,5 +54,6 @@ Secondary indexes for hot query paths live in `lib/db/src/schema/` via Drizzle `
 ## Related
 
 - [PRODUCTION.md](../PRODUCTION.md) — production checklist
+- [docs/DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md) — backup and restore plan
 - [docs/PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md) — health and monitoring
 - [docs/ARCHITECTURE.md](ARCHITECTURE.md) — data layer overview

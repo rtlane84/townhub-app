@@ -94,6 +94,7 @@ When starting a task, check Linear for assignment and acceptance criteria. Do no
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design |
 | [SECURITY.md](SECURITY.md) | Security model |
 | [PRODUCTION.md](PRODUCTION.md) | Deployment checklist |
+| [docs/DATABASE_BACKUP_AND_RECOVERY.md](docs/DATABASE_BACKUP_AND_RECOVERY.md) | Production backup & restore plan |
 
 ---
 

@@ -93,7 +93,7 @@ Set in deployment for richer Admin System Status:
 |------|---------|
 | **Sentry** | Error aggregation — see [SENTRY_SETUP.md](SENTRY_SETUP.md) |
 | **UptimeRobot / Better Stack** | External uptime on `/health` |
-| **Supabase backups / PITR** | Database disaster recovery |
+| **Managed Postgres backups** | Database disaster recovery — see [DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md) |
 | **Stripe Dashboard → Webhooks** | Delivery logs and retry inspection |
 | **Log drain** (Fly.io, Railway, etc.) | Centralize Pino JSON logs in production |
 

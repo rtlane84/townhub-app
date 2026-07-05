@@ -94,6 +94,8 @@ Run `push` after any schema changes under `lib/db/src/schema/`.
 
 **Always review the SQL preview.** Do not confirm destructive changes (drops, column removals) without understanding them. See [docs/OPERATIONS.md](OPERATIONS.md) for pool env vars and schema safety notes.
 
+For production backup and restore planning, see [docs/DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md).
+
 ---
 
 ## Running the Application
