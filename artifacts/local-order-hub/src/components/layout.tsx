@@ -2,7 +2,7 @@ import { Link, useLocation, useRoute } from "wouter";
 import { UserButton, useUser, SignInButton } from "@clerk/react";
 import {
   ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
-  Wrench, Menu, ExternalLink, Calendar, Truck, Package, HelpCircle, Layers,
+  Wrench, Menu, ExternalLink, Calendar, Truck, Package, HelpCircle, ArrowLeft,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
@@ -36,6 +36,15 @@ function PlatformLogo({ className }: { className?: string }) {
   );
 }
 
+function isDashboardRoute(location: string): boolean {
+  return (
+    location === "/dashboard/business" ||
+    location.startsWith("/dashboard/business/") ||
+    location === "/dashboard/admin" ||
+    location.startsWith("/dashboard/admin/")
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { platformName, footerTagline } = usePlatformBranding();
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
@@ -46,6 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     isLoggedOut,
     showBusinessHubNav,
     showListYourBusinessNav,
+    showMyOrdersNav,
   } = useNavAuthState();
   const { itemCount } = useCart();
   const [location] = useLocation();
@@ -67,20 +77,57 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const hideFooter =
     location === "/dashboard/admin/system-status" || location.startsWith("/dashboard/admin/system-status/");
 
+  const inDashboard = isDashboardRoute(location);
   const setupAvailable = authResolved && !bootstrapPending && bootstrapStatus?.setupComplete === false;
   const dashboardHref = isAdmin ? "/dashboard/admin" : "/dashboard/business";
   const dashboardLabel = isAdmin ? "Admin Dashboard" : "Business Hub";
+  const dashboardShortLabel = isAdmin ? "Admin" : "Business Hub";
   const DashboardIcon = isAdmin ? ShieldCheck : LayoutDashboard;
 
+  function isNavActive(href: string) {
+    return location === href || (href !== "/" && location.startsWith(href + "/"));
+  }
+
   function navLinkClass(href: string) {
-    const active = location === href || (href !== "/" && location.startsWith(href + "/"));
-    return cn("flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-      active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted");
+    const active = isNavActive(href);
+    return cn(
+      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted",
+    );
   }
 
   function close() { setMobileOpen(false); }
 
+  function headerActionButtonClass(active: boolean) {
+    return cn(
+      "bg-background text-foreground border-border hover:bg-muted",
+      active && "bg-muted",
+    );
+  }
+
+  function headerActionMobileClass(href: string) {
+    const active = isNavActive(href);
+    return cn(
+      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full border",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      headerActionButtonClass(active),
+    );
+  }
+
+  function returnToMarketplaceClass() {
+    return cn(
+      "inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors",
+      "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md",
+    );
+  }
+
   const showRoleNav = authResolved;
+  const showListYourBusinessAction = showRoleNav && showListYourBusinessNav && !inDashboard;
+  const showMyOrders = showRoleNav && showMyOrdersNav && !inDashboard;
+  const showDashboardAction = showRoleNav && showBusinessHubNav;
+  const dashboardActive = isNavActive(dashboardHref);
+  const listYourBusinessActive = isNavActive("/list-your-business");
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0">
@@ -88,8 +135,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
 
           {/* Left: logo + desktop nav */}
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+          <div className="flex items-center gap-6 min-w-0">
+            <Link
+              href="/"
+              className="flex items-center gap-2 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
+            >
               <PlatformLogo />
               <span className="font-serif text-xl font-semibold tracking-tight text-primary">
                 {platformName}
@@ -97,55 +147,122 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
 
             {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-1 text-sm font-medium text-muted-foreground">
-              <Link href="/businesses" className={navLinkClass("/businesses")}>
-                All Businesses
-              </Link>
-              <Link href="/events" className={navLinkClass("/events")}>
-                Events
-              </Link>
-              <Link href="/food-trucks" className={navLinkClass("/food-trucks")}>
-                Food Trucks
-              </Link>
-              <Link href="/help" className={navLinkClass("/help")}>
-                Help
-              </Link>
-              <Link href="/pricing" className={navLinkClass("/pricing")}>
-                Pricing
-              </Link>
+            <nav
+              className="hidden md:flex items-center gap-1 text-sm font-medium text-muted-foreground"
+              aria-label="Main navigation"
+            >
+              {inDashboard ? (
+                <>
+                  <Link
+                    href="/businesses"
+                    className={returnToMarketplaceClass()}
+                    aria-label="Back to marketplace"
+                  >
+                    <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                    Back
+                  </Link>
+                  <Link
+                    href="/help"
+                    className={navLinkClass("/help")}
+                    aria-current={isNavActive("/help") ? "page" : undefined}
+                  >
+                    Help
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/businesses"
+                    className={navLinkClass("/businesses")}
+                    aria-current={isNavActive("/businesses") ? "page" : undefined}
+                  >
+                    Businesses
+                  </Link>
+                  <Link
+                    href="/events"
+                    className={navLinkClass("/events")}
+                    aria-current={isNavActive("/events") ? "page" : undefined}
+                  >
+                    Events
+                  </Link>
+                  <Link
+                    href="/food-trucks"
+                    className={navLinkClass("/food-trucks")}
+                    aria-current={isNavActive("/food-trucks") ? "page" : undefined}
+                  >
+                    Food Trucks
+                  </Link>
 
-              {showRoleNav && isCustomer && (
-                <Link href="/my-orders" className={navLinkClass("/my-orders")}>
-                  <Package className="h-3.5 w-3.5" />
-                  My Orders
-                </Link>
-              )}
+                  <Link
+                    href="/help"
+                    className={navLinkClass("/help")}
+                    aria-current={isNavActive("/help") ? "page" : undefined}
+                  >
+                    Help
+                  </Link>
 
-              {showRoleNav && showBusinessHubNav && (
-                <Link href={dashboardHref} className={navLinkClass("/dashboard")}>
-                  <DashboardIcon className="h-3.5 w-3.5" />
-                  {isAdmin ? "Admin" : "Business Hub"}
-                </Link>
-              )}
+                  {showMyOrders && (
+                    <Link
+                      href="/my-orders"
+                      className={navLinkClass("/my-orders")}
+                      aria-current={isNavActive("/my-orders") ? "page" : undefined}
+                    >
+                      <Package className="h-3.5 w-3.5" aria-hidden />
+                      My Orders
+                    </Link>
+                  )}
 
-              {showRoleNav && showListYourBusinessNav && (
-                <Link href="/list-your-business" className={navLinkClass("/list-your-business")}>
-                  <PlusCircle className="h-3.5 w-3.5" />
-                  List Your Business
-                </Link>
-              )}
-
-              {setupAvailable && (isLoggedOut || isCustomer) && (
-                <Link href="/setup" className={navLinkClass("/setup")}>
-                  <Wrench className="h-3.5 w-3.5" />
-                  Admin Setup
-                </Link>
+                  {setupAvailable && (isLoggedOut || isCustomer) && (
+                    <Link
+                      href="/setup"
+                      className={navLinkClass("/setup")}
+                      aria-current={isNavActive("/setup") ? "page" : undefined}
+                    >
+                      <Wrench className="h-3.5 w-3.5" aria-hidden />
+                      Admin Setup
+                    </Link>
+                  )}
+                </>
               )}
             </nav>
           </div>
 
-          {/* Right: cart + auth + mobile menu */}
-          <div className="flex items-center gap-2">
+          {/* Right: action CTAs + cart + auth + mobile menu */}
+          <div className="flex items-center gap-2 shrink-0">
+            {showListYourBusinessAction && (
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className={cn("hidden md:inline-flex", headerActionButtonClass(listYourBusinessActive))}
+              >
+                <Link
+                  href="/list-your-business"
+                  aria-current={listYourBusinessActive ? "page" : undefined}
+                >
+                  <PlusCircle className="h-3.5 w-3.5" aria-hidden />
+                  List Your Business
+                </Link>
+              </Button>
+            )}
+
+            {showDashboardAction && (
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className={cn("hidden md:inline-flex", headerActionButtonClass(dashboardActive))}
+              >
+                <Link
+                  href={dashboardHref}
+                  aria-current={dashboardActive ? "page" : undefined}
+                >
+                  <DashboardIcon className="h-3.5 w-3.5" aria-hidden />
+                  {dashboardShortLabel}
+                </Link>
+              </Button>
+            )}
+
             {!hideCart && (
               <Link href="/cart">
                 <Button variant="ghost" size="icon" className="relative text-foreground">
@@ -170,7 +287,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <UserButton appearance={clerkUserButtonAppearance} />
             )}
 
-            {/* Mobile hamburger — shows nav on small screens */}
+            {/* Mobile hamburger */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -178,7 +295,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <span className="sr-only">Menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0">
+              <SheetContent side="left" className="w-72 p-0 flex flex-col">
                 <SheetHeader className="p-6 pb-4 border-b">
                   <SheetTitle className="font-serif text-left flex items-center gap-2">
                     <PlatformLogo className="h-5 w-5" />
@@ -186,76 +303,126 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </SheetTitle>
                 </SheetHeader>
 
-                <nav className="p-4 space-y-1">
-                  <Link href="/businesses" onClick={close}>
-                    <span className={navLinkClass("/businesses")}>
-                      <Store className="h-4 w-4" /> All Businesses
-                    </span>
-                  </Link>
-                  <Link href="/events" onClick={close}>
-                    <span className={navLinkClass("/events")}>
-                      <Calendar className="h-4 w-4" /> Events
-                    </span>
-                  </Link>
-                  <Link href="/food-trucks" onClick={close}>
-                    <span className={navLinkClass("/food-trucks")}>
-                      <Truck className="h-4 w-4" /> Food Trucks
-                    </span>
-                  </Link>
-                  <Link href="/help" onClick={close}>
-                    <span className={navLinkClass("/help")}>
-                      <HelpCircle className="h-4 w-4" /> Help
-                    </span>
-                  </Link>
-                  <Link href="/pricing" onClick={close}>
-                    <span className={navLinkClass("/pricing")}>
-                      <Layers className="h-4 w-4" /> Pricing
-                    </span>
-                  </Link>
+                <nav className="flex-1 overflow-y-auto p-4 space-y-1" aria-label="Mobile navigation">
+                  {inDashboard ? (
+                    <>
+                      <Link href="/businesses" onClick={close} aria-label="Back to marketplace">
+                        <span className={cn(returnToMarketplaceClass(), "w-full px-3 py-2.5 rounded-lg hover:bg-muted")}>
+                          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden />
+                          Back to marketplace
+                        </span>
+                      </Link>
+                      <Link href="/help" onClick={close}>
+                        <span
+                          className={navLinkClass("/help")}
+                          aria-current={isNavActive("/help") ? "page" : undefined}
+                        >
+                          <HelpCircle className="h-4 w-4" aria-hidden /> Help
+                        </span>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Browse
+                      </p>
+                      <Link href="/businesses" onClick={close}>
+                        <span
+                          className={navLinkClass("/businesses")}
+                          aria-current={isNavActive("/businesses") ? "page" : undefined}
+                        >
+                          <Store className="h-4 w-4" aria-hidden /> Businesses
+                        </span>
+                      </Link>
+                      <Link href="/events" onClick={close}>
+                        <span
+                          className={navLinkClass("/events")}
+                          aria-current={isNavActive("/events") ? "page" : undefined}
+                        >
+                          <Calendar className="h-4 w-4" aria-hidden /> Events
+                        </span>
+                      </Link>
+                      <Link href="/food-trucks" onClick={close}>
+                        <span
+                          className={navLinkClass("/food-trucks")}
+                          aria-current={isNavActive("/food-trucks") ? "page" : undefined}
+                        >
+                          <Truck className="h-4 w-4" aria-hidden /> Food Trucks
+                        </span>
+                      </Link>
 
-                  {showRoleNav && isCustomer && (
-                    <Link href="/my-orders" onClick={close}>
-                      <span className={navLinkClass("/my-orders")}>
-                        <Package className="h-4 w-4" /> My Orders
-                      </span>
-                    </Link>
-                  )}
+                      <p className="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Support
+                      </p>
+                      <Link href="/help" onClick={close}>
+                        <span
+                          className={navLinkClass("/help")}
+                          aria-current={isNavActive("/help") ? "page" : undefined}
+                        >
+                          <HelpCircle className="h-4 w-4" aria-hidden /> Help
+                        </span>
+                      </Link>
 
-                  {showRoleNav && showBusinessHubNav && (
-                    <Link href={dashboardHref} onClick={close}>
-                      <span className={navLinkClass("/dashboard")}>
-                        <DashboardIcon className="h-4 w-4" /> {dashboardLabel}
-                      </span>
-                    </Link>
-                  )}
+                      {(showMyOrders || showDashboardAction || showListYourBusinessAction) && (
+                        <p className="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Your account
+                        </p>
+                      )}
 
-                  {showRoleNav && showListYourBusinessNav && (
-                    <Link href="/list-your-business" onClick={close}>
-                      <span className={navLinkClass("/list-your-business")}>
-                        <PlusCircle className="h-4 w-4" /> List Your Business
-                      </span>
-                    </Link>
-                  )}
+                      {showListYourBusinessAction && (
+                        <Link href="/list-your-business" onClick={close}>
+                          <span
+                            className={headerActionMobileClass("/list-your-business")}
+                            aria-current={listYourBusinessActive ? "page" : undefined}
+                          >
+                            <PlusCircle className="h-4 w-4" aria-hidden /> List Your Business
+                          </span>
+                        </Link>
+                      )}
 
-                  {setupAvailable && (isLoggedOut || isCustomer) && (
-                    <Link href="/setup" onClick={close}>
-                      <span className={navLinkClass("/setup")}>
-                        <Wrench className="h-4 w-4" /> Admin Setup
-                        <span className="ml-auto text-xs text-muted-foreground">First-time</span>
-                      </span>
-                    </Link>
+                      {showMyOrders && (
+                        <Link href="/my-orders" onClick={close}>
+                          <span
+                            className={navLinkClass("/my-orders")}
+                            aria-current={isNavActive("/my-orders") ? "page" : undefined}
+                          >
+                            <Package className="h-4 w-4" aria-hidden /> My Orders
+                          </span>
+                        </Link>
+                      )}
+
+                      {showDashboardAction && (
+                        <Link href={dashboardHref} onClick={close}>
+                          <span
+                            className={headerActionMobileClass(dashboardHref)}
+                            aria-current={dashboardActive ? "page" : undefined}
+                          >
+                            <DashboardIcon className="h-4 w-4" aria-hidden /> {dashboardLabel}
+                          </span>
+                        </Link>
+                      )}
+
+                      {setupAvailable && (isLoggedOut || isCustomer) && (
+                        <Link href="/setup" onClick={close}>
+                          <span className={navLinkClass("/setup")}>
+                            <Wrench className="h-4 w-4" aria-hidden /> Admin Setup
+                            <span className="ml-auto text-xs text-muted-foreground">First-time</span>
+                          </span>
+                        </Link>
+                      )}
+                    </>
                   )}
 
                   {clerkLoaded && !isSignedIn && (
-                    <div className="pt-3 border-t">
+                    <div className="pt-3 border-t mt-3">
                       <SignInButton mode="modal">
                         <Button className="w-full" onClick={close}>Sign In</Button>
                       </SignInButton>
                     </div>
                   )}
 
-                  {showRoleNav && isSignedIn && isCustomer && setupAvailable && (
-                    <div className="pt-3 border-t">
+                  {showRoleNav && isSignedIn && isCustomer && setupAvailable && !inDashboard && (
+                    <div className="pt-3 border-t mt-3">
                       <p className="px-3 py-2 text-xs text-muted-foreground">
                         Signed in as customer. Visit <strong>Admin Setup</strong> to claim admin access on first deploy, or <strong>List Your Business</strong> to become a business owner.
                       </p>
@@ -263,8 +430,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   )}
                 </nav>
 
-                {setupAvailable && (isLoggedOut || isCustomer) && (
-                  <div className="absolute bottom-6 left-4 right-4">
+                {setupAvailable && (isLoggedOut || isCustomer) && !inDashboard && (
+                  <div className="p-4 border-t">
                     <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
                       <p className="text-xs font-semibold text-primary">First time here?</p>
                       <p className="text-xs text-muted-foreground">Sign in → go to Admin Setup → claim admin access to manage the platform.</p>

@@ -14,6 +14,7 @@ export type NavAuthState = {
   hasActiveBusinesses: boolean;
   showBusinessHubNav: boolean;
   showListYourBusinessNav: boolean;
+  showMyOrdersNav: boolean;
   isCustomer: boolean;
   isLoggedOut: boolean;
 };
@@ -30,6 +31,7 @@ export function resolveNavAuthState(input: NavAuthInput): NavAuthState {
       hasActiveBusinesses: false,
       showBusinessHubNav: false,
       showListYourBusinessNav: false,
+      showMyOrdersNav: false,
       isCustomer: false,
       isLoggedOut: false,
     };
@@ -40,10 +42,9 @@ export function resolveNavAuthState(input: NavAuthInput): NavAuthState {
   const activeBusinessCount = input.activeBusinessCount ?? 0;
   const hasActiveBusinesses = isBusinessOwner && activeBusinessCount > 0;
   const showBusinessHubNav = isAdmin || hasActiveBusinesses;
-  const showListYourBusinessNav =
-    !input.isSignedIn ||
-    input.role === "CUSTOMER" ||
-    (isBusinessOwner && activeBusinessCount === 0);
+  const showListYourBusinessNav = !input.isSignedIn || input.role === "CUSTOMER";
+  const showMyOrdersNav =
+    input.isSignedIn && !isAdmin && (input.role === "CUSTOMER" || isBusinessOwner);
 
   return {
     authResolved: true,
@@ -53,6 +54,7 @@ export function resolveNavAuthState(input: NavAuthInput): NavAuthState {
     hasActiveBusinesses,
     showBusinessHubNav,
     showListYourBusinessNav,
+    showMyOrdersNav,
     isCustomer: input.isSignedIn && !isAdmin && !isBusinessOwner,
     isLoggedOut: !input.isSignedIn,
   };

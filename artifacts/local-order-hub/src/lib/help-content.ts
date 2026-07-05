@@ -189,7 +189,7 @@ export const businessOwnerTopics: HelpTopic[] = [
       "Founding, beta, and free plans do not require card checkout.",
       "Paid plans include a trial when configured; billing starts after checkout in Business Hub.",
     ],
-    link: { href: "/pricing", label: "View plans" },
+    link: { href: "/list-your-business#plans", label: "View plans" },
   },
   {
     id: "billing-after-approval",

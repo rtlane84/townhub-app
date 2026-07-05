@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUser, useAuth, SignInButton } from "@clerk/react";
 import { useLocation } from "wouter";
+import { BusinessPlansSection } from "@/components/business-plans-section";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { useAsyncAction } from "@/hooks/use-async-action";
@@ -166,6 +167,11 @@ function WhatHappensNext() {
         <p>2. Our team reviews your application — usually within a few business days.</p>
         <p>3. If approved, you&apos;ll get access to your Business Hub to finish setup and go live.</p>
         <p className="pt-1">No payment is charged until your plan trial ends (if applicable).</p>
+        <p className="pt-1">
+          <a href="#plans" className="underline font-medium hover:text-foreground">
+            Compare business plans and pricing
+          </a>
+        </p>
       </AlertDescription>
     </Alert>
   );
@@ -194,6 +200,14 @@ export default function ListYourBusiness() {
   const [appLoading, setAppLoading] = useState(false);
   const [reapplying, setReapplying] = useState(false);
   const [slugAvailability, setSlugAvailability] = useState<SlugAvailabilityState>({ status: "idle" });
+
+  useEffect(() => {
+    if (window.location.hash === "#plans") {
+      requestAnimationFrame(() => {
+        document.getElementById("plans")?.scrollIntoView({ behavior: "smooth" });
+      });
+    }
+  }, []);
 
   const previewSlug = slugifyBusinessName(form.name);
 
@@ -337,8 +351,8 @@ export default function ListYourBusiness() {
 
   if (!isSignedIn) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-        <div className="max-w-md w-full space-y-6">
+      <div className="py-10 sm:py-16 px-4">
+        <div id="apply" className="max-w-md mx-auto space-y-6 scroll-mt-24">
           <div className="text-center space-y-3">
             <div className="flex items-center justify-center gap-2">
               <Store className="h-8 w-8 text-primary" />
@@ -363,9 +377,17 @@ export default function ListYourBusiness() {
             </Button>
           </SignInButton>
           <p className="text-xs text-center text-muted-foreground">
-            New here? The button above lets you create a free account first.
+            New here? The button above lets you create a free account first.{" "}
+            <a href="#plans" className="underline font-medium hover:text-foreground">
+              Compare business plans below
+            </a>
           </p>
         </div>
+
+        <BusinessPlansSection
+          promptSignIn
+          className="container mx-auto max-w-6xl mt-16 pt-10 border-t"
+        />
       </div>
     );
   }
@@ -586,6 +608,10 @@ export default function ListYourBusiness() {
               </Button>
             </CardContent>
           </Card>
+        )}
+
+        {step === 1 && (
+          <BusinessPlansSection className="max-w-6xl mx-auto pt-4" />
         )}
 
         {step === 2 && (

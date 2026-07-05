@@ -8,14 +8,21 @@ export function canAccessBusinessHub(input: {
   return false;
 }
 
-/** Show List Your Business nav for guests, customers, and owners without active businesses. */
+/** Show List Your Business action for visitors and customers without a business. */
 export function shouldShowListYourBusinessNav(input: {
   isSignedIn: boolean;
   role?: string | null;
   activeBusinessCount: number;
 }): boolean {
   if (!input.isSignedIn) return true;
-  if (input.role === "CUSTOMER") return true;
-  if (input.role === "BUSINESS_OWNER" && input.activeBusinessCount === 0) return true;
-  return false;
+  return input.role === "CUSTOMER";
+}
+
+/** Show My Orders for signed-in customers and business owners. */
+export function shouldShowMyOrdersNav(input: {
+  isSignedIn: boolean;
+  role?: string | null;
+}): boolean {
+  if (!input.isSignedIn || input.role === "ADMIN") return false;
+  return input.role === "CUSTOMER" || input.role === "BUSINESS_OWNER";
 }
