@@ -149,7 +149,8 @@ describe("business-order-filters", () => {
 
   it("search matches order number, customer, email, and phone", () => {
     const sample = order({ id: 1, status: "NEW" });
-    assert.equal(orderMatchesSearch(sample, "loh-1001"), true);
+    assert.equal(orderMatchesSearch(sample, "th-1001"), true);
+    assert.equal(orderMatchesSearch(sample, "alex"), true);
     assert.equal(orderMatchesSearch(sample, "alex@example.com"), true);
     assert.equal(orderMatchesSearch(sample, "555-0100"), true);
     assert.equal(orderMatchesSearch(sample, "unknown"), false);

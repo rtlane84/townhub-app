@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import type Stripe from "stripe";
 import { db, ordersTable, businessesTable } from "@workspace/db";
 import { logOperationalFailure } from "./operational-log";
@@ -9,6 +9,7 @@ import {
 } from "./stripe-config";
 import { handleAccountUpdatedEvent } from "./stripe-connect";
 import { notifyCustomerOrderReceived } from "./notification-service";
+import { claimStripeWebhookEvent } from "./stripe-webhook-dedup";
 import {
   evaluateCheckoutSessionPayment,
   verifyStripeWebhookSignature,
@@ -89,7 +90,7 @@ export async function markOrderPaidFromCheckoutSession(
 
   const paymentIntentId = extractPaymentIntentIdFromStripeObject(session.payment_intent);
 
-  await db
+  const [updated] = await db
     .update(ordersTable)
     .set({
       paymentStatus: "PAID",
@@ -97,7 +98,20 @@ export async function markOrderPaidFromCheckoutSession(
       stripeConnectedAccountId: evaluation.connectedAccountId,
       ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
     })
-    .where(eq(ordersTable.id, evaluation.orderId));
+    .where(
+      and(
+        eq(ordersTable.id, evaluation.orderId),
+        ne(ordersTable.paymentStatus, "PAID"),
+      ),
+    )
+    .returning({ id: ordersTable.id });
+
+  if (!updated) {
+    if (paymentIntentId) {
+      await persistPaymentIntentFromCheckoutSession(evaluation.orderId, paymentIntentId);
+    }
+    return { ok: true, orderId: evaluation.orderId, alreadyPaid: true };
+  }
 
   notifyCustomerOrderReceived(evaluation.orderId).catch(() => {});
 
@@ -108,7 +122,13 @@ export async function handleStripeWebhookEvent(event: Stripe.Event): Promise<{
   handled: boolean;
   kind?: "order" | "subscription" | "connect";
   result?: MarkOrderPaidResult;
+  duplicate?: boolean;
 }> {
+  const isNew = await claimStripeWebhookEvent(event.id);
+  if (!isNew) {
+    return { handled: true, duplicate: true };
+  }
+
   if (event.type === "account.updated") {
     await handleAccountUpdatedEvent(event.data.object as Stripe.Account);
     return { handled: true, kind: "connect" };

@@ -13,10 +13,16 @@ import {
   deleteMediaFile,
   getMediaStorageBackend,
   getMediaUploadDir,
-  isAllowedImageMimeType,
   sanitizeLocalStoredFilename,
   saveMediaFile,
 } from "../lib/media-storage";
+import {
+  optimizeMediaImage,
+  parseOptimizedFormat,
+  parseOptimizedQuality,
+  parseOptimizedWidth,
+} from "../lib/media-optimize";
+import { validateUploadedImageBuffer } from "../lib/media-image-validate";
 import { logOperationalFailure } from "../lib/operational-log";
 import { listOwnedBusinessIds } from "../lib/business-access";
 import {
@@ -24,6 +30,10 @@ import {
   resolveOwnerMediaBusinessId,
   type ResolvedMediaScope,
 } from "../lib/media-scope";
+import {
+  signLocalMediaFileUrl,
+  verifyLocalMediaFileAccess,
+} from "../lib/local-media-url";
 
 const router: IRouter = Router();
 
@@ -39,12 +49,16 @@ function parseRequestedBusinessId(raw: unknown): number | undefined {
   return Number.isFinite(id) && id > 0 ? id : undefined;
 }
 
-async function resolveMediaScope(req: Request): Promise<MediaScope | null> {
+async function resolveMediaScope(
+  req: Request,
+  options: { allowBodyBusinessId?: boolean } = {},
+): Promise<MediaScope | null> {
   if (!req.dbUser) return null;
 
-  const requestedBusinessId =
-    parseRequestedBusinessId(req.query.businessId) ??
-    parseRequestedBusinessId(req.body?.businessId);
+  let requestedBusinessId = parseRequestedBusinessId(req.query.businessId);
+  if (options.allowBodyBusinessId !== false && req.dbUser.role !== "BUSINESS_OWNER") {
+    requestedBusinessId ??= parseRequestedBusinessId(req.body?.businessId);
+  }
 
   const ownedBusinessIds =
     req.dbUser.role === "BUSINESS_OWNER"
@@ -94,6 +108,15 @@ function requireMediaAccess(
   });
 }
 
+function publicMediaUrl(row: typeof mediaAssetsTable.$inferSelect): string {
+  if (getMediaStorageBackend() !== "local") {
+    return row.url;
+  }
+  const filename = sanitizeLocalStoredFilename(path.basename(row.storedFilename));
+  if (!filename) return row.url;
+  return signLocalMediaFileUrl(filename);
+}
+
 function serializeMediaAsset(row: typeof mediaAssetsTable.$inferSelect) {
   return {
     id: row.id,
@@ -102,10 +125,42 @@ function serializeMediaAsset(row: typeof mediaAssetsTable.$inferSelect) {
     originalFilename: row.originalFilename,
     mimeType: row.mimeType,
     byteSize: row.byteSize,
-    url: row.url,
+    url: publicMediaUrl(row),
     createdAt: row.createdAt,
   };
 }
+
+// GET /api/media/optimize — on-the-fly resize + modern format delivery for TownHub media URLs
+router.get("/media/optimize", async (req, res): Promise<void> => {
+  const sourceUrl = typeof req.query.src === "string" ? req.query.src.trim() : "";
+  const width = parseOptimizedWidth(req.query.w);
+  const format = parseOptimizedFormat(req.query.fm);
+
+  if (!sourceUrl || width == null || format == null) {
+    res.status(400).json({ error: "Query params src, w, and fm (webp|avif|jpeg) are required." });
+    return;
+  }
+
+  const quality = parseOptimizedQuality(req.query.q);
+
+  try {
+    const optimized = await optimizeMediaImage({
+      sourceUrl,
+      width,
+      format,
+      quality,
+    });
+
+    res.setHeader("Content-Type", optimized.contentType);
+    res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400");
+    res.setHeader("Vary", "Accept");
+    res.send(optimized.buffer);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Optimization failed";
+    const status = message === "Unsupported media source URL" ? 400 : 404;
+    res.status(status).json({ error: message });
+  }
+});
 
 // GET /api/media/files/:filename — legacy local-dev file serving only
 router.get("/media/files/:filename", async (req, res): Promise<void> => {
@@ -122,7 +177,7 @@ router.get("/media/files/:filename", async (req, res): Promise<void> => {
       }
     }
     res.status(404).json({
-      error: "Media is served from Supabase Storage. Configure SUPABASE_* env vars and re-upload if needed.",
+      error: "Media file is not available from this endpoint.",
     });
     return;
   }
@@ -130,6 +185,13 @@ router.get("/media/files/:filename", async (req, res): Promise<void> => {
   const filename = sanitizeLocalStoredFilename(req.params.filename);
   if (!filename) {
     res.status(400).json({ error: "Invalid filename" });
+    return;
+  }
+
+  const exp = typeof req.query.exp === "string" ? req.query.exp : undefined;
+  const sig = typeof req.query.sig === "string" ? req.query.sig : undefined;
+  if (!verifyLocalMediaFileAccess(filename, exp, sig)) {
+    res.status(403).json({ error: "Invalid or expired media access link." });
     return;
   }
 
@@ -141,7 +203,7 @@ router.get("/media/files/:filename", async (req, res): Promise<void> => {
       .from(mediaAssetsTable)
       .where(eq(mediaAssetsTable.storedFilename, filename));
     res.setHeader("Content-Type", asset?.mimeType ?? "application/octet-stream");
-    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Cache-Control", "private, max-age=3600");
     res.send(buffer);
   } catch {
     res.status(404).json({ error: "File not found" });
@@ -176,9 +238,15 @@ router.get("/media", requireMediaAccess, async (req, res): Promise<void> => {
 // POST /api/media/upload — multipart/form-data (field name: file)
 router.post(
   "/media/upload",
-  requireMediaAccess,
+  (req, res, next) => requireAuth(req, res, next),
   mediaUploadSingle,
   async (req, res): Promise<void> => {
+    const scope = await resolveMediaScope(req, { allowBodyBusinessId: false });
+    if (!scope) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
     const file = req.file;
     if (!file) {
       res.status(400).json({ error: "No image file provided. Use multipart field \"file\"." });
@@ -186,12 +254,12 @@ router.post(
     }
 
     const contentType = file.mimetype;
-    if (!isAllowedImageMimeType(contentType)) {
-      res.status(400).json({ error: "Unsupported image type. Use JPEG, PNG, WebP, or GIF." });
+    const imageValidation = await validateUploadedImageBuffer(file.buffer, contentType);
+    if (!imageValidation.ok) {
+      res.status(400).json({ error: imageValidation.error });
       return;
     }
 
-    const scope = (req as Request & { mediaScope: MediaScope }).mediaScope;
     const buffer = file.buffer;
 
     let saved: Awaited<ReturnType<typeof saveMediaFile>>;

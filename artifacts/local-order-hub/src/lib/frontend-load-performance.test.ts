@@ -42,4 +42,21 @@ describe("frontend load performance wiring", () => {
     assert.match(source, /SEARCH_DEBOUNCE_MS = 300/);
     assert.match(source, /searchInput/);
   });
+
+  it("serves the homepage hero through responsive optimized media", async () => {
+    const hero = await readFile(
+      new URL("../components/home-hero-section.tsx", import.meta.url),
+      "utf8",
+    );
+    const responsive = await readFile(
+      new URL("../components/responsive-hero-image.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(hero, /ResponsiveHeroImage/);
+    assert.match(hero, /buildOptimizedSrcSet/);
+    assert.match(responsive, /<picture>/);
+    assert.match(responsive, /image\/avif/);
+    assert.match(responsive, /image\/webp/);
+    assert.match(responsive, /buildOptimizedMediaUrl/);
+  });
 });

@@ -99,6 +99,23 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
   };
 }
 
+/** Public storefront/checkout responses — omits owner PII and internal notification settings. */
+export function serializePublicBusiness(b: typeof businessesTable.$inferSelect) {
+  const {
+    ownerId: _ownerId,
+    orderNotificationEmail: _orderNotificationEmail,
+    notificationEmail: _notificationEmail,
+    notificationPhone: _notificationPhone,
+    notifyNewOrdersByEmail: _notifyNewOrdersByEmail,
+    notifyNewOrdersBySms: _notifyNewOrdersBySms,
+    notifyAppointmentRequestsByEmail: _notifyAppointmentRequestsByEmail,
+    notifyAppointmentRequestsBySms: _notifyAppointmentRequestsBySms,
+    createdAt: _createdAt,
+    ...publicBusiness
+  } = serializeBusiness(b);
+  return publicBusiness;
+}
+
 export function serializeProduct(
   p: typeof productsTable.$inferSelect,
   optionGroups: SerializedProductOptionGroup[] = [],
@@ -140,7 +157,7 @@ router.get("/businesses", async (req, res): Promise<void> => {
     .where(and(...conditions))
     .orderBy(businessesTable.featured, businessesTable.name);
 
-  res.json(businesses.map(serializeBusiness));
+  res.json(businesses.map(serializePublicBusiness));
 });
 
 // POST /api/businesses/register — admin-only direct business creation
@@ -151,22 +168,23 @@ router.post("/businesses/register", requireAdmin, async (req, res): Promise<void
     return;
   }
 
-  const { name, type, description, address, phone, hours, structuredHours } = req.body as {
-    name?: string;
-    type?: string;
-    description?: string;
-    address?: string;
-    phone?: string;
-    hours?: string;
-    structuredHours?: unknown;
-  };
-
-  if (!name?.trim() || !type?.trim()) {
-    res.status(400).json({ error: "name and type are required." });
+  const registerBodySchema = CreateBusinessBody.extend({
+    slug: CreateBusinessBody.shape.slug.optional(),
+  });
+  const parsed = registerBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const slug = await resolveUniqueBusinessSlug(slugifyFromBusinessName(name));
+  const slug =
+    parsed.data.slug ??
+    (await resolveUniqueBusinessSlug(slugifyFromBusinessName(parsed.data.name)));
+
+  const paymentFields = paymentModeForInsert({
+    paymentMode: parsed.data.paymentMode,
+    payAtPickupEnabled: parsed.data.payAtPickupEnabled ?? true,
+  });
 
   // Create the business
   let business;
@@ -174,21 +192,33 @@ router.post("/businesses/register", requireAdmin, async (req, res): Promise<void
     [business] = await db
       .insert(businessesTable)
       .values({
-        name: name.trim(),
+        name: parsed.data.name,
         slug,
-      type: type as never,
-      description: description?.trim() || null,
-      address: address?.trim() || null,
-      phone: phone?.trim() || null,
-      structuredHours: resolveStructuredHoursInput(structuredHours) ?? null,
-      hours: legacyHoursFromStructured(structuredHours) ?? (hours?.trim() || null),
-      ownerId: userId,
-      pickupEnabled: true,
-      payAtPickupEnabled: true,
-      paymentMode: "BOTH",
-      storefrontMode: defaultStorefrontModeForBusinessType(type),
-    })
-    .returning();
+        type: parsed.data.type as never,
+        description: parsed.data.description ?? null,
+        logoUrl: parsed.data.logoUrl ?? null,
+        heroImageUrl: parsed.data.heroImageUrl ?? null,
+        address: parsed.data.address ?? null,
+        phone: parsed.data.phone ?? null,
+        structuredHours: resolveStructuredHoursInput(parsed.data.structuredHours) ?? null,
+        hours:
+          legacyHoursFromStructured(parsed.data.structuredHours) ??
+          parsed.data.hours ??
+          null,
+        ownerId: parsed.data.ownerId ?? userId,
+        pickupEnabled: parsed.data.pickupEnabled ?? true,
+        deliveryEnabled: parsed.data.deliveryEnabled ?? false,
+        deliveryFee: parsed.data.deliveryFee ? String(parsed.data.deliveryFee) : null,
+        minimumOrder: parsed.data.minimumOrder ? String(parsed.data.minimumOrder) : null,
+        payAtPickupEnabled: paymentFields.payAtPickupEnabled,
+        paymentMode: paymentFields.paymentMode,
+        orderCutoffTime: parsed.data.orderCutoffTime ?? null,
+        ...(parsed.data.defaultPrepMinutes != null
+          ? { defaultPrepMinutes: parsed.data.defaultPrepMinutes }
+          : {}),
+        storefrontMode: defaultStorefrontModeForBusinessType(parsed.data.type),
+      })
+      .returning();
   } catch (err) {
     if (isPostgresUniqueViolation(err)) {
       res.status(409).json({
@@ -232,8 +262,8 @@ router.get("/marketplace/stats", async (_req, res): Promise<void> => {
   });
 });
 
-// GET /api/businesses/stats — platform stats
-router.get("/businesses/stats", async (req, res): Promise<void> => {
+// GET /api/businesses/stats — platform stats (admin only)
+router.get("/businesses/stats", requireAdmin, async (req, res): Promise<void> => {
   const businesses = await db.select().from(businessesTable);
   const orders = await db.select().from(ordersTable);
 
@@ -266,7 +296,7 @@ router.get("/businesses/checkout/:businessId", async (req, res): Promise<void> =
     return;
   }
 
-  res.json(serializeBusiness(business));
+  res.json(serializePublicBusiness(business));
 });
 
 // GET /api/businesses/:slug — storefront
@@ -322,7 +352,7 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
   );
 
   res.json({
-    business: serializeBusiness(business),
+    business: serializePublicBusiness(business),
     categories,
     products: products.map((p) =>
       serializeProduct(p, optionGroupsByProduct.get(p.id) ?? []),
@@ -446,8 +476,8 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.structuredHours = resolveStructuredHoursInput(d.structuredHours);
     updateData.hours = legacyHoursFromStructured(d.structuredHours);
   }
-  if (d.active !== undefined) updateData.active = d.active;
-  if (d.featured !== undefined) updateData.featured = d.featured;
+  if (d.active !== undefined && access.isAdmin) updateData.active = d.active;
+  if (d.featured !== undefined && access.isAdmin) updateData.featured = d.featured;
   if (d.pickupEnabled !== undefined) updateData.pickupEnabled = d.pickupEnabled;
   if (d.deliveryEnabled !== undefined)
     updateData.deliveryEnabled = d.deliveryEnabled;

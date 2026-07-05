@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, businessesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import {
   UpdateUserRoleParams,
   UpdateUserRoleBody,
@@ -89,6 +89,27 @@ router.patch("/admin/users/:id/role", async (req, res): Promise<void> => {
     return;
   }
 
+  const [existing] = await db
+    .select({ role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, params.data.id));
+
+  if (!existing) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  if (existing.role === "ADMIN" && parsed.data.role !== "ADMIN") {
+    const [{ value: adminCount }] = await db
+      .select({ value: count() })
+      .from(usersTable)
+      .where(eq(usersTable.role, "ADMIN"));
+    if (Number(adminCount) <= 1) {
+      res.status(400).json({ error: "Cannot demote the last platform admin." });
+      return;
+    }
+  }
+
   const [user] = await db
     .update(usersTable)
     .set({ role: parsed.data.role as never })
@@ -130,6 +151,16 @@ router.patch(
     const parsed = AssignBusinessOwnerBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
+      return;
+    }
+
+    const [owner] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.id, parsed.data.ownerId));
+
+    if (!owner) {
+      res.status(404).json({ error: "User not found" });
       return;
     }
 

@@ -57,3 +57,25 @@ export async function createStripeCheckoutSession(
 
   return { url: session.url, sessionId: session.id, mockMode: false };
 }
+
+export async function retrieveOpenStripeCheckoutSession(
+  sessionId: string,
+  connectedAccountId: string,
+): Promise<{ url: string; sessionId: string } | null> {
+  if (!stripe) return null;
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(
+      sessionId,
+      {},
+      { stripeAccount: connectedAccountId },
+    );
+    if (session.status === "open" && session.url) {
+      return { url: session.url, sessionId: session.id };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}

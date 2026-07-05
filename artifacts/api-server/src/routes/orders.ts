@@ -1,9 +1,11 @@
 import { Router, type IRouter } from "express";
+import { respondOrderNotFound } from "../lib/order-not-found-response";
 import {
   db,
   ordersTable,
   orderItemsTable,
   orderItemOptionsTable,
+  orderIdempotencyKeysTable,
   productsTable,
   businessesTable,
   usersTable,
@@ -23,11 +25,11 @@ import {
   RefundOrderBody,
   EstimateOrderPrepBody,
 } from "@workspace/api-zod";
-import { createStripeCheckoutSession, stripe, isMockMode } from "../lib/stripe";
+import { createStripeCheckoutSession, stripe, isMockMode, retrieveOpenStripeCheckoutSession } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
 import { recordStripeWebhookReceived } from "../lib/system-runtime-state";
 import { handleStripeWebhookEvent, verifyStripeWebhookSignature } from "../lib/stripe-webhook";
-import { validatePaymentMethodForBusiness } from "../lib/payment-mode";
+import { validatePaymentMethodForBusiness, parseOrderPaymentMethod } from "../lib/payment-mode";
 import { validateOnlineCardPaymentReady } from "../lib/stripe-connect";
 import { getAppBaseUrl } from "../lib/app-base-url";
 import { isMockCheckoutAllowed } from "../lib/stripe-config";
@@ -55,6 +57,10 @@ import {
   type OrderOptionSnapshot,
 } from "../lib/product-options";
 import { createOrderAccessToken } from "../lib/order-access-token";
+import {
+  findOrderIdByIdempotencyKey,
+} from "../lib/order-idempotency";
+import { isPostgresUniqueViolation } from "../lib/business-slug";
 import {
   authorizeOrderAccess,
   buildOrderAccessInput,
@@ -199,6 +205,25 @@ router.post("/orders/prep-estimate", async (req, res): Promise<void> => {
 
 // POST /api/orders
 router.post("/orders", async (req, res): Promise<void> => {
+  const idempotencyKey = req.get("Idempotency-Key")?.trim();
+  if (idempotencyKey) {
+    if (idempotencyKey.length > 128) {
+      res.status(400).json({ error: "Idempotency-Key is too long." });
+      return;
+    }
+    const existingOrderId = await findOrderIdByIdempotencyKey(idempotencyKey);
+    if (existingOrderId) {
+      const existing = await getOrderWithItems(existingOrderId);
+      if (existing) {
+        res.status(200).json({
+          ...existing,
+          accessToken: createOrderAccessToken(existingOrderId),
+        });
+        return;
+      }
+    }
+  }
+
   const parsed = CreateOrderBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -288,7 +313,11 @@ router.post("/orders", async (req, res): Promise<void> => {
     return;
   }
 
-  const paymentMethod = d.paymentMethod ?? "STRIPE";
+  const paymentMethod = parseOrderPaymentMethod(d.paymentMethod);
+  if (!paymentMethod) {
+    res.status(400).json({ error: "Invalid payment method." });
+    return;
+  }
   const paymentError = validatePaymentMethodForBusiness(business, paymentMethod);
   if (paymentError) {
     res.status(400).json({ error: paymentError });
@@ -331,58 +360,87 @@ router.post("/orders", async (req, res): Promise<void> => {
     productMap,
   });
 
-  const [order] = await db
-    .insert(ordersTable)
-    .values({
-      businessId: d.businessId,
-      orderNumber: generateOrderNumber(),
-      fulfillmentType: d.fulfillmentType as never,
-      customerName: d.customerName.trim(),
-      customerEmail: d.customerEmail.trim(),
-      customerPhone: d.customerPhone?.trim() ?? null,
-      customerUserId: customerUserId ?? null,
-      deliveryAddress: d.deliveryAddress?.trim(),
-      pickupTime: "ASAP",
-      estimatedWindowStart: prepEstimate.estimatedWindowStart,
-      estimatedWindowEnd: prepEstimate.estimatedWindowEnd,
-      notes: d.notes,
-      specialFields: d.specialFields,
-      subtotalCents: orderTotals.subtotalCents,
-      taxCents: orderTotals.taxCents,
-      taxRatePercent:
-        orderTotals.taxRatePercent != null ? String(orderTotals.taxRatePercent) : null,
-      taxLabel: orderTotals.taxLabel,
-      total: String(total),
-      deliveryFee: deliveryFee ? String(deliveryFee) : null,
-      paymentMethod,
-    })
-    .returning();
+  let order;
+  try {
+    order = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(ordersTable)
+      .values({
+        businessId: d.businessId,
+        orderNumber: generateOrderNumber(),
+        fulfillmentType: d.fulfillmentType as never,
+        customerName: d.customerName.trim(),
+        customerEmail: d.customerEmail.trim(),
+        customerPhone: d.customerPhone?.trim() ?? null,
+        customerUserId: customerUserId ?? null,
+        deliveryAddress: d.deliveryAddress?.trim(),
+        pickupTime: "ASAP",
+        estimatedWindowStart: prepEstimate.estimatedWindowStart,
+        estimatedWindowEnd: prepEstimate.estimatedWindowEnd,
+        notes: d.notes,
+        specialFields: d.specialFields,
+        subtotalCents: orderTotals.subtotalCents,
+        taxCents: orderTotals.taxCents,
+        taxRatePercent:
+          orderTotals.taxRatePercent != null ? String(orderTotals.taxRatePercent) : null,
+        taxLabel: orderTotals.taxLabel,
+        total: String(total),
+        deliveryFee: deliveryFee ? String(deliveryFee) : null,
+        paymentMethod,
+      })
+      .returning();
 
-  const insertedItems = await db
-    .insert(orderItemsTable)
-    .values(
-      orderItems.map((item) => ({
-        orderId: order.id,
-        productId: item.productId,
-        productName: item.productName,
-        quantity: item.quantity,
-        unitPrice: String(item.unitPrice),
-        subtotal: String(item.subtotal),
+    const insertedItems = await tx
+      .insert(orderItemsTable)
+      .values(
+        orderItems.map((item) => ({
+          orderId: created.id,
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: String(item.unitPrice),
+          subtotal: String(item.subtotal),
+        })),
+      )
+      .returning();
+
+    const optionRows = insertedItems.flatMap((inserted, index) =>
+      orderItems[index].options.map((opt) => ({
+        orderItemId: inserted.id,
+        optionId: opt.optionId,
+        groupName: opt.groupName,
+        optionName: opt.optionName,
+        priceAdjustment: String(opt.priceAdjustment),
       })),
-    )
-    .returning();
+    );
+    if (optionRows.length > 0) {
+      await tx.insert(orderItemOptionsTable).values(optionRows);
+    }
 
-  const optionRows = insertedItems.flatMap((inserted, index) =>
-    orderItems[index].options.map((opt) => ({
-      orderItemId: inserted.id,
-      optionId: opt.optionId,
-      groupName: opt.groupName,
-      optionName: opt.optionName,
-      priceAdjustment: String(opt.priceAdjustment),
-    })),
-  );
-  if (optionRows.length > 0) {
-    await db.insert(orderItemOptionsTable).values(optionRows);
+    if (idempotencyKey) {
+      await tx.insert(orderIdempotencyKeysTable).values({
+        idempotencyKey,
+        orderId: created.id,
+      });
+    }
+
+    return created;
+    });
+  } catch (err) {
+    if (idempotencyKey && isPostgresUniqueViolation(err)) {
+      const existingOrderId = await findOrderIdByIdempotencyKey(idempotencyKey);
+      if (existingOrderId) {
+        const existing = await getOrderWithItems(existingOrderId);
+        if (existing) {
+          res.status(200).json({
+            ...existing,
+            accessToken: createOrderAccessToken(existingOrderId),
+          });
+          return;
+        }
+      }
+    }
+    throw err;
   }
 
   const result = await getOrderWithItems(order.id);
@@ -439,7 +497,7 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
     .where(eq(ordersTable.id, params.data.id));
 
   if (!order) {
-    res.status(404).json({ error: "Order not found" });
+    respondOrderNotFound(res);
     return;
   }
 
@@ -453,7 +511,7 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
   );
 
   if (!viewAuth.allowed) {
-    res.status(viewAuth.statusCode).json({ error: viewAuth.error });
+    respondOrderNotFound(res);
     return;
   }
 
@@ -793,7 +851,12 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
   );
 
   if (!checkoutAuth.allowed) {
-    res.status(checkoutAuth.statusCode).json({ error: checkoutAuth.error });
+    respondOrderNotFound(res);
+    return;
+  }
+
+  if (orderRow.paymentStatus === "PAID") {
+    res.status(400).json({ error: "This order has already been paid." });
     return;
   }
 
@@ -832,6 +895,21 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
   if (isMockMode && !isMockCheckoutAllowed()) {
     res.status(503).json({ error: "Online card payments are not available right now." });
     return;
+  }
+
+  if (
+    orderRow.stripeSessionId &&
+    business.stripeConnectedAccountId &&
+    !isMockMode
+  ) {
+    const existingSession = await retrieveOpenStripeCheckoutSession(
+      orderRow.stripeSessionId,
+      business.stripeConnectedAccountId,
+    );
+    if (existingSession) {
+      res.json({ url: existingSession.url, sessionId: existingSession.sessionId, mockMode: false });
+      return;
+    }
   }
 
   const baseUrl = getAppBaseUrl();

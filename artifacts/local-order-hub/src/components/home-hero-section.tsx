@@ -2,10 +2,18 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ResponsiveHeroImage } from "@/components/responsive-hero-image";
 import { usePlatformBranding } from "@/components/theme-provider";
+import {
+  buildOptimizedSrcSet,
+  buildResponsiveHeroPreloadHref,
+  HOMEPAGE_HERO_IMAGE_WIDTHS,
+  isOptimizableMediaUrl,
+} from "@/lib/optimized-image";
 import { cn } from "@/lib/utils";
 
 const HERO_MIN_HEIGHT_CLASS = "min-h-[420px]";
+const HERO_IMAGE_QUALITY = 85;
 
 export function HomeHeroSection() {
   const {
@@ -23,6 +31,7 @@ export function HomeHeroSection() {
   const [imageFailed, setImageFailed] = useState(false);
   const showHeroImage = !!heroImageUrl && !imageFailed;
   const imagePending = showHeroImage && !imageLoaded;
+  const heroOptimizable = !!heroImageUrl && isOptimizableMediaUrl(heroImageUrl);
 
   useEffect(() => {
     setImageLoaded(false);
@@ -31,17 +40,30 @@ export function HomeHeroSection() {
 
   useEffect(() => {
     if (!heroImageUrl) return;
+
     const link = document.createElement("link");
     link.rel = "preload";
     link.as = "image";
-    link.href = heroImageUrl;
+    link.fetchPriority = "high";
+
+    if (heroOptimizable) {
+      link.href = buildResponsiveHeroPreloadHref(heroImageUrl, "webp", HERO_IMAGE_QUALITY);
+      link.setAttribute(
+        "imagesrcset",
+        buildOptimizedSrcSet(heroImageUrl, HOMEPAGE_HERO_IMAGE_WIDTHS, "webp", HERO_IMAGE_QUALITY),
+      );
+      link.setAttribute("imagesizes", "100vw");
+    } else {
+      link.href = heroImageUrl;
+    }
+
     document.head.appendChild(link);
     return () => {
       if (link.parentNode) {
         link.parentNode.removeChild(link);
       }
     };
-  }, [heroImageUrl]);
+  }, [heroImageUrl, heroOptimizable]);
 
   return (
     <section
@@ -61,16 +83,12 @@ export function HomeHeroSection() {
 
       {showHeroImage ? (
         <>
-          <img
+          <ResponsiveHeroImage
             src={heroImageUrl}
-            alt=""
             className={cn(
               "absolute inset-0 h-full w-full object-cover transition-opacity duration-500",
               imageLoaded ? "opacity-100" : "opacity-0",
             )}
-            aria-hidden
-            decoding="async"
-            fetchPriority="high"
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageFailed(true)}
           />

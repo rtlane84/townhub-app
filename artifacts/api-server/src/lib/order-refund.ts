@@ -11,6 +11,7 @@ import {
 import { stripe } from "./stripe";
 import { logOperationalFailure } from "./operational-log";
 import { authorizeOrderStatusUpdate, type UserRole } from "./order-access";
+import { isPostgresUniqueViolation } from "./business-slug";
 import {
   computeAggregateRefundStatus,
   evaluateRefundEligibility,
@@ -208,18 +209,30 @@ export async function createOrderRefund(input: {
   }
 
   const idempotencyKey = `order-refund-${order.id}-${randomUUID()}`;
-  const [refundRecord] = await db
-    .insert(orderRefundsTable)
-    .values({
-      orderId: order.id,
-      businessId: order.businessId,
-      amountCents: input.amountCents,
-      reason: input.reason.trim() || null,
-      idempotencyKey,
-      status: "PENDING",
-      createdByUserId: input.createdByUserId,
-    })
-    .returning();
+  let refundRecord: typeof orderRefundsTable.$inferSelect;
+  try {
+    [refundRecord] = await db
+      .insert(orderRefundsTable)
+      .values({
+        orderId: order.id,
+        businessId: order.businessId,
+        amountCents: input.amountCents,
+        reason: input.reason.trim() || null,
+        idempotencyKey,
+        status: "PENDING",
+        createdByUserId: input.createdByUserId,
+      })
+      .returning();
+  } catch (err) {
+    if (isPostgresUniqueViolation(err)) {
+      return {
+        ok: false,
+        statusCode: 409,
+        error: "A refund is already in progress for this order.",
+      };
+    }
+    throw err;
+  }
 
   if (!stripe) {
     await db

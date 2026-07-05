@@ -3,6 +3,7 @@ import { createServer, type Server } from "node:http";
 import { describe, it } from "node:test";
 import express from "express";
 import {
+  isOrderLookupRoute,
   isReadLimitedRoute,
   isStripeWebhookPath,
   isWriteLimitedRoute,
@@ -44,9 +45,15 @@ describe("rate-limit paths", () => {
 
   it("matches expensive public read endpoints", () => {
     assert.equal(isReadLimitedRoute("/weather", "GET"), true);
+    assert.equal(isReadLimitedRoute("/media/optimize", "GET"), true);
     assert.equal(isReadLimitedRoute("/food-truck-locations/today", "GET"), true);
     assert.equal(isReadLimitedRoute("/food-truck-locations/upcoming", "GET"), true);
     assert.equal(isReadLimitedRoute("/weather", "POST"), false);
+  });
+
+  it("routes guest order lookup to dedicated limiter", () => {
+    assert.equal(isOrderLookupRoute("/orders/42", "GET"), true);
+    assert.equal(isReadLimitedRoute("/orders/42", "GET"), false);
   });
 });
 

@@ -6,7 +6,9 @@ import {
   timestamp,
   pgEnum,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -38,10 +40,11 @@ export const orderRefundsTable = pgTable("order_refunds", {
     .notNull()
     .defaultNow(),
 }, (table) => [
-  // Batched refund hydration and order refund history: WHERE order_id IN (...)
   index("order_refunds_order_id_idx").on(table.orderId),
-  // Stripe refund webhook idempotency: WHERE stripe_refund_id = ?
   index("order_refunds_stripe_refund_id_idx").on(table.stripeRefundId),
+  uniqueIndex("order_refunds_one_pending_per_order_idx")
+    .on(table.orderId)
+    .where(sql`${table.status} = 'PENDING'`),
 ]);
 
 export const insertOrderRefundSchema = createInsertSchema(orderRefundsTable).omit({

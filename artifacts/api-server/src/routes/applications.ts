@@ -73,6 +73,10 @@ const approveSchema = z.object({
   billingInterval: z.enum(["monthly", "yearly"]).optional(),
 });
 
+const rejectApplicationSchema = z.object({
+  note: z.string().max(2000).optional(),
+});
+
 // GET /api/subscription-plans — public list of active plans for the apply form
 router.get("/subscription-plans", async (_req, res): Promise<void> => {
   const plans = await db
@@ -429,7 +433,12 @@ router.post("/admin/applications/:id/reject", requireAdmin, async (req, res): Pr
   }
 
   const id = parseInt(String(req.params.id), 10);
-  const { note } = req.body as { note?: string };
+  const parsed = rejectApplicationSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const note = parsed.data.note;
 
   const [app] = await db
     .select()

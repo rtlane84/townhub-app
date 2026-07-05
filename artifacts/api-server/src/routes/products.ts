@@ -22,6 +22,7 @@ import {
   assignModifierGroupsToProduct,
   clearProductModifierGroups,
 } from "../lib/product-options";
+import { canViewFullBusinessCatalog } from "../lib/catalog-access";
 import { requireBusinessCatalogAccess } from "../middlewares/requireBusinessCatalogAccess";
 
 const router: IRouter = Router();
@@ -167,6 +168,8 @@ router.get(
       return;
     }
 
+    const fullCatalog = await canViewFullBusinessCatalog(req, params.data.businessId);
+
     // Support optional query params server-side
     const { categoryId, available, featured } = req.query as Record<
       string,
@@ -174,7 +177,12 @@ router.get(
     >;
     const conditions = [eq(productsTable.businessId, params.data.businessId)];
     if (categoryId) conditions.push(eq(productsTable.categoryId, parseInt(categoryId, 10)));
-    if (available === "true") conditions.push(eq(productsTable.available, true));
+    if (fullCatalog) {
+      if (available === "true") conditions.push(eq(productsTable.available, true));
+      if (available === "false") conditions.push(eq(productsTable.available, false));
+    } else {
+      conditions.push(eq(productsTable.available, true));
+    }
     if (featured === "true") conditions.push(eq(productsTable.featured, true));
 
     const products = await db

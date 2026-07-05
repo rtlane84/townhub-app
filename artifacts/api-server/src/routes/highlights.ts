@@ -38,10 +38,7 @@ function serializeHighlight(h: typeof highlightsTable.$inferSelect) {
 }
 
 // GET /api/admin/highlights — all highlights for admin management (no date/active filter)
-router.get("/admin/highlights", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-
+router.get("/admin/highlights", requireAdmin, async (req, res): Promise<void> => {
   const rows = await db
     .select()
     .from(highlightsTable)

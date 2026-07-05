@@ -18,7 +18,7 @@ Because the Replit preview runs inside an iframe (blocking `SameSite=Lax` cookie
 | `BUSINESS_OWNER` | Manages one or more businesses |
 | `ADMIN` | Platform operator |
 
-First-run admin promotion: `POST /api/admin/bootstrap` (works only while zero admins exist). Ongoing role changes: Admin → Users.
+First-run admin promotion: `POST /api/admin/bootstrap` (works only while zero admins exist). When `BOOTSTRAP_TOKEN` is set, the request must include that token (body `token` or header `X-Bootstrap-Token`). Ongoing role changes: Admin → Users.
 
 ---
 
@@ -48,7 +48,15 @@ To prevent PII leakage, guest order viewing and Stripe checkout require a **sign
 2. `GET /api/orders/:id` accepts the token via `?token=` query param or `X-Order-Access-Token` header.
 3. `POST /api/checkout/session` accepts `accessToken` in the JSON body for guest Stripe checkout.
 
-Tokens are HMAC-SHA256 over `order:{id}`, signed with `SESSION_SECRET` (≥ 32 characters). In production, missing `SESSION_SECRET` throws at startup.
+Tokens are HMAC-SHA256 signed with `SESSION_SECRET` (≥ 32 characters). New tokens use **v2** format:
+
+`v2.{orderId}.{expiresAtUnix}.{signature}`
+
+where `signature = HMAC-SHA256("order:{id}:{expiresAt}")`. Default TTL is **90 days**.
+
+**Legacy v1 tokens** (bare HMAC over `order:{id}` with no expiry) are still accepted so older notification links keep working during rollout.
+
+In production, missing `SESSION_SECRET` throws at startup.
 
 **Who can view an order without a guest token:**
 
@@ -62,18 +70,14 @@ Stripe success URLs include `?token=…` so the confirmation page can load the o
 
 Customer order email and SMS links use `customerOrderUrlForNotification()` — guest orders include `?token=…`; signed-in customer orders omit it because account login grants access.
 
-### Future: token expiry and revocation
+### Token expiry
 
-Tokens are currently **stateless and do not expire**. This keeps checkout confirmation and notification links working without a server-side session store.
+v2 tokens embed `expiresAt` in the signed payload. Verification rejects expired tokens. Legacy v1 tokens remain valid until operators choose to drop support.
 
-**Recommended future hardening** (not implemented yet — would require a migration plan):
+Optional future hardening:
 
-1. Embed an expiry timestamp in the token payload (e.g. HMAC over `order:{id}:{expiresAt}`).
-2. Accept both old and new token formats during a transition window so existing links in inboxes continue to work.
-3. Use a long default TTL (e.g. 90–180 days) before shortening.
-4. Optionally store revocation nonces for cancelled orders.
-
-Do not enable short-lived tokens without dual-format verification and communication to operators, or guest links in old emails will break.
+1. Shorten TTL after most in-flight links have expired.
+2. Optionally store revocation nonces for cancelled orders.
 
 ## CORS
 

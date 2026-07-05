@@ -43,6 +43,16 @@ export function paymentModeForInsert(input: {
   };
 }
 
+export const ALLOWED_ORDER_PAYMENT_METHODS = ["STRIPE", "IN_PERSON"] as const;
+export type OrderPaymentMethod = (typeof ALLOWED_ORDER_PAYMENT_METHODS)[number];
+
+export function parseOrderPaymentMethod(raw: string | undefined): OrderPaymentMethod | null {
+  const value = raw ?? "STRIPE";
+  return (ALLOWED_ORDER_PAYMENT_METHODS as readonly string[]).includes(value)
+    ? (value as OrderPaymentMethod)
+    : null;
+}
+
 export function validatePaymentMethodForBusiness(
   business: { paymentMode?: string | null; payAtPickupEnabled?: boolean | null },
   paymentMethod: string,

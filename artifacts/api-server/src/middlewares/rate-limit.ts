@@ -2,20 +2,25 @@ import type { Request, RequestHandler, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { logger } from "../lib/logger";
 import {
+  generalRateLimitMax,
+  generalRateLimitWindowMs,
   isRateLimitDisabled,
+  orderLookupRateLimitMax,
+  orderLookupRateLimitWindowMs,
   readRateLimitMax,
   readRateLimitWindowMs,
   writeRateLimitMax,
   writeRateLimitWindowMs,
 } from "../lib/rate-limit-config";
 import {
+  isOrderLookupRoute,
   isReadLimitedRoute,
   isWriteLimitedRoute,
   RATE_LIMIT_ERROR_MESSAGE,
   shouldSkipRateLimit,
 } from "../lib/rate-limit-paths";
 
-type RateLimitKind = "write" | "read";
+type RateLimitKind = "write" | "read" | "order_lookup" | "general";
 
 function logRateLimitHit(
   req: Request,
@@ -69,6 +74,32 @@ export function createReadRateLimiter(
   });
 }
 
+export function createOrderLookupRateLimiter(
+  max = orderLookupRateLimitMax(),
+  windowMs = orderLookupRateLimitWindowMs(),
+): RequestHandler {
+  return rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => rateLimitHandler("order_lookup", max)(req, res),
+  });
+}
+
+export function createGeneralRateLimiter(
+  max = generalRateLimitMax(),
+  windowMs = generalRateLimitWindowMs(),
+): RequestHandler {
+  return rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => rateLimitHandler("general", max)(req, res),
+  });
+}
+
 /**
  * Applies stricter limits to public write endpoints and lighter limits to
  * expensive public reads. Skips Stripe webhooks entirely.
@@ -80,8 +111,16 @@ export function createApiRateLimitMiddleware(): RequestHandler {
 
   const writeMax = writeRateLimitMax();
   const readMax = readRateLimitMax();
+  const orderLookupMax = orderLookupRateLimitMax();
+  const generalMax = generalRateLimitMax();
+
   const writeLimiter = createWriteRateLimiter(writeMax, writeRateLimitWindowMs());
   const readLimiter = createReadRateLimiter(readMax, readRateLimitWindowMs());
+  const orderLookupLimiter = createOrderLookupRateLimiter(
+    orderLookupMax,
+    orderLookupRateLimitWindowMs(),
+  );
+  const generalLimiter = createGeneralRateLimiter(generalMax, generalRateLimitWindowMs());
 
   return (req, res, next) => {
     const path = req.path;
@@ -96,11 +135,16 @@ export function createApiRateLimitMiddleware(): RequestHandler {
       return;
     }
 
+    if (isOrderLookupRoute(path, req.method)) {
+      orderLookupLimiter(req, res, next);
+      return;
+    }
+
     if (isReadLimitedRoute(path, req.method)) {
       readLimiter(req, res, next);
       return;
     }
 
-    next();
+    generalLimiter(req, res, next);
   };
 }

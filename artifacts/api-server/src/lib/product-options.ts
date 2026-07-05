@@ -122,7 +122,20 @@ export function modifierGroupToOptionGroup(
 function serializeModifierGroup(
   group: ModifierGroup,
   choices: ModifierChoice[],
-): SerializedModifierGroup {
+  activeOnly: boolean,
+): SerializedModifierGroup | null {
+  if (activeOnly && !group.active) return null;
+
+  const groupChoices = choices
+    .filter((c) => c.modifierGroupId === group.id)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
+
+  const visibleChoices = activeOnly
+    ? groupChoices.filter((c) => c.active)
+    : groupChoices;
+
+  if (activeOnly && visibleChoices.length === 0) return null;
+
   return {
     id: group.id,
     businessId: group.businessId,
@@ -133,16 +146,15 @@ function serializeModifierGroup(
     maxSelections: group.maxSelections,
     active: group.active,
     sortOrder: group.sortOrder,
-    choices: choices
-      .filter((c) => c.modifierGroupId === group.id)
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id)
-      .map(serializeChoice),
+    choices: visibleChoices.map(serializeChoice),
   };
 }
 
 export async function loadModifierGroupsForBusiness(
   businessId: number,
+  options: { activeOnly?: boolean } = {},
 ): Promise<SerializedModifierGroup[]> {
+  const activeOnly = options.activeOnly ?? false;
   const groups = await db
     .select()
     .from(modifierGroupsTable)
@@ -157,7 +169,9 @@ export async function loadModifierGroupsForBusiness(
     .where(inArray(modifierChoicesTable.modifierGroupId, groups.map((g) => g.id)))
     .orderBy(asc(modifierChoicesTable.sortOrder), asc(modifierChoicesTable.id));
 
-  return groups.map((g) => serializeModifierGroup(g, choices));
+  return groups
+    .map((g) => serializeModifierGroup(g, choices, activeOnly))
+    .filter((g): g is SerializedModifierGroup => g !== null);
 }
 
 export async function loadAssignedModifierGroupsByProductIds(
@@ -346,7 +360,7 @@ export async function createModifierGroup(
     .select()
     .from(modifierChoicesTable)
     .where(eq(modifierChoicesTable.modifierGroupId, group.id));
-  return serializeModifierGroup(group, choiceRows);
+  return serializeModifierGroup(group, choiceRows, false)!;
 }
 
 export async function updateModifierGroupRecord(
@@ -400,7 +414,7 @@ export async function updateModifierGroupRecord(
       .where(eq(modifierChoicesTable.modifierGroupId, modifierGroupId));
   }
 
-  return serializeModifierGroup(group, choiceRows);
+  return serializeModifierGroup(group, choiceRows, false)!;
 }
 
 export async function deleteModifierGroupRecord(

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, count, and, sql } from "drizzle-orm";
 import { serializeBusiness } from "./businesses";
 import {
   getPrimaryOwnedBusiness,
@@ -123,6 +123,17 @@ router.post("/admin/bootstrap", async (req, res): Promise<void> => {
     return;
   }
 
+  const bootstrapToken = process.env.BOOTSTRAP_TOKEN?.trim();
+  if (bootstrapToken) {
+    const provided =
+      (typeof req.body?.token === "string" ? req.body.token.trim() : "") ||
+      (typeof req.get("X-Bootstrap-Token") === "string" ? req.get("X-Bootstrap-Token")!.trim() : "");
+    if (provided !== bootstrapToken) {
+      res.status(403).json({ error: "Invalid bootstrap token." });
+      return;
+    }
+  }
+
   // Ensure the user row exists
   let user;
   try {
@@ -143,12 +154,22 @@ router.post("/admin/bootstrap", async (req, res): Promise<void> => {
     throw err;
   }
 
-  // Promote to ADMIN
+  // Promote to ADMIN only when no admin exists yet (atomic guard against bootstrap races).
   const [updated] = await db
     .update(usersTable)
     .set({ role: "ADMIN" })
-    .where(eq(usersTable.id, userId))
+    .where(
+      and(
+        eq(usersTable.id, userId),
+        sql`(SELECT COUNT(*)::int FROM ${usersTable} WHERE ${usersTable.role} = 'ADMIN') = 0`,
+      ),
+    )
     .returning();
+
+  if (!updated) {
+    res.status(403).json({ error: "An admin already exists. Setup is locked." });
+    return;
+  }
 
   req.log.info({ userId: updated.id }, "Admin bootstrap: user promoted to ADMIN");
   res.json({ message: "Admin access granted. Welcome!", role: updated.role });

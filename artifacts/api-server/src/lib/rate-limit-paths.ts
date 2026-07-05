@@ -14,9 +14,14 @@ export function shouldSkipRateLimit(path: string, _method: string): boolean {
   return isStripeWebhookPath(path);
 }
 
+export function isOrderLookupRoute(path: string, method: string): boolean {
+  return method === "GET" && /^\/orders\/\d+$/.test(path);
+}
+
 export function isWriteLimitedRoute(path: string, method: string): boolean {
   if (method !== "POST") return false;
   if (path === "/orders") return true;
+  if (path === "/orders/prep-estimate") return true;
   if (path === "/checkout/session") return true;
   if (path === "/appointment-requests") return true;
   if (path === "/businesses/apply") return true;
@@ -28,6 +33,8 @@ export function isWriteLimitedRoute(path: string, method: string): boolean {
 
 export function isReadLimitedRoute(path: string, method: string): boolean {
   if (method !== "GET") return false;
+  if (isOrderLookupRoute(path, method)) return false;
+  if (path === "/media/optimize") return true;
   if (path === "/weather") return true;
   if (path === "/food-truck-locations/today") return true;
   if (path === "/food-truck-locations/upcoming") return true;

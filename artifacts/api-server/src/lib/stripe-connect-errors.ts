@@ -31,7 +31,7 @@ export function mapStripeConnectStartError(err: unknown): StripeConnectHttpError
     return {
       status: 503,
       code: "stripe_authentication_failed",
-      error: "Stripe API authentication failed. Check STRIPE_SECRET_KEY on the platform server.",
+      error: "Stripe API authentication failed. Check platform Stripe configuration.",
     };
   }
 

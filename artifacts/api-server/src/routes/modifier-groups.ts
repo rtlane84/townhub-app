@@ -13,6 +13,7 @@ import {
   updateModifierGroupRecord,
   deleteModifierGroupRecord,
 } from "../lib/product-options";
+import { canViewFullBusinessCatalog } from "../lib/catalog-access";
 import { requireBusinessCatalogAccess } from "../middlewares/requireBusinessCatalogAccess";
 
 const router: IRouter = Router();
@@ -32,7 +33,10 @@ router.get(
       return;
     }
 
-    const groups = await loadModifierGroupsForBusiness(params.data.businessId);
+    const fullCatalog = await canViewFullBusinessCatalog(req, params.data.businessId);
+    const groups = await loadModifierGroupsForBusiness(params.data.businessId, {
+      activeOnly: !fullCatalog,
+    });
     res.json(groups);
   },
 );

@@ -33,3 +33,21 @@ export function readRateLimitMax(): number {
 export function readRateLimitWindowMs(): number {
   return parsePositiveInt(process.env.RATE_LIMIT_READ_WINDOW_MS, 15 * 60 * 1000);
 }
+
+/** Guest order lookup — stricter than general reads to slow enumeration. */
+export function orderLookupRateLimitMax(): number {
+  return parsePositiveInt(process.env.RATE_LIMIT_ORDER_LOOKUP_MAX, 30);
+}
+
+export function orderLookupRateLimitWindowMs(): number {
+  return parsePositiveInt(process.env.RATE_LIMIT_ORDER_LOOKUP_WINDOW_MS, 15 * 60 * 1000);
+}
+
+/** Baseline limit for all other /api traffic. */
+export function generalRateLimitMax(): number {
+  return parsePositiveInt(process.env.RATE_LIMIT_GENERAL_MAX, 300);
+}
+
+export function generalRateLimitWindowMs(): number {
+  return parsePositiveInt(process.env.RATE_LIMIT_GENERAL_WINDOW_MS, 15 * 60 * 1000);
+}

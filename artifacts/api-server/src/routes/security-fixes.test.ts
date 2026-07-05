@@ -8,6 +8,7 @@ describe("catalog mutation route auth wiring", () => {
   it("protects product and category mutations with requireBusinessCatalogAccess", async () => {
     const source = await readFile(new URL("products.ts", routesDir), "utf8");
     assert.match(source, /requireBusinessCatalogAccess/);
+    assert.match(source, /canViewFullBusinessCatalog/);
     assert.ok((source.match(/requireBusinessCatalogAccess/g) ?? []).length >= 6);
   });
 
@@ -32,6 +33,13 @@ describe("business register route auth wiring", () => {
     const source = await readFile(new URL("businesses.ts", routesDir), "utf8");
     assert.match(source, /router\.post\("\/businesses\/register", requireAdmin/);
   });
+
+  it("requires admin for platform stats and strips public business PII", async () => {
+    const source = await readFile(new URL("businesses.ts", routesDir), "utf8");
+    assert.match(source, /router\.get\("\/businesses\/stats", requireAdmin/);
+    assert.match(source, /serializePublicBusiness/);
+    assert.match(source, /access\.isAdmin\) updateData\.featured/);
+  });
 });
 
 describe("order and commerce guard wiring", () => {
@@ -39,8 +47,14 @@ describe("order and commerce guard wiring", () => {
     const source = await readFile(new URL("orders.ts", routesDir), "utf8");
     assert.match(source, /createOrderAccessToken/);
     assert.match(source, /authorizeOrderAccess/);
+    assert.match(source, /respondOrderNotFound/);
+    assert.match(source, /paymentStatus === "PAID"/);
     assert.match(source, /isBusinessOpenForPublicCommerce/);
     assert.match(source, /requireOnlineOrderingFeature/);
+    assert.match(source, /db\.transaction/);
+    assert.match(source, /findOrderIdByIdempotencyKey/);
+    assert.match(source, /parseOrderPaymentMethod/);
+    assert.match(source, /retrieveOpenStripeCheckoutSession/);
   });
 
   it("enforces appointment feature gates", async () => {
