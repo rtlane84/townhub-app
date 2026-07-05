@@ -40,6 +40,7 @@ Set all secrets in your hosting provider (Replit Secrets, Fly secrets, etc.). Ne
 | `VITE_CLERK_PUBLISHABLE_KEY` | Frontend build-time publishable key |
 | `SESSION_SECRET` | Guest order access token signing (≥ 32 chars) |
 | `APP_BASE_URL` | Public frontend URL (e.g. `https://yourdomain.com`) |
+| `CORS_ALLOWED_ORIGINS` | Optional comma-separated extra browser origins for API CORS in production (preview/staging). `APP_BASE_URL` origin is always included. |
 
 ### Stripe (customer payments + business subscriptions)
 
@@ -97,6 +98,15 @@ See [docs/TWILIO_SETUP.md](docs/TWILIO_SETUP.md).
 | `RATE_LIMIT_READ_WINDOW_MS` | 900000 |
 | `RATE_LIMIT_DISABLED` | `false` |
 | `RATE_LIMIT_TRUST_PROXY` | `true` in production |
+
+### CORS (production)
+
+In production, the API accepts credentialed browser requests only from:
+
+- The origin derived from `APP_BASE_URL`
+- Additional origins in `CORS_ALLOWED_ORIGINS` (comma-separated preview/staging hosts)
+
+Development (`NODE_ENV !== production`) continues to reflect any `Origin` for local and iframe preview convenience. See [SECURITY.md](SECURITY.md).
 
 ---
 

@@ -43,6 +43,7 @@ export type OrderNotificationData = {
   businessAddress?: string | null;
   pickupInstructions?: string | null;
   customerName: string;
+  customerUserId?: string | null;
   customerEmail?: string | null;
   customerPhone?: string | null;
   fulfillmentType: string;

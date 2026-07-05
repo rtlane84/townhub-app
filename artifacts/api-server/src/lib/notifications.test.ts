@@ -6,7 +6,7 @@ import { buildCustomerLifecycleSms, buildOwnerNewOrderSms } from "./notification
 import { statusToCustomerEvent } from "./email-templates/types";
 import { resolveNotificationStatus } from "./notification-content";
 import { buildOwnerNewAppointmentEmail } from "./notification-content";
-import { customerOrderUrl } from "./notification-urls";
+import { customerOrderUrlForNotification } from "./notification-urls";
 
 const sampleOrder = {
   orderId: 42,
@@ -43,12 +43,42 @@ describe("notification delivery", () => {
 
 describe("customer lifecycle emails", () => {
   it('uses "We received your order" for the first email without "confirmed"', () => {
-    const email = buildCustomerLifecycleEmail("ORDER_RECEIVED", sampleOrder);
-    assert.equal(email.subject, "We received your order");
-    assert.doesNotMatch(email.text, /confirmed/i);
-    assert.doesNotMatch(email.html, /confirmed/i);
-    assert.match(email.html, /View Order/);
-    assert.match(email.text, new RegExp(customerOrderUrl(42).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    const previous = process.env.APP_BASE_URL;
+    const previousSecret = process.env.SESSION_SECRET;
+    process.env.APP_BASE_URL = "https://townhub.test";
+    process.env.SESSION_SECRET = "test-order-access-secret-with-32-chars-min";
+    try {
+      const guestOrder = { ...sampleOrder, customerUserId: null };
+      const email = buildCustomerLifecycleEmail("ORDER_RECEIVED", guestOrder);
+      assert.equal(email.subject, "We received your order");
+      assert.doesNotMatch(email.text, /confirmed/i);
+      assert.doesNotMatch(email.html, /confirmed/i);
+      assert.match(email.html, /View Order/);
+      const expectedUrl = customerOrderUrlForNotification(guestOrder);
+      assert.match(email.text, new RegExp(expectedUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+      assert.match(email.html, /token=/);
+    } finally {
+      if (previous === undefined) delete process.env.APP_BASE_URL;
+      else process.env.APP_BASE_URL = previous;
+      if (previousSecret === undefined) delete process.env.SESSION_SECRET;
+      else process.env.SESSION_SECRET = previousSecret;
+    }
+  });
+
+  it("omits access token for signed-in customer order links", () => {
+    const previous = process.env.APP_BASE_URL;
+    process.env.APP_BASE_URL = "https://townhub.test";
+    try {
+      const signedInOrder = { ...sampleOrder, customerUserId: "user_abc" };
+      const email = buildCustomerLifecycleEmail("ORDER_RECEIVED", signedInOrder);
+      const expectedUrl = customerOrderUrlForNotification(signedInOrder);
+      assert.equal(expectedUrl, "https://townhub.test/order/42");
+      assert.doesNotMatch(email.text, /token=/);
+      assert.match(email.text, new RegExp(expectedUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    } finally {
+      if (previous === undefined) delete process.env.APP_BASE_URL;
+      else process.env.APP_BASE_URL = previous;
+    }
   });
 
   it("uses business-specific accepted subject", () => {
@@ -126,11 +156,19 @@ describe("customer lifecycle SMS", () => {
     assert.match(sms, /Estimated pickup:/i);
   });
 
-  it("keeps SMS concise with order link", () => {
-    const sms = buildCustomerLifecycleSms("ORDER_RECEIVED", sampleOrder);
-    assert.match(sms, /Clay Diner received your order #ORD-1001/);
-    assert.match(sms, /order\/42/);
-    assert.ok(sms.length < 320);
+  it("keeps SMS concise with guest order link and token", () => {
+    const previousSecret = process.env.SESSION_SECRET;
+    process.env.SESSION_SECRET = "test-order-access-secret-with-32-chars-min";
+    try {
+      const guestOrder = { ...sampleOrder, customerUserId: null };
+      const sms = buildCustomerLifecycleSms("ORDER_RECEIVED", guestOrder);
+      assert.match(sms, /Clay Diner received your order #ORD-1001/);
+      assert.match(sms, /order\/42\?token=/);
+      assert.ok(sms.length < 400);
+    } finally {
+      if (previousSecret === undefined) delete process.env.SESSION_SECRET;
+      else process.env.SESSION_SECRET = previousSecret;
+    }
   });
 
   it("uses distinct copy per lifecycle event", () => {

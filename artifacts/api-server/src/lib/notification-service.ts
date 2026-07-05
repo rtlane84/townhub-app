@@ -65,6 +65,7 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
     businessAddress: business?.address,
     pickupInstructions: business?.pickupInstructions,
     customerName: order.customerName,
+    customerUserId: order.customerUserId,
     customerEmail: order.customerEmail,
     customerPhone: order.customerPhone,
     fulfillmentType: order.fulfillmentType,

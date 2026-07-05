@@ -60,3 +60,13 @@ describe("debug route production guard", () => {
     assert.doesNotMatch(source, /router\.use\(debugRouter\);\nrouter\.use\(businessesRouter\)/);
   });
 });
+
+describe("food truck mutation route auth wiring", () => {
+  it("protects food truck mutations with authorizeBusinessOwnerOrAdmin", async () => {
+    const source = await readFile(new URL("food-truck.ts", routesDir), "utf8");
+    assert.match(source, /authorizeBusinessOwnerOrAdmin/);
+    assert.match(source, /authorizeFoodTruckLocationMutation/);
+    assert.ok((source.match(/authorizeBusinessOwnerOrAdmin/g) ?? []).length >= 3);
+    assert.ok((source.match(/authorizeFoodTruckLocationMutation/g) ?? []).length >= 3);
+  });
+});

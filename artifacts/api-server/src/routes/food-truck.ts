@@ -1,7 +1,7 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Response } from "express";
+import { getAuth } from "@clerk/express";
 import { db, foodTruckLocationsTable, businessesTable } from "@workspace/db";
 import { eq, and, lte, gt } from "drizzle-orm";
-import { getAuth } from "@clerk/express";
 import { parseLocationCreateInput, parseLocationUpdateInput } from "../lib/food-truck-location";
 import {
   enrichLocationInputWithGeocode,
@@ -9,6 +9,8 @@ import {
   getPlatformTownHint,
   resolvePublicLocationCoordinates,
 } from "../lib/food-truck-geocode";
+import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
+import { authorizeFoodTruckLocationMutation } from "../lib/food-truck-mutation-auth";
 
 const router: IRouter = Router();
 
@@ -28,9 +30,31 @@ function serializeLocation(loc: typeof foodTruckLocationsTable.$inferSelect) {
   };
 }
 
+function parseBusinessId(raw: string): number | null {
+  const id = parseInt(raw, 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function parseLocationId(raw: string): number | null {
+  const id = parseInt(raw, 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+function respondMutationDenied(
+  res: Response,
+  result: Extract<ReturnType<typeof authorizeFoodTruckLocationMutation>, { ok: false }>,
+): void {
+  res.status(result.status).json({ error: result.error });
+}
+
 // GET /api/businesses/:id/food-truck-locations
 router.get("/businesses/:id/food-truck-locations", async (req, res): Promise<void> => {
-  const businessId = parseInt(req.params.id, 10);
+  const businessId = parseBusinessId(req.params.id);
+  if (!businessId) {
+    res.status(400).json({ error: "Invalid business id" });
+    return;
+  }
+
   const locs = await db
     .select()
     .from(foodTruckLocationsTable)
@@ -41,10 +65,23 @@ router.get("/businesses/:id/food-truck-locations", async (req, res): Promise<voi
 
 // POST /api/businesses/:id/food-truck-locations
 router.post("/businesses/:id/food-truck-locations", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const businessId = parseBusinessId(req.params.id);
+  if (!businessId) {
+    res.status(400).json({ error: "Invalid business id" });
+    return;
+  }
 
-  const businessId = parseInt(req.params.id, 10);
+  const businessAccess = await authorizeBusinessOwnerOrAdmin(req, businessId);
+  const auth = authorizeFoodTruckLocationMutation({
+    isAuthenticated: !!getAuth(req).userId,
+    businessAccess,
+    requestedBusinessId: businessId,
+  });
+  if (!auth.ok) {
+    respondMutationDenied(res, auth);
+    return;
+  }
+
   const parsed = parseLocationCreateInput(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
@@ -60,33 +97,71 @@ router.post("/businesses/:id/food-truck-locations", async (req, res): Promise<vo
 
 // PUT /api/businesses/:id/food-truck-locations/:locationId
 router.put("/businesses/:id/food-truck-locations/:locationId", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const businessId = parseBusinessId(req.params.id);
+  const locationId = parseLocationId(req.params.locationId);
+  if (!businessId || !locationId) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
 
-  const locationId = parseInt(req.params.locationId, 10);
-  const parsed = parseLocationUpdateInput(req.body);
-  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-
+  const businessAccess = await authorizeBusinessOwnerOrAdmin(req, businessId);
   const [existing] = await db
     .select()
     .from(foodTruckLocationsTable)
     .where(eq(foodTruckLocationsTable.id, locationId));
-  if (!existing) { res.status(404).json({ error: "Location not found" }); return; }
+
+  const auth = authorizeFoodTruckLocationMutation({
+    isAuthenticated: !!getAuth(req).userId,
+    businessAccess,
+    requestedBusinessId: businessId,
+    existingLocation: existing ?? null,
+  });
+  if (!auth.ok) {
+    respondMutationDenied(res, auth);
+    return;
+  }
+
+  const parsed = parseLocationUpdateInput(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const townHint = await getPlatformTownHint();
-  const data = await enrichLocationUpdateWithGeocode(parsed.data, existing, townHint);
+  const data = await enrichLocationUpdateWithGeocode(parsed.data, existing!, townHint);
 
-  const [updated] = await db.update(foodTruckLocationsTable).set(data).where(eq(foodTruckLocationsTable.id, locationId)).returning();
+  const [updated] = await db
+    .update(foodTruckLocationsTable)
+    .set(data)
+    .where(eq(foodTruckLocationsTable.id, locationId))
+    .returning();
   if (!updated) { res.status(404).json({ error: "Location not found" }); return; }
   res.json(serializeLocation(updated));
 });
 
 // DELETE /api/businesses/:id/food-truck-locations/:locationId
 router.delete("/businesses/:id/food-truck-locations/:locationId", async (req, res): Promise<void> => {
-  const { userId } = getAuth(req);
-  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+  const businessId = parseBusinessId(req.params.id);
+  const locationId = parseLocationId(req.params.locationId);
+  if (!businessId || !locationId) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
 
-  const locationId = parseInt(req.params.locationId, 10);
+  const businessAccess = await authorizeBusinessOwnerOrAdmin(req, businessId);
+  const [existing] = await db
+    .select()
+    .from(foodTruckLocationsTable)
+    .where(eq(foodTruckLocationsTable.id, locationId));
+
+  const auth = authorizeFoodTruckLocationMutation({
+    isAuthenticated: !!getAuth(req).userId,
+    businessAccess,
+    requestedBusinessId: businessId,
+    existingLocation: existing ?? null,
+  });
+  if (!auth.ok) {
+    respondMutationDenied(res, auth);
+    return;
+  }
+
   await db.delete(foodTruckLocationsTable).where(eq(foodTruckLocationsTable.id, locationId));
   res.status(204).send();
 });

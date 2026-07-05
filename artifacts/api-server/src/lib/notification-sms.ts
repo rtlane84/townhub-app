@@ -1,4 +1,8 @@
-import { customerOrderUrl, dashboardOrderUrl, dashboardAppointmentsUrl } from "./notification-urls";
+import {
+  customerOrderUrlForNotification,
+  dashboardOrderUrl,
+  dashboardAppointmentsUrl,
+} from "./notification-urls";
 import { formatNotificationEstimatedWindow, formatTime12h } from "@workspace/api-zod";
 import type { CustomerLifecycleEvent, OrderNotificationData } from "./email-templates/types";
 import {
@@ -11,31 +15,31 @@ export function buildCustomerOrderReceivedSms(order: OrderNotificationData): str
     order.estimatedWindowStart && order.estimatedWindowEnd
       ? ` ${formatNotificationEstimatedWindow(order.fulfillmentType, order.estimatedWindowStart, order.estimatedWindowEnd)}.`
       : "";
-  return `${order.businessName} received your order #${order.orderNumber}.${timing} We'll notify you when it's accepted. ${customerOrderUrl(order.orderId)}`;
+  return `${order.businessName} received your order #${order.orderNumber}.${timing} We'll notify you when it's accepted. ${customerOrderUrlForNotification(order)}`;
 }
 
 export function buildCustomerOrderAcceptedSms(order: OrderNotificationData): string {
-  return `${order.businessName} accepted your order #${order.orderNumber}. ${customerOrderUrl(order.orderId)}`;
+  return `${order.businessName} accepted your order #${order.orderNumber}. ${customerOrderUrlForNotification(order)}`;
 }
 
 export function buildCustomerOrderPreparingSms(order: OrderNotificationData): string {
-  return `Your order #${order.orderNumber} from ${order.businessName} is being prepared. ${customerOrderUrl(order.orderId)}`;
+  return `Your order #${order.orderNumber} from ${order.businessName} is being prepared. ${customerOrderUrlForNotification(order)}`;
 }
 
 export function buildCustomerOrderReadySms(order: OrderNotificationData): string {
-  return `Your order #${order.orderNumber} is ready for pickup at ${order.businessName}. ${customerOrderUrl(order.orderId)}`;
+  return `Your order #${order.orderNumber} is ready for pickup at ${order.businessName}. ${customerOrderUrlForNotification(order)}`;
 }
 
 export function buildCustomerOrderOutForDeliverySms(order: OrderNotificationData): string {
-  return `Your order #${order.orderNumber} from ${order.businessName} is on the way. ${customerOrderUrl(order.orderId)}`;
+  return `Your order #${order.orderNumber} from ${order.businessName} is on the way. ${customerOrderUrlForNotification(order)}`;
 }
 
 export function buildCustomerOrderCompletedSms(order: OrderNotificationData): string {
-  return `Thanks for ordering from ${order.businessName}! Order #${order.orderNumber}. ${customerOrderUrl(order.orderId)}`;
+  return `Thanks for ordering from ${order.businessName}! Order #${order.orderNumber}. ${customerOrderUrlForNotification(order)}`;
 }
 
 export function buildCustomerOrderCancelledSms(order: OrderNotificationData): string {
-  return `Unfortunately your order #${order.orderNumber} from ${order.businessName} was cancelled. ${customerOrderUrl(order.orderId)}`;
+  return `Unfortunately your order #${order.orderNumber} from ${order.businessName} was cancelled. ${customerOrderUrlForNotification(order)}`;
 }
 
 export function buildCustomerLifecycleSms(

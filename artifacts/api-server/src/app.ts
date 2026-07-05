@@ -7,6 +7,7 @@ import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { buildPublicHealthResponse } from "./lib/system-health";
+import { createCorsOptions } from "./lib/cors-config";
 import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
@@ -53,7 +54,7 @@ app.get("/health", (_req, res) => {
 // Clerk proxy — must be before body parsers
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 
-app.use(cors({ credentials: true, origin: true }));
+app.use(cors(createCorsOptions()));
 
 // Stripe webhooks require the raw body for signature verification
 app.use("/api/checkout/webhook", express.raw({ type: "application/json" }));

@@ -60,9 +60,35 @@ All other callers receive **403**.
 
 Stripe success URLs include `?token=…` so the confirmation page can load the order.
 
----
+Customer order email and SMS links use `customerOrderUrlForNotification()` — guest orders include `?token=…`; signed-in customer orders omit it because account login grants access.
 
-## Endpoint Authorization Summary
+### Future: token expiry and revocation
+
+Tokens are currently **stateless and do not expire**. This keeps checkout confirmation and notification links working without a server-side session store.
+
+**Recommended future hardening** (not implemented yet — would require a migration plan):
+
+1. Embed an expiry timestamp in the token payload (e.g. HMAC over `order:{id}:{expiresAt}`).
+2. Accept both old and new token formats during a transition window so existing links in inboxes continue to work.
+3. Use a long default TTL (e.g. 90–180 days) before shortening.
+4. Optionally store revocation nonces for cancelled orders.
+
+Do not enable short-lived tokens without dual-format verification and communication to operators, or guest links in old emails will break.
+
+## CORS
+
+The API enables `credentials: true` for Clerk iframe and cross-origin preview contexts.
+
+| Environment | Policy |
+|-------------|--------|
+| Development (`NODE_ENV !== production`) | Reflects any request `Origin` (`origin: true`) for local/preview convenience |
+| Production | Allowlist only: `APP_BASE_URL` origin plus comma-separated `CORS_ALLOWED_ORIGINS` |
+
+Unknown browser origins are rejected in production. Requests with no `Origin` header (curl, webhooks, health checks) are allowed.
+
+Configure preview/staging frontends via `CORS_ALLOWED_ORIGINS` — see `.env.example` and [PRODUCTION.md](PRODUCTION.md).
+
+---
 
 ### Public (no auth)
 
@@ -106,6 +132,7 @@ Stripe success URLs include `?token=…` so the confirmation page can load the o
 | Endpoint | Rule |
 |----------|------|
 | `POST/PATCH/DELETE` categories, products, modifier-groups | `requireBusinessCatalogAccess` |
+| `POST/PUT/DELETE /api/businesses/:id/food-truck-locations` | Owner or admin for `:id` |
 | `GET/POST /api/media`, `POST /api/media/upload` | Auth + `businessId` query for owners; admin may use platform scope |
 | `GET /api/businesses/:id/subscription`, feature-access | Owner or admin |
 
@@ -192,6 +219,9 @@ Request
   ├─ Catalog mutations (categories, products, modifier-groups)
   │     └─ requireBusinessCatalogAccess (owner or admin)
   │
+  ├─ Food truck location mutations
+  │     └─ authorizeBusinessOwnerOrAdmin (owner or admin)
+  │
   ├─ Media upload/list
   │     └─ Auth + businessId ownership scope
   │
@@ -208,8 +238,7 @@ Request
 
 | Risk | Severity | Notes |
 |------|----------|-------|
-| Food-truck location mutations lack per-business ownership check | Low | `POST/PUT/DELETE /businesses/:id/food-truck-locations` verify auth but not that the caller owns that business |
-| Guest notification links omit access token | Medium | Email/SMS templates use `/order/{id}` without `?token=` — guests clicking notification links may get 403 until templates are updated |
+| Guest order access tokens never expire | Medium | Stateless HMAC; leaked tokens grant permanent access until expiry/revocation is implemented (see Guest Order Access Tokens) |
 | No pagination on list endpoints | Medium | Full table scans at scale |
 | Cart is client-side only | Low | `localStorage`; no server-side cart persistence |
 

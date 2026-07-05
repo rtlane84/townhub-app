@@ -1,4 +1,4 @@
-import { customerOrderUrl } from "../notification-urls";
+import { customerOrderUrlForNotification } from "../notification-urls";
 import {
   formatOrderDateTime,
   fulfillmentLabel,
@@ -62,7 +62,7 @@ function buildEmail(
     : "";
   const summaryHtml = orderSummaryHtml(order, config.includeItems ?? false);
   const bodyHtml = `${badgeHtml}${introHtml}${config.extraHtml ?? ""}${summaryHtml}`;
-  const orderUrl = customerOrderUrl(order.orderId);
+  const orderUrl = customerOrderUrlForNotification(order);
 
   const html = renderEmailLayout({
     preheader: config.preheader,

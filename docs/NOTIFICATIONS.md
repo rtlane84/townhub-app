@@ -59,7 +59,7 @@ Card orders do **not** send this email on order create — only after payment is
 **SMS example**
 
 ```text
-Clay Diner received your order #LOH-20260629-ABC12. We'll notify you when it's accepted. https://yourdomain.com/order/42
+Clay Diner received your order #LOH-20260629-ABC12. We'll notify you when it's accepted. https://yourdomain.com/order/42?token=<accessToken>
 ```
 
 ---
@@ -241,11 +241,9 @@ If unset, the API falls back to `REPLIT_DOMAINS` or `http://localhost:5173` (cod
 
 ### Guest access tokens in notification links
 
-Guest orders require a signed HMAC access token to view order details (see [SECURITY.md](../SECURITY.md)). The checkout confirmation page and Stripe success URL include `?token=…`.
+Guest orders require a signed HMAC access token to view order details (see [SECURITY.md](../SECURITY.md)). The checkout confirmation page, Stripe success URL, and **customer order email/SMS links** include `?token=…` via `customerOrderUrlForNotification()`.
 
-**Current limitation:** `notification-urls.ts` builds customer links as `/order/{orderId}` **without** the access token. Guest customers who click email or SMS notification links may receive a 403 until templates are updated to append `?token=…`.
-
-Signed-in customers who placed the order can view it via `/order/{id}` (matched by `customerUserId`) or `/my-orders` without a token.
+Signed-in customers who placed the order receive links **without** a token because `/order/{id}` matches their `customerUserId` when logged in. They can also use `/my-orders`.
 
 ---
 
@@ -343,7 +341,7 @@ Verify each scenario in test mode with `APP_BASE_URL` set to your local or stagi
 - [ ] Pay at pickup — customer gets **We received your order** immediately
 - [ ] Stripe card — customer gets **We received your order** only after webhook marks `PAID`
 - [ ] Guest checkout — confirmation page loads with `?token=` from order response
-- [ ] Guest notification links — known gap: email/SMS omit token today (see Links section)
+- [ ] Guest notification links — email/SMS include `?token=` for guest orders
 - [ ] Signed-in customer — `/order/{id}` and `/my-orders` work without token
 - [ ] Signed-in customer — same order link; **My Orders** available separately
 - [ ] Pickup — ready-for-pickup email includes address/instructions
