@@ -51,3 +51,9 @@ Thumbs.db
 
 # uploaded media files (local dev / self-hosted storage)
 uploads/
+
+# Playwright
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
