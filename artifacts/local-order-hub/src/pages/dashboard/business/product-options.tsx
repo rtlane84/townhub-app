@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { ProductOptionGroupCard } from "@/components/product-options/product-option-group-card";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { deleteItemOptionGroupCopy } from "@/lib/confirm-action-copy";
 import {
   ProductOptionGroupSheet,
   EMPTY_GROUP_FORM,
@@ -50,6 +52,7 @@ export default function BusinessProductOptions() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<GroupForm>(EMPTY_GROUP_FORM);
@@ -89,7 +92,7 @@ export default function BusinessProductOptions() {
 
   const deleteGroup = useDeleteModifierGroup({
     mutation: {
-      onMutate: (vars) => { setDeletingId(vars.id); },
+      onMutate: (vars) => { setDeletingId(vars.id); setDeleteTarget(null); },
       onSettled: () => { setDeletingId(null); },
       onSuccess: () => { invalidate(); toast({ title: "Option group deleted" }); },
       onError: () => toast({ title: "Failed to delete option group", variant: "destructive" }),
@@ -183,7 +186,7 @@ export default function BusinessProductOptions() {
                 deleting={deletingId === group.id}
                 saving={savingId === group.id && updateGroup.isPending}
                 onEdit={() => openEdit(group)}
-                onDelete={() => deleteGroup.mutate({ businessId, id: group.id })}
+                onDelete={() => setDeleteTarget({ id: group.id, name: group.name })}
                 onAddChoice={(name, priceAdjustment) => handleAddChoice(group, name, priceAdjustment)}
               />
             ))}
@@ -199,6 +202,18 @@ export default function BusinessProductOptions() {
         onFormChange={setForm}
         onSubmit={handleSubmit}
         pending={isPending}
+      />
+
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        copy={deleteTarget ? deleteItemOptionGroupCopy(deleteTarget.name) : null}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          deleteGroup.mutate({ businessId, id: deleteTarget.id });
+        }}
+        loading={deleteGroup.isPending}
+        loadingText="Deleting…"
       />
     </BusinessDashboardLayout>
   );

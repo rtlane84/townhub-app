@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatRefundAmount, formatRefundAmountCents, getRemainingRefundableAmount } from "@/lib/order-refund-display";
+import { issueRefundCopy } from "@/lib/confirm-action-copy";
 
 type RefundMode = "full" | "partial";
 
@@ -95,14 +96,19 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
     });
   };
 
+  const refundCopy = issueRefundCopy(formatRefundAmountCents(selectedAmountCents));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Issue refund</DialogTitle>
-          <DialogDescription>
-            Refund {formatRefundAmountCents(selectedAmountCents)} to the customer? Stripe will return the payment to
-            the original payment method. This cannot usually be undone.
+          <DialogTitle>{refundCopy.title}</DialogTitle>
+          <DialogDescription asChild>
+            <div className="space-y-2 text-sm text-muted-foreground pt-1">
+              {refundCopy.body.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
           </DialogDescription>
         </DialogHeader>
 
@@ -186,7 +192,7 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
             disabled={refundMutation.isPending}
             data-testid="button-confirm-refund"
           >
-            {refundMutation.isPending ? "Processing…" : `Refund ${formatRefundAmountCents(selectedAmountCents)}`}
+            {refundMutation.isPending ? "Processing…" : refundCopy.confirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

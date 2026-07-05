@@ -37,6 +37,12 @@ import {
 import { cn } from "@/lib/utils";
 import { useAppointmentHighlight } from "@/hooks/order-dashboard-refresh-context";
 import { orderStatusHighlightClass } from "@/components/order-row";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import {
+  cancelAppointmentCopy,
+  completeAppointmentCopy,
+  confirmAppointmentCopy,
+} from "@/lib/confirm-action-copy";
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   NEW: "default",
@@ -184,6 +190,12 @@ export default function BusinessAppointments() {
   const [manualOpen, setManualOpen] = useState(false);
   const [declineTarget, setDeclineTarget] = useState<number | null>(null);
   const [declineNote, setDeclineNote] = useState("");
+  const [confirmTarget, setConfirmTarget] = useState<{
+    id: number;
+    action: "CONFIRMED" | "CANCELLED" | "COMPLETED";
+    customerName: string;
+    dateLabel: string;
+  } | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const { data: requests, isPending, isFetching } = useListBusinessAppointmentRequests(businessId, {
@@ -223,6 +235,7 @@ export default function BusinessAppointments() {
         setUpdatingId(null);
         setDeclineTarget(null);
         setDeclineNote("");
+        setConfirmTarget(null);
         const label = appointmentStatusLabel(updated.status);
         toast({
           title: `Appointment ${label.toLowerCase()}`,
@@ -297,10 +310,31 @@ export default function BusinessAppointments() {
                       key={request.id}
                       request={request}
                       busy={busy}
-                      onConfirm={() => runStatusUpdate(request.id, "CONFIRMED")}
+                      onConfirm={() =>
+                        setConfirmTarget({
+                          id: request.id,
+                          action: "CONFIRMED",
+                          customerName: request.customerName,
+                          dateLabel: `${request.requestedDate} at ${formatTime12h(request.requestedTime)}`,
+                        })
+                      }
                       onDecline={() => setDeclineTarget(request.id)}
-                      onComplete={() => runStatusUpdate(request.id, "COMPLETED")}
-                      onCancel={() => runStatusUpdate(request.id, "CANCELLED")}
+                      onComplete={() =>
+                        setConfirmTarget({
+                          id: request.id,
+                          action: "COMPLETED",
+                          customerName: request.customerName,
+                          dateLabel: `${request.requestedDate} at ${formatTime12h(request.requestedTime)}`,
+                        })
+                      }
+                      onCancel={() =>
+                        setConfirmTarget({
+                          id: request.id,
+                          action: "CANCELLED",
+                          customerName: request.customerName,
+                          dateLabel: `${request.requestedDate} at ${formatTime12h(request.requestedTime)}`,
+                        })
+                      }
                     />
                   );
                 })}
@@ -347,6 +381,26 @@ export default function BusinessAppointments() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmActionDialog
+        open={confirmTarget !== null}
+        onOpenChange={(open) => !open && setConfirmTarget(null)}
+        copy={
+          confirmTarget
+            ? confirmTarget.action === "CONFIRMED"
+              ? confirmAppointmentCopy(confirmTarget.customerName, confirmTarget.dateLabel)
+              : confirmTarget.action === "COMPLETED"
+                ? completeAppointmentCopy(confirmTarget.customerName)
+                : cancelAppointmentCopy(confirmTarget.customerName)
+            : null
+        }
+        onConfirm={() => {
+          if (!confirmTarget) return;
+          runStatusUpdate(confirmTarget.id, confirmTarget.action);
+        }}
+        loading={updateStatus.isPending && updatingId === confirmTarget?.id}
+        loadingText="Saving…"
+      />
     </BusinessDashboardLayout>
   );
 }

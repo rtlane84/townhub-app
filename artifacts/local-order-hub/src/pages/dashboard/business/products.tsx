@@ -31,6 +31,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Star } from "lucide-react";
 import { ImageField } from "@/components/image-field";
 import { ProductOptionsSection } from "@/components/product-options/product-options-section";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { deleteItemCopy } from "@/lib/confirm-action-copy";
 
 interface ProductForm {
   name: string;
@@ -63,6 +65,7 @@ export default function BusinessProducts() {
   const queryClient = useQueryClient();
 
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
@@ -95,7 +98,7 @@ export default function BusinessProducts() {
 
   const deleteProduct = useDeleteProduct({
     mutation: {
-      onMutate: (vars) => { setDeletingId(vars.id); },
+      onMutate: (vars) => { setDeletingId(vars.id); setDeleteTarget(null); },
       onSettled: () => { setDeletingId(null); },
       onSuccess: () => { invalidate(); toast({ title: "Item deleted" }); },
       onError: () => toast({ title: "Failed to delete item", variant: "destructive" }),
@@ -209,7 +212,7 @@ export default function BusinessProducts() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteProduct.mutate({ businessId, id: product.id })}
+                        onClick={() => setDeleteTarget({ id: product.id, name: product.name })}
                         loading={deletingId === product.id}
                         disabled={deleteProduct.isPending}
                         aria-label="Delete product"
@@ -309,6 +312,18 @@ export default function BusinessProducts() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        copy={deleteTarget ? deleteItemCopy(deleteTarget.name) : null}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          deleteProduct.mutate({ businessId, id: deleteTarget.id });
+        }}
+        loading={deleteProduct.isPending}
+        loadingText="Deleting…"
+      />
     </BusinessDashboardLayout>
   );
 }

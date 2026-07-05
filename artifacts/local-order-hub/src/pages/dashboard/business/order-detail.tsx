@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetOrder, useUpdateOrderStatus, getGetOrderQueryKey, getListBusinessOrdersQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +26,12 @@ import {
   getBusinessOrderTimingLabel,
   getBusinessReadyWindowLabel,
 } from "@/lib/order-prep-timing";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { changeOrderStatusCopy } from "@/lib/confirm-action-copy";
+import {
+  formatOrderStatusForDisplay,
+  orderStatusNeedsConfirmation,
+} from "@/lib/order-status-safety";
 
 const STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
 
@@ -48,10 +54,16 @@ export default function BusinessOrderDetail({ params }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [refundOpen, setRefundOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [statusConfirm, setStatusConfirm] = useState<string | null>(null);
 
   const { data: order, isLoading } = useGetOrder(orderId, {
     query: { enabled: !!orderId, queryKey: getGetOrderQueryKey(orderId) },
   });
+
+  useEffect(() => {
+    if (order?.status) setSelectedStatus(order.status);
+  }, [order?.status]);
 
   const updateStatus = useUpdateOrderStatus({
     mutation: {
@@ -60,11 +72,31 @@ export default function BusinessOrderDetail({ params }: Props) {
         if (updated.businessId) {
           queryClient.invalidateQueries({ queryKey: getListBusinessOrdersQueryKey(updated.businessId) });
         }
-        toast({ title: "Status updated", description: `Order is now ${updated.status.replace(/_/g, " ")}` });
+        toast({ title: "Status updated", description: `Order is now ${formatOrderStatusForDisplay(updated.status)}` });
+        setStatusConfirm(null);
       },
-      onError: () => toast({ title: "Failed to update status", variant: "destructive" }),
+      onError: () => {
+        toast({ title: "Failed to update status", variant: "destructive" });
+        if (order) setSelectedStatus(order.status);
+        setStatusConfirm(null);
+      },
     },
   });
+
+  function handleStatusChange(nextStatus: string) {
+    if (!order) return;
+    if (nextStatus === order.status) return;
+    if (orderStatusNeedsConfirmation(nextStatus)) {
+      setStatusConfirm(nextStatus);
+      return;
+    }
+    updateStatus.mutate({ id: orderId, data: { status: nextStatus as never } });
+  }
+
+  function confirmStatusChange() {
+    if (!statusConfirm) return;
+    updateStatus.mutate({ id: orderId, data: { status: statusConfirm as never } });
+  }
 
   return (
     <BusinessDashboardLayout>
@@ -127,8 +159,11 @@ export default function BusinessOrderDetail({ params }: Props) {
               <CardHeader><CardTitle className="text-base">Update Status</CardTitle></CardHeader>
               <CardContent>
                 <Select
-                  defaultValue={order.status}
-                  onValueChange={(val) => updateStatus.mutate({ id: orderId, data: { status: val as never } })}
+                  value={selectedStatus}
+                  onValueChange={(val) => {
+                    setSelectedStatus(val);
+                    handleStatusChange(val);
+                  }}
                   disabled={updateStatus.isPending}
                 >
                   <SelectTrigger className="w-64" data-testid="select-status" aria-busy={updateStatus.isPending}>
@@ -295,6 +330,23 @@ export default function BusinessOrderDetail({ params }: Props) {
       {order ? (
         <OrderRefundDialog order={order} open={refundOpen} onOpenChange={setRefundOpen} />
       ) : null}
+      <ConfirmActionDialog
+        open={statusConfirm !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setStatusConfirm(null);
+            if (order) setSelectedStatus(order.status);
+          }
+        }}
+        copy={
+          order && statusConfirm
+            ? changeOrderStatusCopy(order.orderNumber ?? `Order #${order.id}`, statusConfirm)
+            : null
+        }
+        onConfirm={confirmStatusChange}
+        loading={updateStatus.isPending}
+        loadingText="Updating…"
+      />
     </BusinessDashboardLayout>
   );
 }

@@ -32,6 +32,8 @@ import {
 } from "@/lib/food-truck-location-form";
 import { TimeRangePicker } from "@/components/time-picker";
 import { formatTimeRange12h } from "@workspace/api-zod";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { deleteLocationCopy } from "@/lib/confirm-action-copy";
 
 export default function BusinessLocations() {
   const { selectedBusinessId, business, isLoading: bizLoading } = useSelectedBusiness();
@@ -46,7 +48,7 @@ export default function BusinessLocations() {
   const [editing, setEditing] = useState<FoodTruckLocation | null>(null);
   const [initialForm, setInitialForm] = useState<FoodTruckLocationFormValues | null>(null);
   const [form, setForm] = useState<FoodTruckLocationFormValues>({ ...BLANK_FOOD_TRUCK_LOCATION_FORM });
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
 
   const invalidateLocs = () => {
     if (business?.id) queryClient.invalidateQueries({ queryKey: getListFoodTruckLocationsQueryKey(business.id) });
@@ -79,7 +81,7 @@ export default function BusinessLocations() {
 
   const deleteLoc = useDeleteFoodTruckLocation({
     mutation: {
-      onSuccess: () => { invalidateLocs(); toast({ title: "Location deleted" }); setDeleteId(null); },
+      onSuccess: () => { invalidateLocs(); toast({ title: "Location deleted" }); setDeleteTarget(null); },
       onError: () => toast({ title: "Failed to delete location", variant: "destructive" }),
     },
   });
@@ -211,7 +213,7 @@ export default function BusinessLocations() {
                         </div>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(loc)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(loc.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTarget({ id: loc.id, name: loc.locationName })}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                         </div>
                       </div>
                     ))}
@@ -235,7 +237,7 @@ export default function BusinessLocations() {
                         </div>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(loc)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteId(loc.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTarget({ id: loc.id, name: loc.locationName })}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                         </div>
                       </div>
                     ))}
@@ -318,22 +320,17 @@ export default function BusinessLocations() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Delete this location?</DialogTitle></DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <LoadingButton
-              variant="destructive"
-              onClick={() => deleteId !== null && deleteLoc.mutate({ id: business?.id ?? 0, locationId: deleteId })}
-              loading={deleteLoc.isPending}
-              loadingText="Deleting…"
-            >
-              Delete
-            </LoadingButton>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        copy={deleteTarget ? deleteLocationCopy(deleteTarget.name) : null}
+        onConfirm={() => {
+          if (!deleteTarget || !business) return;
+          deleteLoc.mutate({ id: business.id, locationId: deleteTarget.id });
+        }}
+        loading={deleteLoc.isPending}
+        loadingText="Deleting…"
+      />
     </BusinessDashboardLayout>
   );
 }

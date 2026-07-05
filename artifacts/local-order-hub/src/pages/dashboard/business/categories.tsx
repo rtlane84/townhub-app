@@ -17,6 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, GripVertical } from "lucide-react";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { deleteCategoryCopy } from "@/lib/confirm-action-copy";
 
 interface CategoryForm {
   name: string;
@@ -31,6 +33,7 @@ export default function BusinessCategories() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<CategoryForm>({ name: "", sortOrder: 0 });
 
@@ -56,7 +59,7 @@ export default function BusinessCategories() {
 
   const deleteCategory = useDeleteCategory({
     mutation: {
-      onMutate: (vars) => { setDeletingId(vars.id); },
+      onMutate: (vars) => { setDeletingId(vars.id); setDeleteTarget(null); },
       onSettled: () => { setDeletingId(null); },
       onSuccess: () => { invalidate(); toast({ title: "Category deleted" }); },
       onError: () => toast({ title: "Failed to delete category", variant: "destructive" }),
@@ -127,7 +130,7 @@ export default function BusinessCategories() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteCategory.mutate({ businessId, id: cat.id })}
+                        onClick={() => setDeleteTarget({ id: cat.id, name: cat.name })}
                         loading={deletingId === cat.id}
                         disabled={deleteCategory.isPending}
                         aria-label="Delete category"
@@ -177,6 +180,18 @@ export default function BusinessCategories() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmActionDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        copy={deleteTarget ? deleteCategoryCopy(deleteTarget.name) : null}
+        onConfirm={() => {
+          if (!deleteTarget) return;
+          deleteCategory.mutate({ businessId, id: deleteTarget.id });
+        }}
+        loading={deleteCategory.isPending}
+        loadingText="Deleting…"
+      />
     </BusinessDashboardLayout>
   );
 }

@@ -28,6 +28,9 @@ import {
   type KitchenPaymentFilter,
 } from "@/lib/kitchen-display";
 import { cn } from "@/lib/utils";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { changeOrderStatusCopy } from "@/lib/confirm-action-copy";
+import { orderStatusNeedsConfirmation } from "@/lib/order-status-safety";
 import { Link } from "wouter";
 import { ChefHat, Expand, Loader2, Minimize, RefreshCw, ShoppingBag } from "lucide-react";
 
@@ -49,6 +52,11 @@ export default function BusinessKitchen() {
   const [customRange, setCustomRange] = useState<OrderCustomDateRange>({});
   const [fulfillmentFilter, setFulfillmentFilter] = useState<KitchenFulfillmentFilter>("all");
   const [paymentFilter, setPaymentFilter] = useState<KitchenPaymentFilter>("all");
+  const [statusConfirm, setStatusConfirm] = useState<{
+    orderId: number;
+    orderLabel: string;
+    nextStatus: string;
+  } | null>(null);
 
   const { selectedBusinessId, business } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? 0;
@@ -125,6 +133,7 @@ export default function BusinessKitchen() {
           title: "Order updated",
           description: `${updated.orderNumber ?? `#${updated.id}`} is now ${updated.status.replace(/_/g, " ").toLowerCase()}`,
         });
+        setStatusConfirm(null);
       },
       onError: () => toast({ title: "Failed to update order", variant: "destructive" }),
     },
@@ -132,10 +141,27 @@ export default function BusinessKitchen() {
 
   const handleAdvance = useCallback(
     (orderId: number, nextStatus: string) => {
+      const targetOrder = orderList.find((o) => o.id === orderId);
+      if (orderStatusNeedsConfirmation(nextStatus) && targetOrder) {
+        setStatusConfirm({
+          orderId,
+          nextStatus,
+          orderLabel: targetOrder.orderNumber ?? `#${targetOrder.id}`,
+        });
+        return;
+      }
       updateStatus.mutate({ id: orderId, data: { status: nextStatus as never } });
     },
-    [updateStatus],
+    [updateStatus, orderList],
   );
+
+  const confirmStatusChange = useCallback(() => {
+    if (!statusConfirm) return;
+    updateStatus.mutate({
+      id: statusConfirm.orderId,
+      data: { status: statusConfirm.nextStatus as never },
+    });
+  }, [statusConfirm, updateStatus]);
 
   const toggleFullscreen = useCallback(async () => {
     const el = boardRef.current;
@@ -289,6 +315,19 @@ export default function BusinessKitchen() {
           )}
         </div>
       </div>
+
+      <ConfirmActionDialog
+        open={statusConfirm !== null}
+        onOpenChange={(open) => !open && setStatusConfirm(null)}
+        copy={
+          statusConfirm
+            ? changeOrderStatusCopy(statusConfirm.orderLabel, statusConfirm.nextStatus)
+            : null
+        }
+        onConfirm={confirmStatusChange}
+        loading={updateStatus.isPending}
+        loadingText="Updating…"
+      />
     </BusinessDashboardLayout>
   );
 }

@@ -37,6 +37,8 @@ import {
 } from "@workspace/api-zod";
 import type { BusinessDayHours, PaymentMode } from "@workspace/api-client-react";
 import { PaymentModeSelector } from "@/components/payment-mode-selector";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { archiveBusinessCopy, deactivateBusinessCopy } from "@/lib/confirm-action-copy";
 
 const BUSINESS_TYPES = BUSINESS_TYPE_OPTIONS;
 
@@ -92,6 +94,7 @@ export default function AdminBusinesses() {
   const [assignBusinessId, setAssignBusinessId] = useState<number | null>(null);
   const [assignOwnerId, setAssignOwnerId] = useState("");
   const [form, setForm] = useState<BizForm>(EMPTY_FORM);
+  const [deactivatePending, setDeactivatePending] = useState(false);
 
   const { data: businesses, isLoading } = useListBusinesses();
   const { data: users } = useListUsers();
@@ -120,7 +123,7 @@ export default function AdminBusinesses() {
       onSuccess: () => {
         invalidate();
         setRemoveDialog(null);
-        toast({ title: "Business removed" });
+        toast({ title: "Business archived" });
       },
       onError: (err) => {
         const message = err instanceof Error ? err.message : "Failed to remove business";
@@ -301,7 +304,8 @@ export default function AdminBusinesses() {
                         onClick={() => openRemoveDialog(biz.id, biz.name)}
                         loading={deletingId === biz.id}
                         disabled={deleteBusiness.isPending}
-                        aria-label="Remove business"
+                        title="Archive business"
+                        aria-label="Archive business"
                         data-testid={`button-delete-business-${biz.id}`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -370,7 +374,16 @@ export default function AdminBusinesses() {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center gap-2">
-                <Switch checked={form.active} onCheckedChange={(v) => setForm((f) => ({ ...f, active: v }))} />
+                <Switch
+                  checked={form.active}
+                  onCheckedChange={(v) => {
+                    if (!v && form.active) {
+                      setDeactivatePending(true);
+                      return;
+                    }
+                    setForm((f) => ({ ...f, active: v }));
+                  }}
+                />
                 <label className="text-sm">Active</label>
               </div>
               <div className="flex items-center gap-2">
@@ -445,28 +458,22 @@ export default function AdminBusinesses() {
         </DialogContent>
       </Dialog>
 
-      {/* Remove business dialog */}
+      {/* Archive business dialog */}
       <Dialog open={removeDialog != null} onOpenChange={(open) => !open && setRemoveDialog(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif">Remove business</DialogTitle>
+            <DialogTitle className="font-serif">
+              {removeDialog?.loading ? "Checking business…" : "Archive business?"}
+            </DialogTitle>
           </DialogHeader>
           <div className="py-2 space-y-3 text-sm text-muted-foreground">
             {removeDialog?.loading ? (
               <p>Checking subscription status…</p>
-            ) : (
-              <>
-                <p>
-                  Remove <strong className="text-foreground">{removeDialog?.name}</strong> from Town Hub?
-                  The business will no longer appear publicly or in active admin lists. Order and billing history is preserved.
-                </p>
-                {removeDialog?.hadActiveSubscription ? (
-                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
-                    This business has an active subscription. Removing it will cancel the subscription and disable access.
-                  </p>
-                ) : null}
-              </>
-            )}
+            ) : removeDialog ? (
+              archiveBusinessCopy(removeDialog.name, removeDialog.hadActiveSubscription).body.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))
+            ) : null}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRemoveDialog(null)} disabled={deleteBusiness.isPending}>
@@ -477,9 +484,9 @@ export default function AdminBusinesses() {
               onClick={confirmRemoveBusiness}
               disabled={removeDialog?.loading}
               loading={deleteBusiness.isPending}
-              loadingText="Removing…"
+              loadingText="Archiving…"
             >
-              Remove business
+              Archive business
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
@@ -519,6 +526,16 @@ export default function AdminBusinesses() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmActionDialog
+        open={deactivatePending}
+        onOpenChange={setDeactivatePending}
+        copy={deactivateBusinessCopy(form.name)}
+        onConfirm={() => {
+          setForm((f) => ({ ...f, active: false }));
+          setDeactivatePending(false);
+        }}
+      />
     </AdminDashboardLayout>
   );
 }
