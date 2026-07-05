@@ -40,10 +40,12 @@ Business updates status ──► lifecycle email + SMS for that event
 
 **When it sends**
 
-| Payment method | Trigger |
-|----------------|---------|
-| Pay at pickup (`IN_PERSON`) | Immediately after `POST /api/orders` |
-| Card (`STRIPE`) | After Stripe webhook marks the order `PAID` |
+
+| Payment method              | Trigger                                     |
+| --------------------------- | ------------------------------------------- |
+| Pay at pickup (`IN_PERSON`) | Immediately after `POST /api/orders`        |
+| Card (`STRIPE`)             | After Stripe webhook marks the order `PAID` |
+
 
 Card orders do **not** send this email on order create — only after payment is confirmed by the webhook. That avoids telling customers their order was received before they finish paying.
 
@@ -66,11 +68,13 @@ Clay Diner received your order #LOH-20260629-ABC12. We'll notify you when it's a
 
 **Trigger:** Business sets status to `CONFIRMED`
 
-| Channel | Content |
-|---------|---------|
-| Email subject | `{Business Name} accepted your order` |
-| Email body | Business accepted the order; preparation will begin soon |
-| SMS | `{Business} accepted your order #{number}.` + order link |
+
+| Channel       | Content                                                  |
+| ------------- | -------------------------------------------------------- |
+| Email subject | `{Business Name} accepted your order`                    |
+| Email body    | Business accepted the order; preparation will begin soon |
+| SMS           | `{Business} accepted your order #{number}.` + order link |
+
 
 ---
 
@@ -78,11 +82,13 @@ Clay Diner received your order #LOH-20260629-ABC12. We'll notify you when it's a
 
 **Trigger:** Status → `PREPARING`
 
-| Channel | Content |
-|---------|---------|
-| Email subject | `Your order is being prepared` |
-| Email body | Kitchen/shop is actively preparing the order |
-| SMS | `Your order #{number} from {Business} is being prepared.` + link |
+
+| Channel       | Content                                                          |
+| ------------- | ---------------------------------------------------------------- |
+| Email subject | `Your order is being prepared`                                   |
+| Email body    | Kitchen/shop is actively preparing the order                     |
+| SMS           | `Your order #{number} from {Business} is being prepared.` + link |
+
 
 ---
 
@@ -90,11 +96,13 @@ Clay Diner received your order #LOH-20260629-ABC12. We'll notify you when it's a
 
 **Trigger:** Status → `READY_FOR_PICKUP`
 
-| Channel | Content |
-|---------|---------|
-| Email subject | `Your order is ready for pickup` |
-| Email body | Excited tone; includes pickup location (business address + pickup instructions when set) |
-| SMS | `Your order #{number} is ready for pickup at {Business}.` + link |
+
+| Channel       | Content                                                                                  |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| Email subject | `Your order is ready for pickup`                                                         |
+| Email body    | Excited tone; includes pickup location (business address + pickup instructions when set) |
+| SMS           | `Your order #{number} is ready for pickup at {Business}.` + link                         |
+
 
 ---
 
@@ -102,11 +110,13 @@ Clay Diner received your order #LOH-20260629-ABC12. We'll notify you when it's a
 
 **Trigger:** Status → `OUT_FOR_DELIVERY`
 
-| Channel | Content |
-|---------|---------|
-| Email subject | `Your order is on the way` |
-| Email body | Order has left for delivery; **Track Order** button links to order page |
-| SMS | `Your order #{number} from {Business} is on the way.` + link |
+
+| Channel       | Content                                                                 |
+| ------------- | ----------------------------------------------------------------------- |
+| Email subject | `Your order is on the way`                                              |
+| Email body    | Order has left for delivery; **Track Order** button links to order page |
+| SMS           | `Your order #{number} from {Business} is on the way.` + link            |
+
 
 ---
 
@@ -122,21 +132,25 @@ Short thank-you email encouraging the customer to order again. SMS sends a brief
 
 **Trigger:** Status → `CANCELED`
 
-| Channel | Content |
-|---------|---------|
-| Email subject | `Your order was cancelled` |
-| Email body | Business cancelled the order |
-| Refund note | If payment method was `STRIPE` and `paymentStatus` is `PAID`, email explains a refund will be processed (5–10 business days) |
-| SMS | `Unfortunately your order #{number} from {Business} was cancelled.` + link |
+
+| Channel       | Content                                                                                                                      |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Email subject | `Your order was cancelled`                                                                                                   |
+| Email body    | Business cancelled the order                                                                                                 |
+| Refund note   | If payment method was `STRIPE` and `paymentStatus` is `PAID`, email explains a refund will be processed (5–10 business days) |
+| SMS           | `Unfortunately your order #{number} from {Business} was cancelled.` + link                                                   |
+
 
 ---
 
 ### Statuses that do **not** notify customers
 
-| Status | Why |
-|--------|-----|
-| `NEW` | Internal queue state; customer already got **Order received** |
-| Unchanged status on PATCH | No duplicate notifications |
+
+| Status                    | Why                                                           |
+| ------------------------- | ------------------------------------------------------------- |
+| `NEW`                     | Internal queue state; customer already got **Order received** |
+| Unchanged status on PATCH | No duplicate notifications                                    |
+
 
 ---
 
@@ -165,12 +179,14 @@ https://yourdomain.com/dashboard/business/orders/42
 
 **Owner delivery settings** (Business Dashboard → Settings → Owner Notifications):
 
-| Setting | Default | Effect |
-|---------|---------|--------|
-| `notificationEmail` | — | Primary owner email |
-| `notificationPhone` | — | Owner SMS number (E.164) |
-| `notifyNewOrdersByEmail` | `true` | Email on new order |
-| `notifyNewOrdersBySms` | `false` | SMS on new order |
+
+| Setting                  | Default | Effect                   |
+| ------------------------ | ------- | ------------------------ |
+| `notificationEmail`      | —       | Primary owner email      |
+| `notificationPhone`      | —       | Owner SMS number (E.164) |
+| `notifyNewOrdersByEmail` | `true`  | Email on new order       |
+| `notifyNewOrdersBySms`   | `false` | SMS on new order         |
+
 
 Email sends when the toggle is not `false` and an email is set. SMS sends only when the toggle is `true` and a phone is set.
 
@@ -184,11 +200,13 @@ Separate plain-text owner alerts for new appointment requests. See [RESEND_SETUP
 
 Payment status and notification content are intentionally separate:
 
-| Concern | Controlled by |
-|---------|---------------|
-| `paymentStatus = PAID` | Stripe webhook only (`checkout.session.completed`) |
-| “Order received” customer email/SMS (card) | Same webhook, after `PAID` |
-| Success page copy | Frontend — “Payment received. Waiting for restaurant acceptance.” while `PENDING`; no false “paid” claim before webhook |
+
+| Concern                                    | Controlled by                                                                                                           |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `paymentStatus = PAID`                     | Stripe webhook only (`checkout.session.completed`)                                                                      |
+| “Order received” customer email/SMS (card) | Same webhook, after `PAID`                                                                                              |
+| Success page copy                          | Frontend — “Payment received. Waiting for restaurant acceptance.” while `PENDING`; no false “paid” claim before webhook |
+
 
 Pay-at-pickup orders skip Stripe entirely; customer notifications start on order create.
 
@@ -198,16 +216,19 @@ Pay-at-pickup orders skip Stripe entirely; customer notifications start on order
 
 All notification URLs are built from `APP_BASE_URL` — never hardcoded in templates.
 
-| Audience | URL pattern |
-|----------|-------------|
-| Customer order page | `{APP_BASE_URL}/order/{orderId}` |
-| Business order detail | `{APP_BASE_URL}/dashboard/business/orders/{orderId}` |
+
+| Audience                        | URL pattern                                          |
+| ------------------------------- | ---------------------------------------------------- |
+| Customer order page (signed-in) | `{APP_BASE_URL}/order/{orderId}`                     |
+| Customer order page (guest)     | `{APP_BASE_URL}/order/{orderId}?token={accessToken}` |
+| Business order detail           | `{APP_BASE_URL}/dashboard/business/orders/{orderId}` |
+
 
 Set `APP_BASE_URL` per environment:
 
 ```bash
 # Local
-APP_BASE_URL=http://localhost:5173
+APP_BASE_URL=http://localhost:23032
 
 # Staging
 APP_BASE_URL=https://staging.yourtown.com
@@ -216,7 +237,15 @@ APP_BASE_URL=https://staging.yourtown.com
 APP_BASE_URL=https://yourtown.com
 ```
 
-If unset, the API falls back to `REPLIT_DOMAINS` or `http://localhost:5173`. **Always set `APP_BASE_URL` in staging and production** so emails and SMS contain correct links.
+If unset, the API falls back to `REPLIT_DOMAINS` or `http://localhost:5173` (code default). **Set `APP_BASE_URL=http://localhost:23032` for local dev** so emails, SMS, and Stripe redirects use the correct host.
+
+### Guest access tokens in notification links
+
+Guest orders require a signed HMAC access token to view order details (see [SECURITY.md](../SECURITY.md)). The checkout confirmation page and Stripe success URL include `?token=…`.
+
+**Current limitation:** `notification-urls.ts` builds customer links as `/order/{orderId}` **without** the access token. Guest customers who click email or SMS notification links may receive a 403 until templates are updated to append `?token=…`.
+
+Signed-in customers who placed the order can view it via `/order/{id}` (matched by `customerUserId`) or `/my-orders` without a token.
 
 ---
 
@@ -224,15 +253,17 @@ If unset, the API falls back to `REPLIT_DOMAINS` or `http://localhost:5173`. **A
 
 Customer and business order emails use shared HTML components:
 
-| Component | Purpose |
-|-----------|---------|
-| TownHub header bar | Platform branding |
-| Business logo | Shown when `business.logoUrl` is set |
-| Status badge | Visual lifecycle state |
-| Detail table | Order metadata rows |
-| Order items block | Line items + total |
-| Action button | View Order / Open Order / Track Order |
-| Footer | “Powered by TownHub” |
+
+| Component          | Purpose                               |
+| ------------------ | ------------------------------------- |
+| TownHub header bar | Platform branding                     |
+| Business logo      | Shown when `business.logoUrl` is set  |
+| Status badge       | Visual lifecycle state                |
+| Detail table       | Order metadata rows                   |
+| Order items block  | Line items + total                    |
+| Action button      | View Order / Open Order / Track Order |
+| Footer             | “Powered by TownHub”                  |
+
 
 Plain-text fallbacks are included for every HTML email. Resend receives both `text` and `html` bodies.
 
@@ -263,39 +294,45 @@ notification-service.ts     ← orchestration (load order, pick event, send)
        └── notification-urls.ts      ← APP_BASE_URL link helpers
 ```
 
-| File | Role |
-|------|------|
-| `notification-service.ts` | `notifyCustomerOrderReceived`, `notifyCustomerOrderStatusChange`, `notifyOwnerNewOrderFromOrderId` |
-| `email-templates/customer-emails.ts` | Customer lifecycle email content |
-| `email-templates/business-emails.ts` | Owner new-order HTML email |
-| `email-templates/layout.ts` | Shared HTML shell, spacing, footer |
-| `email-templates/components.ts` | Buttons, badges, item tables, labels |
-| `notification-sms.ts` | SMS copy for all lifecycle events |
-| `notification-delivery.ts` | Send + write `notification_logs` |
-| `notifications.ts` | Public exports + appointment owner alerts |
+
+| File                                 | Role                                                                                               |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `notification-service.ts`            | `notifyCustomerOrderReceived`, `notifyCustomerOrderStatusChange`, `notifyOwnerNewOrderFromOrderId` |
+| `email-templates/customer-emails.ts` | Customer lifecycle email content                                                                   |
+| `email-templates/business-emails.ts` | Owner new-order HTML email                                                                         |
+| `email-templates/layout.ts`          | Shared HTML shell, spacing, footer                                                                 |
+| `email-templates/components.ts`      | Buttons, badges, item tables, labels                                                               |
+| `notification-sms.ts`                | SMS copy for all lifecycle events                                                                  |
+| `notification-delivery.ts`           | Send + write `notification_logs`                                                                   |
+| `notifications.ts`                   | Public exports + appointment owner alerts                                                          |
+
 
 ### Lifecycle event mapping
 
-| Order status | Customer event | Logged `eventType` |
-|--------------|----------------|--------------------|
-| *(checkout / webhook)* | `ORDER_RECEIVED` | `ORDER_RECEIVED` |
-| `CONFIRMED` | `ORDER_ACCEPTED` | `ORDER_ACCEPTED` |
-| `PREPARING` | `ORDER_PREPARING` | `ORDER_PREPARING` |
-| `READY_FOR_PICKUP` | `ORDER_READY_FOR_PICKUP` | `ORDER_READY_FOR_PICKUP` |
-| `OUT_FOR_DELIVERY` | `ORDER_OUT_FOR_DELIVERY` | `ORDER_OUT_FOR_DELIVERY` |
-| `COMPLETED` | `ORDER_COMPLETED` | `ORDER_COMPLETED` |
-| `CANCELED` | `ORDER_CANCELLED` | `ORDER_CANCELLED` |
+
+| Order status           | Customer event           | Logged `eventType`       |
+| ---------------------- | ------------------------ | ------------------------ |
+| *(checkout / webhook)* | `ORDER_RECEIVED`         | `ORDER_RECEIVED`         |
+| `CONFIRMED`            | `ORDER_ACCEPTED`         | `ORDER_ACCEPTED`         |
+| `PREPARING`            | `ORDER_PREPARING`        | `ORDER_PREPARING`        |
+| `READY_FOR_PICKUP`     | `ORDER_READY_FOR_PICKUP` | `ORDER_READY_FOR_PICKUP` |
+| `OUT_FOR_DELIVERY`     | `ORDER_OUT_FOR_DELIVERY` | `ORDER_OUT_FOR_DELIVERY` |
+| `COMPLETED`            | `ORDER_COMPLETED`        | `ORDER_COMPLETED`        |
+| `CANCELED`             | `ORDER_CANCELLED`        | `ORDER_CANCELLED`        |
+
 
 ---
 
 ## Provider setup
 
-| Channel | Provider | Setup doc |
-|---------|----------|-----------|
-| Email | Resend (preferred) or SMTP | [RESEND_SETUP.md](./RESEND_SETUP.md) |
-| SMS | Twilio | [TWILIO_SETUP.md](./TWILIO_SETUP.md) |
 
-When providers are not configured, notifications are still logged with status `LOGGED` so you can verify copy in **Admin → notification logs** without sending real messages.
+| Channel | Provider                   | Setup doc                            |
+| ------- | -------------------------- | ------------------------------------ |
+| Email   | Resend (preferred) or SMTP | [RESEND_SETUP.md](./RESEND_SETUP.md) |
+| SMS     | Twilio                     | [TWILIO_SETUP.md](./TWILIO_SETUP.md) |
+
+
+When providers are not configured, notifications are still logged with status `LOGGED` so you can verify copy in **Admin → System Status** without sending real messages.
 
 ---
 
@@ -305,7 +342,9 @@ Verify each scenario in test mode with `APP_BASE_URL` set to your local or stagi
 
 - [ ] Pay at pickup — customer gets **We received your order** immediately
 - [ ] Stripe card — customer gets **We received your order** only after webhook marks `PAID`
-- [ ] Guest checkout — order link works without sign-in (`/order/{id}`)
+- [ ] Guest checkout — confirmation page loads with `?token=` from order response
+- [ ] Guest notification links — known gap: email/SMS omit token today (see Links section)
+- [ ] Signed-in customer — `/order/{id}` and `/my-orders` work without token
 - [ ] Signed-in customer — same order link; **My Orders** available separately
 - [ ] Pickup — ready-for-pickup email includes address/instructions
 - [ ] Delivery — out-for-delivery email sends
@@ -329,3 +368,4 @@ pnpm --filter @workspace/api-server run test
 - [TWILIO_SETUP.md](./TWILIO_SETUP.md) — SMS provider configuration
 - [STRIPE_SETUP.md](./STRIPE_SETUP.md) — payment webhook (triggers card **Order received** notification)
 - [PRODUCTION_MONITORING.md](./PRODUCTION_MONITORING.md) — health checks and notification logs
+

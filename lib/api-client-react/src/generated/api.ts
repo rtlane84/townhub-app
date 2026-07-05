@@ -1066,7 +1066,7 @@ export const getRegisterBusinessUrl = () => {
 }
 
 /**
- * @summary Self-service business registration (any authenticated user)
+ * @summary Direct business registration (admin only)
  */
 export const registerBusiness = async (businessRegistrationInput: BusinessRegistrationInput, options?: RequestInit): Promise<Business> => {
 
@@ -1083,7 +1083,7 @@ export const registerBusiness = async (businessRegistrationInput: BusinessRegist
 
 
 
-export const getRegisterBusinessMutationOptions = <TError = ErrorType<unknown>,
+export const getRegisterBusinessMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerBusiness>>, TError,{data: BodyType<BusinessRegistrationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof registerBusiness>>, TError,{data: BodyType<BusinessRegistrationInput>}, TContext> => {
 
@@ -1112,12 +1112,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RegisterBusinessMutationResult = NonNullable<Awaited<ReturnType<typeof registerBusiness>>>
     export type RegisterBusinessMutationBody = BodyType<BusinessRegistrationInput>
-    export type RegisterBusinessMutationError = ErrorType<unknown>
+    export type RegisterBusinessMutationError = ErrorType<void>
 
     /**
- * @summary Self-service business registration (any authenticated user)
+ * @summary Direct business registration (admin only)
  */
-export const useRegisterBusiness = <TError = ErrorType<unknown>,
+export const useRegisterBusiness = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerBusiness>>, TError,{data: BodyType<BusinessRegistrationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof registerBusiness>>,
@@ -1504,7 +1504,7 @@ export const getCreateCategoryUrl = (businessId: number,) => {
 }
 
 /**
- * @summary Create a category
+ * @summary Create a category (business owner or admin)
  */
 export const createCategory = async (businessId: number,
     categoryInput: CategoryInput, options?: RequestInit): Promise<Category> => {
@@ -1522,7 +1522,7 @@ export const createCategory = async (businessId: number,
 
 
 
-export const getCreateCategoryMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateCategoryMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCategory>>, TError,{businessId: number;data: BodyType<CategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createCategory>>, TError,{businessId: number;data: BodyType<CategoryInput>}, TContext> => {
 
@@ -1551,12 +1551,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof createCategory>>>
     export type CreateCategoryMutationBody = BodyType<CategoryInput>
-    export type CreateCategoryMutationError = ErrorType<unknown>
+    export type CreateCategoryMutationError = ErrorType<void>
 
     /**
- * @summary Create a category
+ * @summary Create a category (business owner or admin)
  */
-export const useCreateCategory = <TError = ErrorType<unknown>,
+export const useCreateCategory = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCategory>>, TError,{businessId: number;data: BodyType<CategoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createCategory>>,
@@ -1577,7 +1577,7 @@ export const getUpdateCategoryUrl = (businessId: number,
 }
 
 /**
- * @summary Update a category
+ * @summary Update a category (business owner or admin)
  */
 export const updateCategory = async (businessId: number,
     id: number,
@@ -1596,7 +1596,7 @@ export const updateCategory = async (businessId: number,
 
 
 
-export const getUpdateCategoryMutationOptions = <TError = ErrorType<unknown>,
+export const getUpdateCategoryMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCategory>>, TError,{businessId: number;id: number;data: BodyType<CategoryUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateCategory>>, TError,{businessId: number;id: number;data: BodyType<CategoryUpdate>}, TContext> => {
 
@@ -1625,12 +1625,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof updateCategory>>>
     export type UpdateCategoryMutationBody = BodyType<CategoryUpdate>
-    export type UpdateCategoryMutationError = ErrorType<unknown>
+    export type UpdateCategoryMutationError = ErrorType<void>
 
     /**
- * @summary Update a category
+ * @summary Update a category (business owner or admin)
  */
-export const useUpdateCategory = <TError = ErrorType<unknown>,
+export const useUpdateCategory = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCategory>>, TError,{businessId: number;id: number;data: BodyType<CategoryUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateCategory>>,
@@ -1651,7 +1651,7 @@ export const getDeleteCategoryUrl = (businessId: number,
 }
 
 /**
- * @summary Delete a category
+ * @summary Delete a category (business owner or admin)
  */
 export const deleteCategory = async (businessId: number,
     id: number, options?: RequestInit): Promise<void> => {
@@ -1668,7 +1668,7 @@ export const deleteCategory = async (businessId: number,
 
 
 
-export const getDeleteCategoryMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteCategoryMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCategory>>, TError,{businessId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteCategory>>, TError,{businessId: number;id: number}, TContext> => {
 
@@ -1697,12 +1697,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCategory>>>
 
-    export type DeleteCategoryMutationError = ErrorType<unknown>
+    export type DeleteCategoryMutationError = ErrorType<void>
 
     /**
- * @summary Delete a category
+ * @summary Delete a category (business owner or admin)
  */
-export const useDeleteCategory = <TError = ErrorType<unknown>,
+export const useDeleteCategory = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCategory>>, TError,{businessId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteCategory>>,
@@ -1799,7 +1799,7 @@ export const getCreateModifierGroupUrl = (businessId: number,) => {
 }
 
 /**
- * @summary Create a modifier group
+ * @summary Create a modifier group (business owner or admin)
  */
 export const createModifierGroup = async (businessId: number,
     modifierGroupInput: ModifierGroupInput, options?: RequestInit): Promise<ModifierGroup> => {
@@ -1817,7 +1817,7 @@ export const createModifierGroup = async (businessId: number,
 
 
 
-export const getCreateModifierGroupMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateModifierGroupMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createModifierGroup>>, TError,{businessId: number;data: BodyType<ModifierGroupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createModifierGroup>>, TError,{businessId: number;data: BodyType<ModifierGroupInput>}, TContext> => {
 
@@ -1846,12 +1846,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateModifierGroupMutationResult = NonNullable<Awaited<ReturnType<typeof createModifierGroup>>>
     export type CreateModifierGroupMutationBody = BodyType<ModifierGroupInput>
-    export type CreateModifierGroupMutationError = ErrorType<unknown>
+    export type CreateModifierGroupMutationError = ErrorType<void>
 
     /**
- * @summary Create a modifier group
+ * @summary Create a modifier group (business owner or admin)
  */
-export const useCreateModifierGroup = <TError = ErrorType<unknown>,
+export const useCreateModifierGroup = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createModifierGroup>>, TError,{businessId: number;data: BodyType<ModifierGroupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createModifierGroup>>,
@@ -1872,7 +1872,7 @@ export const getUpdateModifierGroupUrl = (businessId: number,
 }
 
 /**
- * @summary Update a modifier group
+ * @summary Update a modifier group (business owner or admin)
  */
 export const updateModifierGroup = async (businessId: number,
     id: number,
@@ -1891,7 +1891,7 @@ export const updateModifierGroup = async (businessId: number,
 
 
 
-export const getUpdateModifierGroupMutationOptions = <TError = ErrorType<unknown>,
+export const getUpdateModifierGroupMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateModifierGroup>>, TError,{businessId: number;id: number;data: BodyType<ModifierGroupUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateModifierGroup>>, TError,{businessId: number;id: number;data: BodyType<ModifierGroupUpdate>}, TContext> => {
 
@@ -1920,12 +1920,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateModifierGroupMutationResult = NonNullable<Awaited<ReturnType<typeof updateModifierGroup>>>
     export type UpdateModifierGroupMutationBody = BodyType<ModifierGroupUpdate>
-    export type UpdateModifierGroupMutationError = ErrorType<unknown>
+    export type UpdateModifierGroupMutationError = ErrorType<void>
 
     /**
- * @summary Update a modifier group
+ * @summary Update a modifier group (business owner or admin)
  */
-export const useUpdateModifierGroup = <TError = ErrorType<unknown>,
+export const useUpdateModifierGroup = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateModifierGroup>>, TError,{businessId: number;id: number;data: BodyType<ModifierGroupUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateModifierGroup>>,
@@ -1946,7 +1946,7 @@ export const getDeleteModifierGroupUrl = (businessId: number,
 }
 
 /**
- * @summary Delete a modifier group
+ * @summary Delete a modifier group (business owner or admin)
  */
 export const deleteModifierGroup = async (businessId: number,
     id: number, options?: RequestInit): Promise<void> => {
@@ -1963,7 +1963,7 @@ export const deleteModifierGroup = async (businessId: number,
 
 
 
-export const getDeleteModifierGroupMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteModifierGroupMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteModifierGroup>>, TError,{businessId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteModifierGroup>>, TError,{businessId: number;id: number}, TContext> => {
 
@@ -1992,12 +1992,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteModifierGroupMutationResult = NonNullable<Awaited<ReturnType<typeof deleteModifierGroup>>>
 
-    export type DeleteModifierGroupMutationError = ErrorType<unknown>
+    export type DeleteModifierGroupMutationError = ErrorType<void>
 
     /**
- * @summary Delete a modifier group
+ * @summary Delete a modifier group (business owner or admin)
  */
-export const useDeleteModifierGroup = <TError = ErrorType<unknown>,
+export const useDeleteModifierGroup = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteModifierGroup>>, TError,{businessId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteModifierGroup>>,
@@ -2094,7 +2094,7 @@ export const getCreateProductUrl = (businessId: number,) => {
 }
 
 /**
- * @summary Create a product
+ * @summary Create a product (business owner or admin)
  */
 export const createProduct = async (businessId: number,
     productInput: ProductInput, options?: RequestInit): Promise<Product> => {
@@ -2112,7 +2112,7 @@ export const createProduct = async (businessId: number,
 
 
 
-export const getCreateProductMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateProductMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{businessId: number;data: BodyType<ProductInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{businessId: number;data: BodyType<ProductInput>}, TContext> => {
 
@@ -2141,12 +2141,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateProductMutationResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>
     export type CreateProductMutationBody = BodyType<ProductInput>
-    export type CreateProductMutationError = ErrorType<unknown>
+    export type CreateProductMutationError = ErrorType<void>
 
     /**
- * @summary Create a product
+ * @summary Create a product (business owner or admin)
  */
-export const useCreateProduct = <TError = ErrorType<unknown>,
+export const useCreateProduct = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProduct>>, TError,{businessId: number;data: BodyType<ProductInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createProduct>>,
@@ -2167,7 +2167,7 @@ export const getUpdateProductUrl = (businessId: number,
 }
 
 /**
- * @summary Update a product
+ * @summary Update a product (business owner or admin)
  */
 export const updateProduct = async (businessId: number,
     id: number,
@@ -2186,7 +2186,7 @@ export const updateProduct = async (businessId: number,
 
 
 
-export const getUpdateProductMutationOptions = <TError = ErrorType<unknown>,
+export const getUpdateProductMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProduct>>, TError,{businessId: number;id: number;data: BodyType<ProductUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateProduct>>, TError,{businessId: number;id: number;data: BodyType<ProductUpdate>}, TContext> => {
 
@@ -2215,12 +2215,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateProductMutationResult = NonNullable<Awaited<ReturnType<typeof updateProduct>>>
     export type UpdateProductMutationBody = BodyType<ProductUpdate>
-    export type UpdateProductMutationError = ErrorType<unknown>
+    export type UpdateProductMutationError = ErrorType<void>
 
     /**
- * @summary Update a product
+ * @summary Update a product (business owner or admin)
  */
-export const useUpdateProduct = <TError = ErrorType<unknown>,
+export const useUpdateProduct = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProduct>>, TError,{businessId: number;id: number;data: BodyType<ProductUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateProduct>>,
@@ -2241,7 +2241,7 @@ export const getDeleteProductUrl = (businessId: number,
 }
 
 /**
- * @summary Delete a product
+ * @summary Delete a product (business owner or admin)
  */
 export const deleteProduct = async (businessId: number,
     id: number, options?: RequestInit): Promise<void> => {
@@ -2258,7 +2258,7 @@ export const deleteProduct = async (businessId: number,
 
 
 
-export const getDeleteProductMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteProductMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{businessId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{businessId: number;id: number}, TContext> => {
 
@@ -2287,12 +2287,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteProductMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>
 
-    export type DeleteProductMutationError = ErrorType<unknown>
+    export type DeleteProductMutationError = ErrorType<void>
 
     /**
- * @summary Delete a product
+ * @summary Delete a product (business owner or admin)
  */
-export const useDeleteProduct = <TError = ErrorType<unknown>,
+export const useDeleteProduct = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProduct>>, TError,{businessId: number;id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteProduct>>,
@@ -2531,7 +2531,11 @@ export const getGetOrderUrl = (id: number,) => {
 }
 
 /**
- * @summary Get order by id
+ * Guest orders require a signed access token via `?token=` query parameter or
+`X-Order-Access-Token` header. Signed-in customers, business owners, and
+admins may access without a token when authorized.
+
+ * @summary Get order by id (guest token, owner, admin, or linked customer)
  */
 export const getOrder = async (id: number, options?: RequestInit): Promise<Order> => {
 
@@ -2578,7 +2582,7 @@ export type GetOrderQueryError = ErrorType<void>
 
 
 /**
- * @summary Get order by id
+ * @summary Get order by id (guest token, owner, admin, or linked customer)
  */
 
 export function useGetOrder<TData = Awaited<ReturnType<typeof getOrder>>, TError = ErrorType<void>>(
@@ -2990,7 +2994,7 @@ export const getCreateCheckoutSessionUrl = () => {
 }
 
 /**
- * @summary Create a Stripe checkout session
+ * @summary Create a Stripe checkout session (requires order access)
  */
 export const createCheckoutSession = async (checkoutSessionInput: CheckoutSessionInput, options?: RequestInit): Promise<CheckoutSessionResult> => {
 
@@ -3007,7 +3011,7 @@ export const createCheckoutSession = async (checkoutSessionInput: CheckoutSessio
 
 
 
-export const getCreateCheckoutSessionMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateCheckoutSessionMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCheckoutSession>>, TError,{data: BodyType<CheckoutSessionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createCheckoutSession>>, TError,{data: BodyType<CheckoutSessionInput>}, TContext> => {
 
@@ -3036,12 +3040,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateCheckoutSessionMutationResult = NonNullable<Awaited<ReturnType<typeof createCheckoutSession>>>
     export type CreateCheckoutSessionMutationBody = BodyType<CheckoutSessionInput>
-    export type CreateCheckoutSessionMutationError = ErrorType<unknown>
+    export type CreateCheckoutSessionMutationError = ErrorType<void>
 
     /**
- * @summary Create a Stripe checkout session
+ * @summary Create a Stripe checkout session (requires order access)
  */
-export const useCreateCheckoutSession = <TError = ErrorType<unknown>,
+export const useCreateCheckoutSession = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCheckoutSession>>, TError,{data: BodyType<CheckoutSessionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createCheckoutSession>>,
@@ -3956,7 +3960,7 @@ export const getCreateEventUrl = () => {
 }
 
 /**
- * @summary Create an event (admin)
+ * @summary Create an event (admin only)
  */
 export const createEvent = async (eventInput: EventInput, options?: RequestInit): Promise<Event> => {
 
@@ -3973,7 +3977,7 @@ export const createEvent = async (eventInput: EventInput, options?: RequestInit)
 
 
 
-export const getCreateEventMutationOptions = <TError = ErrorType<unknown>,
+export const getCreateEventMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEvent>>, TError,{data: BodyType<EventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createEvent>>, TError,{data: BodyType<EventInput>}, TContext> => {
 
@@ -4002,12 +4006,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateEventMutationResult = NonNullable<Awaited<ReturnType<typeof createEvent>>>
     export type CreateEventMutationBody = BodyType<EventInput>
-    export type CreateEventMutationError = ErrorType<unknown>
+    export type CreateEventMutationError = ErrorType<void>
 
     /**
- * @summary Create an event (admin)
+ * @summary Create an event (admin only)
  */
-export const useCreateEvent = <TError = ErrorType<unknown>,
+export const useCreateEvent = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEvent>>, TError,{data: BodyType<EventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createEvent>>,
@@ -4104,7 +4108,7 @@ export const getUpdateEventUrl = (id: number,) => {
 }
 
 /**
- * @summary Update an event (admin)
+ * @summary Update an event (admin only)
  */
 export const updateEvent = async (id: number,
     eventInput: EventInput, options?: RequestInit): Promise<Event> => {
@@ -4122,7 +4126,7 @@ export const updateEvent = async (id: number,
 
 
 
-export const getUpdateEventMutationOptions = <TError = ErrorType<unknown>,
+export const getUpdateEventMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEvent>>, TError,{id: number;data: BodyType<EventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updateEvent>>, TError,{id: number;data: BodyType<EventInput>}, TContext> => {
 
@@ -4151,12 +4155,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UpdateEventMutationResult = NonNullable<Awaited<ReturnType<typeof updateEvent>>>
     export type UpdateEventMutationBody = BodyType<EventInput>
-    export type UpdateEventMutationError = ErrorType<unknown>
+    export type UpdateEventMutationError = ErrorType<void>
 
     /**
- * @summary Update an event (admin)
+ * @summary Update an event (admin only)
  */
-export const useUpdateEvent = <TError = ErrorType<unknown>,
+export const useUpdateEvent = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEvent>>, TError,{id: number;data: BodyType<EventInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof updateEvent>>,
@@ -4176,7 +4180,7 @@ export const getDeleteEventUrl = (id: number,) => {
 }
 
 /**
- * @summary Delete an event (admin)
+ * @summary Delete an event (admin only)
  */
 export const deleteEvent = async (id: number, options?: RequestInit): Promise<void> => {
 
@@ -4192,7 +4196,7 @@ export const deleteEvent = async (id: number, options?: RequestInit): Promise<vo
 
 
 
-export const getDeleteEventMutationOptions = <TError = ErrorType<unknown>,
+export const getDeleteEventMutationOptions = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEvent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteEvent>>, TError,{id: number}, TContext> => {
 
@@ -4221,12 +4225,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type DeleteEventMutationResult = NonNullable<Awaited<ReturnType<typeof deleteEvent>>>
 
-    export type DeleteEventMutationError = ErrorType<unknown>
+    export type DeleteEventMutationError = ErrorType<void>
 
     /**
- * @summary Delete an event (admin)
+ * @summary Delete an event (admin only)
  */
-export const useDeleteEvent = <TError = ErrorType<unknown>,
+export const useDeleteEvent = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEvent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof deleteEvent>>,

@@ -37,13 +37,13 @@ TownHub creates **Express** connected accounts for businesses and runs **direct 
 | ----------------------- | ------------------- | ------------------------------ | ------------------------------------------------------------- |
 | `STRIPE_SECRET_KEY`     | For real payments   | `sk_test_...` or `sk_live_...` | Platform secret key — never expose in browser or git          |
 | `STRIPE_WEBHOOK_SECRET` | With Stripe enabled | `whsec_...`                    | Signing secret from your platform webhook endpoint            |
-| `APP_BASE_URL`          | Recommended         | `http://localhost:5173`        | Used for Stripe onboarding return URLs and checkout redirects |
+| `APP_BASE_URL`          | Recommended         | `http://localhost:23032`       | Used for Stripe onboarding return URLs and checkout redirects |
 
 
 ```bash
 STRIPE_SECRET_KEY=sk_test_xxxxxxxx
 STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxx
-APP_BASE_URL=http://localhost:5173
+APP_BASE_URL=http://localhost:23032
 ```
 
 If `STRIPE_SECRET_KEY` is unset, checkout runs in **mock mode** (dev only — redirects without charging). **Mock mode is blocked in production.**

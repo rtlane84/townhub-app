@@ -1,124 +1,224 @@
-# LocalOrderHub — Security Hardening & Production Readiness
+# TownHub — Security Model
 
-Summary of the security audit and cleanup pass applied to this codebase.
-
----
-
-## What Was Fixed
-
-### 1. Admin role guard — all `/api/admin/*` routes
-
-**New file:** `artifacts/api-server/src/middlewares/requireRole.ts`
-
-Two middleware functions:
-- `requireAuth` — verifies a valid Clerk session; returns 401 if not authenticated
-- `requireAdmin` — verifies session + checks DB role is `ADMIN`; returns 403 if not
-
-**`routes/index.ts`** registers a single `router.use("/admin", requireAdmin)` that covers every admin endpoint in one shot.
-
-**Intentional exception:** `GET /admin/settings/theme` is exempted — the app loads brand colors on public pages (home, storefront) without requiring auth. All other `/admin/*` routes are fully guarded.
-
-**Before:** any signed-in user (CUSTOMER, BUSINESS_OWNER) could approve applications, delete subscription plans, change user roles, and read all platform orders.  
-**After:** those endpoints return 403 unless the caller's DB role is `ADMIN`.
+This document describes how TownHub protects data and operations in the current codebase. For local setup and deployment, see [docs/SETUP.md](docs/SETUP.md) and [PRODUCTION.md](PRODUCTION.md). For system design context, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
-### 2. Missing auth on business manage routes
+## Authentication
 
-`PATCH /api/businesses/manage/:id` and `DELETE /api/businesses/manage/:id` had **no auth check at all** — unauthenticated requests from the open internet could modify or delete any business.
+TownHub uses [Clerk](https://clerk.com) for identity. The API applies `@clerk/express` middleware globally; route handlers read `userId` via `getAuth(req)`.
 
-| Route | Before | After |
-|---|---|---|
-| `GET /businesses/manage/:id` | No auth | `requireAuth` |
-| `PATCH /businesses/manage/:id` | No auth | `requireAuth` (business owners also use this for settings) |
-| `POST /businesses/manage` | Auth only | `requireAdmin` (only admin creates businesses) |
-| `DELETE /businesses/manage/:id` | No auth | `requireAdmin` |
+Because the Replit preview runs inside an iframe (blocking `SameSite=Lax` cookies), authenticated API calls pass the Clerk session JWT as an `Authorization: Bearer <token>` header. The frontend `ClerkApiTokenBridge` wires this into all generated hooks and raw fetches.
 
----
+**Roles** (stored in `users.role`):
 
-### 3. Order status mutation with no auth
+| Role | Description |
+|------|-------------|
+| `CUSTOMER` | Default for signed-in shoppers |
+| `BUSINESS_OWNER` | Manages one or more businesses |
+| `ADMIN` | Platform operator |
 
-`PATCH /api/orders/:id/status` had **no auth check at all** — anyone on the internet could flip any order to `PAID`, `CANCELED`, `READY`, etc.
-
-Fixed: added `requireAuth` middleware to the route.
+First-run admin promotion: `POST /api/admin/bootstrap` (works only while zero admins exist). Ongoing role changes: Admin → Users.
 
 ---
 
-### 4. Highlights CRUD not requiring admin role
+## Authorization Middleware
 
-`POST /PUT /DELETE /api/highlights` checked "is logged in" but not role. Any authenticated customer could create, edit, or delete homepage banners.
+| Middleware | Behavior |
+|------------|----------|
+| `requireAuth` | Valid Clerk session required → 401 |
+| `requireAdmin` | Session + `users.role === ADMIN` → 401 / 403 |
+| `requireBusinessCatalogAccess` | Auth + business ownership or admin for catalog mutations |
 
-Fixed: added `requireAdmin` middleware to all three mutation routes.
+`router.use("/admin", requireAdmin)` in `routes/index.ts` guards almost all `/api/admin/*` paths. Exceptions (intentionally public):
 
----
-
-### 5. Business subscription ownership check
-
-`GET /api/businesses/:businessId/subscription` only checked that the caller was authenticated. Any logged-in user could read any business's subscription details by guessing an integer ID.
-
-Fixed: the route now verifies the caller's `userId` matches `businesses.ownerId` for that business, or that the caller is an `ADMIN`. Non-owners receive a 403.
-
----
-
-### 6. Pre-existing TypeScript errors fixed
-
-Two `parseInt(req.params.id)` type errors in `highlights.ts` (flagged by `tsc --noEmit`, pre-existing before this pass) were fixed with the same array-safe cast used throughout the rest of the codebase.
-
-**The API server typecheck now passes with zero errors.**
+- `GET /api/admin/settings/theme` — brand colors on public pages
+- `GET /api/admin/bootstrap-status` — first-run setup probe
+- `POST /api/admin/bootstrap` — one-time admin promotion (handler enforces single use)
 
 ---
 
-### 7. Documentation added
+## Guest Order Access Tokens
 
-| File | Contents |
-|---|---|
-| `.env.example` | All required and optional environment variables with comments, split into server and frontend sections |
-| `PRODUCTION.md` | Step-by-step production checklist: Clerk production instance, Stripe live mode + webhook, email setup, DB push, admin bootstrap, Replit publish steps, post-deploy smoke tests |
+Guest checkout does **not** require Clerk authentication to place an order. Guest orders have `customerUserId = null`.
+
+To prevent PII leakage, guest order viewing and Stripe checkout require a **signed HMAC access token**:
+
+1. `POST /api/orders` returns `accessToken` in the response body (guest and signed-in orders).
+2. `GET /api/orders/:id` accepts the token via `?token=` query param or `X-Order-Access-Token` header.
+3. `POST /api/checkout/session` accepts `accessToken` in the JSON body for guest Stripe checkout.
+
+Tokens are HMAC-SHA256 over `order:{id}`, signed with `SESSION_SECRET` (≥ 32 characters). In production, missing `SESSION_SECRET` throws at startup.
+
+**Who can view an order without a guest token:**
+
+- Platform `ADMIN`
+- The business owner for that order's business
+- The signed-in customer whose `customerUserId` matches the order
+
+All other callers receive **403**.
+
+Stripe success URLs include `?token=…` so the confirmation page can load the order.
+
+---
+
+## Endpoint Authorization Summary
+
+### Public (no auth)
+
+| Endpoint | Notes |
+|----------|-------|
+| `GET /health`, `GET /api/healthz` | Uptime checks |
+| `GET /api/businesses`, `GET /api/businesses/:slug` | Active business directory and storefronts |
+| `GET /api/businesses/:id/products`, categories, modifier-groups | Public catalog reads |
+| `GET /api/events`, `GET /api/highlights` | Community content |
+| `GET /api/food-truck-locations/today`, `/upcoming` | Food truck map data |
+| `GET /api/weather` | Platform weather widget |
+| `GET /api/pricing/plans`, `GET /api/subscription-plans` | Public plan listing |
+| `GET /api/admin/settings/theme`, `GET /api/platform/theme` | Brand colors |
+| `GET /api/admin/bootstrap-status` | Setup UI probe |
+| `POST /api/orders` | Guest and signed-in checkout |
+| `POST /api/orders/prep-estimate` | Cart prep-time preview |
+| `POST /api/appointment-requests` | Public appointment requests (feature-gated) |
+| `POST /api/businesses/apply` | Business application submission |
+| `POST /api/checkout/webhook` | Stripe webhook (signature verified, not Clerk) |
+
+### Guest token or auth required
+
+| Endpoint | Rule |
+|----------|------|
+| `GET /api/orders/:id` | Guest token, admin, owner, or linked customer |
+| `POST /api/checkout/session` | Same access rules as order view |
+
+### Authenticated (any signed-in user)
+
+| Endpoint | Rule |
+|----------|------|
+| `GET /api/auth/me`, `/me/businesses`, `/me/business` | Profile |
+| `GET /api/me/orders` | Customer order history |
+| `PATCH /api/orders/:id/status` | Business owner for that order's business, or admin |
+| `POST /api/orders/:id/refund` | Business owner or admin |
+| `GET/PATCH /api/businesses/manage/:id` | Owner or admin |
+| Business subscription, Stripe Connect, appointment dashboard routes | Owner or admin for the business |
+
+### Owner or admin required
+
+| Endpoint | Rule |
+|----------|------|
+| `POST/PATCH/DELETE` categories, products, modifier-groups | `requireBusinessCatalogAccess` |
+| `GET/POST /api/media`, `POST /api/media/upload` | Auth + `businessId` query for owners; admin may use platform scope |
+| `GET /api/businesses/:id/subscription`, feature-access | Owner or admin |
+
+### Admin only
+
+| Endpoint | Rule |
+|----------|------|
+| `/api/admin/*` (except theme + bootstrap exceptions) | `requireAdmin` |
+| `POST /api/businesses/register` | Direct business creation |
+| `POST /api/businesses/manage` | Create business |
+| `DELETE /api/businesses/manage/:id` | Archive business |
+| `POST/PUT/DELETE /api/events` | Community events |
+| `POST/PUT/DELETE /api/highlights` | Homepage banners |
+
+---
+
+## Commerce Guards
+
+Server-side enforcement (not frontend-only):
+
+| Guard | Applies to | Behavior |
+|-------|------------|----------|
+| `requireOnlineOrderingFeature` | `POST /api/orders` | 403 when plan lacks `online_ordering` |
+| `requireAppointmentRequestsFeature` | `POST /api/appointment-requests` | 403 when plan lacks `appointment_requests` |
+| `isBusinessOpenForPublicCommerce` | Orders and appointments | 400 when business is inactive or archived |
+
+---
+
+## Rate Limiting
+
+Applied to `/api/*` via `createApiRateLimitMiddleware()` in `app.ts`. Stripe webhooks are excluded.
+
+| Tier | Default | Env vars |
+|------|---------|----------|
+| Write (orders, checkout, applications, media uploads) | 60 / 15 min | `RATE_LIMIT_WRITE_MAX`, `RATE_LIMIT_WRITE_WINDOW_MS` |
+| Read (weather, food-truck aggregates) | 120 / 15 min | `RATE_LIMIT_READ_MAX`, `RATE_LIMIT_READ_WINDOW_MS` |
+
+Disable: `RATE_LIMIT_DISABLED=true`. Trust proxy in production: `RATE_LIMIT_TRUST_PROXY` (defaults on when `NODE_ENV=production`).
+
+---
+
+## Media Upload Scoping
+
+Business owners must pass `?businessId=` on `GET /api/media` and `POST /api/media/upload`. The server verifies the caller owns that business. Requests without a valid scope return **403**.
+
+Admins may upload to a specific business or to platform scope (no `businessId`).
+
+---
+
+## Stripe Webhook Security
+
+`POST /api/checkout/webhook` verifies Stripe signatures on the raw request body. Forged or unsigned requests return **400**. Order payment status is updated only from verified `checkout.session.completed` events — not from browser redirects.
+
+---
+
+## Debug Endpoints (Development Only)
+
+| Endpoint | Availability |
+|----------|--------------|
+| `GET /api/debug/sentry` | Mounted only when `NODE_ENV !== "production"` |
+| `/debug/sentry` (frontend) | Route registered only in Vite dev mode |
+
+These intentionally throw test errors for Sentry validation. They are not exposed in production builds.
+
+---
+
+## Security Architecture
+
+```text
+Request
+  │
+  ├─ Public reads (businesses, events, highlights, weather, …)
+  │
+  ├─ Public writes (orders, appointment-requests, applications)
+  │     ├─ Feature gate check (subscription)
+  │     └─ Business active/archived check
+  │
+  ├─ Order view / checkout
+  │     ├─ Admin → allow
+  │     ├─ Business owner → allow
+  │     ├─ Linked customer → allow
+  │     └─ Guest → require HMAC access token
+  │
+  ├─ Catalog mutations (categories, products, modifier-groups)
+  │     └─ requireBusinessCatalogAccess (owner or admin)
+  │
+  ├─ Media upload/list
+  │     └─ Auth + businessId ownership scope
+  │
+  ├─ Order status / refunds
+  │     └─ Auth + business owner or admin
+  │
+  └─ /api/admin/*
+        └─ requireAdmin (with theme/bootstrap exceptions)
+```
 
 ---
 
 ## Remaining Risks
 
-These gaps were identified but not fixed in this pass. Address them before handling real users or money.
-
-| Risk | Severity | What to do |
-|---|---|---|
-| `PATCH /orders/:id/status` — auth added but no ownership check | Medium | Any authenticated user can update any order's status. Fix: fetch the order's `businessId`, verify the caller owns that business or is admin before updating. |
-| Stripe webhook signature verification | **Resolved** | Platform webhook verifies signatures; Connect direct charges on business connected accounts; orders marked paid idempotently via `checkout.session.completed` only. See [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md). |
-| `/setup` bootstrap page stays live after first use | **Resolved** | `GET /api/admin/bootstrap-status` hides nav/setup UI after the first admin exists; bootstrap POST remains locked with 403. |
-| No rate limiting on public endpoints | **Resolved** | Stricter limits on public writes (orders, checkout session, appointment requests, applications, media uploads); lighter limits on weather and food-truck reads. Stripe webhooks are excluded. Configure via `RATE_LIMIT_*` env vars. |
-| No pagination on list endpoints | Medium | All list endpoints return full DB rows. Fine at demo scale; will degrade with real data. Add `limit` + `offset` query params and a `total` count in responses. |
-| Food-truck location mutations lack ownership check | Low | `POST/PUT/DELETE /api/businesses/:id/food-truck-locations` verify auth but not that the caller owns that specific business. |
+| Risk | Severity | Notes |
+|------|----------|-------|
+| Food-truck location mutations lack per-business ownership check | Low | `POST/PUT/DELETE /businesses/:id/food-truck-locations` verify auth but not that the caller owns that business |
+| Guest notification links omit access token | Medium | Email/SMS templates use `/order/{id}` without `?token=` — guests clicking notification links may get 403 until templates are updated |
+| No pagination on list endpoints | Medium | Full table scans at scale |
+| Cart is client-side only | Low | `localStorage`; no server-side cart persistence |
 
 ---
 
-## Security Architecture Summary
+## Related Documentation
 
-```
-Public request
-    │
-    ├─ GET /admin/settings/theme          → no auth (brand colors needed on all pages)
-    ├─ GET /admin/bootstrap-status      → no auth (hide first-run setup UI after bootstrap)
-    ├─ POST /admin/bootstrap              → auth required; only works when zero admins exist
-    │
-    ├─ GET /api/businesses                → no auth (public directory)
-    ├─ GET /api/businesses/:slug          → no auth (public storefront)
-    ├─ GET /api/highlights                → no auth (public homepage banners)
-    ├─ GET /api/events                    → no auth
-    ├─ GET /api/food-truck-locations/today → no auth
-    │
-    ├─ POST /api/orders                   → auth (Clerk session)
-    ├─ POST /api/checkout/session         → auth
-    ├─ GET  /api/orders/:id               → no auth (order confirmation page)
-    ├─ PATCH /api/orders/:id/status       → auth
-    │
-    ├─ /api/businesses/manage/*           → auth or admin (see above)
-    ├─ POST/PUT/DELETE /api/highlights    → ADMIN role
-    ├─ GET /api/businesses/:id/subscription → auth + business ownership or ADMIN
-    │
-    └─ /api/admin/*  (all other paths)    → ADMIN role  ← enforced by router.use()
-           includes: users, applications, orders, plans,
-                     subscription assignment, notification logs, etc.
-```
-
-Clerk session tokens are passed as `Authorization: Bearer <token>` headers on all authenticated requests (SameSite=Lax cookies are blocked inside the Replit preview iframe).
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — system design
+- [docs/SETUP.md](docs/SETUP.md) — local development
+- [PRODUCTION.md](PRODUCTION.md) — deployment checklist
+- [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) — Connect payments
+- [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) — email/SMS flows

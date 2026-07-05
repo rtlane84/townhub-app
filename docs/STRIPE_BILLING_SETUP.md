@@ -24,7 +24,7 @@ Example (`.env`):
 ```bash
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-APP_BASE_URL=http://localhost:5173
+APP_BASE_URL=http://localhost:23032
 ```
 
 If `STRIPE_SECRET_KEY` is unset, the API runs in mock mode (development only).

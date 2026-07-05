@@ -104,7 +104,7 @@ If it shows **Not configured**, check that both `RESEND_API_KEY` and `RESEND_FRO
 
 ### Notification logs
 
-1. **Admin → Settings** includes recent notification logs.
+1. **Admin → System Status** includes recent notification logs.
 2. Successful sends show status **`SENT`**. Missing provider config shows **`LOGGED`**. Provider errors show **`FAILED`** with a safe error message (no API keys in the log).
 
 ---

@@ -38,7 +38,7 @@ Start the API:
 pnpm --filter @workspace/api-server run dev
 ```
 
-Test (temporary endpoint — remove after validation):
+Test (development-only endpoint — not mounted in production):
 
 ```bash
 curl http://localhost:8080/api/debug/sentry
@@ -124,9 +124,13 @@ Do not add PII or secrets to Sentry `extra` / `context` manually.
 
 ---
 
-## Removing test endpoints
+## Debug test endpoints
 
-After verifying Sentry in each environment:
+Sentry test routes are **development-only** and are not available in production:
 
-- API: remove `artifacts/api-server/src/routes/debug.ts` and its mount in `routes/index.ts`
-- Frontend: remove `src/pages/debug-sentry.tsx` and the dev-only route in `App.tsx`
+| Endpoint | Availability |
+|----------|--------------|
+| `GET /api/debug/sentry` | Mounted when `NODE_ENV !== "production"` |
+| `/debug/sentry` (frontend) | Registered only in Vite dev mode (`import.meta.env.DEV`) |
+
+No action is required before production deploy — these routes are automatically excluded.

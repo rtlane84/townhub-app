@@ -268,7 +268,7 @@ paths:
     post:
       operationId: registerBusiness
       tags: [businesses]
-      summary: Self-service business registration (any authenticated user)
+      summary: Direct business registration (admin only)
       requestBody:
         required: true
         content:
@@ -277,11 +277,15 @@ paths:
               $ref: "#/components/schemas/BusinessRegistrationInput"
       responses:
         "201":
-          description: Business created and user promoted to BUSINESS_OWNER
+          description: Business created
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Business"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
 
   # ─── Business Admin (owner/admin) ──────────────────────────────
   /businesses/manage:
@@ -390,7 +394,7 @@ paths:
     post:
       operationId: createCategory
       tags: [categories]
-      summary: Create a category
+      summary: Create a category (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -410,12 +414,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Category"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
 
   /businesses/{businessId}/categories/{id}:
     patch:
       operationId: updateCategory
       tags: [categories]
-      summary: Update a category
+      summary: Update a category (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -440,10 +448,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Category"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
     delete:
       operationId: deleteCategory
       tags: [categories]
-      summary: Delete a category
+      summary: Delete a category (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -458,6 +470,10 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
 
   # ─── Modifier Groups ─────────────────────────────────────────────
   /businesses/{businessId}/modifier-groups:
@@ -483,7 +499,7 @@ paths:
     post:
       operationId: createModifierGroup
       tags: [modifier-groups]
-      summary: Create a modifier group
+      summary: Create a modifier group (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -503,12 +519,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ModifierGroup"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
 
   /businesses/{businessId}/modifier-groups/{id}:
     patch:
       operationId: updateModifierGroup
       tags: [modifier-groups]
-      summary: Update a modifier group
+      summary: Update a modifier group (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -533,10 +553,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ModifierGroup"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
     delete:
       operationId: deleteModifierGroup
       tags: [modifier-groups]
-      summary: Delete a modifier group
+      summary: Delete a modifier group (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -551,6 +575,10 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
 
   # ─── Products ───────────────────────────────────────────────────
   /businesses/{businessId}/products:
@@ -576,7 +604,7 @@ paths:
     post:
       operationId: createProduct
       tags: [products]
-      summary: Create a product
+      summary: Create a product (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -596,12 +624,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Product"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
 
   /businesses/{businessId}/products/{id}:
     patch:
       operationId: updateProduct
       tags: [products]
-      summary: Update a product
+      summary: Update a product (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -626,10 +658,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Product"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
     delete:
       operationId: deleteProduct
       tags: [products]
-      summary: Delete a product
+      summary: Delete a product (business owner or admin)
       parameters:
         - in: path
           name: businessId
@@ -644,6 +680,10 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
 
   # ─── Orders ─────────────────────────────────────────────────────
   /orders/prep-estimate:
@@ -707,7 +747,11 @@ paths:
     get:
       operationId: getOrder
       tags: [orders]
-      summary: Get order by id
+      summary: Get order by id (guest token, owner, admin, or linked customer)
+      description: |
+        Guest orders require a signed access token via `?token=` query parameter or
+        `X-Order-Access-Token` header. Signed-in customers, business owners, and
+        admins may access without a token when authorized.
       parameters:
         - in: path
           name: id
@@ -722,7 +766,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
         "403":
-          description: Forbidden
+          description: Forbidden — valid access token, ownership, or admin required
         "404":
           description: Not found
 
@@ -862,7 +906,7 @@ paths:
     post:
       operationId: createCheckoutSession
       tags: [orders]
-      summary: Create a Stripe checkout session
+      summary: Create a Stripe checkout session (requires order access)
       requestBody:
         required: true
         content:
@@ -876,6 +920,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CheckoutSessionResult"
+        "403":
+          description: Forbidden — valid access token, ownership, or admin required
 
   /checkout/webhook:
     post:
@@ -1147,7 +1193,7 @@ paths:
     post:
       operationId: createEvent
       tags: [events]
-      summary: Create an event (admin)
+      summary: Create an event (admin only)
       requestBody:
         required: true
         content:
@@ -1161,6 +1207,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Event"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
 
   /events/{id}:
     get:
@@ -1183,7 +1233,7 @@ paths:
     put:
       operationId: updateEvent
       tags: [events]
-      summary: Update an event (admin)
+      summary: Update an event (admin only)
       parameters:
         - in: path
           name: id
@@ -1203,10 +1253,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Event"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
     delete:
       operationId: deleteEvent
       tags: [events]
-      summary: Delete an event (admin)
+      summary: Delete an event (admin only)
       parameters:
         - in: path
           name: id
@@ -1216,6 +1270,10 @@ paths:
       responses:
         "204":
           description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
 
   # ─── Highlights ────────────────────────────────────────────────
   /highlights:
@@ -2000,6 +2058,12 @@ paths:
           description: Not found
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk session JWT passed as Authorization Bearer token
   schemas:
     HealthStatus:
       type: object

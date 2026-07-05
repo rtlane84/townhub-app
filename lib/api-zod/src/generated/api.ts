@@ -481,7 +481,7 @@ export const GetBusinessBySlugResponse = zod.object({
 
 
 /**
- * @summary Self-service business registration (any authenticated user)
+ * @summary Direct business registration (admin only)
  */
 
 export const registerBusinessBodyStructuredHoursItemDayOfWeekMin = 0;
@@ -768,7 +768,7 @@ export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem)
 
 
 /**
- * @summary Create a category
+ * @summary Create a category (business owner or admin)
  */
 export const CreateCategoryParams = zod.object({
   "businessId": zod.coerce.number()
@@ -784,7 +784,7 @@ export const CreateCategoryBody = zod.object({
 
 
 /**
- * @summary Update a category
+ * @summary Update a category (business owner or admin)
  */
 export const UpdateCategoryParams = zod.object({
   "businessId": zod.coerce.number(),
@@ -805,7 +805,7 @@ export const UpdateCategoryResponse = zod.object({
 
 
 /**
- * @summary Delete a category
+ * @summary Delete a category (business owner or admin)
  */
 export const DeleteCategoryParams = zod.object({
   "businessId": zod.coerce.number(),
@@ -842,7 +842,7 @@ export const ListModifierGroupsResponse = zod.array(ListModifierGroupsResponseIt
 
 
 /**
- * @summary Create a modifier group
+ * @summary Create a modifier group (business owner or admin)
  */
 export const CreateModifierGroupParams = zod.object({
   "businessId": zod.coerce.number()
@@ -871,7 +871,7 @@ export const CreateModifierGroupBody = zod.object({
 
 
 /**
- * @summary Update a modifier group
+ * @summary Update a modifier group (business owner or admin)
  */
 export const UpdateModifierGroupParams = zod.object({
   "businessId": zod.coerce.number(),
@@ -919,7 +919,7 @@ export const UpdateModifierGroupResponse = zod.object({
 
 
 /**
- * @summary Delete a modifier group
+ * @summary Delete a modifier group (business owner or admin)
  */
 export const DeleteModifierGroupParams = zod.object({
   "businessId": zod.coerce.number(),
@@ -973,7 +973,7 @@ export const ListProductsResponse = zod.array(ListProductsResponseItem)
 
 
 /**
- * @summary Create a product
+ * @summary Create a product (business owner or admin)
  */
 export const CreateProductParams = zod.object({
   "businessId": zod.coerce.number()
@@ -997,7 +997,7 @@ export const CreateProductBody = zod.object({
 
 
 /**
- * @summary Update a product
+ * @summary Update a product (business owner or admin)
  */
 export const UpdateProductParams = zod.object({
   "businessId": zod.coerce.number(),
@@ -1055,7 +1055,7 @@ export const UpdateProductResponse = zod.object({
 
 
 /**
- * @summary Delete a product
+ * @summary Delete a product (business owner or admin)
  */
 export const DeleteProductParams = zod.object({
   "businessId": zod.coerce.number(),
@@ -1184,7 +1184,11 @@ export const ListMyOrdersResponse = zod.array(ListMyOrdersResponseItem)
 
 
 /**
- * @summary Get order by id
+ * Guest orders require a signed access token via `?token=` query parameter or
+`X-Order-Access-Token` header. Signed-in customers, business owners, and
+admins may access without a token when authorized.
+
+ * @summary Get order by id (guest token, owner, admin, or linked customer)
  */
 export const GetOrderParams = zod.object({
   "id": zod.coerce.number()
@@ -1396,7 +1400,8 @@ export const RefundOrderResponse = zod.object({
   "priceAdjustment": zod.number()
 })).optional()
 })).optional(),
-  "createdAt": zod.coerce.date().optional()
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
 }),
   "refund": zod.object({
   "id": zod.number(),
@@ -1626,7 +1631,7 @@ export const ListAllOrdersResponse = zod.array(ListAllOrdersResponseItem)
 
 
 /**
- * @summary Create a Stripe checkout session
+ * @summary Create a Stripe checkout session (requires order access)
  */
 export const CreateCheckoutSessionBody = zod.object({
   "orderId": zod.number(),
@@ -1995,7 +2000,7 @@ export const ListEventsResponse = zod.array(ListEventsResponseItem)
 
 
 /**
- * @summary Create an event (admin)
+ * @summary Create an event (admin only)
  */
 export const CreateEventBody = zod.object({
   "title": zod.string(),
@@ -2039,7 +2044,7 @@ export const GetEventResponse = zod.object({
 
 
 /**
- * @summary Update an event (admin)
+ * @summary Update an event (admin only)
  */
 export const UpdateEventParams = zod.object({
   "id": zod.coerce.number()
@@ -2079,7 +2084,7 @@ export const UpdateEventResponse = zod.object({
 
 
 /**
- * @summary Delete an event (admin)
+ * @summary Delete an event (admin only)
  */
 export const DeleteEventParams = zod.object({
   "id": zod.coerce.number()

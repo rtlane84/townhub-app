@@ -117,7 +117,7 @@ If it shows **Not configured**, check that all three env vars are set and the AP
 
 ### Notification logs
 
-1. **Admin → Settings** shows recent notification logs.
+1. **Admin → System Status** shows recent notification logs.
 2. Successful SMS shows channel **`SMS`** and status **`SENT`**. Missing provider shows **`LOGGED`**. Twilio errors show **`FAILED`** with a safe error message (no auth tokens in the log).
 
 ---

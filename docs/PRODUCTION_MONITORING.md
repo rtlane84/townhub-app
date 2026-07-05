@@ -87,13 +87,11 @@ Set in deployment for richer Admin System Status:
 - `BUILD_DATE` — ISO build timestamp
 - `GIT_COMMIT_SHA` — git commit (short or full)
 
-## Recommended future tooling
-
-These are **not** included in the current codebase but are good next steps:
+## Recommended tooling
 
 | Tool | Purpose |
 |------|---------|
-| **Sentry** (or similar) | Error aggregation and stack traces |
+| **Sentry** | Error aggregation — see [SENTRY_SETUP.md](SENTRY_SETUP.md) |
 | **UptimeRobot / Better Stack** | External uptime on `/health` |
 | **Supabase backups / PITR** | Database disaster recovery |
 | **Stripe Dashboard → Webhooks** | Delivery logs and retry inspection |
