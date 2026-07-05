@@ -1,6 +1,7 @@
 import { e2eApiUrl, e2eBusinessSlugOverride } from "./env";
 
 const PAY_AT_PICKUP_MODES = new Set(["BOTH", "PAY_AT_PICKUP_ONLY"]);
+const ONLINE_PAYMENT_MODES = new Set(["BOTH", "ONLINE_ONLY"]);
 
 export type E2EProduct = {
   id: number;
@@ -89,11 +90,27 @@ function pickSimpleProduct(products: E2EProduct[]): E2EProduct | undefined {
   );
 }
 
-async function resolveCheckoutBusinessFromSlug(slug: string): Promise<E2ECheckoutBusiness | null> {
-  const storefront = await fetchJson<StorefrontResponse>(`/api/businesses/${slug}`);
-  const checkout = await fetchJson<CheckoutContext>(`/api/businesses/checkout/${storefront.business.id}`);
+function allowsOnlinePayment(business: BusinessSummary | CheckoutContext): boolean {
+  if (business.paymentMode && ONLINE_PAYMENT_MODES.has(business.paymentMode)) {
+    return true;
+  }
+  return business.payAtPickupEnabled === false;
+}
 
-  if (!storefront.business.active || !allowsPayAtPickup(checkout)) {
+async function resolveCheckoutBusinessFromSlug(
+  slug: string,
+  options: { requireOnlinePayment?: boolean } = {},
+): Promise<E2ECheckoutBusiness | null> {
+  const storefront = await fetchJson<StorefrontResponse>(`/api/businesses/${slug}`);
+  const checkout = await fetchJson<CheckoutContext & { stripeConnectedAccountId?: string | null }>(
+    `/api/businesses/checkout/${storefront.business.id}`,
+  );
+
+  if (!storefront.business.active) return null;
+  if (options.requireOnlinePayment) {
+    if (!allowsOnlinePayment(checkout)) return null;
+    if (!checkout.stripeConnectedAccountId) return null;
+  } else if (!allowsPayAtPickup(checkout)) {
     return null;
   }
 
@@ -135,6 +152,78 @@ export async function findCheckoutBusiness(): Promise<E2ECheckoutBusiness> {
   throw new Error(
     "No checkout-ready business found. Create an active business with pay-at-pickup enabled, " +
       "at least one available product without required modifiers, or set E2E_BUSINESS_SLUG.",
+  );
+}
+
+export async function findStripeCheckoutBusiness(): Promise<E2ECheckoutBusiness> {
+  const overrideSlug = e2eBusinessSlugOverride();
+  if (overrideSlug) {
+    const business = await resolveCheckoutBusinessFromSlug(overrideSlug, {
+      requireOnlinePayment: true,
+    });
+    if (!business) {
+      throw new Error(
+        `E2E_BUSINESS_SLUG=${overrideSlug} is not Stripe-checkout-ready (needs online payment + Stripe Connect + simple product).`,
+      );
+    }
+    return business;
+  }
+
+  const businesses = await fetchJson<BusinessSummary[]>("/api/businesses");
+
+  for (const summary of businesses) {
+    if (!summary.active) continue;
+    const business = await resolveCheckoutBusinessFromSlug(summary.slug, {
+      requireOnlinePayment: true,
+    });
+    if (business) return business;
+  }
+
+  throw new Error(
+    "No Stripe-checkout-ready business found. Connect Stripe for a business with online payments, " +
+      "or set E2E_BUSINESS_SLUG.",
+  );
+}
+
+export async function fetchOrderById(
+  orderId: number,
+  accessToken?: string | null,
+): Promise<{
+  id: number;
+  paymentStatus?: string;
+  refundStatus?: string;
+  status?: string;
+  orderNumber?: string;
+}> {
+  const tokenQuery = accessToken ? `?token=${encodeURIComponent(accessToken)}` : "";
+  return fetchJson(`/api/orders/${orderId}${tokenQuery}`);
+}
+
+export async function findAppointmentBusiness(): Promise<E2ECheckoutBusiness & { storefrontMode: string }> {
+  const businesses = await fetchJson<BusinessSummary[]>("/api/businesses");
+
+  for (const summary of businesses) {
+    if (!summary.active) continue;
+    const storefront = await fetchJson<StorefrontResponse>(`/api/businesses/${summary.slug}`);
+    const mode = storefront.business.storefrontMode ?? "ORDERING";
+    if (mode !== "APPOINTMENT") continue;
+
+    const product = pickSimpleProduct(storefront.products);
+    if (!product) continue;
+
+    return {
+      id: storefront.business.id,
+      slug: storefront.business.slug,
+      name: storefront.business.name,
+      product,
+      taxEnabled: false,
+      taxRatePercent: null,
+      storefrontMode: mode,
+    };
+  }
+
+  throw new Error(
+    "No appointment-mode business found. Set a business storefront mode to Appointments in owner settings.",
   );
 }
 

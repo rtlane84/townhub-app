@@ -54,9 +54,10 @@ Tests fail fast in global setup if the API is not reachable.
 | `E2E_BASE_URL`      | `http://localhost:23032` | Playwright `baseURL`                         |
 | `E2E_API_URL`       | `http://localhost:8080`  | Direct API calls in helpers                  |
 | `E2E_BUSINESS_SLUG` | *(auto-discover)*        | Pin a specific storefront for checkout tests |
+| `E2E_STRIPE_CHECKOUT` | *(unset)*              | Set to `1` to run Stripe card checkout + refund workflows |
 
 
-All other vars come from the root `.env` used by the running API and frontend (Clerk, `SESSION_SECRET`, `DATABASE_URL`, etc.).
+All other vars come from the root `.env` used by the running API and frontend (Clerk, `SESSION_SECRET`, `DATABASE_URL`, Stripe keys, etc.).
 
 ### Test data requirements
 
@@ -77,6 +78,7 @@ tests/e2e/
   customer/        # Guest cart and checkout
   owner/           # Business Hub (Clerk auth)
   admin/           # Admin Hub (Clerk auth)
+  workflows/       # End-to-end production journeys
   helpers/         # API, navigation, cart, assertions
   fixtures/        # Shared Playwright fixtures + auth storage
 ```
@@ -102,6 +104,23 @@ tests/e2e/
 - Operations Center (system status)
 - Business Applications
 
+### Production workflows (`tests/e2e/workflows/`)
+
+Workflow specs are grouped by journey. They create their own data (unique names per run), poll API state instead of using fixed sleeps, and skip cleanly when prerequisites are missing.
+
+| Workflow | Auth needed | Notes |
+| -------- | ----------- | ----- |
+| Business application | Applicant + admin (API verify) | Clerk user with **no pending application** |
+| Admin approval | Admin + applicant | Approves pending app; applicant reaches Business Hub |
+| Owner onboarding | Owner | Creates category + product; verifies storefront |
+| Stripe checkout | Owner + `E2E_STRIPE_CHECKOUT=1` | Owner must own a Stripe-connected business |
+| Appointment | Owner | Owner must have a business in **Appointments** storefront mode |
+| Refund | Owner + `E2E_STRIPE_CHECKOUT=1` | Full refund on a paid Stripe order |
+| Multi-business switching | Owner | Skips when account has fewer than two businesses |
+| Feature gating | Admin | Toggles `online_ordering` on the checkout business plan (restored after) |
+
+Smoke tests in `smoke/`, `customer/`, `owner/`, and `admin/` are unchanged.
+
 ## Authentication tests
 
 Clerk sign-in is **not automated** in the default smoke run. Owner and admin specs use Playwright [storage state](https://playwright.dev/docs/auth) and **skip with instructions** when auth files are missing.
@@ -113,6 +132,15 @@ Clerk sign-in is **not automated** in the default smoke run. Owner and admin spe
 ```bash
 mkdir -p tests/e2e/fixtures/.auth
 ```
+
+1. **Applicant session** — sign in as a Clerk user who does **not** already have a pending business application (can be a fresh account):
+
+```bash
+pnpm exec playwright codegen http://localhost:23032/sign-in \
+  --save-storage=tests/e2e/fixtures/.auth/applicant.json
+```
+
+Complete sign-in, visit `/list-your-business`, then close codegen.
 
 1. **Owner session** — sign in as a user who owns at least one active business:
 
@@ -136,9 +164,13 @@ Auth JSON files are gitignored. Re-generate after Clerk key changes or session e
 
 ## Stripe checkout
 
-**Not covered.** Real Stripe Checkout requires hosted payment pages and webhook timing that are brittle in local E2E. The suite validates **pay-at-pickup** (`paymentMethod: IN_PERSON`) only.
+Stripe card checkout and refund workflows run only when `E2E_STRIPE_CHECKOUT=1` and the owner account has a business with:
 
-Future work: mock Stripe or use Stripe test-mode with a dedicated fixture business.
+- Online payments enabled
+- Stripe Connect connected (test mode)
+- Webhook forwarding so orders reach `paymentStatus: PAID` (e.g. Stripe CLI `stripe listen --forward-to localhost:8080/api/stripe/webhook`)
+
+Without that, pay-at-pickup smoke tests still run; Stripe workflow specs skip with a clear message.
 
 ## Debugging failures
 
@@ -208,11 +240,8 @@ Add Clerk auth secrets and storage-state upload only when you enable owner/admin
 
 ## Intentionally not covered yet
 
-- Stripe card checkout and webhooks
-- Signed-in customer `/my-orders` flows
-- Business owner CRUD (create product, change order status)
-- Admin approve/reject applications
-- File uploads, kitchen display, subscriptions
+- Signed-in customer `/my-orders` flows (guest token confirmation is covered)
+- Email/SMS notification delivery (appointment status emails, etc.)
+- File uploads, kitchen display, subscriptions billing UI
 - Mobile viewports (desktop Chromium only for now)
-- Email/SMS notification delivery
 

@@ -29,6 +29,19 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: [
+        "**/workflows/business-application.spec.ts",
+        "**/workflows/admin-approval.spec.ts",
+      ],
+    },
+    {
+      name: "chromium-applicant-workflows",
+      testMatch: [
+        "**/workflows/business-application.spec.ts",
+        "**/workflows/admin-approval.spec.ts",
+      ],
+      fullyParallel: false,
+      workers: 1,
     },
   ],
   metadata: {

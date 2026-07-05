@@ -3,6 +3,27 @@ import path from "node:path";
 
 const AUTH_DIR = path.join(process.cwd(), "tests/e2e/fixtures/.auth");
 
+export function applicantAuthStatePath(): string {
+  return path.join(AUTH_DIR, "applicant.json");
+}
+
+export function hasApplicantAuthState(): boolean {
+  return fs.existsSync(applicantAuthStatePath());
+}
+
+export const APPLICANT_AUTH_SKIP_REASON =
+  "Applicant auth storage state missing. Generate tests/e2e/fixtures/.auth/applicant.json (Clerk user with no approved business).";
+
+export const APPLICANT_PENDING_SKIP_REASON =
+  "Applicant already has a pending application. Approve or reject it in admin, or use a fresh applicant account.";
+
+export class ApplicantPendingApplicationError extends Error {
+  constructor() {
+    super(APPLICANT_PENDING_SKIP_REASON);
+    this.name = "ApplicantPendingApplicationError";
+  }
+}
+
 export function ownerAuthStatePath(): string {
   return path.join(AUTH_DIR, "owner.json");
 }

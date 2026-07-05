@@ -15,3 +15,7 @@ export function uniqueE2EEmail(prefix = "e2e-guest"): string {
   const stamp = Date.now();
   return `${prefix}+${stamp}@example.com`;
 }
+
+export function uniqueE2ELabel(prefix = "E2E"): string {
+  return `${prefix} ${Date.now()}`;
+}
