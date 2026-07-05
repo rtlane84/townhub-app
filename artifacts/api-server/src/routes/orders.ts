@@ -27,6 +27,7 @@ import {
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession, stripe, isMockMode, retrieveOpenStripeCheckoutSession } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
+import { respondIfUserDisabled } from "../lib/user-account-status";
 import { recordStripeWebhookReceived } from "../lib/system-runtime-state";
 import { handleStripeWebhookEvent, verifyStripeWebhookSignature } from "../lib/stripe-webhook";
 import { validatePaymentMethodForBusiness, parseOrderPaymentMethod } from "../lib/payment-mode";
@@ -245,6 +246,17 @@ router.post("/orders", async (req, res): Promise<void> => {
   }
 
   const { userId: customerUserId } = getAuth(req);
+
+  if (customerUserId) {
+    const [customer] = await db
+      .select({ status: usersTable.status })
+      .from(usersTable)
+      .where(eq(usersTable.id, customerUserId));
+
+    if (customer && respondIfUserDisabled(customer.status, res)) {
+      return;
+    }
+  }
 
   const products = await db
     .select()

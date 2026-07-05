@@ -18,7 +18,33 @@ Because the Replit preview runs inside an iframe (blocking `SameSite=Lax` cookie
 | `BUSINESS_OWNER` | Manages one or more businesses |
 | `ADMIN` | Platform operator |
 
-First-run admin promotion: `POST /api/admin/bootstrap` (works only while zero admins exist). When `BOOTSTRAP_TOKEN` is set, the request must include that token (body `token` or header `X-Bootstrap-Token`). Ongoing role changes: Admin → Users.
+First-run admin promotion: `POST /api/admin/bootstrap` (works only while zero admins exist). When `BOOTSTRAP_TOKEN` is set, the request must include that token (body `token` or header `X-Bootstrap-Token`). Ongoing role changes and account status updates: Admin → Users.
+
+### User account status
+
+TownHub stores an app-level account status on each user:
+
+| Status | Description |
+|--------|-------------|
+| `ACTIVE` | Default. Full access based on role. |
+| `DISABLED` | Signed-in access blocked; historical data preserved. |
+
+**Disable, don't delete:** Admins disable users instead of deleting them. Disabled users remain in the database and stay linked to past orders, businesses, applications, notifications, and audit history. An admin can re-enable the account later.
+
+**Clerk identity is separate:** Disabling a user is app-level only. TownHub does not delete the Clerk user. If Clerk identity removal is ever required, that is a separate manual action in Clerk (or your identity provider).
+
+**Safeguards:**
+
+- Admins must confirm role changes and disable/re-enable actions in the UI.
+- An admin cannot disable their own account.
+- An admin cannot remove their own `ADMIN` role.
+- The last active admin cannot be disabled or demoted to a non-admin role.
+
+**Disabled user access:**
+
+- Blocked from Admin dashboard, Business Hub, business mutations, and authenticated customer orders.
+- `GET /api/auth/me` still returns profile (including `status`) so the frontend can show an account-disabled message.
+- Guest checkout continues to work without a user account.
 
 ---
 
@@ -26,8 +52,8 @@ First-run admin promotion: `POST /api/admin/bootstrap` (works only while zero ad
 
 | Middleware | Behavior |
 |------------|----------|
-| `requireAuth` | Valid Clerk session required → 401 |
-| `requireAdmin` | Session + `users.role === ADMIN` → 401 / 403 |
+| `requireAuth` | Valid Clerk session required → 401; disabled users → 403 |
+| `requireAdmin` | Session + active `users.role === ADMIN` → 401 / 403 |
 | `requireBusinessCatalogAccess` | Auth + business ownership or admin for catalog mutations |
 
 `router.use("/admin", requireAdmin)` in `routes/index.ts` guards almost all `/api/admin/*` paths. Exceptions (intentionally public):
@@ -145,6 +171,8 @@ Configure preview/staging frontends via `CORS_ALLOWED_ORIGINS` — see `.env.exa
 | Endpoint | Rule |
 |----------|------|
 | `/api/admin/*` (except theme + bootstrap exceptions) | `requireAdmin` |
+| `PATCH /api/admin/users/:id/role` | Admin safeguards: self-demotion + last active admin |
+| `PATCH /api/admin/users/:id/status` | Admin safeguards: self-disable + last active admin |
 | `POST /api/businesses/register` | Direct business creation |
 | `POST /api/businesses/manage` | Create business |
 | `DELETE /api/businesses/manage/:id` | Archive business |

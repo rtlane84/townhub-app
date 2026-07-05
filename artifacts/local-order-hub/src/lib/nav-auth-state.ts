@@ -3,6 +3,7 @@ export type NavAuthInput = {
   isSignedIn: boolean;
   meLoading: boolean;
   role?: string | null;
+  status?: string | null;
   activeBusinessCount?: number;
 };
 
@@ -17,6 +18,7 @@ export type NavAuthState = {
   showMyOrdersNav: boolean;
   isCustomer: boolean;
   isLoggedOut: boolean;
+  isAccountDisabled: boolean;
 };
 
 export function resolveNavAuthState(input: NavAuthInput): NavAuthState {
@@ -34,6 +36,25 @@ export function resolveNavAuthState(input: NavAuthInput): NavAuthState {
       showMyOrdersNav: false,
       isCustomer: false,
       isLoggedOut: false,
+      isAccountDisabled: false,
+    };
+  }
+
+  const isAccountDisabled = input.isSignedIn && input.status === "DISABLED";
+
+  if (isAccountDisabled) {
+    return {
+      authResolved: true,
+      showPublicNavOnly: true,
+      isAdmin: false,
+      isBusinessOwner: false,
+      hasActiveBusinesses: false,
+      showBusinessHubNav: false,
+      showListYourBusinessNav: false,
+      showMyOrdersNav: false,
+      isCustomer: false,
+      isLoggedOut: false,
+      isAccountDisabled: true,
     };
   }
 
@@ -57,5 +78,6 @@ export function resolveNavAuthState(input: NavAuthInput): NavAuthState {
     showMyOrdersNav,
     isCustomer: input.isSignedIn && !isAdmin && !isBusinessOwner,
     isLoggedOut: !input.isSignedIn,
+    isAccountDisabled: false,
   };
 }

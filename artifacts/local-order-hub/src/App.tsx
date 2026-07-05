@@ -60,6 +60,7 @@ const AdminSystemStatus = lazy(() => import("@/pages/dashboard/admin/system-stat
 import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
 import { BusinessFeatureAccessProvider } from "@/hooks/business-feature-access";
 import { BusinessHubGate } from "@/components/business-hub-gate";
+import { AccountDisabledGate } from "@/components/account-disabled-gate";
 import { SentryErrorBoundary } from "@/components/sentry-error-boundary";
 import { SentryContextBridge } from "@/components/sentry-context-bridge";
 
@@ -218,16 +219,18 @@ function BusinessDashboardRoute({
       {(params) => (
         <>
           <Show when="signed-in">
-            <SelectedBusinessProvider>
-              <BusinessFeatureAccessProvider>
-                <BusinessHubGate>
-                  <LazyRoutePage
-                    component={Component}
-                    params={params as Record<string, string>}
-                  />
-                </BusinessHubGate>
-              </BusinessFeatureAccessProvider>
-            </SelectedBusinessProvider>
+            <AccountDisabledGate>
+              <SelectedBusinessProvider>
+                <BusinessFeatureAccessProvider>
+                  <BusinessHubGate>
+                    <LazyRoutePage
+                      component={Component}
+                      params={params as Record<string, string>}
+                    />
+                  </BusinessHubGate>
+                </BusinessFeatureAccessProvider>
+              </SelectedBusinessProvider>
+            </AccountDisabledGate>
           </Show>
           <Show when="signed-out">
             <Redirect to="/sign-in" />
@@ -250,7 +253,9 @@ function ProtectedRoute({
       {(params) => (
         <>
           <Show when="signed-in">
-            <LazyRoutePage component={Component} params={params as Record<string, string>} />
+            <AccountDisabledGate>
+              <LazyRoutePage component={Component} params={params as Record<string, string>} />
+            </AccountDisabledGate>
           </Show>
           <Show when="signed-out">
             <Redirect to="/sign-in" />

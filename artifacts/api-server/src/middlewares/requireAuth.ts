@@ -2,6 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import { getAuth } from "@clerk/express";
 import { usersTable } from "@workspace/db";
 import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
+import { respondIfUserDisabled } from "../lib/user-account-status";
 
 export type UserRole = "CUSTOMER" | "BUSINESS_OWNER" | "ADMIN";
 
@@ -41,6 +42,10 @@ export async function requireAuth(
       return;
     }
     throw err;
+  }
+
+  if (respondIfUserDisabled(req.dbUser.status, res)) {
+    return;
   }
 
   next();

@@ -1156,6 +1156,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
 
+  /admin/users/{id}/status:
+    patch:
+      operationId: updateUserStatus
+      tags: [admin]
+      summary: Disable or re-enable a user (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserStatusUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
   /admin/businesses/{id}/assign-owner:
     patch:
       operationId: assignBusinessOwner
@@ -2341,6 +2366,12 @@ components:
         - BUSINESS_OWNER
         - ADMIN
 
+    UserStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - DISABLED
+
     PaymentMode:
       type: string
       enum:
@@ -2427,7 +2458,7 @@ components:
 
     UserProfile:
       type: object
-      required: [id, email, role]
+      required: [id, email, role, status]
       properties:
         id:
           type: string
@@ -2437,6 +2468,8 @@ components:
           type: ["string", "null"]
         role:
           $ref: "#/components/schemas/UserRole"
+        status:
+          $ref: "#/components/schemas/UserStatus"
         businessId:
           type: ["integer", "null"]
           description: Selected owned business id for dashboard context
@@ -2448,6 +2481,13 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    UserStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/UserStatus"
 
     OwnedBusinessSummary:
       type: object

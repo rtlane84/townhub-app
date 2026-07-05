@@ -13,6 +13,7 @@ import {
 import { resolveSelectedBusinessId } from "../lib/business-selection";
 import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
 import { isAdminBootstrapComplete } from "../lib/admin-bootstrap";
+import { respondIfUserDisabled } from "../lib/user-account-status";
 
 const router: IRouter = Router();
 
@@ -59,6 +60,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     email: user.email,
     name: user.name,
     role: user.role,
+    status: user.status,
     businessId: selectedId,
     businessIds: ownedIds,
     createdAt: user.createdAt,
@@ -73,6 +75,20 @@ router.get("/auth/me/businesses", async (req, res): Promise<void> => {
     return;
   }
 
+  const [user] = await db
+    .select({ status: usersTable.status })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  if (respondIfUserDisabled(user.status, res)) {
+    return;
+  }
+
   const businesses = await listOwnedBusinesses(userId);
   res.set("Cache-Control", "no-store");
   res.json(businesses);
@@ -83,6 +99,20 @@ router.get("/auth/me/business", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [user] = await db
+    .select({ status: usersTable.status })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  if (respondIfUserDisabled(user.status, res)) {
     return;
   }
 

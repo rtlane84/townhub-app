@@ -97,6 +97,7 @@ import type {
   UploadMediaAssetParams,
   UserProfile,
   UserRoleUpdate,
+  UserStatusUpdate,
   WeatherForecast
 } from './api.schemas';
 
@@ -3806,6 +3807,78 @@ export const useUpdateUserRole = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateUserRoleMutationOptions(options));
+    }
+
+export const getUpdateUserStatusUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/users/${id}/status`
+}
+
+/**
+ * @summary Disable or re-enable a user (admin)
+ */
+export const updateUserStatus = async (id: string,
+    userStatusUpdate: UserStatusUpdate, options?: RequestInit): Promise<UserProfile> => {
+
+  return customFetch<UserProfile>(getUpdateUserStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      userStatusUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateUserStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserStatus>>, TError,{id: string;data: BodyType<UserStatusUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateUserStatus>>, TError,{id: string;data: BodyType<UserStatusUpdate>}, TContext> => {
+
+const mutationKey = ['updateUserStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateUserStatus>>, {id: string;data: BodyType<UserStatusUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateUserStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateUserStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateUserStatus>>>
+    export type UpdateUserStatusMutationBody = BodyType<UserStatusUpdate>
+    export type UpdateUserStatusMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Disable or re-enable a user (admin)
+ */
+export const useUpdateUserStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUserStatus>>, TError,{id: string;data: BodyType<UserStatusUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateUserStatus>>,
+        TError,
+        {id: string;data: BodyType<UserStatusUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateUserStatusMutationOptions(options));
     }
 
 export const getAssignBusinessOwnerUrl = (id: number,) => {

@@ -185,6 +185,14 @@ export const UserRole = {
   ADMIN: 'ADMIN',
 } as const;
 
+export type UserStatus = typeof UserStatus[keyof typeof UserStatus];
+
+
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  DISABLED: 'DISABLED',
+} as const;
+
 export type PaymentMode = typeof PaymentMode[keyof typeof PaymentMode];
 
 
@@ -279,6 +287,7 @@ export interface UserProfile {
   /** @nullable */
   name?: string | null;
   role: UserRole;
+  status: UserStatus;
   /**
      * Selected owned business id for dashboard context
      * @nullable
@@ -287,6 +296,10 @@ export interface UserProfile {
   /** All business ids owned by this user */
   businessIds?: number[];
   createdAt?: string;
+}
+
+export interface UserStatusUpdate {
+  status: UserStatus;
 }
 
 export interface OwnedBusinessSummary {

@@ -1,9 +1,12 @@
 import { Router, type IRouter } from "express";
+import { getAuth } from "@clerk/express";
 import { db, usersTable, businessesTable } from "@workspace/db";
-import { eq, count } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   UpdateUserRoleParams,
   UpdateUserRoleBody,
+  UpdateUserStatusParams,
+  UpdateUserStatusBody,
   AssignBusinessOwnerParams,
   AssignBusinessOwnerBody,
   GetAdminSystemHealthResponse,
@@ -11,11 +14,36 @@ import {
 import { serializeBusiness } from "./businesses";
 import { buildSystemHealthReport, buildFallbackHealthReport } from "../lib/system-health";
 import { logOperationalFailure } from "../lib/operational-log";
+import { countActiveAdmins } from "../lib/user-admin-queries";
+import {
+  validateRoleChange,
+  validateUserStatusChange,
+  type UserRole,
+  type UserStatus,
+} from "../lib/user-admin-safeguards";
+import { respondIfUserDisabled } from "../lib/user-account-status";
 
 const router: IRouter = Router();
 
 function parseId(raw: string | string[]): number {
   return parseInt(Array.isArray(raw) ? raw[0] : raw, 10);
+}
+
+function serializeAdminUser(
+  user: typeof usersTable.$inferSelect,
+  businessId: number | null,
+  businessIds: number[] = [],
+) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    status: user.status,
+    businessId,
+    businessIds,
+    createdAt: user.createdAt,
+  };
 }
 
 // GET /api/admin/system/health
@@ -62,20 +90,20 @@ router.get("/admin/users", async (req, res): Promise<void> => {
   }
 
   res.json(
-    users.map((u) => ({
-      id: u.id,
-      email: u.email,
-      name: u.name,
-      role: u.role,
-      businessId: bizIdsByOwner.get(u.id)?.[0] ?? null,
-      businessIds: bizIdsByOwner.get(u.id) ?? [],
-      createdAt: u.createdAt,
-    })),
+    users.map((u) =>
+      serializeAdminUser(u, bizIdsByOwner.get(u.id)?.[0] ?? null, bizIdsByOwner.get(u.id) ?? []),
+    ),
   );
 });
 
 // PATCH /api/admin/users/:id/role
 router.patch("/admin/users/:id/role", async (req, res): Promise<void> => {
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = UpdateUserRoleParams.safeParse({ id: raw });
   if (!params.success) {
@@ -90,7 +118,7 @@ router.patch("/admin/users/:id/role", async (req, res): Promise<void> => {
   }
 
   const [existing] = await db
-    .select({ role: usersTable.role })
+    .select()
     .from(usersTable)
     .where(eq(usersTable.id, params.data.id));
 
@@ -99,15 +127,17 @@ router.patch("/admin/users/:id/role", async (req, res): Promise<void> => {
     return;
   }
 
-  if (existing.role === "ADMIN" && parsed.data.role !== "ADMIN") {
-    const [{ value: adminCount }] = await db
-      .select({ value: count() })
-      .from(usersTable)
-      .where(eq(usersTable.role, "ADMIN"));
-    if (Number(adminCount) <= 1) {
-      res.status(400).json({ error: "Cannot demote the last platform admin." });
-      return;
-    }
+  const activeAdminCount = await countActiveAdmins();
+  const roleValidation = validateRoleChange({
+    actorUserId,
+    targetUserId: existing.id,
+    targetCurrentRole: existing.role as UserRole,
+    newRole: parsed.data.role as UserRole,
+    activeAdminCount,
+  });
+  if (!roleValidation.ok) {
+    res.status(400).json({ error: roleValidation.error });
+    return;
   }
 
   const [user] = await db
@@ -126,14 +156,77 @@ router.patch("/admin/users/:id/role", async (req, res): Promise<void> => {
     .from(businessesTable)
     .where(eq(businessesTable.ownerId, user.id));
 
-  res.json({
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    businessId: business?.id ?? null,
-    createdAt: user.createdAt,
+  res.json(serializeAdminUser(user, business?.id ?? null));
+});
+
+// PATCH /api/admin/users/:id/status
+router.patch("/admin/users/:id/status", async (req, res): Promise<void> => {
+  const { userId: actorUserId } = getAuth(req);
+  if (!actorUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = UpdateUserStatusParams.safeParse({ id: raw });
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const parsed = UpdateUserStatusBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, params.data.id));
+
+  if (!existing) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  const activeAdminCount = await countActiveAdmins();
+  const statusValidation = validateUserStatusChange({
+    actorUserId,
+    targetUserId: existing.id,
+    targetRole: existing.role as UserRole,
+    targetStatus: existing.status as UserStatus,
+    newStatus: parsed.data.status as UserStatus,
+    activeAdminCount,
   });
+  if (!statusValidation.ok) {
+    res.status(400).json({ error: statusValidation.error });
+    return;
+  }
+
+  const [user] = await db
+    .update(usersTable)
+    .set({ status: parsed.data.status as never })
+    .where(eq(usersTable.id, params.data.id))
+    .returning();
+
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  const businesses = await db
+    .select({ id: businessesTable.id })
+    .from(businessesTable)
+    .where(eq(businessesTable.ownerId, user.id));
+
+  res.json(
+    serializeAdminUser(
+      user,
+      businesses[0]?.id ?? null,
+      businesses.map((business) => business.id),
+    ),
+  );
 });
 
 // PATCH /api/admin/businesses/:id/assign-owner
@@ -155,12 +248,16 @@ router.patch(
     }
 
     const [owner] = await db
-      .select({ id: usersTable.id })
+      .select()
       .from(usersTable)
       .where(eq(usersTable.id, parsed.data.ownerId));
 
     if (!owner) {
       res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (respondIfUserDisabled(owner.status, res)) {
       return;
     }
 

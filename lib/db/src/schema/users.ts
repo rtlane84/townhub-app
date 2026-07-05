@@ -8,11 +8,14 @@ export const userRoleEnum = pgEnum("user_role", [
   "ADMIN",
 ]);
 
+export const userStatusEnum = pgEnum("user_status", ["ACTIVE", "DISABLED"]);
+
 export const usersTable = pgTable("users", {
   id: text("id").primaryKey(), // Clerk user ID
   email: text("email").notNull().unique(),
   name: text("name"),
   role: userRoleEnum("role").notNull().default("CUSTOMER"),
+  status: userStatusEnum("status").notNull().default("ACTIVE"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

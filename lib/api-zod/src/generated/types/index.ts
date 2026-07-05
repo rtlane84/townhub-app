@@ -134,6 +134,8 @@ export * from './uploadMediaAssetParams';
 export * from './userProfile';
 export * from './userRole';
 export * from './userRoleUpdate';
+export * from './userStatus';
+export * from './userStatusUpdate';
 export * from './weatherCurrent';
 export * from './weatherDaily';
 export * from './weatherForecast';

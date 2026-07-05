@@ -33,6 +33,7 @@ export function useNavAuthState() {
     isSignedIn: !!isSignedIn,
     meLoading,
     role: me?.role,
+    status: me?.status,
     activeBusinessCount: ownedBusinesses.length,
   });
 }

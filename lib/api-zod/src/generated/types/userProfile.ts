@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { UserRole } from './userRole';
+import type { UserStatus } from './userStatus';
 
 export interface UserProfile {
   id: string;
@@ -13,6 +14,7 @@ export interface UserProfile {
   /** @nullable */
   name?: string | null;
   role: UserRole;
+  status: UserStatus;
   /**
      * Selected owned business id for dashboard context
      * @nullable

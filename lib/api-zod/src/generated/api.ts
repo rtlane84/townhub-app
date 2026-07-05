@@ -28,6 +28,7 @@ export const GetMeResponse = zod.object({
   "email": zod.string(),
   "name": zod.string().nullish(),
   "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN']),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
   "businessId": zod.number().nullish().describe('Selected owned business id for dashboard context'),
   "businessIds": zod.array(zod.number()).optional().describe('All business ids owned by this user'),
   "createdAt": zod.coerce.date().optional()
@@ -1876,6 +1877,7 @@ export const ListUsersResponseItem = zod.object({
   "email": zod.string(),
   "name": zod.string().nullish(),
   "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN']),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
   "businessId": zod.number().nullish().describe('Selected owned business id for dashboard context'),
   "businessIds": zod.array(zod.number()).optional().describe('All business ids owned by this user'),
   "createdAt": zod.coerce.date().optional()
@@ -1899,6 +1901,30 @@ export const UpdateUserRoleResponse = zod.object({
   "email": zod.string(),
   "name": zod.string().nullish(),
   "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN']),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
+  "businessId": zod.number().nullish().describe('Selected owned business id for dashboard context'),
+  "businessIds": zod.array(zod.number()).optional().describe('All business ids owned by this user'),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Disable or re-enable a user (admin)
+ */
+export const UpdateUserStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const UpdateUserStatusBody = zod.object({
+  "status": zod.enum(['ACTIVE', 'DISABLED'])
+})
+
+export const UpdateUserStatusResponse = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN']),
+  "status": zod.enum(['ACTIVE', 'DISABLED']),
   "businessId": zod.number().nullish().describe('Selected owned business id for dashboard context'),
   "businessIds": zod.array(zod.number()).optional().describe('All business ids owned by this user'),
   "createdAt": zod.coerce.date().optional()

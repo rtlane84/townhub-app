@@ -93,4 +93,20 @@ describe("resolveNavAuthState", () => {
     assert.equal(state.showBusinessHubNav, false);
     assert.equal(state.showListYourBusinessNav, false);
   });
+
+  it("hides protected nav for disabled accounts", () => {
+    const state = resolveNavAuthState({
+      clerkLoaded: true,
+      isSignedIn: true,
+      meLoading: false,
+      role: "ADMIN",
+      status: "DISABLED",
+      activeBusinessCount: 1,
+    });
+    assert.equal(state.isAccountDisabled, true);
+    assert.equal(state.showPublicNavOnly, true);
+    assert.equal(state.isAdmin, false);
+    assert.equal(state.showBusinessHubNav, false);
+    assert.equal(state.showMyOrdersNav, false);
+  });
 });
