@@ -104,7 +104,13 @@ export function MediaLibraryPicker({
                   data-testid={`media-asset-${asset.id}`}
                 >
                   {src ? (
-                    <img src={src} alt={asset.originalFilename} className="w-full h-full object-cover" />
+                    <img
+                      src={src}
+                      alt={asset.originalFilename}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                       <ImageIcon className="h-6 w-6" />

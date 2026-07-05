@@ -6,6 +6,7 @@ import {
   numeric,
   timestamp,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -65,7 +66,23 @@ export const ordersTable = pgTable("orders", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => [
+  // Business order lists (kitchen active queue, status filter) ORDER BY created_at DESC
+  index("orders_business_status_created_at_idx").on(
+    table.businessId,
+    table.status,
+    table.createdAt,
+  ),
+  // Business order history and summary aggregates ORDER BY created_at DESC
+  index("orders_business_created_at_idx").on(table.businessId, table.createdAt),
+  // Customer my-orders list ORDER BY created_at DESC
+  index("orders_customer_user_created_at_idx").on(
+    table.customerUserId,
+    table.createdAt,
+  ),
+  // Admin global order list ORDER BY created_at DESC
+  index("orders_created_at_idx").on(table.createdAt),
+]);
 
 export const orderItemsTable = pgTable("order_items", {
   id: serial("id").primaryKey(),
@@ -75,7 +92,10 @@ export const orderItemsTable = pgTable("order_items", {
   quantity: integer("quantity").notNull(),
   unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
   subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
-});
+}, (table) => [
+  // Batched order hydration: WHERE order_id IN (...)
+  index("order_items_order_id_idx").on(table.orderId),
+]);
 
 /** Snapshot of selected options at order time. */
 export const orderItemOptionsTable = pgTable("order_item_options", {
@@ -85,7 +105,10 @@ export const orderItemOptionsTable = pgTable("order_item_options", {
   groupName: text("group_name").notNull(),
   optionName: text("option_name").notNull(),
   priceAdjustment: numeric("price_adjustment", { precision: 10, scale: 2 }).notNull().default("0"),
-});
+}, (table) => [
+  // Batched option hydration: WHERE order_item_id IN (...)
+  index("order_item_options_order_item_id_idx").on(table.orderItemId),
+]);
 
 export const insertOrderSchema = createInsertSchema(ordersTable).omit({
   id: true,

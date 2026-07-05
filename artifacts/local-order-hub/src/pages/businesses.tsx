@@ -15,13 +15,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BusinessListingCardMedia } from "@/components/business-logo-badge";
 import { BusinessTags } from "@/components/business-tags";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 const LISTING_CARD_CLASS =
   "h-full hover-elevate cursor-pointer border-border/60 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
 
 export default function Businesses() {
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [selectedType, setSelectedType] = useState<string>("ALL");
+  const search = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
 
   const { data: businesses, isLoading } = useListBusinesses({
     search: search || undefined,
@@ -45,8 +49,8 @@ export default function Businesses() {
           <Input 
             placeholder="Search businesses..." 
             className="pl-9 h-11"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
         <div className="flex overflow-x-auto pb-2 -mb-2 gap-2 hide-scrollbar">
@@ -80,7 +84,7 @@ export default function Businesses() {
           <p className="text-muted-foreground">Try adjusting your filters or search term.</p>
           <Button 
             variant="link" 
-            onClick={() => { setSearch(""); setSelectedType("ALL"); }}
+            onClick={() => { setSearchInput(""); setSelectedType("ALL"); }}
             className="mt-2"
           >
             Clear all filters

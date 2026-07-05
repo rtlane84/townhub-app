@@ -25,7 +25,7 @@ function order(overrides: Partial<Order> & Pick<Order, "id" | "status">): Order 
     customerName: "Alex Rivera",
     customerEmail: "alex@example.com",
     customerPhone: "+15555550100",
-    orderNumber: "LOH-1001",
+    orderNumber: "TH-1001",
     total: 12,
     createdAt: "2026-06-24T12:00:00.000Z",
     ...overrides,
@@ -115,7 +115,7 @@ describe("business-order-filters", () => {
     const orders = [
       order({ id: 1, status: "NEW", customerName: "Alex Rivera" }),
       order({ id: 2, status: "COMPLETED", customerName: "Jamie Lee", createdAt: "2026-06-24T11:00:00.000Z" }),
-      order({ id: 3, status: "NEW", customerName: "Jamie Lee", orderNumber: "LOH-9999" }),
+      order({ id: 3, status: "NEW", customerName: "Jamie Lee", orderNumber: "TH-9999" }),
     ];
 
     const searched = applyBusinessOrderListFilters(orders, {

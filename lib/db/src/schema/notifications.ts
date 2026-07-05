@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, index } from "drizzle-orm/pg-core";
 
 export const notificationLogsTable = pgTable("notification_logs", {
   id: serial("id").primaryKey(),
@@ -16,6 +16,14 @@ export const notificationLogsTable = pgTable("notification_logs", {
   status: text("status").notNull().default("LOGGED"),
   errorMessage: text("error_message"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [
+  // Admin notification log viewer ORDER BY created_at DESC (+ optional filters)
+  index("notification_logs_created_at_idx").on(table.createdAt),
+  // Subscription dedup lookup: WHERE business_id = ? AND event_type = ?
+  index("notification_logs_business_event_type_idx").on(
+    table.businessId,
+    table.eventType,
+  ),
+]);
 
 export type NotificationLog = typeof notificationLogsTable.$inferSelect;

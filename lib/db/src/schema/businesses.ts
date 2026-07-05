@@ -8,6 +8,7 @@ import {
   pgEnum,
   integer,
   jsonb,
+  index,
 } from "drizzle-orm/pg-core";
 
 export type StructuredHoursJson = Array<{
@@ -112,7 +113,14 @@ export const businessesTable = pgTable("businesses", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => [
+  // Owner business picker: WHERE owner_id = ? AND archived_at IS NULL ORDER BY name
+  index("businesses_owner_id_idx").on(table.ownerId),
+  // Public directory base filter: active + not archived (+ optional type/featured)
+  index("businesses_active_archived_at_idx").on(table.active, table.archivedAt),
+  // Category browse filter on directory
+  index("businesses_type_idx").on(table.type),
+]);
 
 // Food truck location schedule entries
 export const foodTruckLocationsTable = pgTable("food_truck_locations", {
@@ -132,7 +140,18 @@ export const foodTruckLocationsTable = pgTable("food_truck_locations", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => [
+  // Owner location schedule: WHERE business_id = ? ORDER BY location_date
+  index("food_truck_locations_business_date_idx").on(
+    table.businessId,
+    table.locationDate,
+  ),
+  // Public today/upcoming endpoints: WHERE location_date = ? AND is_active
+  index("food_truck_locations_date_active_idx").on(
+    table.locationDate,
+    table.isActive,
+  ),
+]);
 
 export const insertBusinessSchema = createInsertSchema(businessesTable).omit({
   id: true,

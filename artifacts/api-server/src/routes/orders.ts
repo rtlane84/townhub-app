@@ -8,7 +8,7 @@ import {
   businessesTable,
   usersTable,
 } from "@workspace/db";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, sql, inArray, gte } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import {
   CreateOrderBody,
@@ -42,8 +42,6 @@ import { validateGuestOrderContact } from "../lib/guest-checkout";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import {
   createOrderRefund,
-  loadOrderRefunds,
-  orderTotalCents,
   serializeOrderRefunds,
   authorizeOrderRefund,
 } from "../lib/order-refund";
@@ -80,6 +78,16 @@ import {
 } from "@workspace/api-zod";
 import type { Request } from "express";
 import type { UserRole } from "../lib/order-access";
+import {
+  ACTIVE_KITCHEN_ORDER_STATUSES,
+  parseBusinessOrderListQuery,
+} from "../lib/order-list-query";
+import {
+  getOrderWithItems,
+  serializeOrdersBatch,
+  loadBusinessNameMap,
+} from "../lib/order-serialization";
+import { loadBusinessOrderSummary } from "../lib/business-order-summary";
 
 const router: IRouter = Router();
 
@@ -126,63 +134,7 @@ function generateOrderNumber(): string {
   const now = new Date();
   const date = now.toISOString().slice(0, 10).replace(/-/g, "");
   const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
-  return `LOH-${date}-${rand}`;
-}
-
-async function loadOptionsByOrderItemIds(itemIds: number[]) {
-  const map = new Map<number, (typeof orderItemOptionsTable.$inferSelect)[]>();
-  if (itemIds.length === 0) return map;
-
-  const rows = await db
-    .select()
-    .from(orderItemOptionsTable)
-    .where(inArray(orderItemOptionsTable.orderItemId, itemIds));
-
-  for (const row of rows) {
-    const list = map.get(row.orderItemId) ?? [];
-    list.push(row);
-    map.set(row.orderItemId, list);
-  }
-  return map;
-}
-
-async function serializeOrderWithLoadedItems(
-  order: typeof ordersTable.$inferSelect,
-  businessName: string,
-  viewer: OrderViewerContext = { includeRefundDetails: false },
-) {
-  const items = await db
-    .select()
-    .from(orderItemsTable)
-    .where(eq(orderItemsTable.orderId, order.id));
-  const optionsByItemId = await loadOptionsByOrderItemIds(items.map((i) => i.id));
-  return serializeOrder(order, items, businessName, optionsByItemId, viewer);
-}
-
-async function getOrderWithItems(
-  orderId: number,
-  viewer: OrderViewerContext = { includeRefundDetails: false },
-) {
-  const [order] = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.id, orderId));
-
-  if (!order) return null;
-
-  const items = await db
-    .select()
-    .from(orderItemsTable)
-    .where(eq(orderItemsTable.orderId, orderId));
-
-  const optionsByItemId = await loadOptionsByOrderItemIds(items.map((i) => i.id));
-
-  const [business] = await db
-    .select()
-    .from(businessesTable)
-    .where(eq(businessesTable.id, order.businessId));
-
-  return serializeOrder(order, items, business?.name ?? "Unknown", optionsByItemId, viewer);
+  return `TH-${date}-${rand}`;
 }
 
 async function resolveIncludeRefundDetails(
@@ -191,104 +143,6 @@ async function resolveIncludeRefundDetails(
 ): Promise<boolean> {
   const access = await authorizeBusinessOwnerOrAdmin(req, businessId);
   return access.ok;
-}
-
-type OrderViewerContext = {
-  includeRefundDetails: boolean;
-};
-
-async function serializeOrder(
-  order: typeof ordersTable.$inferSelect,
-  items: typeof orderItemsTable.$inferSelect[],
-  businessName: string,
-  optionsByItemId: Map<number, (typeof orderItemOptionsTable.$inferSelect)[]> = new Map(),
-  viewer: OrderViewerContext = { includeRefundDetails: false },
-) {
-  const totalCents = orderTotalCents(order);
-  const refundedCents = order.refundedAmountCents ?? 0;
-  const remainingCents = Math.max(0, totalCents - refundedCents);
-  const deliveryFee = order.deliveryFee ? parseFloat(order.deliveryFee) : null;
-  const mappedItems = items.map((item) => ({
-    id: item.id,
-    orderId: item.orderId,
-    productId: item.productId,
-    productName: item.productName,
-    quantity: item.quantity,
-    unitPrice: parseFloat(item.unitPrice),
-    subtotal: parseFloat(item.subtotal),
-    options: (optionsByItemId.get(item.id) ?? []).map((o) => ({
-      id: o.id,
-      optionId: o.optionId,
-      groupName: o.groupName,
-      optionName: o.optionName,
-      priceAdjustment: parseFloat(o.priceAdjustment),
-    })),
-  }));
-  const totals = resolveOrderTotalsDisplay({
-    subtotalCents: order.subtotalCents,
-    taxCents: order.taxCents,
-    taxLabel: order.taxLabel,
-    deliveryFee,
-    total: parseFloat(order.total),
-    items: mappedItems,
-  });
-
-  const base = {
-    id: order.id,
-    businessId: order.businessId,
-    businessName,
-    orderNumber: order.orderNumber,
-    status: order.status,
-    fulfillmentType: order.fulfillmentType,
-    customerName: order.customerName,
-    customerEmail: order.customerEmail,
-    customerPhone: order.customerPhone,
-    customerUserId: order.customerUserId,
-    deliveryAddress: order.deliveryAddress,
-    pickupTime: order.pickupTime,
-    estimatedWindowStart:
-      order.estimatedWindowStart instanceof Date
-        ? order.estimatedWindowStart.toISOString()
-        : order.estimatedWindowStart,
-    estimatedWindowEnd:
-      order.estimatedWindowEnd instanceof Date
-        ? order.estimatedWindowEnd.toISOString()
-        : order.estimatedWindowEnd,
-    notes: order.notes,
-    specialFields: order.specialFields,
-    subtotal: totals.subtotal,
-    tax: totals.tax,
-    taxRatePercent: order.taxRatePercent ? parseFloat(order.taxRatePercent) : null,
-    taxLabel: totals.taxLabel,
-    total: totals.total,
-    deliveryFee,
-    paymentStatus: order.paymentStatus,
-    paymentMethod: order.paymentMethod,
-    stripeSessionId: order.stripeSessionId,
-    refundStatus: order.refundStatus ?? "NONE",
-    refundedAmount: refundedCents / 100,
-    refundableAmount: remainingCents / 100,
-    items: mappedItems,
-    createdAt:
-      order.createdAt instanceof Date
-        ? order.createdAt.toISOString()
-        : order.createdAt,
-  };
-
-  if (!viewer.includeRefundDetails) {
-    return base;
-  }
-
-  const refunds = await loadOrderRefunds(order.id);
-  return {
-    ...base,
-    lastRefundedAt: order.lastRefundedAt
-      ? order.lastRefundedAt instanceof Date
-        ? order.lastRefundedAt.toISOString()
-        : String(order.lastRefundedAt)
-      : null,
-    refunds: await serializeOrderRefunds(refunds),
-  };
 }
 
 // POST /api/orders/prep-estimate
@@ -558,15 +412,14 @@ router.get("/me/orders", requireAuth, async (req, res): Promise<void> => {
     .where(eq(ordersTable.customerUserId, userId))
     .orderBy(sql`${ordersTable.createdAt} DESC`);
 
-  const ordersWithItems = await Promise.all(
-    orders.map(async (order) => {
-      const [business] = await db
-        .select()
-        .from(businessesTable)
-        .where(eq(businessesTable.id, order.businessId));
+  const businessNameById = await loadBusinessNameMap(
+    [...new Set(orders.map((order) => order.businessId))],
+  );
 
-      return serializeOrderWithLoadedItems(order, business?.name ?? "Unknown");
-    }),
+  const ordersWithItems = await serializeOrdersBatch(
+    orders,
+    (order) => businessNameById.get(order.businessId) ?? "Unknown",
+    { includeRefundDetails: false },
   );
 
   res.json(ordersWithItems);
@@ -792,9 +645,22 @@ router.get(
       return;
     }
 
-    const { status } = req.query as Record<string, string>;
+    const listQuery = parseBusinessOrderListQuery(
+      req.query as Record<string, string | undefined>,
+    );
+
     const conditions = [eq(ordersTable.businessId, params.data.businessId)];
-    if (status) conditions.push(eq(ordersTable.status, status as never));
+    if (listQuery.status) {
+      conditions.push(eq(ordersTable.status, listQuery.status as never));
+    }
+    if (listQuery.activeOnly) {
+      conditions.push(
+        inArray(ordersTable.status, [...ACTIVE_KITCHEN_ORDER_STATUSES] as never),
+      );
+    }
+    if (listQuery.since) {
+      conditions.push(gte(ordersTable.createdAt, listQuery.since));
+    }
 
     const orders = await db
       .select()
@@ -803,16 +669,15 @@ router.get(
       .orderBy(sql`${ordersTable.createdAt} DESC`);
 
     const [business] = await db
-      .select()
+      .select({ name: businessesTable.name })
       .from(businessesTable)
       .where(eq(businessesTable.id, params.data.businessId));
 
-    const ordersWithItems = await Promise.all(
-      orders.map((order) =>
-        serializeOrderWithLoadedItems(order, business?.name ?? "Unknown", {
-          includeRefundDetails: true,
-        }),
-      ),
+    const businessName = business?.name ?? "Unknown";
+    const ordersWithItems = await serializeOrdersBatch(
+      orders,
+      () => businessName,
+      { includeRefundDetails: true },
     );
 
     res.set("Cache-Control", "no-store");
@@ -843,44 +708,18 @@ router.get(
       return;
     }
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const allOrders = await db
-      .select()
-      .from(ordersTable)
-      .where(eq(ordersTable.businessId, businessId))
-      .orderBy(sql`${ordersTable.createdAt} DESC`);
-
-    const todayOrders = allOrders.filter((o) => o.createdAt >= todayStart);
-    const pendingOrders = allOrders.filter((o) =>
-      ["NEW", "CONFIRMED", "PREPARING"].includes(o.status),
-    );
-    const todayRevenue = todayOrders.reduce(
-      (sum, o) => sum + parseFloat(o.total),
-      0,
-    );
-
     const [business] = await db
-      .select()
+      .select({ name: businessesTable.name })
       .from(businessesTable)
       .where(eq(businessesTable.id, businessId));
 
-    const recentRaw = allOrders.slice(0, 5);
-    const recentOrders = await Promise.all(
-      recentRaw.map((order) =>
-        serializeOrderWithLoadedItems(order, business?.name ?? "Unknown"),
-      ),
+    const summary = await loadBusinessOrderSummary(
+      businessId,
+      business?.name ?? "Unknown",
     );
 
     res.set("Cache-Control", "no-store");
-    res.json({
-      todayCount: todayOrders.length,
-      pendingCount: pendingOrders.length,
-      todayRevenue,
-      upcomingCount: pendingOrders.length,
-      recentOrders,
-    });
+    res.json(summary);
   },
 );
 
@@ -903,13 +742,15 @@ router.get("/admin/orders", async (req, res): Promise<void> => {
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(sql`${ordersTable.createdAt} DESC`);
 
-  const businesses = await db.select().from(businessesTable);
+  const businesses = await db
+    .select({ id: businessesTable.id, name: businessesTable.name })
+    .from(businessesTable);
   const bizMap = new Map(businesses.map((b) => [b.id, b.name]));
 
-  const ordersWithItems = await Promise.all(
-    orders.map((order) =>
-      serializeOrderWithLoadedItems(order, bizMap.get(order.businessId) ?? "Unknown"),
-    ),
+  const ordersWithItems = await serializeOrdersBatch(
+    orders,
+    (order) => bizMap.get(order.businessId) ?? "Unknown",
+    { includeRefundDetails: false },
   );
 
   res.json(ordersWithItems);

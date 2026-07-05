@@ -40,7 +40,13 @@ export function BusinessLogoBadge({
     >
       <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-muted/25 p-0.5">
         {src ? (
-          <img src={src} alt={alt} className="max-h-full max-w-full object-contain" />
+          <img
+            src={src}
+            alt={alt}
+            loading="lazy"
+            decoding="async"
+            className="max-h-full max-w-full object-contain"
+          />
         ) : (
           <Store className={cn("text-muted-foreground", FALLBACK_ICON_CLASS[size])} />
         )}
@@ -70,6 +76,8 @@ export function BusinessListingCardMedia({
           <img
             src={heroImageUrl}
             alt={heroAlt}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (

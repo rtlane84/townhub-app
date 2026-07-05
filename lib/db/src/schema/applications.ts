@@ -6,6 +6,7 @@ import {
   pgEnum,
   timestamp,
   jsonb,
+  index,
 } from "drizzle-orm/pg-core";
 import { subscriptionBillingIntervalEnum } from "./subscriptions";
 
@@ -45,6 +46,14 @@ export const businessApplicationsTable = pgTable("business_applications", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => [
+  // Applicant pending check: WHERE user_id = ? AND status = 'PENDING'
+  index("business_applications_user_status_idx").on(table.userId, table.status),
+  // Admin application queue ORDER BY created_at DESC
+  index("business_applications_status_created_at_idx").on(
+    table.status,
+    table.createdAt,
+  ),
+]);
 
 export type BusinessApplication = typeof businessApplicationsTable.$inferSelect;

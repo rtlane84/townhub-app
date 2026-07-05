@@ -8,6 +8,7 @@ import {
   pgEnum,
   integer,
   primaryKey,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const businessSubscriptionStatusEnum = pgEnum("business_subscription_status", [
@@ -99,7 +100,14 @@ export const businessSubscriptionsTable = pgTable("business_subscriptions", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => [
+  // Stripe subscription webhook sync: WHERE stripe_subscription_id = ?
+  index("business_subscriptions_stripe_subscription_id_idx").on(
+    table.stripeSubscriptionId,
+  ),
+  // Platform metrics status counts: WHERE status IN (...)
+  index("business_subscriptions_status_idx").on(table.status),
+]);
 
 export type SubscriptionPlan = typeof subscriptionPlansTable.$inferSelect;
 export type SubscriptionFeature = typeof subscriptionFeaturesTable.$inferSelect;

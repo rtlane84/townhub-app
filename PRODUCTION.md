@@ -140,9 +140,22 @@ Drizzle push-based workflow:
 DATABASE_URL=<production_url> pnpm --filter @workspace/db run push
 ```
 
-Review the diff Drizzle prints before confirming. Set up automated daily backups before accepting real orders.
+**Review the SQL Drizzle prints before confirming.** Do not approve destructive changes (drops, column removals, enum rewrites) without explicit review. If Drizzle reports destructive changes you did not intend, stop and investigate.
 
-For production traffic, use a connection pooler (PgBouncer, Neon pooler, Supabase pooler).
+Set up automated daily backups before accepting real orders.
+
+For production traffic, use a connection pooler (PgBouncer, Neon pooler, Supabase pooler) in front of PostgreSQL. The API also configures a small server-side `pg` pool (see [docs/OPERATIONS.md](docs/OPERATIONS.md)).
+
+### Connection pool env vars (optional)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DATABASE_POOL_MAX` | `10` | Max connections in the API `pg` pool |
+| `DATABASE_CONNECTION_TIMEOUT_MS` | `10000` | Fail if a connection cannot be acquired in time |
+| `DATABASE_IDLE_TIMEOUT_MS` | `30000` | Close idle clients after this duration |
+| `DATABASE_QUERY_TIMEOUT_MS` | `30000` | PostgreSQL `statement_timeout` per connection (`0` disables) |
+
+Local development works without setting these.
 
 ---
 

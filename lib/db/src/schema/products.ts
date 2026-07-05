@@ -7,6 +7,7 @@ import {
   numeric,
   timestamp,
   pgEnum,
+  index,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -19,7 +20,10 @@ export const categoriesTable = pgTable("categories", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  // Storefront/menu categories: WHERE business_id = ? ORDER BY sort_order, name
+  index("categories_business_sort_order_idx").on(table.businessId, table.sortOrder),
+]);
 
 export const insertCategorySchema = createInsertSchema(categoriesTable).omit({
   id: true,
@@ -54,7 +58,14 @@ export const productsTable = pgTable("products", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => [
+  // Storefront product list: WHERE business_id = ? [AND available] [AND category_id]
+  index("products_business_available_category_idx").on(
+    table.businessId,
+    table.available,
+    table.categoryId,
+  ),
+]);
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({
   id: true,

@@ -11,8 +11,6 @@ import {
   type BusinessOrderPaymentFlag,
 } from "./business-order-display.ts";
 
-export const KITCHEN_POLL_INTERVAL_MS = 5000;
-
 export type KitchenFulfillmentFilter = "all" | "PICKUP" | "DELIVERY";
 export type KitchenPaymentFilter = "all" | BusinessOrderPaymentFlag;
 

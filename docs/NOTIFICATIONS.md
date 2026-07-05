@@ -59,7 +59,7 @@ Card orders do **not** send this email on order create — only after payment is
 **SMS example**
 
 ```text
-Clay Diner received your order #LOH-20260629-ABC12. We'll notify you when it's accepted. https://yourdomain.com/order/42?token=<accessToken>
+Clay Diner received your order #TH-20260629-ABC12. We'll notify you when it's accepted. https://yourdomain.com/order/42?token=<accessToken>
 ```
 
 ---
@@ -172,7 +172,7 @@ Short thank-you email encouraging the customer to order again. SMS sends a brief
 **SMS example**
 
 ```text
-Clay Diner: New order #LOH-20260629-ABC12
+Clay Diner: New order #TH-20260629-ABC12
 Alex · $24.50 · Paid
 https://yourdomain.com/dashboard/business/orders/42
 ```

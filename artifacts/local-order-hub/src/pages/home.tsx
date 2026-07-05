@@ -166,7 +166,15 @@ export default function Home() {
               {featuredHighlights.map((h) => (
                 <div key={h.id} className="flex items-start gap-3 rounded-xl border border-border/50 bg-white p-4 shadow-sm">
                   {h.imageUrl && (
-                    <img src={h.imageUrl} alt={h.title} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                    <img
+                      src={h.imageUrl}
+                      alt={h.title}
+                      width={64}
+                      height={64}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                    />
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">{h.title}</p>

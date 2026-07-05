@@ -24,7 +24,13 @@ export function EventCard({ event, showFeaturedBadge = false }: EventCardProps) 
     <Card className="border-border/50 overflow-hidden h-full">
       {event.imageUrl && (
         <div className="aspect-[16/9] overflow-hidden">
-          <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover"
+          />
         </div>
       )}
       <CardContent className="p-4">

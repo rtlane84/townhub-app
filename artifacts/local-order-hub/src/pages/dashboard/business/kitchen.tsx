@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  useListBusinessOrders,
   useUpdateOrderStatus,
   getListBusinessOrdersQueryKey,
   getGetBusinessOrderSummaryQueryKey,
 } from "@workspace/api-client-react";
+import {
+  getKitchenBusinessOrdersQueryKey,
+  listKitchenBusinessOrders,
+} from "@/lib/business-orders-api";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { KitchenDisplayToolbar } from "@/components/kitchen-display-toolbar";
@@ -17,7 +20,6 @@ import type { OrderCustomDateRange, OrderDateFilterPreset } from "@/lib/business
 import { getOrderListDateSummary } from "@/lib/business-order-filters";
 import {
   KITCHEN_COLUMN_DEFS,
-  KITCHEN_POLL_INTERVAL_MS,
   applyKitchenDisplayFilters,
   filterActiveKitchenOrders,
   getKitchenDisplayFilterSummary,
@@ -68,14 +70,11 @@ export default function BusinessKitchen() {
     isError,
     refetch,
     dataUpdatedAt,
-  } = useListBusinessOrders(businessId, {
-    query: {
-      enabled: !!businessId,
-      queryKey: getListBusinessOrdersQueryKey(businessId),
-      placeholderData: keepPreviousData,
-      refetchInterval: KITCHEN_POLL_INTERVAL_MS,
-      refetchIntervalInBackground: true,
-    },
+  } = useQuery({
+    queryKey: getKitchenBusinessOrdersQueryKey(businessId),
+    queryFn: ({ signal }) => listKitchenBusinessOrders(businessId, { signal }),
+    enabled: !!businessId,
+    placeholderData: keepPreviousData,
   });
 
   const orderList = orders ?? [];
@@ -126,8 +125,12 @@ export default function BusinessKitchen() {
       onSettled: () => setUpdatingId(null),
       onSuccess: (updated) => {
         if (updated.businessId) {
-          queryClient.invalidateQueries({ queryKey: getListBusinessOrdersQueryKey(updated.businessId) });
-          queryClient.invalidateQueries({ queryKey: getGetBusinessOrderSummaryQueryKey(updated.businessId) });
+          queryClient.invalidateQueries({
+            queryKey: [`/api/businesses/${updated.businessId}/orders`],
+          });
+          queryClient.invalidateQueries({
+            queryKey: getGetBusinessOrderSummaryQueryKey(updated.businessId),
+          });
         }
         toast({
           title: "Order updated",

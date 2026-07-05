@@ -2,13 +2,15 @@ import { useCallback, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  listBusinessOrders,
   getBusinessOrderSummary,
-  getListBusinessOrdersQueryKey,
   getGetBusinessOrderSummaryQueryKey,
   type Order,
   type BusinessOrderSummary,
 } from "@workspace/api-client-react";
+import {
+  getKitchenBusinessOrdersQueryKey,
+  listKitchenBusinessOrders,
+} from "@/lib/business-orders-api";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { getOrderSoundsEnabled } from "@/lib/order-alert-preferences";
@@ -43,7 +45,7 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
     (orders: Order[], summary: BusinessOrderSummary) => {
       if (!Array.isArray(orders) || !summary) return;
 
-      const listKey = getListBusinessOrdersQueryKey(businessId!);
+      const listKey = getKitchenBusinessOrdersQueryKey(businessId!);
       const summaryKey = getGetBusinessOrderSummaryQueryKey(businessId!);
 
       const previousOrders = queryClient.getQueryData<Order[]>(listKey);
@@ -122,7 +124,7 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
 
       try {
         const [orders, summary] = await Promise.all([
-          listBusinessOrders(businessId),
+          listKitchenBusinessOrders(businessId),
           getBusinessOrderSummary(businessId),
         ]);
 

@@ -412,7 +412,15 @@ export default function Cart() {
                 {cart.items.map((item) => (
                   <div key={item.lineKey} className="p-4 flex gap-4">
                     {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        width={64}
+                        height={64}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-16 w-16 shrink-0 rounded-md object-cover"
+                      />
                     ) : (
                       <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
                         <ShoppingBag className="h-6 w-6 text-muted-foreground/50" />

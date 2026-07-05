@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, lazy, Suspense, type ComponentType } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { clerkAuthAppearance } from "@/lib/clerk-appearance";
@@ -14,52 +14,54 @@ import { Layout } from "@/components/layout";
 import { CartProvider } from "@/components/cart-context";
 import { PlatformThemeProvider } from "@/components/theme-provider";
 
+import { RoutePageLoader } from "@/components/route-page-loader";
+
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Events from "@/pages/events";
-import FoodTrucks from "@/pages/food-trucks";
 import Businesses from "@/pages/businesses";
 import Storefront from "@/pages/storefront";
 import Cart from "@/pages/cart";
 import OrderConfirmation from "@/pages/order-confirmation";
 import MyOrders from "@/pages/my-orders";
 import MyOrderDetail from "@/pages/my-order-detail";
-
-import BusinessOverview from "@/pages/dashboard/business/overview";
-import BusinessOrders from "@/pages/dashboard/business/orders";
-import BusinessKitchen from "@/pages/dashboard/business/kitchen";
-import BusinessOrderDetail from "@/pages/dashboard/business/order-detail";
-import BusinessProducts from "@/pages/dashboard/business/products";
-import BusinessProductOptions from "@/pages/dashboard/business/product-options";
-import BusinessCategories from "@/pages/dashboard/business/categories";
-import BusinessSettings from "@/pages/dashboard/business/settings";
-import BusinessAppointments from "@/pages/dashboard/business/appointments";
-import BusinessBilling from "@/pages/dashboard/business/billing";
-import BusinessSubscription from "@/pages/dashboard/business/subscription";
-import BusinessLocations from "@/pages/dashboard/business/locations";
-
-import AdminOverview from "@/pages/dashboard/admin/overview";
-import AdminApplications from "@/pages/dashboard/admin/applications";
-import AdminBusinesses from "@/pages/dashboard/admin/businesses";
-import AdminOrders from "@/pages/dashboard/admin/orders";
-import AdminUsers from "@/pages/dashboard/admin/users";
-import AdminEvents from "@/pages/dashboard/admin/events";
-import AdminHighlights from "@/pages/dashboard/admin/highlights";
-import AdminPlans from "@/pages/dashboard/admin/plans";
-import AdminFeatures from "@/pages/dashboard/admin/features";
-import AdminSettings from "@/pages/dashboard/admin/settings";
-import AdminSystemStatus from "@/pages/dashboard/admin/system-status";
-
-import Setup from "@/pages/setup";
-import ListYourBusiness from "@/pages/list-your-business";
 import Help from "@/pages/help";
 import Pricing from "@/pages/pricing";
+
+const FoodTrucks = lazy(() => import("@/pages/food-trucks"));
+const Setup = lazy(() => import("@/pages/setup"));
+const ListYourBusiness = lazy(() => import("@/pages/list-your-business"));
+const DebugSentryPage = lazy(() => import("@/pages/debug-sentry"));
+
+const BusinessOverview = lazy(() => import("@/pages/dashboard/business/overview"));
+const BusinessOrders = lazy(() => import("@/pages/dashboard/business/orders"));
+const BusinessKitchen = lazy(() => import("@/pages/dashboard/business/kitchen"));
+const BusinessOrderDetail = lazy(() => import("@/pages/dashboard/business/order-detail"));
+const BusinessProducts = lazy(() => import("@/pages/dashboard/business/products"));
+const BusinessProductOptions = lazy(() => import("@/pages/dashboard/business/product-options"));
+const BusinessCategories = lazy(() => import("@/pages/dashboard/business/categories"));
+const BusinessSettings = lazy(() => import("@/pages/dashboard/business/settings"));
+const BusinessAppointments = lazy(() => import("@/pages/dashboard/business/appointments"));
+const BusinessBilling = lazy(() => import("@/pages/dashboard/business/billing"));
+const BusinessSubscription = lazy(() => import("@/pages/dashboard/business/subscription"));
+const BusinessLocations = lazy(() => import("@/pages/dashboard/business/locations"));
+
+const AdminOverview = lazy(() => import("@/pages/dashboard/admin/overview"));
+const AdminApplications = lazy(() => import("@/pages/dashboard/admin/applications"));
+const AdminBusinesses = lazy(() => import("@/pages/dashboard/admin/businesses"));
+const AdminOrders = lazy(() => import("@/pages/dashboard/admin/orders"));
+const AdminUsers = lazy(() => import("@/pages/dashboard/admin/users"));
+const AdminEvents = lazy(() => import("@/pages/dashboard/admin/events"));
+const AdminHighlights = lazy(() => import("@/pages/dashboard/admin/highlights"));
+const AdminPlans = lazy(() => import("@/pages/dashboard/admin/plans"));
+const AdminFeatures = lazy(() => import("@/pages/dashboard/admin/features"));
+const AdminSettings = lazy(() => import("@/pages/dashboard/admin/settings"));
+const AdminSystemStatus = lazy(() => import("@/pages/dashboard/admin/system-status"));
 import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
 import { BusinessFeatureAccessProvider } from "@/hooks/business-feature-access";
 import { BusinessHubGate } from "@/components/business-hub-gate";
 import { SentryErrorBoundary } from "@/components/sentry-error-boundary";
 import { SentryContextBridge } from "@/components/sentry-context-bridge";
-import DebugSentryPage from "@/pages/debug-sentry";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -190,11 +192,25 @@ function PostSignInRedirector() {
   return null;
 }
 
+function LazyRoutePage({
+  component: Component,
+  params,
+}: {
+  component: ComponentType<{ params: Record<string, string> }>;
+  params: Record<string, string>;
+}) {
+  return (
+    <Suspense fallback={<RoutePageLoader />}>
+      <Component params={params} />
+    </Suspense>
+  );
+}
+
 function BusinessDashboardRoute({
   component: Component,
   ...rest
 }: {
-  component: React.ComponentType<{ params: Record<string, string> }>;
+  component: ComponentType<{ params: Record<string, string> }>;
   path: string;
 }) {
   return (
@@ -205,7 +221,10 @@ function BusinessDashboardRoute({
             <SelectedBusinessProvider>
               <BusinessFeatureAccessProvider>
                 <BusinessHubGate>
-                  <Component params={params as Record<string, string>} />
+                  <LazyRoutePage
+                    component={Component}
+                    params={params as Record<string, string>}
+                  />
                 </BusinessHubGate>
               </BusinessFeatureAccessProvider>
             </SelectedBusinessProvider>
@@ -223,7 +242,7 @@ function ProtectedRoute({
   component: Component,
   ...rest
 }: {
-  component: React.ComponentType<{ params: Record<string, string> }>;
+  component: ComponentType<{ params: Record<string, string> }>;
   path: string;
 }) {
   return (
@@ -231,13 +250,29 @@ function ProtectedRoute({
       {(params) => (
         <>
           <Show when="signed-in">
-            <Component params={params as Record<string, string>} />
+            <LazyRoutePage component={Component} params={params as Record<string, string>} />
           </Show>
           <Show when="signed-out">
             <Redirect to="/sign-in" />
           </Show>
         </>
       )}
+    </Route>
+  );
+}
+
+function SuspenseRoute({
+  component: Component,
+  ...rest
+}: {
+  component: ComponentType;
+  path: string;
+}) {
+  return (
+    <Route {...rest}>
+      <Suspense fallback={<RoutePageLoader />}>
+        <Component />
+      </Suspense>
     </Route>
   );
 }
@@ -268,7 +303,11 @@ function ClerkProviderWithRoutes() {
                 {/* Public routes */}
                 <Route path="/" component={Home} />
                 <Route path="/events" component={Events} />
-                <Route path="/food-trucks" component={FoodTrucks} />
+                <Route path="/food-trucks">
+                  <Suspense fallback={<RoutePageLoader />}>
+                    <FoodTrucks />
+                  </Suspense>
+                </Route>
                 <Route path="/businesses" component={Businesses} />
                 <Route path="/businesses/:slug" component={Storefront} />
                 <Route path="/cart" component={Cart} />
@@ -278,12 +317,12 @@ function ClerkProviderWithRoutes() {
 
                 <Route path="/sign-in/*?" component={SignInPage} />
                 <Route path="/sign-up/*?" component={SignUpPage} />
-                <Route path="/setup" component={Setup} />
-                <Route path="/list-your-business" component={ListYourBusiness} />
+                <SuspenseRoute path="/setup" component={Setup} />
+                <SuspenseRoute path="/list-your-business" component={ListYourBusiness} />
                 <Route path="/help" component={Help} />
                 <Route path="/pricing" component={Pricing} />
                 {import.meta.env.DEV ? (
-                  <Route path="/debug/sentry" component={DebugSentryPage} />
+                  <SuspenseRoute path="/debug/sentry" component={DebugSentryPage} />
                 ) : null}
 
                 {/* Business owner dashboard */}

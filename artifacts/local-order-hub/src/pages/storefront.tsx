@@ -212,13 +212,15 @@ export default function Storefront() {
       )}
 
       <div className="container mx-auto max-w-[1400px] px-4 pt-4 sm:pt-5 md:pt-6">
-        <div className="relative mx-auto w-[84%] overflow-hidden rounded-xl bg-muted shadow-lg shadow-black/[0.08] ring-1 ring-black/[0.05] sm:w-[86%] md:rounded-2xl">
+        <div className="relative mx-auto aspect-video w-[84%] overflow-hidden rounded-xl bg-muted shadow-lg shadow-black/[0.08] ring-1 ring-black/[0.05] sm:w-[86%] md:rounded-2xl">
           {b.heroImageUrl ? (
             <img
               src={b.heroImageUrl}
               alt=""
               aria-hidden
-              className="block w-full h-auto"
+              decoding="async"
+              fetchPriority="high"
+              className="block h-full w-full object-cover"
             />
           ) : (
             <div className="flex aspect-video size-full items-center justify-center bg-primary/10">
@@ -465,7 +467,9 @@ export default function Storefront() {
                         <img
                           src={product.imageUrl}
                           alt={product.name}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover transition-transform hover:scale-105"
                         />
                       </div>
                     )}

@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, timestamp, index } from "drizzle-orm/pg-core";
 
 export const appointmentRequestsTable = pgTable("appointment_requests", {
   id: serial("id").primaryKey(),
@@ -15,6 +15,12 @@ export const appointmentRequestsTable = pgTable("appointment_requests", {
   source: text("source").notNull().default("CUSTOMER"),
   statusNote: text("status_note"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => [
+  // Business appointment inbox: WHERE business_id = ? ORDER BY created_at DESC
+  index("appointment_requests_business_created_at_idx").on(
+    table.businessId,
+    table.createdAt,
+  ),
+]);
 
 export type AppointmentRequest = typeof appointmentRequestsTable.$inferSelect;
