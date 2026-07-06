@@ -67,6 +67,7 @@ import type {
   ModifierGroupInput,
   ModifierGroupUpdate,
   NotificationLog,
+  NotificationTestResult,
   Order,
   OrderInput,
   OrderRefundInput,
@@ -6086,6 +6087,356 @@ export function useGetBusinessFeatureAccess<TData = Awaited<ReturnType<typeof ge
 
 
 
+
+export const getTestBusinessNotificationEmailUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/notifications/test/email`
+}
+
+/**
+ * @summary Send a test notification email to the business owner
+ */
+export const testBusinessNotificationEmail = async (businessId: number, options?: RequestInit): Promise<NotificationTestResult> => {
+
+  return customFetch<NotificationTestResult>(getTestBusinessNotificationEmailUrl(businessId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getTestBusinessNotificationEmailMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationEmail>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationEmail>>, TError,{businessId: number}, TContext> => {
+
+const mutationKey = ['testBusinessNotificationEmail'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof testBusinessNotificationEmail>>, {businessId: number}> = (props) => {
+          const {businessId} = props ?? {};
+
+          return  testBusinessNotificationEmail(businessId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TestBusinessNotificationEmailMutationResult = NonNullable<Awaited<ReturnType<typeof testBusinessNotificationEmail>>>
+
+    export type TestBusinessNotificationEmailMutationError = ErrorType<void>
+
+    /**
+ * @summary Send a test notification email to the business owner
+ */
+export const useTestBusinessNotificationEmail = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationEmail>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof testBusinessNotificationEmail>>,
+        TError,
+        {businessId: number},
+        TContext
+      > => {
+      return useMutation(getTestBusinessNotificationEmailMutationOptions(options));
+    }
+
+export const getTestBusinessNotificationSmsUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/notifications/test/sms`
+}
+
+/**
+ * @summary Send a test notification SMS to the business owner
+ */
+export const testBusinessNotificationSms = async (businessId: number, options?: RequestInit): Promise<NotificationTestResult> => {
+
+  return customFetch<NotificationTestResult>(getTestBusinessNotificationSmsUrl(businessId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getTestBusinessNotificationSmsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationSms>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationSms>>, TError,{businessId: number}, TContext> => {
+
+const mutationKey = ['testBusinessNotificationSms'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof testBusinessNotificationSms>>, {businessId: number}> = (props) => {
+          const {businessId} = props ?? {};
+
+          return  testBusinessNotificationSms(businessId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TestBusinessNotificationSmsMutationResult = NonNullable<Awaited<ReturnType<typeof testBusinessNotificationSms>>>
+
+    export type TestBusinessNotificationSmsMutationError = ErrorType<void>
+
+    /**
+ * @summary Send a test notification SMS to the business owner
+ */
+export const useTestBusinessNotificationSms = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationSms>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof testBusinessNotificationSms>>,
+        TError,
+        {businessId: number},
+        TContext
+      > => {
+      return useMutation(getTestBusinessNotificationSmsMutationOptions(options));
+    }
+
+export const getTestBusinessNotificationDiscordUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/notifications/test/discord`
+}
+
+/**
+ * @summary Send a test notification to the business Discord webhook
+ */
+export const testBusinessNotificationDiscord = async (businessId: number, options?: RequestInit): Promise<NotificationTestResult> => {
+
+  return customFetch<NotificationTestResult>(getTestBusinessNotificationDiscordUrl(businessId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getTestBusinessNotificationDiscordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationDiscord>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationDiscord>>, TError,{businessId: number}, TContext> => {
+
+const mutationKey = ['testBusinessNotificationDiscord'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof testBusinessNotificationDiscord>>, {businessId: number}> = (props) => {
+          const {businessId} = props ?? {};
+
+          return  testBusinessNotificationDiscord(businessId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TestBusinessNotificationDiscordMutationResult = NonNullable<Awaited<ReturnType<typeof testBusinessNotificationDiscord>>>
+
+    export type TestBusinessNotificationDiscordMutationError = ErrorType<void>
+
+    /**
+ * @summary Send a test notification to the business Discord webhook
+ */
+export const useTestBusinessNotificationDiscord = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationDiscord>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof testBusinessNotificationDiscord>>,
+        TError,
+        {businessId: number},
+        TContext
+      > => {
+      return useMutation(getTestBusinessNotificationDiscordMutationOptions(options));
+    }
+
+export const getTestBusinessNotificationNtfyUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/notifications/test/ntfy`
+}
+
+/**
+ * @summary Send a test ntfy push notification to the business topic
+ */
+export const testBusinessNotificationNtfy = async (businessId: number, options?: RequestInit): Promise<NotificationTestResult> => {
+
+  return customFetch<NotificationTestResult>(getTestBusinessNotificationNtfyUrl(businessId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getTestBusinessNotificationNtfyMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationNtfy>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationNtfy>>, TError,{businessId: number}, TContext> => {
+
+const mutationKey = ['testBusinessNotificationNtfy'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof testBusinessNotificationNtfy>>, {businessId: number}> = (props) => {
+          const {businessId} = props ?? {};
+
+          return  testBusinessNotificationNtfy(businessId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TestBusinessNotificationNtfyMutationResult = NonNullable<Awaited<ReturnType<typeof testBusinessNotificationNtfy>>>
+
+    export type TestBusinessNotificationNtfyMutationError = ErrorType<void>
+
+    /**
+ * @summary Send a test ntfy push notification to the business topic
+ */
+export const useTestBusinessNotificationNtfy = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testBusinessNotificationNtfy>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof testBusinessNotificationNtfy>>,
+        TError,
+        {businessId: number},
+        TContext
+      > => {
+      return useMutation(getTestBusinessNotificationNtfyMutationOptions(options));
+    }
+
+export const getRegenerateBusinessNtfyTopicUrl = (businessId: number,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/notifications/ntfy/regenerate-topic`
+}
+
+/**
+ * @summary Regenerate the ntfy subscription topic for a business
+ */
+export const regenerateBusinessNtfyTopic = async (businessId: number, options?: RequestInit): Promise<Business> => {
+
+  return customFetch<Business>(getRegenerateBusinessNtfyTopicUrl(businessId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRegenerateBusinessNtfyTopicMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regenerateBusinessNtfyTopic>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof regenerateBusinessNtfyTopic>>, TError,{businessId: number}, TContext> => {
+
+const mutationKey = ['regenerateBusinessNtfyTopic'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof regenerateBusinessNtfyTopic>>, {businessId: number}> = (props) => {
+          const {businessId} = props ?? {};
+
+          return  regenerateBusinessNtfyTopic(businessId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegenerateBusinessNtfyTopicMutationResult = NonNullable<Awaited<ReturnType<typeof regenerateBusinessNtfyTopic>>>
+
+    export type RegenerateBusinessNtfyTopicMutationError = ErrorType<void>
+
+    /**
+ * @summary Regenerate the ntfy subscription topic for a business
+ */
+export const useRegenerateBusinessNtfyTopic = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regenerateBusinessNtfyTopic>>, TError,{businessId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof regenerateBusinessNtfyTopic>>,
+        TError,
+        {businessId: number},
+        TContext
+      > => {
+      return useMutation(getRegenerateBusinessNtfyTopicMutationOptions(options));
+    }
 
 export const getListFoodTruckLocationsUrl = (id: number,) => {
 

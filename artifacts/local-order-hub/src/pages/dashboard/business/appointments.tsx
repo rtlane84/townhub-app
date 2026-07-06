@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import {
   useListBusinessAppointmentRequests,
@@ -188,6 +188,7 @@ export default function BusinessAppointments() {
   const queryClient = useQueryClient();
 
   const [manualOpen, setManualOpen] = useState(false);
+
   const [declineTarget, setDeclineTarget] = useState<number | null>(null);
   const [declineNote, setDeclineNote] = useState("");
   const [confirmTarget, setConfirmTarget] = useState<{

@@ -9,7 +9,17 @@ import {
   buildCustomerAppointmentStatusEmail,
   buildCustomerAppointmentStatusSms,
 } from "./notification-content";
-import { deliverOwnerEmail, deliverOwnerSms, deliverAppointmentCustomerNotification } from "./notification-delivery";
+import { deliverOwnerEmail, deliverOwnerSms, deliverAppointmentCustomerNotification, deliverOwnerDiscord, deliverOwnerNtfy } from "./notification-delivery";
+import {
+  buildOwnerNewAppointmentDiscordPayload,
+  sendOwnerDiscordWebhook,
+} from "./discord-owner-notifications";
+import { normalizeDiscordWebhookUrl } from "./discord-webhook";
+import {
+  buildOwnerNewAppointmentNtfyMessage,
+  sendOwnerNtfyNotification,
+} from "./ntfy-owner-notifications";
+import { isValidNtfyTopic } from "./ntfy-topic";
 import { logOperationalFailure } from "./operational-log";
 import { logger } from "./logger";
 
@@ -39,6 +49,10 @@ export async function notifyOwnerNewAppointmentRequest(input: {
     notificationPhone?: string | null;
     notifyAppointmentRequestsByEmail?: boolean | null;
     notifyAppointmentRequestsBySms?: boolean | null;
+    discordWebhookUrl?: string | null;
+    notifyAppointmentRequestsByDiscord?: boolean | null;
+    ntfyEnabled?: boolean | null;
+    ntfyTopic?: string | null;
   };
   appointmentRequestId: number;
   customerName: string;
@@ -95,6 +109,56 @@ export async function notifyOwnerNewAppointmentRequest(input: {
           to: phone,
           body: smsBody,
           appointmentRequestId: input.appointmentRequestId,
+        }),
+      );
+    }
+
+    const discordWebhook = normalizeDiscordWebhookUrl(input.business.discordWebhookUrl);
+    if (input.business.notifyAppointmentRequestsByDiscord && discordWebhook) {
+      const payload = buildOwnerNewAppointmentDiscordPayload({
+        businessName: input.business.name,
+        customerName: input.customerName,
+        serviceName: input.serviceName,
+        requestedDate: input.requestedDate,
+        requestedTime: input.requestedTime,
+      });
+      tasks.push(
+        deliverOwnerDiscord({
+          businessId: input.business.id,
+          eventType: "NEW_APPOINTMENT_REQUEST",
+          webhookUrl: discordWebhook,
+          body: payload.embeds[0]?.description ?? "New appointment request",
+          appointmentRequestId: input.appointmentRequestId,
+          send: () => sendOwnerDiscordWebhook({ webhookUrl: discordWebhook, payload }),
+        }),
+      );
+    }
+
+    const ntfyTopic = input.business.ntfyTopic?.trim();
+    if (input.business.ntfyEnabled && ntfyTopic && isValidNtfyTopic(ntfyTopic)) {
+      const ntfy = buildOwnerNewAppointmentNtfyMessage({
+        businessName: input.business.name,
+        customerName: input.customerName,
+        serviceName: input.serviceName,
+        requestedDate: input.requestedDate,
+        requestedTime: input.requestedTime,
+      });
+      tasks.push(
+        deliverOwnerNtfy({
+          businessId: input.business.id,
+          eventType: "NEW_APPOINTMENT_REQUEST",
+          topic: ntfyTopic,
+          title: ntfy.title,
+          body: ntfy.message,
+          appointmentRequestId: input.appointmentRequestId,
+          send: () =>
+            sendOwnerNtfyNotification({
+              topic: ntfyTopic,
+              title: ntfy.title,
+              message: ntfy.message,
+              click: ntfy.click,
+              tags: ntfy.tags,
+            }),
         }),
       );
     }

@@ -4,13 +4,14 @@ import { sendSms } from "./sms";
 import { logger } from "./logger";
 import { logOperationalFailure } from "./operational-log";
 import { resolveNotificationStatus, type NotificationStatus } from "./notification-content";
+import { redactNtfyTopic } from "./ntfy-topic";
 
 import type {
   SubscriptionNotificationEvent,
   PlatformAdminEvent,
 } from "./email-templates/types";
 
-export type NotificationChannel = "EMAIL" | "SMS";
+export type NotificationChannel = "EMAIL" | "SMS" | "DISCORD" | "NTFY";
 export type OwnerEventType =
   | "NEW_ORDER"
   | "NEW_APPOINTMENT_REQUEST"
@@ -271,6 +272,76 @@ export async function deliverOwnerSms(input: {
     status,
     orderId: input.orderId,
     appointmentRequestId: input.appointmentRequestId,
+    errorMessage: result.error,
+  });
+}
+
+export async function deliverOwnerDiscord(input: {
+  businessId: number;
+  eventType: Extract<OwnerEventType, "NEW_ORDER" | "NEW_APPOINTMENT_REQUEST">;
+  webhookUrl: string;
+  body: string;
+  orderId?: number;
+  appointmentRequestId?: number;
+  send: () => Promise<{ sent: boolean; error?: string }>;
+}): Promise<void> {
+  const result = await input.send();
+  const status: NotificationStatus = result.sent ? "SENT" : "FAILED";
+
+  if (status === "FAILED") {
+    logOperationalFailure("order_notification_discord_failed", {
+      eventType: input.eventType,
+      businessId: input.businessId,
+      orderId: input.orderId,
+      appointmentRequestId: input.appointmentRequestId,
+    });
+  }
+
+  await logNotification({
+    businessId: input.businessId,
+    channel: "DISCORD",
+    eventType: input.eventType,
+    body: input.body,
+    status,
+    orderId: input.orderId,
+    appointmentRequestId: input.appointmentRequestId,
+    subject: "Discord webhook",
+    errorMessage: result.error,
+  });
+}
+
+export async function deliverOwnerNtfy(input: {
+  businessId: number;
+  eventType: Extract<OwnerEventType, "NEW_ORDER" | "NEW_APPOINTMENT_REQUEST">;
+  topic: string;
+  title: string;
+  body: string;
+  orderId?: number;
+  appointmentRequestId?: number;
+  send: () => Promise<{ sent: boolean; error?: string }>;
+}): Promise<void> {
+  const result = await input.send();
+  const status: NotificationStatus = result.sent ? "SENT" : "FAILED";
+
+  if (status === "FAILED") {
+    logOperationalFailure("order_notification_ntfy_failed", {
+      eventType: input.eventType,
+      businessId: input.businessId,
+      orderId: input.orderId,
+      appointmentRequestId: input.appointmentRequestId,
+    });
+  }
+
+  await logNotification({
+    businessId: input.businessId,
+    channel: "NTFY",
+    eventType: input.eventType,
+    body: input.body,
+    status,
+    orderId: input.orderId,
+    appointmentRequestId: input.appointmentRequestId,
+    subject: input.title,
+    recipientPhone: redactNtfyTopic(input.topic),
     errorMessage: result.error,
   });
 }

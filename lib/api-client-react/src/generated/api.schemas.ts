@@ -412,6 +412,19 @@ export interface Business {
   notifyNewOrdersBySms?: boolean;
   notifyAppointmentRequestsByEmail?: boolean;
   notifyAppointmentRequestsBySms?: boolean;
+  /** @nullable */
+  discordWebhookUrl?: string | null;
+  notifyNewOrdersByDiscord?: boolean;
+  notifyAppointmentRequestsByDiscord?: boolean;
+  ntfyEnabled?: boolean;
+  /** @nullable */
+  ntfyTopic?: string | null;
+  /** @nullable */
+  ntfyConnectedAt?: string | null;
+  /** @nullable */
+  ntfyLastTestAt?: string | null;
+  /** @nullable */
+  ntfySubscriptionUrl?: string | null;
   eventLocationEnabled?: boolean;
   storefrontMode?: StorefrontMode | null;
   /** @nullable */
@@ -565,6 +578,11 @@ export interface BusinessUpdate {
   notifyNewOrdersBySms?: boolean;
   notifyAppointmentRequestsByEmail?: boolean;
   notifyAppointmentRequestsBySms?: boolean;
+  /** @nullable */
+  discordWebhookUrl?: string | null;
+  notifyNewOrdersByDiscord?: boolean;
+  notifyAppointmentRequestsByDiscord?: boolean;
+  ntfyEnabled?: boolean;
   eventLocationEnabled?: boolean;
   storefrontMode?: StorefrontMode | null;
   /** @nullable */
@@ -1224,6 +1242,23 @@ export interface BusinessFeatureAccessEntry {
   enabled: boolean;
 }
 
+export type NotificationTestResultChannel = typeof NotificationTestResultChannel[keyof typeof NotificationTestResultChannel];
+
+
+export const NotificationTestResultChannel = {
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+  DISCORD: 'DISCORD',
+  NTFY: 'NTFY',
+} as const;
+
+export interface NotificationTestResult {
+  ok: boolean;
+  channel: NotificationTestResultChannel;
+  recipient?: string;
+  message?: string;
+}
+
 export interface BusinessFeatureAccess {
   bypassRestrictions: boolean;
   /** @nullable */
@@ -1477,6 +1512,8 @@ export type NotificationLogChannel = typeof NotificationLogChannel[keyof typeof 
 export const NotificationLogChannel = {
   EMAIL: 'EMAIL',
   SMS: 'SMS',
+  DISCORD: 'DISCORD',
+  NTFY: 'NTFY',
 } as const;
 
 export interface NotificationLog {
@@ -1667,6 +1704,8 @@ export type ListNotificationLogsChannel = typeof ListNotificationLogsChannel[key
 export const ListNotificationLogsChannel = {
   EMAIL: 'EMAIL',
   SMS: 'SMS',
+  DISCORD: 'DISCORD',
+  NTFY: 'NTFY',
 } as const;
 
 export type ListMediaAssetsParams = {

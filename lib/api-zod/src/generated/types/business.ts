@@ -86,6 +86,19 @@ export interface Business {
   notifyNewOrdersBySms?: boolean;
   notifyAppointmentRequestsByEmail?: boolean;
   notifyAppointmentRequestsBySms?: boolean;
+  /** @nullable */
+  discordWebhookUrl?: string | null;
+  notifyNewOrdersByDiscord?: boolean;
+  notifyAppointmentRequestsByDiscord?: boolean;
+  ntfyEnabled?: boolean;
+  /** @nullable */
+  ntfyTopic?: string | null;
+  /** @nullable */
+  ntfyConnectedAt?: Date | null;
+  /** @nullable */
+  ntfyLastTestAt?: Date | null;
+  /** @nullable */
+  ntfySubscriptionUrl?: string | null;
   eventLocationEnabled?: boolean;
   storefrontMode?: StorefrontMode | null;
   /** @nullable */

@@ -54,6 +54,11 @@ export interface BusinessUpdate {
   notifyNewOrdersBySms?: boolean;
   notifyAppointmentRequestsByEmail?: boolean;
   notifyAppointmentRequestsBySms?: boolean;
+  /** @nullable */
+  discordWebhookUrl?: string | null;
+  notifyNewOrdersByDiscord?: boolean;
+  notifyAppointmentRequestsByDiscord?: boolean;
+  ntfyEnabled?: boolean;
   eventLocationEnabled?: boolean;
   storefrontMode?: StorefrontMode | null;
   /** @nullable */

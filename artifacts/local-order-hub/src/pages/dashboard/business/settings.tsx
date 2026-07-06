@@ -20,7 +20,6 @@ import {
   parseStructuredHours,
   resolvePaymentMode,
   resolveStorefrontMode,
-  acceptsAppointmentRequests,
   isOrderingStorefrontMode,
   isPaymentMode,
   normalizeOptionalTime,
@@ -49,12 +48,6 @@ type FormState = {
   pickupInstructions: string; deliveryInstructions: string;
   orderCutoffTime: string;
   defaultPrepMinutes: string;
-  notificationEmail: string;
-  notificationPhone: string;
-  notifyNewOrdersByEmail: boolean;
-  notifyNewOrdersBySms: boolean;
-  notifyAppointmentRequestsByEmail: boolean;
-  notifyAppointmentRequestsBySms: boolean;
   accentColor: string; buttonColor: string; bannerText: string;
   taxEnabled: boolean; taxRatePercent: string; taxLabel: string;
 };
@@ -69,9 +62,7 @@ const EMPTY: FormState = {
   deliveryFee: "", minimumOrder: "", minimumOrderForDelivery: "",
   deliveryRadiusMiles: "", deliveryNotes: "",
   pickupInstructions: "", deliveryInstructions: "",
-  orderCutoffTime: "", defaultPrepMinutes: "15", notificationEmail: "", notificationPhone: "",
-  notifyNewOrdersByEmail: true, notifyNewOrdersBySms: false,
-  notifyAppointmentRequestsByEmail: true, notifyAppointmentRequestsBySms: false,
+  orderCutoffTime: "", defaultPrepMinutes: "15",
   accentColor: "", buttonColor: "", bannerText: "",
   taxEnabled: false, taxRatePercent: "", taxLabel: "Sales Tax",
 };
@@ -115,12 +106,6 @@ export default function BusinessSettings() {
         orderCutoffTime: coerceFormTime(business.orderCutoffTime),
         defaultPrepMinutes:
           business.defaultPrepMinutes != null ? String(business.defaultPrepMinutes) : "15",
-        notificationEmail: String(b.notificationEmail ?? b.orderNotificationEmail ?? ""),
-        notificationPhone: String(b.notificationPhone ?? ""),
-        notifyNewOrdersByEmail: b.notifyNewOrdersByEmail !== false,
-        notifyNewOrdersBySms: b.notifyNewOrdersBySms === true,
-        notifyAppointmentRequestsByEmail: b.notifyAppointmentRequestsByEmail !== false,
-        notifyAppointmentRequestsBySms: b.notifyAppointmentRequestsBySms === true,
         accentColor: String(b.accentColor ?? ""),
         buttonColor: String(b.buttonColor ?? ""),
         bannerText: String(b.bannerText ?? ""),
@@ -200,12 +185,6 @@ export default function BusinessSettings() {
               taxLabel: form.taxLabel.trim() || "Sales Tax",
             }
           : {}),
-        notificationEmail: opt(form.notificationEmail),
-        notificationPhone: opt(form.notificationPhone),
-        notifyNewOrdersByEmail: form.notifyNewOrdersByEmail,
-        notifyNewOrdersBySms: form.notifyNewOrdersBySms,
-        notifyAppointmentRequestsByEmail: form.notifyAppointmentRequestsByEmail,
-        notifyAppointmentRequestsBySms: form.notifyAppointmentRequestsBySms,
         accentColor: opt(form.accentColor),
         buttonColor: opt(form.buttonColor),
         bannerText: opt(form.bannerText),
@@ -227,23 +206,6 @@ export default function BusinessSettings() {
     );
   }
 
-  function notifyToggle(
-    label: string,
-    desc: string,
-    key: "notifyNewOrdersByEmail" | "notifyNewOrdersBySms" | "notifyAppointmentRequestsByEmail" | "notifyAppointmentRequestsBySms",
-  ) {
-    return (
-      <div className="flex items-center justify-between py-2">
-        <div>
-          <p className="text-sm font-medium">{label}</p>
-          <p className="text-xs text-muted-foreground">{desc}</p>
-        </div>
-        <Switch checked={!!form[key]} onCheckedChange={(val) => setForm((f) => ({ ...f, [key]: val }))} data-testid={`switch-${key}`} />
-      </div>
-    );
-  }
-
-  const acceptsAppointments = acceptsAppointmentRequests({ type: form.type, storefrontMode: form.storefrontMode });
   const isOrderingMode = isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
 
   function toggle(label: string, desc: string, key: "pickupEnabled" | "deliveryEnabled") {
@@ -530,26 +492,6 @@ export default function BusinessSettings() {
             </>
             )}
 
-            <Card>
-              <CardHeader><CardTitle className="text-base">Owner Notifications</CardTitle></CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  Alerts are sent by the platform when you receive new orders or appointment requests.
-                  Configure where you want email and SMS notifications delivered.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {field("Notification email", "notificationEmail", { type: "email", placeholder: "owner@yourbusiness.com" })}
-                  {field("Notification phone (SMS)", "notificationPhone", { type: "tel", placeholder: "+15555550100" })}
-                </div>
-                <Separator />
-                <div className="space-y-1 divide-y divide-border">
-                  {notifyToggle("Email me for new orders", "Receive an email when a customer places an order", "notifyNewOrdersByEmail")}
-                  {notifyToggle("Text me for new orders", "Urgent SMS alert for new orders", "notifyNewOrdersBySms")}
-                  {acceptsAppointments && notifyToggle("Email me for appointment requests", "Receive an email when a customer requests an appointment", "notifyAppointmentRequestsByEmail")}
-                  {acceptsAppointments && notifyToggle("Text me for appointment requests", "Urgent SMS alert for new appointment requests", "notifyAppointmentRequestsBySms")}
-                </div>
-              </CardContent>
-            </Card>
           </>
         )}
       </div>

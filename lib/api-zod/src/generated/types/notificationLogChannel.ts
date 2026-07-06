@@ -12,4 +12,6 @@ export type NotificationLogChannel = typeof NotificationLogChannel[keyof typeof 
 export const NotificationLogChannel = {
   EMAIL: 'EMAIL',
   SMS: 'SMS',
+  DISCORD: 'DISCORD',
+  NTFY: 'NTFY',
 } as const;

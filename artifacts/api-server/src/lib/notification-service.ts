@@ -16,8 +16,20 @@ import {
   deliverCustomerNotification,
   deliverOwnerEmail,
   deliverOwnerSms,
+  deliverOwnerDiscord,
+  deliverOwnerNtfy,
   type CustomerLifecycleEventType,
 } from "./notification-delivery";
+import {
+  buildOwnerNewOrderDiscordPayload,
+  sendOwnerDiscordWebhook,
+} from "./discord-owner-notifications";
+import { normalizeDiscordWebhookUrl } from "./discord-webhook";
+import {
+  buildOwnerNewOrderNtfyMessage,
+  sendOwnerNtfyNotification,
+} from "./ntfy-owner-notifications";
+import { isValidNtfyTopic } from "./ntfy-topic";
 
 export {
   statusToCustomerEvent,
@@ -191,6 +203,44 @@ export async function notifyOwnerNewOrderFromOrderId(orderId: number): Promise<v
         to: ownerPhone,
         body: sms,
         orderId,
+      }),
+    );
+  }
+
+  const discordWebhook = normalizeDiscordWebhookUrl(business.discordWebhookUrl);
+  if (business.notifyNewOrdersByDiscord && discordWebhook) {
+    const payload = buildOwnerNewOrderDiscordPayload(order);
+    tasks.push(
+      deliverOwnerDiscord({
+        businessId: business.id,
+        eventType: "NEW_ORDER",
+        webhookUrl: discordWebhook,
+        body: payload.embeds[0]?.description ?? "New order",
+        orderId,
+        send: () => sendOwnerDiscordWebhook({ webhookUrl: discordWebhook, payload }),
+      }),
+    );
+  }
+
+  const ntfyTopic = business.ntfyTopic?.trim();
+  if (business.ntfyEnabled && ntfyTopic && isValidNtfyTopic(ntfyTopic)) {
+    const ntfy = buildOwnerNewOrderNtfyMessage(order);
+    tasks.push(
+      deliverOwnerNtfy({
+        businessId: business.id,
+        eventType: "NEW_ORDER",
+        topic: ntfyTopic,
+        title: ntfy.title,
+        body: ntfy.message,
+        orderId,
+        send: () =>
+          sendOwnerNtfyNotification({
+            topic: ntfyTopic,
+            title: ntfy.title,
+            message: ntfy.message,
+            click: ntfy.click,
+            tags: ntfy.tags,
+          }),
       }),
     );
   }

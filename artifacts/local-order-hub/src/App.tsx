@@ -40,6 +40,7 @@ const BusinessOrderDetail = lazy(() => import("@/pages/dashboard/business/order-
 const BusinessProducts = lazy(() => import("@/pages/dashboard/business/products"));
 const BusinessProductOptions = lazy(() => import("@/pages/dashboard/business/product-options"));
 const BusinessCategories = lazy(() => import("@/pages/dashboard/business/categories"));
+const BusinessNotifications = lazy(() => import("@/pages/dashboard/business/notifications"));
 const BusinessSettings = lazy(() => import("@/pages/dashboard/business/settings"));
 const BusinessAppointments = lazy(() => import("@/pages/dashboard/business/appointments"));
 const BusinessBilling = lazy(() => import("@/pages/dashboard/business/billing"));
@@ -344,6 +345,7 @@ function ClerkProviderWithRoutes() {
                 <BusinessDashboardRoute path="/dashboard/business/billing" component={BusinessBilling} />
                 <BusinessDashboardRoute path="/dashboard/business/subscription" component={BusinessSubscription} />
                 <BusinessDashboardRoute path="/dashboard/business/appointments" component={BusinessAppointments} />
+                <BusinessDashboardRoute path="/dashboard/business/notifications" component={BusinessNotifications} />
                 <BusinessDashboardRoute path="/dashboard/business/settings" component={BusinessSettings} />
                 <BusinessDashboardRoute path="/dashboard/business" component={BusinessOverview} />
 

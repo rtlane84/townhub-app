@@ -95,6 +95,15 @@ export const businessesTable = pgTable("businesses", {
   notifyNewOrdersBySms: boolean("notify_new_orders_by_sms").notNull().default(false),
   notifyAppointmentRequestsByEmail: boolean("notify_appointment_requests_by_email").notNull().default(true),
   notifyAppointmentRequestsBySms: boolean("notify_appointment_requests_by_sms").notNull().default(false),
+  discordWebhookUrl: text("discord_webhook_url"),
+  notifyNewOrdersByDiscord: boolean("notify_new_orders_by_discord").notNull().default(false),
+  notifyAppointmentRequestsByDiscord: boolean("notify_appointment_requests_by_discord").notNull().default(false),
+
+  // Free phone push via ntfy (topic-only; server URL from NTFY_SERVER_URL)
+  ntfyEnabled: boolean("ntfy_enabled").notNull().default(false),
+  ntfyTopic: text("ntfy_topic"),
+  ntfyConnectedAt: timestamp("ntfy_connected_at", { withTimezone: true }),
+  ntfyLastTestAt: timestamp("ntfy_last_test_at", { withTimezone: true }),
 
   // Food truck mode
   eventLocationEnabled: boolean("event_location_enabled").notNull().default(false),

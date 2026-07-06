@@ -328,9 +328,55 @@ notification-service.ts     ← orchestration (load order, pick event, send)
 | ------- | -------------------------- | ------------------------------------ |
 | Email   | Resend (preferred) or SMTP | [RESEND_SETUP.md](./RESEND_SETUP.md) |
 | SMS     | Twilio                     | [TWILIO_SETUP.md](./TWILIO_SETUP.md) |
+| Phone push (free) | ntfy (public `ntfy.sh` by default) | See [Free phone notifications](#free-phone-notifications) below |
+| Discord | Webhook URL (owner-configured) | Business Hub → Notifications |
 
 
 When providers are not configured, notifications are still logged with status `LOGGED` so you can verify copy in **Admin → System Status** without sending real messages.
+
+---
+
+## Free phone notifications
+
+Business owners can receive **free instant phone alerts** via [ntfy](https://ntfy.sh) — no SMS charges from TownHub.
+
+### Requirements
+
+- The free **ntfy** mobile app (iOS or Android) on the owner’s phone
+- Phone notifications enabled in **Business Hub → Notifications**
+
+### Setup (owner)
+
+1. Enable **Free phone notifications** in TownHub (generates a private topic).
+2. Install the ntfy app from [ntfy.sh/app](https://ntfy.sh/app).
+3. In ntfy, tap **Subscribe to topic**, paste your topic (use **Copy topic** in TownHub), and keep the server as **ntfy.sh**.
+4. Tap **Send test notification** in TownHub to confirm delivery.
+
+### What gets sent
+
+| Event | Push title |
+| ----- | ---------- |
+| New order | 🍔 New Order |
+| New appointment request | 📅 New Appointment Request |
+
+Messages include business name, key order/appointment details, and a link to the Business Hub dashboard.
+
+### Server configuration
+
+| Variable | Default | Purpose |
+| -------- | ------- | ------- |
+| `NTFY_SERVER_URL` | `https://ntfy.sh` | Base URL for publishing and subscription links |
+
+TownHub stores only the **topic** per business (never the full server URL in the database). Subscription URLs are built at runtime from `NTFY_SERVER_URL` + topic.
+
+**Future:** To use a self-hosted ntfy server, set `NTFY_SERVER_URL` to your instance (for example `https://ntfy.yourdomain.com`). No application code changes are required.
+
+### Security
+
+- Topics are cryptographically random (minimum 32 URL-safe characters).
+- Regenerating a topic immediately invalidates the old subscription.
+- Topics are omitted from public storefront API responses.
+- Do not share your topic — anyone subscribed to it receives your alerts.
 
 ---
 
@@ -349,6 +395,8 @@ Verify each scenario in test mode with `APP_BASE_URL` set to your local or stagi
 - [ ] Cancelled card order that was paid — refund note appears
 - [ ] Business new-order email — HTML layout, **Open Order** uses dashboard URL
 - [ ] Business SMS — includes dashboard link
+- [ ] ntfy — enable phone notifications, paste topic in ntfy app, test push succeeds
+- [ ] ntfy — new order sends push when enabled; disabled sends nothing
 - [ ] Status `CONFIRMED` — says “accepted”, not “confirmed” in the first email (first email already sent earlier)
 - [ ] No duplicate messages when status PATCH sends the same value
 

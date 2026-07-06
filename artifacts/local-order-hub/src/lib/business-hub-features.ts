@@ -17,6 +17,7 @@ export const BUSINESS_HUB_NAV_ITEMS: BusinessHubNavItem[] = [
   { href: "/dashboard/business/categories", label: "Categories", featureKey: "business_website" },
   { href: "/dashboard/business/locations", label: "Locations", featureKey: "food_truck_tracking" },
   { href: "/dashboard/business/subscription", label: "Subscription", featureKey: null },
+  { href: "/dashboard/business/notifications", label: "Notifications", featureKey: null },
   { href: "/dashboard/business/settings", label: "Settings", featureKey: null },
 ];
 

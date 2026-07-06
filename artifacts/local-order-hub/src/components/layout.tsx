@@ -10,7 +10,7 @@ import { Badge } from "./ui/badge";
 import { useGetBusinessBySlug, getGetBusinessBySlugQueryKey, useGetAdminBootstrapStatus, getGetAdminBootstrapStatusQueryKey } from "@workspace/api-client-react";
 import { hidesStorefrontCart } from "@workspace/api-zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { usePlatformBranding } from "@/components/theme-provider";
@@ -134,7 +134,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0"
-      style={{ [SITE_HEADER_HEIGHT_CSS_VAR]: `${headerMinHeightPx}px` }}
+      style={{ [SITE_HEADER_HEIGHT_CSS_VAR]: `${headerMinHeightPx}px` } as CSSProperties}
     >
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden">
         <div

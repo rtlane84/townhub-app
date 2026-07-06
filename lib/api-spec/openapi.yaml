@@ -1803,6 +1803,131 @@ paths:
               schema:
                 $ref: "#/components/schemas/BusinessFeatureAccess"
 
+  /businesses/{businessId}/notifications/test/email:
+    post:
+      operationId: testBusinessNotificationEmail
+      tags: [notifications]
+      summary: Send a test notification email to the business owner
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test email sent or logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: Missing notification email
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/notifications/test/sms:
+    post:
+      operationId: testBusinessNotificationSms
+      tags: [notifications]
+      summary: Send a test notification SMS to the business owner
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test SMS sent or logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: Missing notification phone
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/notifications/test/discord:
+    post:
+      operationId: testBusinessNotificationDiscord
+      tags: [notifications]
+      summary: Send a test notification to the business Discord webhook
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test Discord message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: Missing or invalid Discord webhook URL
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/notifications/test/ntfy:
+    post:
+      operationId: testBusinessNotificationNtfy
+      tags: [notifications]
+      summary: Send a test ntfy push notification to the business topic
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test ntfy notification sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: ntfy not enabled or topic missing
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/notifications/ntfy/regenerate-topic:
+    post:
+      operationId: regenerateBusinessNtfyTopic
+      tags: [notifications]
+      summary: Regenerate the ntfy subscription topic for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated business with new topic
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Business not found
+
   # ─── Food Truck Locations ───────────────────────────────────────
   /businesses/{id}/food-truck-locations:
     get:
@@ -1996,7 +2121,7 @@ paths:
           name: channel
           schema:
             type: string
-            enum: [EMAIL, SMS]
+            enum: [EMAIL, SMS, DISCORD, NTFY]
         - in: query
           name: eventType
           schema:
@@ -2631,6 +2756,24 @@ components:
           type: boolean
         notifyAppointmentRequestsBySms:
           type: boolean
+        discordWebhookUrl:
+          type: ["string", "null"]
+        notifyNewOrdersByDiscord:
+          type: boolean
+        notifyAppointmentRequestsByDiscord:
+          type: boolean
+        ntfyEnabled:
+          type: boolean
+        ntfyTopic:
+          type: ["string", "null"]
+        ntfyConnectedAt:
+          type: ["string", "null"]
+          format: date-time
+        ntfyLastTestAt:
+          type: ["string", "null"]
+          format: date-time
+        ntfySubscriptionUrl:
+          type: ["string", "null"]
         eventLocationEnabled:
           type: boolean
         storefrontMode:
@@ -2808,6 +2951,14 @@ components:
         notifyAppointmentRequestsByEmail:
           type: boolean
         notifyAppointmentRequestsBySms:
+          type: boolean
+        discordWebhookUrl:
+          type: ["string", "null"]
+        notifyNewOrdersByDiscord:
+          type: boolean
+        notifyAppointmentRequestsByDiscord:
+          type: boolean
+        ntfyEnabled:
           type: boolean
         eventLocationEnabled:
           type: boolean
@@ -3944,6 +4095,20 @@ components:
         enabled:
           type: boolean
 
+    NotificationTestResult:
+      type: object
+      required: [ok, channel]
+      properties:
+        ok:
+          type: boolean
+        channel:
+          type: string
+          enum: [EMAIL, SMS, DISCORD, NTFY]
+        recipient:
+          type: string
+        message:
+          type: string
+
     BusinessFeatureAccess:
       type: object
       required: [bypassRestrictions, planName, features]
@@ -4266,7 +4431,7 @@ components:
           type: ["integer", "null"]
         channel:
           type: string
-          enum: [EMAIL, SMS]
+          enum: [EMAIL, SMS, DISCORD, NTFY]
         eventType:
           type: ["string", "null"]
         type:

@@ -99,13 +99,17 @@ export default function BusinessOrders() {
   const { selectedBusinessId, business } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? 0;
 
-  const { data: orders, isPending, isFetching, isError, error, refetch } = useListBusinessOrders(businessId, {
-    query: {
-      enabled: !!businessId,
-      queryKey: getListBusinessOrdersQueryKey(businessId),
-      placeholderData: keepPreviousData,
+  const { data: orders, isPending, isFetching, isError, error, refetch } = useListBusinessOrders(
+    businessId,
+    undefined,
+    {
+      query: {
+        enabled: !!businessId,
+        queryKey: getListBusinessOrdersQueryKey(businessId),
+        placeholderData: keepPreviousData,
+      },
     },
-  });
+  );
 
   const lastOrdersRef = useRef<Order[]>([]);
   const orderList = useMemo(() => {

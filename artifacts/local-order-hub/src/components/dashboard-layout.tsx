@@ -12,15 +12,14 @@ import {
   ChefHat,
   Lock,
   SlidersHorizontal,
+  Bell,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
 import { useLiveAppointmentAlerts } from "@/hooks/use-live-appointment-alerts";
 import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
-import { OrderAlertControls } from "@/components/order-alert-controls";
 import { NewOrderAlertBanner } from "@/components/new-order-alert-banner";
 import { NewAppointmentAlertBanner } from "@/components/new-appointment-alert-banner";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
@@ -34,6 +33,7 @@ import {
   resolveBusinessHubNavItem,
   type BusinessHubNavItem,
 } from "@/lib/business-hub-features";
+import { cn } from "@/lib/utils";
 import { FeatureLockedPage, StorefrontModeRestrictedPage } from "@/components/locked-feature-modal";
 import {
   DASHBOARD_MOBILE_MAIN_TOP_CLASS,
@@ -51,6 +51,7 @@ const NAV_ICONS = {
   "/dashboard/business/categories": Tags,
   "/dashboard/business/locations": MapPin,
   "/dashboard/business/subscription": CreditCard,
+  "/dashboard/business/notifications": Bell,
   "/dashboard/business/settings": Settings,
 } as const;
 
@@ -177,9 +178,6 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
           <nav className="space-y-1 mt-6">
             <BusinessNavLinks location={location} navItems={visibleNavItems} />
           </nav>
-          <div className="mt-8">
-            <OrderAlertControls />
-          </div>
         </div>
       </aside>
 
@@ -210,9 +208,6 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
                 onNavigate={() => setOpen(false)}
               />
             </nav>
-            <div className="px-3 mt-6 pb-6">
-              <OrderAlertControls compact />
-            </div>
           </SheetContent>
         </Sheet>
         <span className="text-sm font-semibold truncate">{business?.name ?? activeLabel}</span>

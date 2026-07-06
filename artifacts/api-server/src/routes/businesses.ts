@@ -35,6 +35,8 @@ import { businessHasOnlinePaymentsReady } from "../lib/stripe-connect";
 import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
 import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
 import { archiveBusiness } from "../lib/business-lifecycle";
+import { buildNtfySubscriptionUrl } from "../lib/ntfy-config";
+import { ntfySettingsForEnable } from "../lib/ntfy-business-settings";
 import {
   isPostgresUniqueViolation,
   resolveUniqueBusinessSlug,
@@ -89,6 +91,14 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     notifyNewOrdersBySms: b.notifyNewOrdersBySms,
     notifyAppointmentRequestsByEmail: b.notifyAppointmentRequestsByEmail,
     notifyAppointmentRequestsBySms: b.notifyAppointmentRequestsBySms,
+    discordWebhookUrl: b.discordWebhookUrl,
+    notifyNewOrdersByDiscord: b.notifyNewOrdersByDiscord,
+    notifyAppointmentRequestsByDiscord: b.notifyAppointmentRequestsByDiscord,
+    ntfyEnabled: b.ntfyEnabled,
+    ntfyTopic: b.ntfyTopic,
+    ntfyConnectedAt: b.ntfyConnectedAt,
+    ntfyLastTestAt: b.ntfyLastTestAt,
+    ntfySubscriptionUrl: b.ntfyTopic ? buildNtfySubscriptionUrl(b.ntfyTopic) : null,
     eventLocationEnabled: b.eventLocationEnabled,
     storefrontMode: b.storefrontMode,
     accentColor: b.accentColor,
@@ -110,6 +120,14 @@ export function serializePublicBusiness(b: typeof businessesTable.$inferSelect) 
     notifyNewOrdersBySms: _notifyNewOrdersBySms,
     notifyAppointmentRequestsByEmail: _notifyAppointmentRequestsByEmail,
     notifyAppointmentRequestsBySms: _notifyAppointmentRequestsBySms,
+    notifyNewOrdersByDiscord: _notifyNewOrdersByDiscord,
+    notifyAppointmentRequestsByDiscord: _notifyAppointmentRequestsByDiscord,
+    discordWebhookUrl: _discordWebhookUrl,
+    ntfyEnabled: _ntfyEnabled,
+    ntfyTopic: _ntfyTopic,
+    ntfyConnectedAt: _ntfyConnectedAt,
+    ntfyLastTestAt: _ntfyLastTestAt,
+    ntfySubscriptionUrl: _ntfySubscriptionUrl,
     createdAt: _createdAt,
     ...publicBusiness
   } = serializeBusiness(b);
@@ -533,6 +551,22 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.notifyAppointmentRequestsByEmail = (d as Record<string, unknown>).notifyAppointmentRequestsByEmail;
   if ((d as Record<string, unknown>).notifyAppointmentRequestsBySms !== undefined)
     updateData.notifyAppointmentRequestsBySms = (d as Record<string, unknown>).notifyAppointmentRequestsBySms;
+  if ((d as Record<string, unknown>).discordWebhookUrl !== undefined) {
+    const raw = String((d as Record<string, unknown>).discordWebhookUrl ?? "").trim();
+    updateData.discordWebhookUrl = raw || null;
+  }
+  if ((d as Record<string, unknown>).notifyNewOrdersByDiscord !== undefined)
+    updateData.notifyNewOrdersByDiscord = (d as Record<string, unknown>).notifyNewOrdersByDiscord;
+  if ((d as Record<string, unknown>).notifyAppointmentRequestsByDiscord !== undefined)
+    updateData.notifyAppointmentRequestsByDiscord = (d as Record<string, unknown>).notifyAppointmentRequestsByDiscord;
+  if ((d as Record<string, unknown>).ntfyEnabled !== undefined) {
+    const enabled = (d as Record<string, unknown>).ntfyEnabled === true;
+    if (enabled) {
+      Object.assign(updateData, ntfySettingsForEnable(access.business));
+    } else {
+      updateData.ntfyEnabled = false;
+    }
+  }
   if ((d as Record<string, unknown>).eventLocationEnabled !== undefined)
     updateData.eventLocationEnabled = (d as Record<string, unknown>).eventLocationEnabled;
   if ((d as Record<string, unknown>).storefrontMode !== undefined)

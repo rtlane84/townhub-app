@@ -107,6 +107,14 @@ export const GetMyBusinessResponse = zod.object({
   "notifyNewOrdersBySms": zod.boolean().optional(),
   "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
   "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
+  "ntfyTopic": zod.string().nullish(),
+  "ntfyConnectedAt": zod.coerce.date().nullish(),
+  "ntfyLastTestAt": zod.coerce.date().nullish(),
+  "ntfySubscriptionUrl": zod.string().nullish(),
   "eventLocationEnabled": zod.boolean().optional(),
   "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
   "accentColor": zod.string().nullish(),
@@ -196,6 +204,14 @@ export const ListBusinessesResponseItem = zod.object({
   "notifyNewOrdersBySms": zod.boolean().optional(),
   "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
   "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
+  "ntfyTopic": zod.string().nullish(),
+  "ntfyConnectedAt": zod.coerce.date().nullish(),
+  "ntfyLastTestAt": zod.coerce.date().nullish(),
+  "ntfySubscriptionUrl": zod.string().nullish(),
   "eventLocationEnabled": zod.boolean().optional(),
   "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
   "accentColor": zod.string().nullish(),
@@ -359,6 +375,14 @@ export const GetBusinessCheckoutResponse = zod.object({
   "notifyNewOrdersBySms": zod.boolean().optional(),
   "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
   "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
+  "ntfyTopic": zod.string().nullish(),
+  "ntfyConnectedAt": zod.coerce.date().nullish(),
+  "ntfyLastTestAt": zod.coerce.date().nullish(),
+  "ntfySubscriptionUrl": zod.string().nullish(),
   "eventLocationEnabled": zod.boolean().optional(),
   "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
   "accentColor": zod.string().nullish(),
@@ -429,6 +453,14 @@ export const GetBusinessBySlugResponse = zod.object({
   "notifyNewOrdersBySms": zod.boolean().optional(),
   "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
   "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
+  "ntfyTopic": zod.string().nullish(),
+  "ntfyConnectedAt": zod.coerce.date().nullish(),
+  "ntfyLastTestAt": zod.coerce.date().nullish(),
+  "ntfySubscriptionUrl": zod.string().nullish(),
   "eventLocationEnabled": zod.boolean().optional(),
   "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
   "accentColor": zod.string().nullish(),
@@ -604,6 +636,14 @@ export const GetBusinessResponse = zod.object({
   "notifyNewOrdersBySms": zod.boolean().optional(),
   "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
   "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
+  "ntfyTopic": zod.string().nullish(),
+  "ntfyConnectedAt": zod.coerce.date().nullish(),
+  "ntfyLastTestAt": zod.coerce.date().nullish(),
+  "ntfySubscriptionUrl": zod.string().nullish(),
   "eventLocationEnabled": zod.boolean().optional(),
   "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
   "accentColor": zod.string().nullish(),
@@ -667,6 +707,10 @@ export const UpdateBusinessBody = zod.object({
   "notifyNewOrdersBySms": zod.boolean().optional(),
   "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
   "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
   "eventLocationEnabled": zod.boolean().optional(),
   "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
   "accentColor": zod.string().nullish(),
@@ -727,6 +771,14 @@ export const UpdateBusinessResponse = zod.object({
   "notifyNewOrdersBySms": zod.boolean().optional(),
   "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
   "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
+  "ntfyTopic": zod.string().nullish(),
+  "ntfyConnectedAt": zod.coerce.date().nullish(),
+  "ntfyLastTestAt": zod.coerce.date().nullish(),
+  "ntfySubscriptionUrl": zod.string().nullish(),
   "eventLocationEnabled": zod.boolean().optional(),
   "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
   "accentColor": zod.string().nullish(),
@@ -1994,6 +2046,14 @@ export const AssignBusinessOwnerResponse = zod.object({
   "notifyNewOrdersBySms": zod.boolean().optional(),
   "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
   "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
+  "ntfyTopic": zod.string().nullish(),
+  "ntfyConnectedAt": zod.coerce.date().nullish(),
+  "ntfyLastTestAt": zod.coerce.date().nullish(),
+  "ntfySubscriptionUrl": zod.string().nullish(),
   "eventLocationEnabled": zod.boolean().optional(),
   "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
   "accentColor": zod.string().nullish(),
@@ -2882,6 +2942,143 @@ export const GetBusinessFeatureAccessResponse = zod.object({
 
 
 /**
+ * @summary Send a test notification email to the business owner
+ */
+export const TestBusinessNotificationEmailParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const TestBusinessNotificationEmailResponse = zod.object({
+  "ok": zod.boolean(),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "recipient": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Send a test notification SMS to the business owner
+ */
+export const TestBusinessNotificationSmsParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const TestBusinessNotificationSmsResponse = zod.object({
+  "ok": zod.boolean(),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "recipient": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Send a test notification to the business Discord webhook
+ */
+export const TestBusinessNotificationDiscordParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const TestBusinessNotificationDiscordResponse = zod.object({
+  "ok": zod.boolean(),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "recipient": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Send a test ntfy push notification to the business topic
+ */
+export const TestBusinessNotificationNtfyParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const TestBusinessNotificationNtfyResponse = zod.object({
+  "ok": zod.boolean(),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "recipient": zod.string().optional(),
+  "message": zod.string().optional()
+})
+
+
+/**
+ * @summary Regenerate the ntfy subscription topic for a business
+ */
+export const RegenerateBusinessNtfyTopicParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const regenerateBusinessNtfyTopicResponseStructuredHoursItemDayOfWeekMin = 0;
+export const regenerateBusinessNtfyTopicResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
+
+
+export const RegenerateBusinessNtfyTopicResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "heroImageUrl": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "websiteUrl": zod.string().nullish().describe('External website URL shown when the website card is enabled.'),
+  "showWebsiteCard": zod.boolean().optional().describe('When true and websiteUrl is set, show a website card on the public storefront.'),
+  "hours": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(regenerateBusinessNtfyTopicResponseStructuredHoursItemDayOfWeekMin).max(regenerateBusinessNtfyTopicResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
+  "active": zod.boolean(),
+  "featured": zod.boolean().optional(),
+  "pickupEnabled": zod.boolean().optional(),
+  "deliveryEnabled": zod.boolean().optional(),
+  "deliveryFee": zod.number().nullish(),
+  "minimumOrder": zod.number().nullish(),
+  "payAtPickupEnabled": zod.boolean().optional(),
+  "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
+  "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
+  "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
+  "orderCutoffTime": zod.string().nullish(),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "minimumOrderForDelivery": zod.number().nullish(),
+  "deliveryRadiusMiles": zod.number().nullish(),
+  "deliveryNotes": zod.string().nullish(),
+  "pickupInstructions": zod.string().nullish(),
+  "deliveryInstructions": zod.string().nullish(),
+  "taxEnabled": zod.boolean().optional().describe('When true, apply the configured sales tax rate to taxable items at checkout.'),
+  "taxRatePercent": zod.number().nullish().describe('Sales tax rate as a percentage (e.g. 6.00 for 6%).'),
+  "taxLabel": zod.string().optional().describe('Label shown on receipts and checkout (default \"Sales Tax\").'),
+  "orderNotificationEmail": zod.string().nullish(),
+  "notificationEmail": zod.string().nullish(),
+  "notificationPhone": zod.string().nullish(),
+  "notifyNewOrdersByEmail": zod.boolean().optional(),
+  "notifyNewOrdersBySms": zod.boolean().optional(),
+  "notifyAppointmentRequestsByEmail": zod.boolean().optional(),
+  "notifyAppointmentRequestsBySms": zod.boolean().optional(),
+  "discordWebhookUrl": zod.string().nullish(),
+  "notifyNewOrdersByDiscord": zod.boolean().optional(),
+  "notifyAppointmentRequestsByDiscord": zod.boolean().optional(),
+  "ntfyEnabled": zod.boolean().optional(),
+  "ntfyTopic": zod.string().nullish(),
+  "ntfyConnectedAt": zod.coerce.date().nullish(),
+  "ntfyLastTestAt": zod.coerce.date().nullish(),
+  "ntfySubscriptionUrl": zod.string().nullish(),
+  "eventLocationEnabled": zod.boolean().optional(),
+  "storefrontMode": zod.enum(['ORDERING', 'APPOINTMENT', 'INFORMATION']).describe('ORDERING shows cart\/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu\/products without online ordering.').nullish(),
+  "accentColor": zod.string().nullish(),
+  "buttonColor": zod.string().nullish(),
+  "bannerText": zod.string().nullish(),
+  "ownerId": zod.string().nullish(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
  * @summary List food truck location schedule for a business
  */
 export const ListFoodTruckLocationsParams = zod.object({
@@ -3165,7 +3362,7 @@ export const ListNotificationLogsQueryParams = zod.object({
   "orderId": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
   "status": zod.enum(['SENT', 'LOGGED', 'FAILED']).optional(),
-  "channel": zod.enum(['EMAIL', 'SMS']).optional(),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']).optional(),
   "eventType": zod.coerce.string().optional()
 })
 
@@ -3174,7 +3371,7 @@ export const ListNotificationLogsResponseItem = zod.object({
   "businessId": zod.number(),
   "orderId": zod.number().nullish(),
   "appointmentRequestId": zod.number().nullish(),
-  "channel": zod.enum(['EMAIL', 'SMS']),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
   "eventType": zod.string().nullish(),
   "type": zod.string().optional(),
   "recipientEmail": zod.string().nullish(),

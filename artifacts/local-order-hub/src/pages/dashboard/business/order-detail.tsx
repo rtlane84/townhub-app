@@ -32,7 +32,6 @@ import {
   formatOrderStatusForDisplay,
   orderStatusNeedsConfirmation,
 } from "@/lib/order-status-safety";
-
 const STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
 
 const STATUS_COLORS: Record<string, string> = {

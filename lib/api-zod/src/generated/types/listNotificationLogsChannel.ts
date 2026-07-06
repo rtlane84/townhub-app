@@ -12,4 +12,6 @@ export type ListNotificationLogsChannel = typeof ListNotificationLogsChannel[key
 export const ListNotificationLogsChannel = {
   EMAIL: 'EMAIL',
   SMS: 'SMS',
+  DISCORD: 'DISCORD',
+  NTFY: 'NTFY',
 } as const;

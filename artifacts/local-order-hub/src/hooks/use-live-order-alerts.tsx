@@ -13,8 +13,6 @@ import {
 } from "@/lib/business-orders-api";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { getOrderSoundsEnabled } from "@/lib/order-alert-preferences";
-import { playOrderAlertChime } from "@/lib/order-alert-sound";
 import { orderAlertDescription } from "@/lib/order-alert-format";
 import {
   detectOrderListChanges,
@@ -22,12 +20,21 @@ import {
   orderSummariesEqual,
 } from "@/lib/order-dashboard-sync";
 import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh-context";
+import { getNotificationPreferences } from "@/lib/notification-preferences";
+import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
 
 const POLL_INTERVAL_MS = 5000;
 
 function maxOrderId(orders: Order[]): number {
   if (!orders.length) return 0;
   return Math.max(...orders.map((o) => o.id));
+}
+
+function playOrderAlertSound(businessId: number): void {
+  const prefs = getNotificationPreferences(businessId);
+  if (!prefs.soundsEnabled) return;
+  unlockNotificationSound();
+  playNotificationSound(prefs.volume);
 }
 
 export function useLiveOrderAlerts(businessId: number | undefined) {
@@ -82,11 +89,11 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
         ),
       });
 
-      if (getOrderSoundsEnabled()) {
-        playOrderAlertChime();
+      if (businessId) {
+        playOrderAlertSound(businessId);
       }
     },
-    [setLocation, toast],
+    [businessId, setLocation, toast],
   );
 
   const showMultipleOrdersAlert = useCallback(
@@ -105,11 +112,11 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
         ),
       });
 
-      if (getOrderSoundsEnabled()) {
-        playOrderAlertChime();
+      if (businessId) {
+        playOrderAlertSound(businessId);
       }
     },
-    [setLocation, toast],
+    [businessId, setLocation, toast],
   );
 
   useEffect(() => {

@@ -72,6 +72,8 @@ export * from './modifierGroupUpdate';
 export * from './modifierSelectionType';
 export * from './notificationLog';
 export * from './notificationLogChannel';
+export * from './notificationTestResult';
+export * from './notificationTestResultChannel';
 export * from './order';
 export * from './orderInput';
 export * from './orderItem';

@@ -8,8 +8,6 @@ import {
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { getOrderSoundsEnabled } from "@/lib/order-alert-preferences";
-import { playOrderAlertChime } from "@/lib/order-alert-sound";
 import { appointmentAlertDescription } from "@/lib/appointment-alert-format";
 import {
   appointmentListsEqual,
@@ -17,12 +15,21 @@ import {
   isAlertableNewAppointmentRequest,
 } from "@/lib/appointment-dashboard-sync";
 import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh-context";
+import { getNotificationPreferences } from "@/lib/notification-preferences";
+import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
 
 const POLL_INTERVAL_MS = 5000;
 
 function maxRequestId(requests: AppointmentRequest[]): number {
   if (!requests.length) return 0;
   return Math.max(...requests.map((r) => r.id));
+}
+
+function playAppointmentAlertSound(businessId: number): void {
+  const prefs = getNotificationPreferences(businessId);
+  if (!prefs.soundsEnabled) return;
+  unlockNotificationSound();
+  playNotificationSound(prefs.volume);
 }
 
 export function useLiveAppointmentAlerts(
@@ -76,11 +83,11 @@ export function useLiveAppointmentAlerts(
         ),
       });
 
-      if (getOrderSoundsEnabled()) {
-        playOrderAlertChime();
+      if (businessId) {
+        playAppointmentAlertSound(businessId);
       }
     },
-    [setLocation, toast],
+    [businessId, setLocation, toast],
   );
 
   const showMultipleRequestsAlert = useCallback(
@@ -99,11 +106,11 @@ export function useLiveAppointmentAlerts(
         ),
       });
 
-      if (getOrderSoundsEnabled()) {
-        playOrderAlertChime();
+      if (businessId) {
+        playAppointmentAlertSound(businessId);
       }
     },
-    [setLocation, toast],
+    [businessId, setLocation, toast],
   );
 
   useEffect(() => {
