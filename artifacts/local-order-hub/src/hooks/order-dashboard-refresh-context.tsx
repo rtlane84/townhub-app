@@ -9,44 +9,48 @@ import {
 } from "react";
 import type { AppointmentRequest, Order } from "@workspace/api-client-react";
 import { ORDER_HIGHLIGHT_DURATION_MS } from "@/lib/order-dashboard-sync";
+import {
+  mergePendingAppointments,
+  mergePendingOrders,
+} from "@/lib/business-hub-notification-manager";
 
 export type OrderHighlightKind = "new" | "updated";
 export type AppointmentHighlightKind = OrderHighlightKind;
 
-export interface PendingOrderBanner {
-  order: Order;
-}
+export type PendingOrderNotification = {
+  orders: Order[];
+};
 
-export interface PendingAppointmentBanner {
-  request: AppointmentRequest;
-}
+export type PendingAppointmentNotification = {
+  requests: AppointmentRequest[];
+};
 
 interface OrderDashboardRefreshContextValue {
   getHighlight: (orderId: number) => OrderHighlightKind | undefined;
   markHighlights: (newOrderIds: number[], updatedOrderIds: number[]) => void;
-  pendingBanners: PendingOrderBanner[];
-  addNewOrderBanners: (orders: Order[]) => void;
-  dismissBanner: (orderId: number) => void;
+  pendingOrderNotification: PendingOrderNotification | null;
+  queueOrderNotificationBanner: (orders: Order[]) => void;
+  clearOrderNotificationBanner: () => void;
   getAppointmentHighlight: (requestId: number) => AppointmentHighlightKind | undefined;
   markAppointmentHighlights: (newRequestIds: number[], updatedRequestIds: number[]) => void;
-  pendingAppointmentBanners: PendingAppointmentBanner[];
-  addNewAppointmentBanners: (requests: AppointmentRequest[]) => void;
-  dismissAppointmentBanner: (requestId: number) => void;
+  pendingAppointmentNotification: PendingAppointmentNotification | null;
+  queueAppointmentNotificationBanner: (requests: AppointmentRequest[]) => void;
+  clearAppointmentNotificationBanner: () => void;
 }
 
 const OrderDashboardRefreshContext = createContext<OrderDashboardRefreshContextValue | null>(null);
 
 export function OrderDashboardRefreshProvider({ children }: { children: ReactNode }) {
   const [highlights, setHighlights] = useState<Map<number, OrderHighlightKind>>(() => new Map());
-  const [pendingBanners, setPendingBanners] = useState<PendingOrderBanner[]>([]);
+  const [pendingOrderNotification, setPendingOrderNotification] =
+    useState<PendingOrderNotification | null>(null);
   const [appointmentHighlights, setAppointmentHighlights] = useState<Map<number, AppointmentHighlightKind>>(
     () => new Map(),
   );
-  const [pendingAppointmentBanners, setPendingAppointmentBanners] = useState<PendingAppointmentBanner[]>([]);
+  const [pendingAppointmentNotification, setPendingAppointmentNotification] =
+    useState<PendingAppointmentNotification | null>(null);
   const timeoutIdsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
-  const bannerOrderIdsRef = useRef<Set<number>>(new Set());
   const appointmentTimeoutIdsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
-  const bannerAppointmentIdsRef = useRef<Set<number>>(new Set());
 
   const clearHighlight = useCallback((orderId: number) => {
     setHighlights((prev) => {
@@ -98,22 +102,17 @@ export function OrderDashboardRefreshProvider({ children }: { children: ReactNod
     [scheduleClear],
   );
 
-  const addNewOrderBanners = useCallback((orders: Order[]) => {
+  const queueOrderNotificationBanner = useCallback((orders: Order[]) => {
     if (!orders.length) return;
 
-    setPendingBanners((prev) => {
-      const next = [...prev];
-      for (const order of orders) {
-        if (bannerOrderIdsRef.current.has(order.id)) continue;
-        bannerOrderIdsRef.current.add(order.id);
-        next.push({ order });
-      }
-      return next.sort((a, b) => b.order.id - a.order.id);
+    setPendingOrderNotification((prev) => {
+      const merged = mergePendingOrders(prev?.orders ?? [], orders);
+      return merged.length ? { orders: merged } : null;
     });
   }, []);
 
-  const dismissBanner = useCallback((orderId: number) => {
-    setPendingBanners((prev) => prev.filter((b) => b.order.id !== orderId));
+  const clearOrderNotificationBanner = useCallback(() => {
+    setPendingOrderNotification(null);
   }, []);
 
   const clearAppointmentHighlight = useCallback((requestId: number) => {
@@ -166,22 +165,17 @@ export function OrderDashboardRefreshProvider({ children }: { children: ReactNod
     [scheduleAppointmentClear],
   );
 
-  const addNewAppointmentBanners = useCallback((requests: AppointmentRequest[]) => {
+  const queueAppointmentNotificationBanner = useCallback((requests: AppointmentRequest[]) => {
     if (!requests.length) return;
 
-    setPendingAppointmentBanners((prev) => {
-      const next = [...prev];
-      for (const request of requests) {
-        if (bannerAppointmentIdsRef.current.has(request.id)) continue;
-        bannerAppointmentIdsRef.current.add(request.id);
-        next.push({ request });
-      }
-      return next.sort((a, b) => b.request.id - a.request.id);
+    setPendingAppointmentNotification((prev) => {
+      const merged = mergePendingAppointments(prev?.requests ?? [], requests);
+      return merged.length ? { requests: merged } : null;
     });
   }, []);
 
-  const dismissAppointmentBanner = useCallback((requestId: number) => {
-    setPendingAppointmentBanners((prev) => prev.filter((b) => b.request.id !== requestId));
+  const clearAppointmentNotificationBanner = useCallback(() => {
+    setPendingAppointmentNotification(null);
   }, []);
 
   const getHighlight = useCallback(
@@ -198,26 +192,26 @@ export function OrderDashboardRefreshProvider({ children }: { children: ReactNod
     () => ({
       getHighlight,
       markHighlights,
-      pendingBanners,
-      addNewOrderBanners,
-      dismissBanner,
+      pendingOrderNotification,
+      queueOrderNotificationBanner,
+      clearOrderNotificationBanner,
       getAppointmentHighlight,
       markAppointmentHighlights,
-      pendingAppointmentBanners,
-      addNewAppointmentBanners,
-      dismissAppointmentBanner,
+      pendingAppointmentNotification,
+      queueAppointmentNotificationBanner,
+      clearAppointmentNotificationBanner,
     }),
     [
       getHighlight,
       markHighlights,
-      pendingBanners,
-      addNewOrderBanners,
-      dismissBanner,
+      pendingOrderNotification,
+      queueOrderNotificationBanner,
+      clearOrderNotificationBanner,
       getAppointmentHighlight,
       markAppointmentHighlights,
-      pendingAppointmentBanners,
-      addNewAppointmentBanners,
-      dismissAppointmentBanner,
+      pendingAppointmentNotification,
+      queueAppointmentNotificationBanner,
+      clearAppointmentNotificationBanner,
     ],
   );
 
@@ -241,14 +235,14 @@ export function useOrderDashboardRefreshActions() {
   return ctx;
 }
 
-export function usePendingOrderBanners() {
+export function usePendingOrderNotification() {
   const ctx = useContext(OrderDashboardRefreshContext);
   if (!ctx) {
-    throw new Error("usePendingOrderBanners must be used within OrderDashboardRefreshProvider");
+    throw new Error("usePendingOrderNotification must be used within OrderDashboardRefreshProvider");
   }
   return {
-    pendingBanners: ctx.pendingBanners,
-    dismissBanner: ctx.dismissBanner,
+    notification: ctx.pendingOrderNotification,
+    clearNotification: ctx.clearOrderNotificationBanner,
   };
 }
 
@@ -257,13 +251,13 @@ export function useAppointmentHighlight(requestId: number): AppointmentHighlight
   return ctx?.getAppointmentHighlight(requestId);
 }
 
-export function usePendingAppointmentBanners() {
+export function usePendingAppointmentNotification() {
   const ctx = useContext(OrderDashboardRefreshContext);
   if (!ctx) {
-    throw new Error("usePendingAppointmentBanners must be used within OrderDashboardRefreshProvider");
+    throw new Error("usePendingAppointmentNotification must be used within OrderDashboardRefreshProvider");
   }
   return {
-    pendingBanners: ctx.pendingAppointmentBanners,
-    dismissBanner: ctx.dismissAppointmentBanner,
+    notification: ctx.pendingAppointmentNotification,
+    clearNotification: ctx.clearAppointmentNotificationBanner,
   };
 }

@@ -61,7 +61,9 @@ Live events use an **in-process event bus** in `artifacts/api-server/src/lib/bus
 
 ### Polling fallback
 
-The frontend keeps the previous polling loop as a fallback when SSE cannot be established. Owner dashboard GETs (`/orders`, `/summary`, `/appointment-requests`, `/live-events`) are excluded from the general rate limiter so live dashboards do not hit 429 during normal use.
+The frontend keeps HTTP polling as a fallback when SSE cannot be established, and uses polling on all non-live Business Hub pages. Owner dashboard GETs (`/orders`, `/summary`, `/appointment-requests`, `/live-events`) are excluded from the general rate limiter so live dashboards do not hit 429 during normal use.
+
+For owner-facing toast, banner, and tab/window behavior, see [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](BUSINESS_HUB_LIVE_NOTIFICATIONS.md).
 
 ### Proxies
 

@@ -38,6 +38,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { changeOrderStatusCopy } from "@/lib/confirm-action-copy";
+import { safeCancelQueries, safeInvalidateQueries } from "@/lib/query-cancellation";
 import { orderStatusNeedsConfirmation } from "@/lib/order-status-safety";
 import { Link } from "wouter";
 import { ChefHat, Expand, Loader2, Minimize, RefreshCw, ShoppingBag } from "lucide-react";
@@ -249,7 +250,7 @@ export default function BusinessKitchen() {
       onMutate: async (vars) => {
         setUpdatingId(vars.id);
         const nextStatus = String(vars.data.status);
-        await queryClient.cancelQueries({ queryKey: getKitchenBusinessOrdersQueryKey(businessId) });
+        await safeCancelQueries(queryClient, { queryKey: getKitchenBusinessOrdersQueryKey(businessId) });
         const previous = queryClient.getQueryData<Order[]>(getKitchenBusinessOrdersQueryKey(businessId));
         patchKitchenOrdersCache(queryClient, businessId, vars.id, nextStatus);
         return { previous };
@@ -257,7 +258,7 @@ export default function BusinessKitchen() {
       onSuccess: (updated) => {
         if (updated.businessId) {
           patchKitchenOrdersCache(queryClient, updated.businessId, updated.id, updated.status, updated);
-          queryClient.invalidateQueries({
+          safeInvalidateQueries(queryClient, {
             queryKey: getGetBusinessOrderSummaryQueryKey(updated.businessId),
           });
         }

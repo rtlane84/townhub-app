@@ -71,7 +71,7 @@ GET /api/businesses/:businessId/live-events
 
 **Event bus (beta):** `business-live-events.ts` is an in-process pub/sub map keyed by `businessId`. Order and appointment routes publish after successful mutations; the Stripe webhook publishes `order.paid` / refund events. This is correct for a **single API instance**. Multi-instance production requires a shared bus (Redis pub/sub, Postgres `LISTEN/NOTIFY`, or another message broker) so every instance can fan out to its local SSE connections.
 
-**Frontend fallback:** If SSE is unavailable, returns 401/403, or fails after repeated reconnect attempts, `useLiveOrderAlerts` / `useLiveAppointmentAlerts` resume route-aware polling (12s interval, 429 backoff, paused when `document.hidden`). A small status dot shows Live / Reconnecting / Polling / Offline on live pages.
+**Frontend fallback:** If SSE is unavailable, returns 401/403, or fails after repeated reconnect attempts, live pages use HTTP polling (~12s). Non-live Business Hub pages always poll. See [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](BUSINESS_HUB_LIVE_NOTIFICATIONS.md) for toast, banner, and tab/visibility behavior. A small status dot shows Live / Reconnecting / Polling / Offline on live pages.
 
 **Security:** Customers and guests cannot subscribe. Events are scoped to one business; payloads exclude customer PII, Stripe IDs, tokens, and notes.
 

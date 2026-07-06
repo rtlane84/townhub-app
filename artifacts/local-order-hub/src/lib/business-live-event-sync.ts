@@ -8,7 +8,9 @@ import {
 import { getKitchenBusinessOrdersQueryKey } from "@/lib/business-orders-api";
 import type { BusinessLiveEvent } from "@/lib/business-live-event-types";
 import { isAppointmentLiveEventType, isOrderLiveEventType } from "@/lib/business-live-event-types";
+import { safeInvalidateQueries } from "@/lib/query-cancellation";
 
+/** Marks related queries stale without awaiting — avoids CancelledError races with in-flight mutations. */
 export function invalidateQueriesForBusinessLiveEvent(
   queryClient: QueryClient,
   event: BusinessLiveEvent,
@@ -16,21 +18,21 @@ export function invalidateQueriesForBusinessLiveEvent(
   const { businessId, orderId, appointmentId } = event.data;
 
   if (isOrderLiveEventType(event.type)) {
-    queryClient.invalidateQueries({ queryKey: getKitchenBusinessOrdersQueryKey(businessId) });
-    queryClient.invalidateQueries({ queryKey: getGetBusinessOrderSummaryQueryKey(businessId) });
-    queryClient.invalidateQueries({ queryKey: getListBusinessOrdersQueryKey(businessId) });
+    safeInvalidateQueries(queryClient, { queryKey: getKitchenBusinessOrdersQueryKey(businessId) });
+    safeInvalidateQueries(queryClient, { queryKey: getGetBusinessOrderSummaryQueryKey(businessId) });
+    safeInvalidateQueries(queryClient, { queryKey: getListBusinessOrdersQueryKey(businessId) });
     if (orderId != null) {
-      queryClient.invalidateQueries({ queryKey: getGetOrderQueryKey(orderId) });
+      safeInvalidateQueries(queryClient, { queryKey: getGetOrderQueryKey(orderId) });
     }
     return;
   }
 
   if (isAppointmentLiveEventType(event.type)) {
-    queryClient.invalidateQueries({
+    safeInvalidateQueries(queryClient, {
       queryKey: getListBusinessAppointmentRequestsQueryKey(businessId),
     });
     if (appointmentId != null) {
-      queryClient.invalidateQueries({
+      safeInvalidateQueries(queryClient, {
         queryKey: getListBusinessAppointmentRequestsQueryKey(businessId),
       });
     }

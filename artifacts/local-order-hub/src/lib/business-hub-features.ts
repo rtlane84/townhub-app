@@ -73,15 +73,41 @@ const BUSINESS_HUB_LIVE_EVENTS_PATHS = new Set([
   "/dashboard/business/appointments",
 ]);
 
-export function isBusinessHubLiveEventsRoute(pathname: string): boolean {
-  const normalized = pathname.split("?")[0] ?? pathname;
-  if (BUSINESS_HUB_LIVE_EVENTS_PATHS.has(normalized)) return true;
-  for (const base of BUSINESS_HUB_LIVE_EVENTS_PATHS) {
+const BUSINESS_HUB_ORDER_LIVE_PATHS = new Set([
+  "/dashboard/business",
+  "/dashboard/business/orders",
+  "/dashboard/business/kitchen",
+]);
+
+const BUSINESS_HUB_APPOINTMENT_LIVE_PATHS = new Set([
+  "/dashboard/business/appointments",
+]);
+
+function normalizeBusinessHubPath(pathname: string): string {
+  return pathname.split("?")[0] ?? pathname;
+}
+
+function matchesBusinessHubPath(pathname: string, bases: Set<string>): boolean {
+  const normalized = normalizeBusinessHubPath(pathname);
+  if (bases.has(normalized)) return true;
+  for (const base of bases) {
     if (base !== "/dashboard/business" && normalized.startsWith(`${base}/`)) {
       return true;
     }
   }
-  return normalized === "/dashboard/business";
+  return normalized === "/dashboard/business" && bases.has("/dashboard/business");
+}
+
+export function isBusinessHubOrderLivePage(pathname: string): boolean {
+  return matchesBusinessHubPath(pathname, BUSINESS_HUB_ORDER_LIVE_PATHS);
+}
+
+export function isBusinessHubAppointmentLivePage(pathname: string): boolean {
+  return matchesBusinessHubPath(pathname, BUSINESS_HUB_APPOINTMENT_LIVE_PATHS);
+}
+
+export function isBusinessHubLiveEventsRoute(pathname: string): boolean {
+  return matchesBusinessHubPath(pathname, BUSINESS_HUB_LIVE_EVENTS_PATHS);
 }
 
 export function isBusinessHubNavVisibleForStorefrontMode(

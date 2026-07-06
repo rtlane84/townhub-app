@@ -24,19 +24,29 @@ export function orderAlertDescription(order: Order): string {
   return parts.join(" · ");
 }
 
-export function orderBannerHeadline(order: Order, extraCount = 0): string {
-  const label = formatOrderTicketNumber(order.id);
-  if (extraCount > 0) {
-    return `New order · ${label} (+${extraCount} more)`;
+export function orderToastTitle(order: Order): string {
+  return `🍔 New ${formatOrderTicketNumber(order.id)}`;
+}
+
+export function orderToastBody(order: Order): string {
+  return `${order.customerName}\n${formatFulfillmentType(order.fulfillmentType)} • $${order.total.toFixed(2)}`;
+}
+
+export function orderToastTitleMultiple(count: number): string {
+  return `${count} new orders`;
+}
+
+export function orderBannerHeadline(order: Order, totalCount: number): string {
+  if (totalCount > 1) {
+    return `${totalCount} New Orders Waiting`;
   }
-  return `New order · ${label}`;
+  return `🔔 New ${formatOrderTicketNumber(order.id)}`;
 }
 
 export function orderBannerDetails(order: Order): string {
   return [
     order.customerName,
-    `$${order.total.toFixed(2)}`,
     formatFulfillmentType(order.fulfillmentType),
-    formatPaymentMethod(order.paymentMethod),
-  ].join(" · ");
+    `$${order.total.toFixed(2)}`,
+  ].join(" • ");
 }

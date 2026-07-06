@@ -1,18 +1,13 @@
 import { useCallback, useEffect, useRef } from "react";
-import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getListBusinessAppointmentRequestsQueryKey,
   ApiError,
   type AppointmentRequest,
 } from "@workspace/api-client-react";
-import { useToast } from "@/hooks/use-toast";
-import { ToastAction } from "@/components/ui/toast";
-import { appointmentAlertDescription } from "@/lib/appointment-alert-format";
 import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh-context";
-import { getNotificationPreferences } from "@/lib/notification-preferences";
-import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
 import { useBusinessLiveEventsContext } from "@/hooks/business-live-events-provider";
+import { useBusinessHubNotifications } from "@/hooks/use-business-hub-notifications";
 import {
   fetchOwnerAppointmentDashboardData,
   findNewAppointmentRequestsSince,
@@ -23,88 +18,93 @@ import type { BusinessLiveEvent } from "@/lib/business-live-event-types";
 const POLL_INTERVAL_MS = 12_000;
 const RATE_LIMIT_BACKOFF_MS = 60_000;
 
-function playAppointmentAlertSound(businessId: number): void {
-  const prefs = getNotificationPreferences(businessId);
-  if (!prefs.soundsEnabled) return;
-  unlockNotificationSound();
-  playNotificationSound(prefs.volume);
-}
-
 export function useLiveAppointmentAlerts(
   businessId: number | undefined,
   enabled: boolean,
 ) {
-  const { toast } = useToast();
-  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const { markAppointmentHighlights, addNewAppointmentBanners } = useOrderDashboardRefreshActions();
+  const { markAppointmentHighlights } = useOrderDashboardRefreshActions();
   const { usePollingFallback, registerAppointmentRefresh } = useBusinessLiveEventsContext();
+  const { notifyNewAppointments } = useBusinessHubNotifications(businessId);
 
-  const baselineSetRef = useRef(false);
   const latestKnownIdRef = useRef(0);
   const alertedIdsRef = useRef(new Set<number>());
+  const baselineReadyRef = useRef(false);
   const pollingRef = useRef(false);
   const rateLimitedUntilRef = useRef(0);
 
+  const recordNotifiedRequests = useCallback((requests: AppointmentRequest[]) => {
+    for (const request of requests) {
+      alertedIdsRef.current.add(request.id);
+    }
+    if (requests.length) {
+      latestKnownIdRef.current = Math.max(
+        latestKnownIdRef.current,
+        maxAppointmentRequestId(requests),
+      );
+    }
+  }, []);
+
+  const notifyRequests = useCallback(
+    (requests: AppointmentRequest[]) => {
+      if (!requests.length) return;
+      markAppointmentHighlights(
+        requests.map((request) => request.id),
+        [],
+      );
+      notifyNewAppointments(requests);
+      recordNotifiedRequests(requests);
+    },
+    [markAppointmentHighlights, notifyNewAppointments, recordNotifiedRequests],
+  );
+
+  const resolveRequestForAlert = useCallback(
+    async (requestId: number): Promise<AppointmentRequest | null> => {
+      if (!businessId) return null;
+
+      const listKey = getListBusinessAppointmentRequestsQueryKey(businessId);
+      const cached = queryClient.getQueryData<AppointmentRequest[]>(listKey) ?? [];
+      let request = cached.find((entry) => entry.id === requestId);
+      if (request) return request;
+
+      const refreshed = await fetchOwnerAppointmentDashboardData(queryClient, businessId);
+      request = refreshed.requests.find((entry) => entry.id === requestId);
+      return request ?? null;
+    },
+    [businessId, queryClient],
+  );
+
   const processNewRequests = useCallback(
     (requests: AppointmentRequest[]) => {
-      if (!businessId) return;
-
-      if (!baselineSetRef.current) {
-        latestKnownIdRef.current = maxAppointmentRequestId(requests);
-        baselineSetRef.current = true;
-        return;
-      }
+      if (!businessId || !baselineReadyRef.current) return;
 
       const newRequests = findNewAppointmentRequestsSince(
         requests,
         latestKnownIdRef.current,
         alertedIdsRef.current,
       );
-      if (!newRequests.length) return;
-
-      if (newRequests.length === 1) {
-        const request = newRequests[0]!;
-        toast({
-          title: "New appointment request",
-          description: appointmentAlertDescription(request),
-          action: (
-            <ToastAction
-              altText="View appointments"
-              onClick={() => setLocation("/dashboard/business/appointments")}
-            >
-              View
-            </ToastAction>
-          ),
-        });
-        playAppointmentAlertSound(businessId);
-      } else {
-        const latest = newRequests[newRequests.length - 1]!;
-        toast({
-          title: `${newRequests.length} new appointment requests`,
-          description: `Latest: ${appointmentAlertDescription(latest)}`,
-          action: (
-            <ToastAction
-              altText="View appointments"
-              onClick={() => setLocation("/dashboard/business/appointments")}
-            >
-              View appointments
-            </ToastAction>
-          ),
-        });
-        playAppointmentAlertSound(businessId);
-      }
-
-      addNewAppointmentBanners(newRequests);
-      for (const request of newRequests) {
-        alertedIdsRef.current.add(request.id);
-      }
-      latestKnownIdRef.current = Math.max(
-        latestKnownIdRef.current,
-        maxAppointmentRequestId(newRequests),
-      );
+      notifyRequests(newRequests);
     },
-    [addNewAppointmentBanners, businessId, setLocation, toast],
+    [businessId, notifyRequests],
+  );
+
+  const handleAppointmentCreatedEvent = useCallback(
+    async (event: BusinessLiveEvent) => {
+      if (!businessId) return;
+
+      const appointmentId = event.data.appointmentId;
+      if (appointmentId == null || alertedIdsRef.current.has(appointmentId)) {
+        return;
+      }
+
+      const request = await resolveRequestForAlert(appointmentId);
+      if (!request || alertedIdsRef.current.has(request.id)) {
+        return;
+      }
+
+      notifyRequests([request]);
+    },
+    [businessId, notifyRequests, resolveRequestForAlert],
   );
 
   const handleAppointmentLiveEvent = useCallback(
@@ -112,11 +112,7 @@ export function useLiveAppointmentAlerts(
       if (!businessId) return;
 
       if (event.type === "appointment.created") {
-        const requests =
-          queryClient.getQueryData<AppointmentRequest[]>(
-            getListBusinessAppointmentRequestsQueryKey(businessId),
-          ) ?? [];
-        processNewRequests(requests);
+        await handleAppointmentCreatedEvent(event);
         return;
       }
 
@@ -127,8 +123,43 @@ export function useLiveAppointmentAlerts(
         }
       }
     },
-    [businessId, markAppointmentHighlights, processNewRequests, queryClient],
+    [businessId, handleAppointmentCreatedEvent, markAppointmentHighlights],
   );
+
+  useEffect(() => {
+    if (!businessId || !enabled) {
+      latestKnownIdRef.current = 0;
+      alertedIdsRef.current = new Set();
+      baselineReadyRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+    baselineReadyRef.current = false;
+
+    const cached = queryClient.getQueryData<AppointmentRequest[]>(
+      getListBusinessAppointmentRequestsQueryKey(businessId),
+    );
+    if (cached?.length) {
+      latestKnownIdRef.current = maxAppointmentRequestId(cached);
+    }
+
+    void fetchOwnerAppointmentDashboardData(queryClient, businessId)
+      .then(({ requests }) => {
+        if (cancelled) return;
+        latestKnownIdRef.current = maxAppointmentRequestId(requests);
+        baselineReadyRef.current = true;
+      })
+      .catch(() => {
+        if (cancelled) return;
+        baselineReadyRef.current = true;
+      });
+
+    return () => {
+      cancelled = true;
+      baselineReadyRef.current = false;
+    };
+  }, [businessId, enabled, queryClient]);
 
   useEffect(() => {
     if (!businessId || !enabled || usePollingFallback) return;
@@ -137,9 +168,6 @@ export function useLiveAppointmentAlerts(
 
   useEffect(() => {
     if (!businessId || !enabled) {
-      baselineSetRef.current = false;
-      latestKnownIdRef.current = 0;
-      alertedIdsRef.current = new Set();
       return;
     }
 
@@ -159,6 +187,11 @@ export function useLiveAppointmentAlerts(
           businessId,
         );
         if (cancelled) return;
+
+        if (!baselineReadyRef.current) {
+          latestKnownIdRef.current = maxAppointmentRequestId(requests);
+          baselineReadyRef.current = true;
+        }
 
         if (changes.newRequestIds.length || changes.updatedRequestIds.length) {
           markAppointmentHighlights(changes.newRequestIds, changes.updatedRequestIds);

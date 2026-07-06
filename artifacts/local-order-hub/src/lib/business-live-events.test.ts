@@ -60,7 +60,7 @@ describe("business live events wiring", () => {
     assert.match(source, /closeSharedConnection/);
     assert.match(source, /isBusinessHubLiveEventsRoute/);
     assert.match(source, /SSE_MAX_RECONNECT_ATTEMPTS/);
-    assert.match(source, /status === "fallback"/);
+    assert.match(source, /shouldUseOwnerDashboardPolling/);
   });
 
   it("live order and appointment alerts use polling only as fallback", async () => {
@@ -69,12 +69,11 @@ describe("business live events wiring", () => {
       new URL("use-live-appointment-alerts.tsx", hooksDir),
       "utf8",
     );
-    assert.match(orderAlerts, /usePollingFallback/);
-    assert.match(orderAlerts, /registerOrderRefresh/);
-    assert.match(appointmentAlerts, /usePollingFallback/);
-    assert.match(appointmentAlerts, /registerAppointmentRefresh/);
-    assert.match(orderAlerts, /if \(!businessId \|\| !usePollingFallback\) return/);
-    assert.match(appointmentAlerts, /if \(!businessId \|\| !enabled \|\| usePollingFallback\) return/);
+    assert.match(orderAlerts, /handleOrderCreatedEvent/);
+    assert.match(orderAlerts, /alertedIdsRef/);
+    assert.match(orderAlerts, /baselineReadyRef/);
+    assert.match(appointmentAlerts, /useBusinessHubNotifications/);
+    assert.match(appointmentAlerts, /notifyNewAppointments/);
   });
 
   it("dashboard layout wraps BusinessLiveEventsProvider and shows status on live routes", async () => {
@@ -85,6 +84,16 @@ describe("business live events wiring", () => {
     assert.match(layout, /BusinessLiveEventsProvider/);
     assert.match(layout, /useBusinessLiveEvents/);
     assert.match(layout, /BusinessLiveStatusIndicator/);
-    assert.match(layout, /isBusinessHubLiveEventsRoute/);
+    assert.match(layout, /showOrderNotificationBanner/);
+    assert.match(layout, /showAppointmentNotificationBanner/);
+    assert.match(layout, /isBusinessHubOrderLivePage/);
+    assert.match(layout, /shouldUseOwnerDashboardPolling|usePollingFallback/);
+
+    const refresh = await readFile(
+      new URL("owner-order-live-refresh.ts", import.meta.url),
+      "utf8",
+    );
+    assert.match(refresh, /getListBusinessOrdersQueryKey/);
+    assert.match(refresh, /listBusinessOrdersWithQuery/);
   });
 });

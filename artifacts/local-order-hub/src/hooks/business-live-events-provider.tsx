@@ -18,15 +18,16 @@ import {
   sseReconnectDelayMs,
   SSE_MAX_RECONNECT_ATTEMPTS,
 } from "@/lib/business-live-events";
+import { shouldUseOwnerDashboardPolling } from "@/lib/business-hub-notification-manager";
 import { connectBusinessLiveEventStream } from "@/lib/business-live-event-stream";
 import {
-  invalidateQueriesForBusinessLiveEvent,
   isActionableBusinessLiveEvent,
 } from "@/lib/business-live-event-sync";
 import type { BusinessLiveEvent } from "@/lib/business-live-event-types";
 import { isAppointmentLiveEventType, isOrderLiveEventType } from "@/lib/business-live-event-types";
 import { fetchOwnerOrderDashboardData } from "@/lib/owner-order-live-refresh";
 import { fetchOwnerAppointmentDashboardData } from "@/lib/owner-appointment-live-refresh";
+import { isQueryCancellationError } from "@/lib/query-cancellation";
 
 export type BusinessLiveConnectionStatus =
   | "disconnected"
@@ -80,11 +81,12 @@ export function BusinessLiveEventsProvider({ businessId, enabled, children }: Pr
     enabled && isSignedIn && businessId && routeNeedsLiveEvents && isEventSourceSupported(),
   );
 
-  const usePollingFallback =
-    routeNeedsLiveEvents &&
-    (status === "fallback" ||
-      !isEventSourceSupported() ||
-      (status === "disconnected" && !shouldConnect));
+  const usePollingFallback = shouldUseOwnerDashboardPolling(
+    routeNeedsLiveEvents,
+    status,
+    shouldConnect,
+    isEventSourceSupported(),
+  );
 
   const registerOrderRefresh = useCallback(
     (handler: (event: BusinessLiveEvent) => Promise<void>) => {
@@ -110,21 +112,23 @@ export function BusinessLiveEventsProvider({ businessId, enabled, children }: Pr
     async (event: BusinessLiveEvent) => {
       if (!isActionableBusinessLiveEvent(event) || !businessId) return;
 
-      invalidateQueriesForBusinessLiveEvent(queryClient, event);
-
-      if (isOrderLiveEventType(event.type)) {
-        await fetchOwnerOrderDashboardData(queryClient, businessId);
-        for (const handler of orderHandlersRef.current) {
-          await handler(event);
+      try {
+        if (isOrderLiveEventType(event.type)) {
+          await fetchOwnerOrderDashboardData(queryClient, businessId);
+          for (const handler of orderHandlersRef.current) {
+            await handler(event);
+          }
+          return;
         }
-        return;
-      }
 
-      if (isAppointmentLiveEventType(event.type)) {
-        await fetchOwnerAppointmentDashboardData(queryClient, businessId);
-        for (const handler of appointmentHandlersRef.current) {
-          await handler(event);
+        if (isAppointmentLiveEventType(event.type)) {
+          await fetchOwnerAppointmentDashboardData(queryClient, businessId);
+          for (const handler of appointmentHandlersRef.current) {
+            await handler(event);
+          }
         }
+      } catch (error) {
+        if (!isQueryCancellationError(error)) throw error;
       }
     },
     [businessId, queryClient],

@@ -10,7 +10,7 @@ describe("business-live-event-sync", () => {
     assert.match(source, /getKitchenBusinessOrdersQueryKey/);
     assert.match(source, /getGetBusinessOrderSummaryQueryKey/);
     assert.match(source, /getListBusinessOrdersQueryKey/);
-    assert.match(source, /getGetOrderQueryKey/);
+    assert.match(source, /safeInvalidateQueries/);
     assert.match(source, /isOrderLiveEventType/);
   });
 

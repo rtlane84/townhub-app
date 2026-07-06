@@ -5,6 +5,7 @@ import {
   BUSINESS_HUB_NAV_SECTIONS,
   getVisibleBusinessHubNavItems,
   isBusinessHubLiveEventsRoute,
+  isBusinessHubOrderLivePage,
   isBusinessHubRouteHiddenByStorefrontMode,
   resolveBusinessHubFeatureKey,
 } from "./business-hub-features.ts";
@@ -94,5 +95,10 @@ describe("business-hub-features", () => {
     assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/notifications"), false);
     assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/subscription"), false);
     assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/locations"), false);
+  });
+
+  it("limits order live notifications to overview, orders, and kitchen", () => {
+    assert.equal(isBusinessHubOrderLivePage("/dashboard/business/appointments"), false);
+    assert.equal(isBusinessHubOrderLivePage("/dashboard/business/settings"), false);
   });
 });

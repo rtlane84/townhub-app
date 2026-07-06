@@ -156,6 +156,19 @@ Short thank-you email encouraging the customer to order again. SMS sends a brief
 
 ## Business (owner) notifications
 
+### In-browser live alerts (Business Hub open)
+
+While **Business Hub** is open in a browser tab, owners also get **live list updates**, **toasts**, and (on non-queue pages) **persistent banners** for new orders and appointment requests. That flow is separate from email/SMS and only runs when the dashboard is loaded.
+
+See **[BUSINESS_HUB_LIVE_NOTIFICATIONS.md](./BUSINESS_HUB_LIVE_NOTIFICATIONS.md)** for:
+
+- Which pages use SSE vs polling  
+- Toast vs banner rules by screen  
+- Tab/window/background behavior  
+- What requires the dashboard to be open vs what works when it is closed  
+
+Server-delivered owner alerts below (email, SMS, ntfy, Discord) are unchanged and do not require an open dashboard tab.
+
 ### New order
 
 **Trigger:** Immediately after `POST /api/orders` (all payment methods)
@@ -410,6 +423,7 @@ pnpm --filter @workspace/api-server run test
 
 ## Related docs
 
+- [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](./BUSINESS_HUB_LIVE_NOTIFICATIONS.md) — in-browser toasts, banners, and SSE while Business Hub is open
 - [RESEND_SETUP.md](./RESEND_SETUP.md) — email provider configuration
 - [TWILIO_SETUP.md](./TWILIO_SETUP.md) — SMS provider configuration
 - [STRIPE_SETUP.md](./STRIPE_SETUP.md) — payment webhook (triggers card **Order received** notification)

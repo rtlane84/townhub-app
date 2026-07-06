@@ -1,16 +1,24 @@
-import { Link } from "wouter";
 import { Bell, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePendingAppointmentBanners } from "@/hooks/order-dashboard-refresh-context";
+import { usePendingAppointmentNotification } from "@/hooks/order-dashboard-refresh-context";
 import { appointmentBannerDetails, appointmentBannerHeadline } from "@/lib/appointment-alert-format";
+import { useLocation } from "wouter";
+import { BUSINESS_HUB_APPOINTMENTS_PATH } from "@/lib/business-hub-notification-manager";
 
 export function NewAppointmentAlertBanner() {
-  const { pendingBanners, dismissBanner } = usePendingAppointmentBanners();
+  const [, setLocation] = useLocation();
+  const { notification, clearNotification } = usePendingAppointmentNotification();
 
-  if (!pendingBanners.length) return null;
+  if (!notification?.requests.length) return null;
 
-  const latest = pendingBanners[0]!;
-  const extraCount = pendingBanners.length - 1;
+  const latest = notification.requests[0]!;
+  const totalCount = notification.requests.length;
+  const multiple = totalCount > 1;
+
+  const openAppointments = () => {
+    setLocation(BUSINESS_HUB_APPOINTMENTS_PATH);
+    clearNotification();
+  };
 
   return (
     <div
@@ -26,36 +34,23 @@ export function NewAppointmentAlertBanner() {
 
         <div className="flex-1 min-w-0 space-y-1">
           <p className="font-semibold text-sm text-foreground">
-            {appointmentBannerHeadline(latest.request, extraCount)}
+            {appointmentBannerHeadline(latest, totalCount)}
           </p>
-          <p className="text-sm text-muted-foreground truncate">
-            {appointmentBannerDetails(latest.request)}
-          </p>
+          {!multiple ? (
+            <p className="text-sm text-muted-foreground truncate">
+              {appointmentBannerDetails(latest)}
+            </p>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2 pt-2">
-            <Link href="/dashboard/business/appointments">
-              <Button
-                size="sm"
-                className="h-8"
-                data-testid="new-appointment-banner-view"
-                onClick={() => dismissBanner(latest.request.id)}
-              >
-                Review request
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-              </Button>
-            </Link>
-            {extraCount > 0 && (
-              <Link href="/dashboard/business/appointments">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  data-testid="new-appointment-banner-view-all"
-                  onClick={() => pendingBanners.forEach((b) => dismissBanner(b.request.id))}
-                >
-                  View all requests
-                </Button>
-              </Link>
-            )}
+            <Button
+              size="sm"
+              className="h-8"
+              data-testid="new-appointment-banner-view"
+              onClick={openAppointments}
+            >
+              {multiple ? "View Appointments" : "Open Appointments"}
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
           </div>
         </div>
 
@@ -65,7 +60,7 @@ export function NewAppointmentAlertBanner() {
           className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
           aria-label="Dismiss new appointment alert"
           data-testid="new-appointment-banner-dismiss"
-          onClick={() => dismissBanner(latest.request.id)}
+          onClick={clearNotification}
         >
           <X className="h-4 w-4" />
         </Button>

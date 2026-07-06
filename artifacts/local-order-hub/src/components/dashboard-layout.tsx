@@ -25,7 +25,7 @@ import {
 } from "@/hooks/business-live-events-provider";
 import { BusinessLiveStatusIndicator } from "@/components/business-live-status-indicator";
 import { resolveLiveIndicatorStatus } from "@/lib/business-live-indicator-status";
-import { isBusinessHubLiveEventsRoute } from "@/lib/business-hub-features";
+import { isBusinessHubAppointmentLivePage, isBusinessHubLiveEventsRoute, isBusinessHubOrderLivePage } from "@/lib/business-hub-features";
 import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
 import { NewOrderAlertBanner } from "@/components/new-order-alert-banner";
 import { NewAppointmentAlertBanner } from "@/components/new-appointment-alert-banner";
@@ -209,6 +209,11 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   const { status: liveStatus, usePollingFallback } = useBusinessLiveEvents(businessId);
   const liveIndicatorStatus = resolveLiveIndicatorStatus(liveStatus, usePollingFallback);
 
+  const showOrderNotificationBanner =
+    orderingEnabled && !isBusinessHubOrderLivePage(location);
+  const showAppointmentNotificationBanner =
+    appointmentsEnabled && !isBusinessHubAppointmentLivePage(location);
+
   useLiveOrderAlerts(orderingEnabled ? businessId : undefined);
   useLiveAppointmentAlerts(businessId, appointmentsEnabled);
 
@@ -284,8 +289,8 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
 
       <main className={cn("flex-1 p-4 md:p-10 print:p-0 overflow-x-hidden", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
         <div className="print:hidden">
-          {orderingEnabled && <NewOrderAlertBanner />}
-          {appointmentsEnabled && <NewAppointmentAlertBanner />}
+          {showOrderNotificationBanner ? <NewOrderAlertBanner /> : null}
+          {showAppointmentNotificationBanner ? <NewAppointmentAlertBanner /> : null}
         </div>
         {routeHiddenByStorefrontMode && routeNavItem ? (
           <StorefrontModeRestrictedPage

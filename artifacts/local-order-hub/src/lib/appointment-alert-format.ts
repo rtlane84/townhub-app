@@ -10,19 +10,31 @@ export function appointmentAlertDescription(request: AppointmentRequest): string
   return parts.filter(Boolean).join(" · ");
 }
 
-export function appointmentBannerHeadline(request: AppointmentRequest, extraCount = 0): string {
-  if (extraCount > 0) {
-    return `New appointment request · ${request.customerName} (+${extraCount} more)`;
+export function appointmentToastTitle(request: AppointmentRequest): string {
+  return `📅 New Appointment Request`;
+}
+
+export function appointmentToastBody(request: AppointmentRequest): string {
+  return `${request.customerName}\n${request.serviceName ?? "Appointment"} • ${request.requestedDate} ${formatTime12h(request.requestedTime)}`;
+}
+
+export function appointmentToastTitleMultiple(count: number): string {
+  return `${count} new appointment requests`;
+}
+
+export function appointmentBannerHeadline(request: AppointmentRequest, totalCount: number): string {
+  if (totalCount > 1) {
+    return `${totalCount} New Appointments Waiting`;
   }
-  return `New appointment request · ${request.customerName}`;
+  return `🔔 New Appointment · ${request.customerName}`;
 }
 
 export function appointmentBannerDetails(request: AppointmentRequest): string {
   return [
+    request.customerName,
     request.serviceName ?? "General request",
     `${request.requestedDate} at ${formatTime12h(request.requestedTime)}`,
-    request.customerPhone ?? request.customerEmail ?? "",
   ]
     .filter(Boolean)
-    .join(" · ");
+    .join(" • ");
 }
