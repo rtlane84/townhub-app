@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useListBusinessOrders, getListBusinessOrdersQueryKey, type Order } from "@workspace/api-client-react";
 import { formatOrderTicketNumber } from "@workspace/api-zod";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
-import { BusinessOrderListToolbar } from "@/components/business-order-list-toolbar";
+import { BusinessOrderFiltersToolbar } from "@/components/business-order-filters-toolbar";
 import { BusinessOrderQueueSummary } from "@/components/business-order-queue-summary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,12 +33,14 @@ import {
   getOrderListDateSummary,
   getOrderListEmptyState,
   countActiveOrdersOutsideDateRange,
-  hasActiveBusinessOrderFilters,
   hasQueueScopeFilters,
-  type OrderCustomDateRange,
-  type OrderDateFilterPreset,
 } from "@/lib/business-order-filters";
 import { parseOrdersPageSearch } from "@/lib/business-order-list-url";
+import {
+  countOrdersPanelActiveFilters,
+  ordersWorkspaceHasActiveFilters,
+} from "@/lib/business-order-workspace";
+import { useBusinessOrdersWorkspace } from "@/hooks/use-business-orders-workspace";
 import { cn } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -94,21 +96,42 @@ function PaymentStatusBadge({
 }
 
 export default function BusinessOrders() {
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [datePreset, setDatePreset] = useState<OrderDateFilterPreset>("today");
-  const [customRange, setCustomRange] = useState<OrderCustomDateRange>({});
-  const [searchQuery, setSearchQuery] = useState("");
+  const { selectedBusinessId, business } = useSelectedBusiness();
+  const businessId = selectedBusinessId ?? 0;
 
+  const {
+    searchQuery,
+    setSearchQuery,
+    datePreset,
+    setDatePreset,
+    customRange,
+    setCustomRange,
+    statusFilter,
+    setStatusFilter,
+    fulfillmentFilter,
+    setFulfillmentFilter,
+    paymentFilter,
+    setPaymentFilter,
+    filtersExpanded,
+    setFiltersExpanded,
+    applyWorkspacePatch,
+    clearFilters,
+  } = useBusinessOrdersWorkspace(businessId);
+
+  const urlAppliedRef = useRef(false);
   useEffect(() => {
+    if (urlAppliedRef.current) return;
+    urlAppliedRef.current = true;
     const { datePreset: urlDate, statusFilter: urlStatus } = parseOrdersPageSearch(
       window.location.search,
     );
-    if (urlDate) setDatePreset(urlDate);
-    if (urlStatus) setStatusFilter(urlStatus);
-  }, []);
-
-  const { selectedBusinessId, business } = useSelectedBusiness();
-  const businessId = selectedBusinessId ?? 0;
+    if (urlDate || urlStatus) {
+      applyWorkspacePatch({
+        ...(urlDate ? { datePreset: urlDate } : {}),
+        ...(urlStatus ? { statusFilter: urlStatus } : {}),
+      });
+    }
+  }, [applyWorkspacePatch]);
 
   const { data: orders, isPending, isFetching, isError, error, refetch } = useListBusinessOrders(
     businessId,
@@ -148,8 +171,10 @@ export default function BusinessOrders() {
         customRange,
         statusFilter,
         searchQuery,
+        fulfillmentFilter,
+        paymentFilter,
       }),
-    [orderList, datePreset, customRange, statusFilter, searchQuery],
+    [orderList, datePreset, customRange, statusFilter, searchQuery, fulfillmentFilter, paymentFilter],
   );
 
   const dateSummary = useMemo(
@@ -173,11 +198,21 @@ export default function BusinessOrders() {
     [orderList.length, searchQuery, statusFilter, datePreset],
   );
 
-  const filtersActive = hasActiveBusinessOrderFilters({
-    statusFilter,
-    datePreset,
+  const filtersActive = ordersWorkspaceHasActiveFilters({
     searchQuery,
+    datePreset,
     customRange,
+    statusFilter,
+    fulfillmentFilter,
+    paymentFilter,
+  });
+
+  const activeFilterCount = countOrdersPanelActiveFilters({
+    datePreset,
+    customRange,
+    statusFilter,
+    fulfillmentFilter,
+    paymentFilter,
   });
 
   const filterSummary = useMemo(() => {
@@ -194,14 +229,7 @@ export default function BusinessOrders() {
   }, [businessId, isPending, orders, refetch]);
 
   const handleQueueSelect = (status: QueueSummaryStatus) => {
-    setStatusFilter((current) => (current === status ? "all" : status));
-  };
-
-  const clearFilters = () => {
-    setStatusFilter("all");
-    setDatePreset("today");
-    setCustomRange({});
-    setSearchQuery("");
+    setStatusFilter(statusFilter === status ? "all" : status);
   };
 
   const queueCountsReflectFilters = hasQueueScopeFilters({
@@ -212,11 +240,11 @@ export default function BusinessOrders() {
 
   return (
     <BusinessDashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-3 md:space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-serif text-3xl font-bold">Orders</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="font-serif text-2xl md:text-3xl font-bold">Orders</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
               {business?.name ? `${business.name} · ` : ""}
               Manage active orders and recent order history
             </p>
@@ -239,7 +267,10 @@ export default function BusinessOrders() {
         )}
 
         {!showInitialSkeleton && (
-          <BusinessOrderListToolbar
+          <BusinessOrderFiltersToolbar
+            variant="orders"
+            testIdPrefix="order-list"
+            searchPlaceholder="Search orders..."
             searchQuery={searchQuery}
             onSearchQueryChange={setSearchQuery}
             datePreset={datePreset}
@@ -248,6 +279,13 @@ export default function BusinessOrders() {
             onCustomRangeChange={setCustomRange}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
+            fulfillmentFilter={fulfillmentFilter}
+            onFulfillmentFilterChange={setFulfillmentFilter}
+            paymentFilter={paymentFilter}
+            onPaymentFilterChange={setPaymentFilter}
+            filtersExpanded={filtersExpanded}
+            onFiltersExpandedChange={setFiltersExpanded}
+            activeFilterCount={activeFilterCount}
             filterSummary={filterSummary}
             filtersActive={filtersActive}
             onClearFilters={clearFilters}

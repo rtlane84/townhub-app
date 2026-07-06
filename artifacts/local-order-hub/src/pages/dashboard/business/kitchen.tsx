@@ -12,24 +12,28 @@ import {
 } from "@/lib/business-orders-api";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
-import { KitchenDisplayToolbar } from "@/components/kitchen-display-toolbar";
+import { BusinessOrderFiltersToolbar } from "@/components/business-order-filters-toolbar";
 import { KitchenOrderCard } from "@/components/kitchen-order-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import type { OrderCustomDateRange, OrderDateFilterPreset } from "@/lib/business-order-filters";
 import { getOrderListDateSummary } from "@/lib/business-order-filters";
 import {
+  countKitchenPanelActiveFilters,
+  kitchenWorkspaceHasActiveFilters,
+} from "@/lib/business-order-workspace";
+import { useBusinessKitchenWorkspace } from "@/hooks/use-business-kitchen-workspace";
+import {
   KITCHEN_COLUMN_DEFS,
+  KITCHEN_MOBILE_COLUMN_DEFS,
   applyKitchenDisplayFilters,
   filterActiveKitchenOrders,
   getKitchenDisplayFilterSummary,
   groupOrdersByKitchenColumn,
-  hasKitchenDisplayFilters,
+  groupOrdersByKitchenMobileColumn,
   isActiveKitchenOrder,
   type KitchenColumnId,
-  type KitchenFulfillmentFilter,
-  type KitchenPaymentFilter,
+  type KitchenMobileColumnId,
 } from "@/lib/kitchen-display";
 import { cn } from "@/lib/utils";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
@@ -44,6 +48,48 @@ const COLUMN_HEADER_CLASS: Record<KitchenColumnId, string> = {
   PREPARING: "bg-amber-100 text-amber-900 border-amber-200",
   READY: "bg-green-100 text-green-900 border-green-200",
 };
+
+const MOBILE_COLUMN_HEADER_CLASS: Record<KitchenMobileColumnId, string> = {
+  NEW: "bg-blue-100 text-blue-800 border-blue-200",
+  CONFIRMED: "bg-indigo-100 text-indigo-800 border-indigo-200",
+  PREPARING: "bg-amber-100 text-amber-900 border-amber-200",
+  READY_FOR_PICKUP: "bg-green-100 text-green-900 border-green-200",
+  OUT_FOR_DELIVERY: "bg-purple-100 text-purple-800 border-purple-200",
+};
+
+function KitchenColumnBody({
+  columnLabel,
+  columnOrders,
+  updatingId,
+  onAdvance,
+}: {
+  columnLabel: string;
+  columnOrders: Order[];
+  updatingId: number | null;
+  onAdvance: (orderId: number, nextStatus: string) => void;
+}) {
+  return (
+    <div
+      data-kitchen-column-scroll
+      className="flex-1 space-y-3 min-h-[120px] max-h-[calc(100dvh-13rem)] overflow-y-auto pr-0.5 md:max-h-[calc(100vh-14rem)]"
+    >
+      {columnOrders.length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-8 px-2 rounded-lg border border-dashed bg-background/50">
+          No {columnLabel.toLowerCase()} orders
+        </p>
+      ) : (
+        columnOrders.map((order) => (
+          <KitchenOrderCard
+            key={order.id}
+            order={order}
+            updating={updatingId === order.id}
+            onAdvance={onAdvance}
+          />
+        ))
+      )}
+    </div>
+  );
+}
 
 function patchKitchenOrdersCache(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -73,13 +119,10 @@ export default function BusinessKitchen() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const boardRef = useRef<HTMLDivElement>(null);
+  const mobileBoardRef = useRef<HTMLDivElement>(null);
+  const mobileBoardScrollRestoredRef = useRef(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [datePreset, setDatePreset] = useState<OrderDateFilterPreset>("today");
-  const [customRange, setCustomRange] = useState<OrderCustomDateRange>({});
-  const [fulfillmentFilter, setFulfillmentFilter] = useState<KitchenFulfillmentFilter>("all");
-  const [paymentFilter, setPaymentFilter] = useState<KitchenPaymentFilter>("all");
   const [statusConfirm, setStatusConfirm] = useState<{
     orderId: number;
     orderLabel: string;
@@ -88,6 +131,24 @@ export default function BusinessKitchen() {
 
   const { selectedBusinessId, business } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? 0;
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    datePreset,
+    setDatePreset,
+    customRange,
+    setCustomRange,
+    fulfillmentFilter,
+    setFulfillmentFilter,
+    paymentFilter,
+    setPaymentFilter,
+    filtersExpanded,
+    setFiltersExpanded,
+    mobileBoardScrollLeft,
+    saveMobileBoardScrollLeft,
+    clearFilters,
+  } = useBusinessKitchenWorkspace(businessId);
 
   const {
     data: orders,
@@ -122,11 +183,18 @@ export default function BusinessKitchen() {
   );
 
   const grouped = useMemo(() => groupOrdersByKitchenColumn(filteredOrders), [filteredOrders]);
+  const mobileGrouped = useMemo(() => groupOrdersByKitchenMobileColumn(filteredOrders), [filteredOrders]);
   const totalActiveCount = useMemo(() => filterActiveKitchenOrders(orderList).length, [orderList]);
   const visibleCount = filteredOrders.length;
-  const filtersActive = hasKitchenDisplayFilters({
-    datePreset,
+  const filtersActive = kitchenWorkspaceHasActiveFilters({
     searchQuery,
+    datePreset,
+    customRange,
+    fulfillmentFilter,
+    paymentFilter,
+  });
+  const activeFilterCount = countKitchenPanelActiveFilters({
+    datePreset,
     customRange,
     fulfillmentFilter,
     paymentFilter,
@@ -137,13 +205,44 @@ export default function BusinessKitchen() {
     return `${countLine} · ${dateLine}`;
   }, [visibleCount, totalActiveCount, filtersActive, datePreset, customRange]);
 
-  const clearFilters = useCallback(() => {
-    setSearchQuery("");
-    setDatePreset("today");
-    setCustomRange({});
-    setFulfillmentFilter("all");
-    setPaymentFilter("all");
-  }, []);
+  const clearKitchenFilters = useCallback(() => {
+    clearFilters();
+  }, [clearFilters]);
+
+  useEffect(() => {
+    mobileBoardScrollRestoredRef.current = false;
+  }, [businessId]);
+
+  useEffect(() => {
+    const node = mobileBoardRef.current;
+    if (!node || mobileBoardScrollRestoredRef.current) return;
+    mobileBoardScrollRestoredRef.current = true;
+    if (mobileBoardScrollLeft > 0) {
+      requestAnimationFrame(() => {
+        node.scrollLeft = mobileBoardScrollLeft;
+      });
+    }
+  }, [mobileBoardScrollLeft, filteredOrders.length]);
+
+  useEffect(() => {
+    const node = mobileBoardRef.current;
+    if (!node) return;
+
+    let timeoutId = 0;
+    const onScroll = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        saveMobileBoardScrollLeft(node.scrollLeft);
+      }, 150);
+    };
+
+    node.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      node.removeEventListener("scroll", onScroll);
+      window.clearTimeout(timeoutId);
+      saveMobileBoardScrollLeft(node.scrollLeft);
+    };
+  }, [saveMobileBoardScrollLeft, filteredOrders.length]);
 
   const updateStatus = useUpdateOrderStatus({
     mutation: {
@@ -266,7 +365,11 @@ export default function BusinessKitchen() {
           </div>
         </div>
 
-        <KitchenDisplayToolbar
+        <BusinessOrderFiltersToolbar
+          variant="kitchen"
+          testIdPrefix="kitchen"
+          className="print:hidden"
+          searchPlaceholder="Search order #, customer, phone, or email"
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
           datePreset={datePreset}
@@ -277,9 +380,12 @@ export default function BusinessKitchen() {
           onFulfillmentFilterChange={setFulfillmentFilter}
           paymentFilter={paymentFilter}
           onPaymentFilterChange={setPaymentFilter}
+          filtersExpanded={filtersExpanded}
+          onFiltersExpandedChange={setFiltersExpanded}
+          activeFilterCount={activeFilterCount}
           filterSummary={filterSummary}
           filtersActive={filtersActive}
-          onClearFilters={clearFilters}
+          onClearFilters={clearKitchenFilters}
         />
 
         {isError ? (
@@ -301,57 +407,88 @@ export default function BusinessKitchen() {
           data-testid="kitchen-display-board"
         >
           {isPending && orderList.length === 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-              {KITCHEN_COLUMN_DEFS.map((col) => (
-                <Skeleton key={col.id} className="h-64 w-full rounded-lg" />
-              ))}
-            </div>
+            <>
+              <Skeleton className="h-64 w-full rounded-lg md:hidden" />
+              <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {KITCHEN_COLUMN_DEFS.map((col) => (
+                  <Skeleton key={col.id} className="h-64 w-full rounded-lg" />
+                ))}
+              </div>
+            </>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory md:overflow-visible md:grid md:grid-cols-2 xl:grid-cols-4 md:gap-4">
-              {KITCHEN_COLUMN_DEFS.map((column) => {
-                const columnOrders = grouped[column.id];
-                return (
-                  <section
-                    key={column.id}
-                    className="flex flex-col min-w-[240px] sm:min-w-[260px] flex-1 snap-start md:min-w-0"
-                    aria-label={`${column.label} orders`}
-                    data-testid={`kitchen-column-${column.id}`}
-                  >
-                    <header
-                      className={cn(
-                        "flex items-center justify-between rounded-lg border px-3 py-2 mb-3 sticky top-0 z-10",
-                        COLUMN_HEADER_CLASS[column.id],
-                      )}
+            <>
+              {/* Mobile: one full-width column per swipe panel */}
+              <div
+                ref={mobileBoardRef}
+                className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-3 px-3 pb-1 md:hidden"
+                data-testid="kitchen-mobile-board"
+              >
+                {KITCHEN_MOBILE_COLUMN_DEFS.map((column) => {
+                  const columnOrders = mobileGrouped[column.id];
+                  return (
+                    <section
+                      key={column.id}
+                      className="flex flex-[0_0_100%] snap-center flex-col"
+                      aria-label={`${column.label} orders`}
+                      data-testid={`kitchen-mobile-column-${column.id}`}
                     >
-                      <h2 className="font-semibold text-sm">{column.label}</h2>
-                      <span className="text-xs font-bold tabular-nums rounded-full bg-white/70 px-2 py-0.5 min-w-[1.5rem] text-center">
-                        {columnOrders.length}
-                      </span>
-                    </header>
+                      <header
+                        className={cn(
+                          "flex items-center justify-between rounded-lg border px-3 py-2 mb-3 sticky top-0 z-10",
+                          MOBILE_COLUMN_HEADER_CLASS[column.id],
+                        )}
+                      >
+                        <h2 className="font-semibold text-sm">{column.label}</h2>
+                        <span className="text-xs font-bold tabular-nums rounded-full bg-white/70 px-2 py-0.5 min-w-[1.5rem] text-center">
+                          {columnOrders.length}
+                        </span>
+                      </header>
 
-                    <div
-                      data-kitchen-column-scroll
-                      className="flex-1 space-y-3 min-h-[120px] max-h-[calc(100vh-16rem)] overflow-y-auto pr-0.5 md:max-h-[calc(100vh-14rem)]"
+                      <KitchenColumnBody
+                        columnLabel={column.label}
+                        columnOrders={columnOrders}
+                        updatingId={updatingId}
+                        onAdvance={handleAdvance}
+                      />
+                    </section>
+                  );
+                })}
+              </div>
+
+              {/* Desktop: multi-column board (unchanged) */}
+              <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-4 md:gap-4" data-testid="kitchen-desktop-board">
+                {KITCHEN_COLUMN_DEFS.map((column) => {
+                  const columnOrders = grouped[column.id];
+                  return (
+                    <section
+                      key={column.id}
+                      className="flex flex-col min-w-0"
+                      aria-label={`${column.label} orders`}
+                      data-testid={`kitchen-column-${column.id}`}
                     >
-                      {columnOrders.length === 0 ? (
-                        <p className="text-xs text-muted-foreground text-center py-8 px-2 rounded-lg border border-dashed bg-background/50">
-                          No {column.label.toLowerCase()} orders
-                        </p>
-                      ) : (
-                        columnOrders.map((order) => (
-                          <KitchenOrderCard
-                            key={order.id}
-                            order={order}
-                            updating={updatingId === order.id}
-                            onAdvance={handleAdvance}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
+                      <header
+                        className={cn(
+                          "flex items-center justify-between rounded-lg border px-3 py-2 mb-3 sticky top-0 z-10",
+                          COLUMN_HEADER_CLASS[column.id],
+                        )}
+                      >
+                        <h2 className="font-semibold text-sm">{column.label}</h2>
+                        <span className="text-xs font-bold tabular-nums rounded-full bg-white/70 px-2 py-0.5 min-w-[1.5rem] text-center">
+                          {columnOrders.length}
+                        </span>
+                      </header>
+
+                      <KitchenColumnBody
+                        columnLabel={column.label}
+                        columnOrders={columnOrders}
+                        updatingId={updatingId}
+                        onAdvance={handleAdvance}
+                      />
+                    </section>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

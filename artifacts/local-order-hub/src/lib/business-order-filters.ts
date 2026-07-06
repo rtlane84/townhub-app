@@ -8,6 +8,12 @@ import {
   subDays,
 } from "date-fns";
 import type { Order } from "@workspace/api-client-react";
+import {
+  filterKitchenOrdersByFulfillment,
+  filterKitchenOrdersByPayment,
+  type KitchenFulfillmentFilter,
+  type KitchenPaymentFilter,
+} from "./kitchen-display.ts";
 
 export const ACTIVE_ORDER_STATUSES = [
   "NEW",
@@ -165,6 +171,8 @@ export function applyBusinessOrderListFilters(
     customRange?: OrderCustomDateRange;
     statusFilter: string;
     searchQuery: string;
+    fulfillmentFilter?: KitchenFulfillmentFilter;
+    paymentFilter?: KitchenPaymentFilter;
     now?: Date;
   },
 ): Order[] {
@@ -175,7 +183,12 @@ export function applyBusinessOrderListFilters(
     input.now,
   );
   const statusFiltered = filterOrdersByStatus(dateFiltered, input.statusFilter);
-  return filterOrdersBySearch(statusFiltered, input.searchQuery);
+  const searchFiltered = filterOrdersBySearch(statusFiltered, input.searchQuery);
+  const fulfillmentFiltered = filterKitchenOrdersByFulfillment(
+    searchFiltered,
+    input.fulfillmentFilter ?? "all",
+  );
+  return filterKitchenOrdersByPayment(fulfillmentFiltered, input.paymentFilter ?? "all");
 }
 
 /** Date + search scope for live queue counts (status is selected via queue cards). */
@@ -224,13 +237,17 @@ export function hasActiveBusinessOrderFilters(input: {
   datePreset: OrderDateFilterPreset;
   searchQuery: string;
   customRange: OrderCustomDateRange;
+  fulfillmentFilter?: KitchenFulfillmentFilter;
+  paymentFilter?: KitchenPaymentFilter;
 }): boolean {
   return (
     input.statusFilter !== "all" ||
     input.datePreset !== "today" ||
     Boolean(normalizeSearchQuery(input.searchQuery)) ||
     Boolean(input.customRange.from) ||
-    Boolean(input.customRange.to)
+    Boolean(input.customRange.to) ||
+    (input.fulfillmentFilter ?? "all") !== "all" ||
+    (input.paymentFilter ?? "all") !== "all"
   );
 }
 

@@ -6,6 +6,7 @@ import {
   filterActiveKitchenOrders,
   getKitchenQuickAction,
   groupOrdersByKitchenColumn,
+  groupOrdersByKitchenMobileColumn,
   isActiveKitchenOrder,
 } from "./kitchen-display.ts";
 
@@ -80,6 +81,16 @@ describe("kitchen-display", () => {
       getKitchenQuickAction(order({ id: 4, status: "READY_FOR_PICKUP" })),
       { label: "Complete order", nextStatus: "COMPLETED" },
     );
+  });
+
+  it("groupOrdersByKitchenMobileColumn splits ready and out-for-delivery on mobile", () => {
+    const grouped = groupOrdersByKitchenMobileColumn([
+      order({ id: 1, status: "READY_FOR_PICKUP" }),
+      order({ id: 2, status: "OUT_FOR_DELIVERY", fulfillmentType: "DELIVERY" }),
+    ]);
+
+    assert.equal(grouped.READY_FOR_PICKUP.length, 1);
+    assert.equal(grouped.OUT_FOR_DELIVERY.length, 1);
   });
 
   it("applyKitchenDisplayFilters combines date, search, fulfillment, and payment filters", () => {

@@ -46,7 +46,17 @@ export const KITCHEN_COLUMN_DEFS = [
   { id: "READY", label: "Ready", statuses: ["READY_FOR_PICKUP", "OUT_FOR_DELIVERY"] as const },
 ] as const;
 
+/** One status per column for swipeable mobile kitchen board. */
+export const KITCHEN_MOBILE_COLUMN_DEFS = [
+  { id: "NEW", label: "New", statuses: ["NEW"] as const },
+  { id: "CONFIRMED", label: "Confirmed", statuses: ["CONFIRMED"] as const },
+  { id: "PREPARING", label: "Preparing", statuses: ["PREPARING"] as const },
+  { id: "READY_FOR_PICKUP", label: "Ready", statuses: ["READY_FOR_PICKUP"] as const },
+  { id: "OUT_FOR_DELIVERY", label: "Out for Delivery", statuses: ["OUT_FOR_DELIVERY"] as const },
+] as const;
+
 export type KitchenColumnId = (typeof KITCHEN_COLUMN_DEFS)[number]["id"];
+export type KitchenMobileColumnId = (typeof KITCHEN_MOBILE_COLUMN_DEFS)[number]["id"];
 
 export const ACTIVE_KITCHEN_STATUSES: readonly OrderStatus[] = KITCHEN_COLUMN_DEFS.flatMap(
   (column) => column.statuses,
@@ -148,6 +158,39 @@ export function groupOrdersByKitchenColumn(orders: Order[]): Record<KitchenColum
   }
 
   for (const column of KITCHEN_COLUMN_DEFS) {
+    grouped[column.id].sort((a, b) => {
+      const aEnd = a.estimatedWindowEnd ? new Date(a.estimatedWindowEnd).getTime() : Number.POSITIVE_INFINITY;
+      const bEnd = b.estimatedWindowEnd ? new Date(b.estimatedWindowEnd).getTime() : Number.POSITIVE_INFINITY;
+      if (aEnd !== bEnd) return aEnd - bEnd;
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aTime - bTime;
+    });
+  }
+
+  return grouped;
+}
+
+export function groupOrdersByKitchenMobileColumn(
+  orders: Order[],
+): Record<KitchenMobileColumnId, Order[]> {
+  const grouped: Record<KitchenMobileColumnId, Order[]> = {
+    NEW: [],
+    CONFIRMED: [],
+    PREPARING: [],
+    READY_FOR_PICKUP: [],
+    OUT_FOR_DELIVERY: [],
+  };
+
+  for (const order of orders) {
+    if (!isActiveKitchenOrder(order)) continue;
+    const column = KITCHEN_MOBILE_COLUMN_DEFS.find((def) =>
+      (def.statuses as readonly string[]).includes(order.status),
+    );
+    if (column) grouped[column.id].push(order);
+  }
+
+  for (const column of KITCHEN_MOBILE_COLUMN_DEFS) {
     grouped[column.id].sort((a, b) => {
       const aEnd = a.estimatedWindowEnd ? new Date(a.estimatedWindowEnd).getTime() : Number.POSITIVE_INFINITY;
       const bEnd = b.estimatedWindowEnd ? new Date(b.estimatedWindowEnd).getTime() : Number.POSITIVE_INFINITY;
