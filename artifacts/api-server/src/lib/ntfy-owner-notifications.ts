@@ -1,6 +1,10 @@
 import type { OrderNotificationData } from "./email-templates/types";
 import { dashboardAppointmentsUrl, dashboardOrderUrl } from "./notification-urls";
-import { formatTime12h } from "@workspace/api-zod";
+import {
+  formatOrderReferenceLabel,
+  formatOrderTicketNumber,
+  formatTime12h,
+} from "@workspace/api-zod";
 import { postNtfyNotification } from "./ntfy-provider";
 
 function fulfillmentLabel(type: string): string {
@@ -9,18 +13,23 @@ function fulfillmentLabel(type: string): string {
 
 export function buildOwnerNewOrderNtfyMessage(order: OrderNotificationData) {
   const orderUrl = dashboardOrderUrl(order.orderId);
-  const message = [
-    `**${order.businessName}** received a new order.`,
-    "",
-    `Order: ${order.orderNumber}`,
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const messageLines = [
+    "**New Order**",
+    order.businessName,
+    ticketLabel,
+    fulfillmentLabel(order.fulfillmentType),
+    `$${order.total.toFixed(2)}`,
     `Customer: ${order.customerName}`,
-    `Total: $${order.total.toFixed(2)}`,
-    `Fulfillment: ${fulfillmentLabel(order.fulfillmentType)}`,
-    `Open in TownHub: ${orderUrl}`,
-  ].join("\n");
+  ];
+  const reference = formatOrderReferenceLabel(order.orderNumber);
+  if (reference) {
+    messageLines.push(reference);
+  }
+  messageLines.push(`Open in TownHub: ${orderUrl}`);
   return {
     title: "New order",
-    message,
+    message: messageLines.join("\n"),
     click: orderUrl,
     tags: ["shopping_cart"],
   };

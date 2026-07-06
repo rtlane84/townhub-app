@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Package } from "lucide-react";
 import { formatOrderPaymentLabel } from "@/lib/stripe-checkout-return";
+import { formatOrderTicketNumber, formatOrderReferenceLabel } from "@workspace/api-zod";
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-700",
@@ -68,7 +69,8 @@ export default function MyOrders() {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {order.orderNumber}
+                      {formatOrderTicketNumber(order.id)}
+                      {order.orderNumber ? ` · ${formatOrderReferenceLabel(order.orderNumber)}` : ""}
                       {order.createdAt ? ` · ${new Date(order.createdAt).toLocaleString()}` : ""}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">

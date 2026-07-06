@@ -22,6 +22,7 @@ import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/b
 import { nullsToUndefinedTopLevel } from "../lib/request-body";
 import { parseStructuredHours } from "@workspace/api-zod";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
+import { isValidDiscordWebhookUrl } from "../lib/discord-webhook";
 import { allowsOnlinePayment, resolvePaymentMode } from "@workspace/api-zod";
 import {
   loadOptionGroupsByProductIds,
@@ -553,6 +554,12 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.notifyAppointmentRequestsBySms = (d as Record<string, unknown>).notifyAppointmentRequestsBySms;
   if ((d as Record<string, unknown>).discordWebhookUrl !== undefined) {
     const raw = String((d as Record<string, unknown>).discordWebhookUrl ?? "").trim();
+    if (raw && !isValidDiscordWebhookUrl(raw)) {
+      res.status(400).json({
+        error: "Enter a valid Discord webhook URL (https://discord.com/api/webhooks/...)",
+      });
+      return;
+    }
     updateData.discordWebhookUrl = raw || null;
   }
   if ((d as Record<string, unknown>).notifyNewOrdersByDiscord !== undefined)

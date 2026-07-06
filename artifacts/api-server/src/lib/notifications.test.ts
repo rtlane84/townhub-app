@@ -84,7 +84,7 @@ describe("customer lifecycle emails", () => {
   it("uses business-specific accepted subject", () => {
     const email = buildCustomerLifecycleEmail("ORDER_ACCEPTED", sampleOrder);
     assert.equal(email.subject, "Clay Diner accepted your order");
-    assert.match(email.text, /accepted your order/);
+    assert.match(email.text, /accepted Order #42/);
   });
 
   it("maps order statuses to lifecycle events", () => {
@@ -112,10 +112,11 @@ describe("owner new order notifications", () => {
     process.env.APP_BASE_URL = "https://townhub.test";
     try {
       const email = buildOwnerNewOrderEmail(sampleOrder);
-      assert.match(email.subject, /New order ORD-1001/);
+      assert.match(email.subject, /New Order #42/);
       assert.match(email.html, /New Order Received/);
       assert.match(email.html, /Alex/);
       assert.match(email.html, /Online card payment/);
+      assert.match(email.html, /Order #42/);
       assert.match(email.html, /Open Order/);
       assert.match(email.html, /https:\/\/townhub\.test\/dashboard\/business\/orders\/42/);
       assert.doesNotMatch(email.html, /localhost/);
@@ -127,8 +128,8 @@ describe("owner new order notifications", () => {
 
   it("builds compact owner SMS with dashboard link", () => {
     const body = buildOwnerNewOrderSms(sampleOrder);
+    assert.match(body, /Order #42/);
     assert.match(body, /Clay Diner/);
-    assert.match(body, /ORD-1001/);
     assert.match(body, /Sales Tax/);
     assert.match(body, /Estimated pickup:/i);
     assert.match(body, /dashboard\/business\/orders\/42/);
@@ -138,6 +139,8 @@ describe("owner new order notifications", () => {
 describe("order tax in notifications", () => {
   it("shows subtotal and tax in customer order received email", () => {
     const email = buildCustomerLifecycleEmail("ORDER_RECEIVED", sampleOrder);
+    assert.match(email.text, /Order: Order #42/);
+    assert.match(email.text, /Reference: ORD-1001/);
     assert.match(email.text, /Subtotal: \$23\.00/);
     assert.match(email.text, /Sales Tax: \$1\.50/);
     assert.match(email.text, /Total: \$24\.50/);
@@ -162,7 +165,7 @@ describe("customer lifecycle SMS", () => {
     try {
       const guestOrder = { ...sampleOrder, customerUserId: null };
       const sms = buildCustomerLifecycleSms("ORDER_RECEIVED", guestOrder);
-      assert.match(sms, /Clay Diner received your order #ORD-1001/);
+      assert.match(sms, /Clay Diner received Order #42/);
       assert.match(sms, /order\/42\?token=/);
       assert.ok(sms.length < 400);
     } finally {

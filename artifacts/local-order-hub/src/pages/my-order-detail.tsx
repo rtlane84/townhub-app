@@ -8,6 +8,7 @@ import { ArrowLeft, ShoppingBag, Store, MapPin } from "lucide-react";
 import { customerRefundSummary, orderPaymentDisplayStatus } from "@/lib/order-refund-display";
 import { getCustomerEstimatedWindowLabel } from "@/lib/order-prep-timing";
 import { OrderTotalsSummary } from "@/components/order-totals-summary";
+import { formatOrderTicketNumber, formatOrderReferenceLabel } from "@workspace/api-zod";
 
 export default function MyOrderDetail() {
   const [, params] = useRoute("/my-orders/:id");
@@ -52,7 +53,10 @@ export default function MyOrderDetail() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl font-bold">{order.orderNumber}</h1>
+          <h1 className="font-serif text-3xl font-bold">{formatOrderTicketNumber(order.id)}</h1>
+          {order.orderNumber ? (
+            <p className="text-sm text-muted-foreground mt-1">{formatOrderReferenceLabel(order.orderNumber)}</p>
+          ) : null}
           <p className="text-muted-foreground mt-1">
             {order.businessName}
             {order.createdAt ? ` · ${new Date(order.createdAt).toLocaleString()}` : ""}

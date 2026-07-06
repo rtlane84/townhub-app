@@ -1,4 +1,5 @@
 import type { Order } from "@workspace/api-client-react";
+import { formatOrderTicketNumber, formatOrderReferenceLabel } from "@workspace/api-zod";
 import {
   formatKitchenFulfillment,
   formatKitchenPaymentStatus,
@@ -22,9 +23,12 @@ export function KitchenTicketPrint({ order }: Props) {
   const totals = resolveDisplayedOrderTotals(order);
   const fulfillment = formatKitchenFulfillment(order);
 
+  const ticketLabel = formatOrderTicketNumber(order.id, "Ticket");
+  const referenceLabel = formatOrderReferenceLabel(order.orderNumber);
+
   return (
     <div className="kitchen-ticket-print hidden print:block" data-testid="kitchen-ticket-print">
-      <article className="kitchen-ticket" aria-label={`Kitchen ticket for order ${order.orderNumber ?? order.id}`}>
+      <article className="kitchen-ticket" aria-label={`Kitchen ticket for ${ticketLabel}`}>
         <header className="kitchen-ticket-header">
           <p className="kitchen-ticket-business">{order.businessName}</p>
           <p className="kitchen-ticket-kitchen-label">KITCHEN TICKET</p>
@@ -33,7 +37,8 @@ export function KitchenTicketPrint({ order }: Props) {
         <TicketRule />
 
         <section className="kitchen-ticket-section">
-          <p className="kitchen-ticket-order-number">{order.orderNumber ?? `#${order.id}`}</p>
+          <p className="kitchen-ticket-order-number">{ticketLabel}</p>
+          {referenceLabel ? <p className="kitchen-ticket-meta">{referenceLabel}</p> : null}
           {orderTime ? <p className="kitchen-ticket-meta">{orderTime}</p> : null}
           <p className="kitchen-ticket-meta">{fulfillment}</p>
           {order.status ? (

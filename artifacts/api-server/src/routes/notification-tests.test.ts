@@ -30,6 +30,7 @@ describe("notification test API routes", () => {
     assert.match(source, /deliverOwnerSms/);
     assert.match(source, /deliverOwnerDiscord/);
     assert.match(source, /deliverOwnerNtfy/);
+    assert.match(source, /respondToTestDelivery/);
     assert.match(source, /notifications\/test\/ntfy/);
     assert.match(source, /notifications\/ntfy\/regenerate-topic/);
     assert.match(source, /eventType: "NEW_ORDER"/);

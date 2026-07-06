@@ -7,7 +7,12 @@ import {
   renderOrderItems,
   renderStatusBadge,
 } from "./components";
-import { formatNotificationEstimatedWindow } from "@workspace/api-zod";
+import {
+  formatNotificationEstimatedWindow,
+  formatOrderReferenceLabel,
+  formatOrderReferenceNumber,
+  formatOrderTicketNumber,
+} from "@workspace/api-zod";
 import { escapeHtml, renderEmailLayout, renderParagraph } from "./layout";
 import type { CustomerLifecycleEvent, EmailContent, OrderNotificationData } from "./types";
 import { formatOrderTotalsTextLines, orderTotalsSummaryFromNotification } from "./types";
@@ -15,10 +20,16 @@ import { formatOrderTotalsTextLines, orderTotalsSummaryFromNotification } from "
 function orderSummaryRows(order: OrderNotificationData): Array<{ label: string; value: string }> {
   const rows: Array<{ label: string; value: string }> = [
     { label: "Business", value: order.businessName },
-    { label: "Order number", value: order.orderNumber },
+    { label: "Order", value: formatOrderTicketNumber(order.orderId) },
+  ];
+  const reference = formatOrderReferenceNumber(order.orderNumber);
+  if (reference) {
+    rows.push({ label: "Reference", value: reference });
+  }
+  rows.push(
     { label: "Order placed", value: formatOrderDateTime(order.orderedAt) },
     { label: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType) },
-  ];
+  );
 
   if (order.estimatedWindowStart && order.estimatedWindowEnd) {
     rows.push({
@@ -75,16 +86,19 @@ function buildEmail(
     footerNote: config.footerNote,
   });
 
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const referenceLine = formatOrderReferenceLabel(order.orderNumber);
   const textLines = [
     greeting,
     "",
     ...config.introParagraphs.map((p) => p.replace(/<[^>]+>/g, "")),
     "",
     `Business: ${order.businessName}`,
-    `Order #: ${order.orderNumber}`,
+    `Order: ${ticketLabel}`,
+    referenceLine,
     `Placed: ${formatOrderDateTime(order.orderedAt)}`,
     `Fulfillment: ${fulfillmentLabel(order.fulfillmentType)}`,
-  ];
+  ].filter(Boolean) as string[];
 
   if (order.estimatedWindowStart && order.estimatedWindowEnd) {
     textLines.push(
@@ -111,9 +125,10 @@ function buildEmail(
 
 export function buildCustomerOrderReceivedEmail(order: OrderNotificationData): EmailContent {
   const business = escapeHtml(order.businessName);
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
   return buildEmail(order, {
     subject: "We received your order",
-    preheader: `${order.businessName} received your order ${order.orderNumber}.`,
+    preheader: `${order.businessName} received ${ticketLabel}.`,
     heading: "We received your order",
     introParagraphs: [
       `Thank you for ordering from ${business}.`,
@@ -128,12 +143,13 @@ export function buildCustomerOrderReceivedEmail(order: OrderNotificationData): E
 
 export function buildCustomerOrderAcceptedEmail(order: OrderNotificationData): EmailContent {
   const business = escapeHtml(order.businessName);
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
   return buildEmail(order, {
     subject: `${order.businessName} accepted your order`,
-    preheader: `${order.businessName} accepted order ${order.orderNumber}.`,
+    preheader: `${order.businessName} accepted ${ticketLabel}.`,
     heading: `${order.businessName} accepted your order`,
     introParagraphs: [
-      `Good news — ${business} accepted your order ${order.orderNumber}.`,
+      `Good news — ${business} accepted ${ticketLabel}.`,
       `They're getting started and will begin preparing it soon.`,
     ],
     includeItems: false,
@@ -142,9 +158,10 @@ export function buildCustomerOrderAcceptedEmail(order: OrderNotificationData): E
 }
 
 export function buildCustomerOrderPreparingEmail(order: OrderNotificationData): EmailContent {
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
   return buildEmail(order, {
     subject: "Your order is being prepared",
-    preheader: `${order.businessName} is preparing order ${order.orderNumber}.`,
+    preheader: `${order.businessName} is preparing ${ticketLabel}.`,
     heading: "Your order is being prepared",
     introParagraphs: [
       `${escapeHtml(order.businessName)} is actively preparing your order right now.`,
@@ -162,9 +179,10 @@ export function buildCustomerOrderReadyEmail(order: OrderNotificationData): Emai
       ? renderDetailTable([{ label: "Pickup location", value: pickup }])
       : "";
 
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
   return buildEmail(order, {
     subject: "Your order is ready for pickup",
-    preheader: `Order ${order.orderNumber} is ready for pickup at ${order.businessName}.`,
+    preheader: `${ticketLabel} is ready for pickup at ${order.businessName}.`,
     heading: "Your order is ready for pickup!",
     introParagraphs: [
       `Your order from ${escapeHtml(order.businessName)} is ready — come pick it up when you can.`,
@@ -176,9 +194,10 @@ export function buildCustomerOrderReadyEmail(order: OrderNotificationData): Emai
 }
 
 export function buildCustomerOrderOutForDeliveryEmail(order: OrderNotificationData): EmailContent {
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
   return buildEmail(order, {
     subject: "Your order is on the way",
-    preheader: `Order ${order.orderNumber} from ${order.businessName} is on the way.`,
+    preheader: `${ticketLabel} from ${order.businessName} is on the way.`,
     heading: "Your order is on the way",
     introParagraphs: [
       `${escapeHtml(order.businessName)} has sent your order out for delivery.`,
@@ -191,9 +210,10 @@ export function buildCustomerOrderOutForDeliveryEmail(order: OrderNotificationDa
 }
 
 export function buildCustomerOrderCompletedEmail(order: OrderNotificationData): EmailContent {
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
   return buildEmail(order, {
     subject: `Thanks for ordering from ${order.businessName}`,
-    preheader: `Thanks for your order ${order.orderNumber}.`,
+    preheader: `Thanks for ${ticketLabel}.`,
     heading: "Thanks for your order!",
     introParagraphs: [
       `We hope you enjoyed your order from ${escapeHtml(order.businessName)}.`,
@@ -213,12 +233,15 @@ export function buildCustomerOrderRefundEmail(
   const timingNote =
     "Refunds are returned to your original payment method. Depending on your bank, it may take 5–10 business days to appear on your statement.";
 
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const referenceLabel = formatOrderReferenceLabel(order.orderNumber);
+
   return buildEmail(order, {
-    subject: `Refund issued for order ${order.orderNumber}`,
-    preheader: `${order.businessName} issued a $${refundAmount} refund for order ${order.orderNumber}.`,
+    subject: `Refund issued for ${ticketLabel}`,
+    preheader: `${order.businessName} issued a $${refundAmount} refund for ${ticketLabel}.`,
     heading: "Your refund is on the way",
     introParagraphs: [
-      `${escapeHtml(order.businessName)} issued a refund of $${refundAmount} for order ${order.orderNumber}.`,
+      `${escapeHtml(order.businessName)} issued a refund of $${refundAmount} for ${ticketLabel}.${referenceLabel ? ` (${referenceLabel})` : ""}`,
       timingNote,
     ],
     includeItems: false,
@@ -233,14 +256,15 @@ export function buildCustomerOrderCancelledEmail(order: OrderNotificationData): 
       ? "If you were charged, a refund will be processed. Please allow 5–10 business days for it to appear on your statement."
       : undefined;
 
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
   const intro = [
-    `We're sorry — ${escapeHtml(order.businessName)} had to cancel your order ${order.orderNumber}.`,
+    `We're sorry — ${escapeHtml(order.businessName)} had to cancel ${ticketLabel}.`,
     refundNote ?? "If you have questions, please contact the business directly.",
   ];
 
   return buildEmail(order, {
     subject: "Your order was cancelled",
-    preheader: `Order ${order.orderNumber} from ${order.businessName} was cancelled.`,
+    preheader: `${ticketLabel} from ${order.businessName} was cancelled.`,
     heading: "Your order was cancelled",
     introParagraphs: intro,
     includeItems: false,

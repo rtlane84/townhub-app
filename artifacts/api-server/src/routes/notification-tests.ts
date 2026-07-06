@@ -9,6 +9,7 @@ import {
   resolveOwnerNotificationPhone,
 } from "../lib/owner-notification-settings";
 import { deliverOwnerEmail, deliverOwnerSms, deliverOwnerDiscord, deliverOwnerNtfy } from "../lib/notification-delivery";
+import { respondToTestDelivery } from "../lib/notification-test-outcome";
 import {
   buildOwnerDiscordTestPayload,
   sendOwnerDiscordWebhook,
@@ -58,13 +59,14 @@ router.post(
     const body = `This is a test notification email from TownHub for ${business.name}. If you received this, email alerts are configured correctly.`;
 
     try {
-      await deliverOwnerEmail({
+      const outcome = await deliverOwnerEmail({
         businessId,
         eventType: "NEW_ORDER",
         to,
         subject,
         body,
       });
+      if (!respondToTestDelivery(res, outcome)) return;
       res.json({ ok: true, channel: "EMAIL", recipient: to });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to send test email";
@@ -100,12 +102,13 @@ router.post(
     const body = `TownHub test SMS for ${business.name}. SMS alerts are configured correctly.`;
 
     try {
-      await deliverOwnerSms({
+      const outcome = await deliverOwnerSms({
         businessId,
         eventType: "NEW_ORDER",
         to,
         body,
       });
+      if (!respondToTestDelivery(res, outcome)) return;
       res.json({ ok: true, channel: "SMS", recipient: to });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to send test SMS";
@@ -140,13 +143,14 @@ router.post(
 
     const payload = buildOwnerDiscordTestPayload(business.name);
     try {
-      await deliverOwnerDiscord({
+      const outcome = await deliverOwnerDiscord({
         businessId,
         eventType: "NEW_ORDER",
         webhookUrl,
         body: payload.embeds[0]?.description ?? "Test notification",
         send: () => sendOwnerDiscordWebhook({ webhookUrl, payload }),
       });
+      if (!respondToTestDelivery(res, outcome)) return;
       res.json({ ok: true, channel: "DISCORD", recipient: "Discord webhook" });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to send test Discord message";
@@ -186,7 +190,7 @@ router.post(
 
     const ntfy = buildOwnerNtfyTestMessage(business.name);
     try {
-      await deliverOwnerNtfy({
+      const outcome = await deliverOwnerNtfy({
         businessId,
         eventType: "NEW_ORDER",
         topic,
@@ -200,6 +204,7 @@ router.post(
             tags: ntfy.tags,
           }),
       });
+      if (!respondToTestDelivery(res, outcome)) return;
 
       await db
         .update(businessesTable)

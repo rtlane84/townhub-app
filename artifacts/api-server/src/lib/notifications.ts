@@ -84,7 +84,7 @@ export async function notifyOwnerNewAppointmentRequest(input: {
 
   const ownerEmail = resolveOwnerNotificationEmail(input.business);
   const phone = resolveOwnerNotificationPhone(input.business);
-  const tasks: Promise<void>[] = [];
+  const tasks: Promise<unknown>[] = [];
 
   try {
     if (input.business.notifyAppointmentRequestsByEmail !== false && ownerEmail) {
@@ -205,7 +205,7 @@ export async function notifyCustomerAppointmentStatusUpdate(input: {
 
   const emailContent = buildCustomerAppointmentStatusEmail(notificationData);
   const smsBody = buildCustomerAppointmentStatusSms(notificationData);
-  const tasks: Promise<void>[] = [];
+  const tasks: Promise<unknown>[] = [];
 
   const customerEmail = input.customerEmail?.trim();
   if (customerEmail) {

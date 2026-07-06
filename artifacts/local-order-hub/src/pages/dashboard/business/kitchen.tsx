@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   useUpdateOrderStatus,
-  getListBusinessOrdersQueryKey,
   getGetBusinessOrderSummaryQueryKey,
+  type Order,
 } from "@workspace/api-client-react";
+import { formatOrderTicketNumber } from "@workspace/api-zod";
 import {
   getKitchenBusinessOrdersQueryKey,
   listKitchenBusinessOrders,
@@ -25,6 +26,7 @@ import {
   getKitchenDisplayFilterSummary,
   groupOrdersByKitchenColumn,
   hasKitchenDisplayFilters,
+  isActiveKitchenOrder,
   type KitchenColumnId,
   type KitchenFulfillmentFilter,
   type KitchenPaymentFilter,
@@ -42,6 +44,30 @@ const COLUMN_HEADER_CLASS: Record<KitchenColumnId, string> = {
   PREPARING: "bg-amber-100 text-amber-900 border-amber-200",
   READY: "bg-green-100 text-green-900 border-green-200",
 };
+
+function patchKitchenOrdersCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  businessId: number,
+  orderId: number,
+  nextStatus: string,
+  serverOrder?: Order,
+) {
+  const queryKey = getKitchenBusinessOrdersQueryKey(businessId);
+  queryClient.setQueryData<Order[]>(queryKey, (previous) => {
+    if (!previous) return previous;
+
+    const resolved = serverOrder ?? previous.find((order) => order.id === orderId);
+    if (!resolved) return previous;
+
+    const updated: Order = { ...resolved, ...serverOrder, status: serverOrder?.status ?? (nextStatus as Order["status"]) };
+
+    if (!isActiveKitchenOrder(updated)) {
+      return previous.filter((order) => order.id !== orderId);
+    }
+
+    return previous.map((order) => (order.id === orderId ? updated : order));
+  });
+}
 
 export default function BusinessKitchen() {
   const { toast } = useToast();
@@ -121,24 +147,35 @@ export default function BusinessKitchen() {
 
   const updateStatus = useUpdateOrderStatus({
     mutation: {
-      onMutate: (vars) => setUpdatingId(vars.id),
-      onSettled: () => setUpdatingId(null),
+      onMutate: async (vars) => {
+        setUpdatingId(vars.id);
+        const nextStatus = String(vars.data.status);
+        await queryClient.cancelQueries({ queryKey: getKitchenBusinessOrdersQueryKey(businessId) });
+        const previous = queryClient.getQueryData<Order[]>(getKitchenBusinessOrdersQueryKey(businessId));
+        patchKitchenOrdersCache(queryClient, businessId, vars.id, nextStatus);
+        return { previous };
+      },
       onSuccess: (updated) => {
         if (updated.businessId) {
-          queryClient.invalidateQueries({
-            queryKey: [`/api/businesses/${updated.businessId}/orders`],
-          });
+          patchKitchenOrdersCache(queryClient, updated.businessId, updated.id, updated.status, updated);
           queryClient.invalidateQueries({
             queryKey: getGetBusinessOrderSummaryQueryKey(updated.businessId),
           });
         }
+        setUpdatingId(null);
         toast({
           title: "Order updated",
-          description: `${updated.orderNumber ?? `#${updated.id}`} is now ${updated.status.replace(/_/g, " ").toLowerCase()}`,
+          description: `${formatOrderTicketNumber(updated.id)} is now ${updated.status.replace(/_/g, " ").toLowerCase()}`,
         });
         setStatusConfirm(null);
       },
-      onError: () => toast({ title: "Failed to update order", variant: "destructive" }),
+      onError: (_err, _vars, context) => {
+        if (context?.previous) {
+          queryClient.setQueryData(getKitchenBusinessOrdersQueryKey(businessId), context.previous);
+        }
+        setUpdatingId(null);
+        toast({ title: "Failed to update order", variant: "destructive" });
+      },
     },
   });
 
@@ -149,7 +186,7 @@ export default function BusinessKitchen() {
         setStatusConfirm({
           orderId,
           nextStatus,
-          orderLabel: targetOrder.orderNumber ?? `#${targetOrder.id}`,
+          orderLabel: formatOrderTicketNumber(targetOrder.id),
         });
         return;
       }

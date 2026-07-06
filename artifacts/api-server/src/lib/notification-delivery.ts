@@ -12,6 +12,12 @@ import type {
 } from "./email-templates/types";
 
 export type NotificationChannel = "EMAIL" | "SMS" | "DISCORD" | "NTFY";
+
+export type DeliveryOutcome = {
+  status: NotificationStatus;
+  error?: string;
+};
+
 export type OwnerEventType =
   | "NEW_ORDER"
   | "NEW_APPOINTMENT_REQUEST"
@@ -84,7 +90,7 @@ export async function deliverOwnerEmail(input: {
   html?: string;
   orderId?: number;
   appointmentRequestId?: number;
-}): Promise<void> {
+}): Promise<DeliveryOutcome> {
   const result = await sendEmail(input.to, input.subject, input.body, input.html);
   const status = resolveNotificationStatus(result);
 
@@ -111,6 +117,8 @@ export async function deliverOwnerEmail(input: {
     appointmentRequestId: input.appointmentRequestId,
     errorMessage: result.error,
   });
+
+  return { status, error: result.error };
 }
 
 export async function deliverOwnerApplicationEmail(input: {
@@ -248,7 +256,7 @@ export async function deliverOwnerSms(input: {
   body: string;
   orderId?: number;
   appointmentRequestId?: number;
-}): Promise<void> {
+}): Promise<DeliveryOutcome> {
   const result = await sendSms(input.to, input.body);
   const status = resolveNotificationStatus(result);
 
@@ -274,6 +282,8 @@ export async function deliverOwnerSms(input: {
     appointmentRequestId: input.appointmentRequestId,
     errorMessage: result.error,
   });
+
+  return { status, error: result.error };
 }
 
 export async function deliverOwnerDiscord(input: {
@@ -284,7 +294,7 @@ export async function deliverOwnerDiscord(input: {
   orderId?: number;
   appointmentRequestId?: number;
   send: () => Promise<{ sent: boolean; error?: string }>;
-}): Promise<void> {
+}): Promise<DeliveryOutcome> {
   const result = await input.send();
   const status: NotificationStatus = result.sent ? "SENT" : "FAILED";
 
@@ -308,6 +318,8 @@ export async function deliverOwnerDiscord(input: {
     subject: "Discord webhook",
     errorMessage: result.error,
   });
+
+  return { status, error: result.error };
 }
 
 export async function deliverOwnerNtfy(input: {
@@ -319,7 +331,7 @@ export async function deliverOwnerNtfy(input: {
   orderId?: number;
   appointmentRequestId?: number;
   send: () => Promise<{ sent: boolean; error?: string }>;
-}): Promise<void> {
+}): Promise<DeliveryOutcome> {
   const result = await input.send();
   const status: NotificationStatus = result.sent ? "SENT" : "FAILED";
 
@@ -344,6 +356,8 @@ export async function deliverOwnerNtfy(input: {
     recipientPhone: redactNtfyTopic(input.topic),
     errorMessage: result.error,
   });
+
+  return { status, error: result.error };
 }
 
 export async function deliverCustomerNotification(input: {

@@ -9,3 +9,4 @@ export * from "./appointment-status";
 export * from "./business-slug";
 export * from "./order-prep-estimate";
 export * from "./order-tax";
+export * from "./order-ticket-display";

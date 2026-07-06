@@ -65,20 +65,20 @@ describe("kitchen-display", () => {
 
   it("getKitchenQuickAction advances pickup and delivery orders correctly", () => {
     assert.deepEqual(getKitchenQuickAction(order({ id: 1, status: "NEW" })), {
-      label: "Confirm",
+      label: "Confirm order",
       nextStatus: "CONFIRMED",
     });
     assert.deepEqual(
       getKitchenQuickAction(order({ id: 2, status: "PREPARING", fulfillmentType: "DELIVERY" })),
-      { label: "Ready", nextStatus: "OUT_FOR_DELIVERY" },
+      { label: "Out for delivery", nextStatus: "OUT_FOR_DELIVERY" },
     );
     assert.deepEqual(
       getKitchenQuickAction(order({ id: 3, status: "PREPARING", fulfillmentType: "PICKUP" })),
-      { label: "Ready", nextStatus: "READY_FOR_PICKUP" },
+      { label: "Ready for pickup", nextStatus: "READY_FOR_PICKUP" },
     );
     assert.deepEqual(
       getKitchenQuickAction(order({ id: 4, status: "READY_FOR_PICKUP" })),
-      { label: "Complete", nextStatus: "COMPLETED" },
+      { label: "Complete order", nextStatus: "COMPLETED" },
     );
   });
 

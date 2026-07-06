@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   listBusinessAppointmentRequests,
   getListBusinessAppointmentRequestsQueryKey,
+  ApiError,
   type AppointmentRequest,
 } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +19,8 @@ import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh
 import { getNotificationPreferences } from "@/lib/notification-preferences";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_MS = 12_000;
+const RATE_LIMIT_BACKOFF_MS = 60_000;
 
 function maxRequestId(requests: AppointmentRequest[]): number {
   if (!requests.length) return 0;
@@ -48,6 +50,7 @@ export function useLiveAppointmentAlerts(
   const latestKnownIdRef = useRef(0);
   const alertedIdsRef = useRef(new Set<number>());
   const pollingRef = useRef(false);
+  const rateLimitedUntilRef = useRef(0);
 
   const syncAppointmentsCache = useCallback(
     (requests: AppointmentRequest[]) => {
@@ -126,10 +129,15 @@ export function useLiveAppointmentAlerts(
 
     const poll = async () => {
       if (cancelled || pollingRef.current || document.hidden) return;
+      if (Date.now() < rateLimitedUntilRef.current) return;
       pollingRef.current = true;
 
       try {
-        const requests = await listBusinessAppointmentRequests(businessId);
+        const requests = await queryClient.fetchQuery({
+          queryKey: getListBusinessAppointmentRequestsQueryKey(businessId),
+          queryFn: () => listBusinessAppointmentRequests(businessId),
+          staleTime: POLL_INTERVAL_MS - 1_000,
+        });
         if (cancelled) return;
 
         if (!baselineSetRef.current) {
@@ -167,8 +175,10 @@ export function useLiveAppointmentAlerts(
         }
 
         syncAppointmentsCache(requests);
-      } catch {
-        // ignore transient poll failures
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 429) {
+          rateLimitedUntilRef.current = Date.now() + RATE_LIMIT_BACKOFF_MS;
+        }
       } finally {
         pollingRef.current = false;
       }
@@ -190,6 +200,7 @@ export function useLiveAppointmentAlerts(
   }, [
     businessId,
     enabled,
+    queryClient,
     syncAppointmentsCache,
     showNewRequestAlert,
     showMultipleRequestsAlert,

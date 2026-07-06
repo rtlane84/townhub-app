@@ -120,6 +120,9 @@ export function filterOrdersByDateView(
 
 export function filterOrdersByStatus(orders: Order[], statusFilter: string): Order[] {
   if (statusFilter === "all") return orders;
+  if (statusFilter === "active") {
+    return orders.filter((order) => isActiveOrderStatus(order.status));
+  }
   return orders.filter((order) => order.status === statusFilter);
 }
 

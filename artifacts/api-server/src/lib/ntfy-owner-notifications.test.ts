@@ -42,11 +42,13 @@ describe("ntfy-owner-notifications", () => {
     });
 
     assert.equal(message.title, "New order");
-    assert.match(message.message, /\*\*Clay Diner\*\* received a new order\./);
-    assert.match(message.message, /Order: TH-100/);
+    assert.match(message.message, /\*\*New Order\*\*/);
+    assert.match(message.message, /Clay Diner/);
+    assert.match(message.message, /Order #9/);
+    assert.match(message.message, /Reference: TH-100/);
     assert.match(message.message, /Customer: Alex/);
-    assert.match(message.message, /Total: \$24\.50/);
-    assert.match(message.message, /Fulfillment: Pickup/);
+    assert.match(message.message, /\$24\.50/);
+    assert.match(message.message, /^Pickup$/m);
     assert.match(message.message, /Open in TownHub:/);
     assert.match(message.click!, /\/dashboard\/business\/orders\/9/);
   });

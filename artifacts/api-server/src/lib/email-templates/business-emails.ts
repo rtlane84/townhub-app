@@ -1,5 +1,10 @@
 import { dashboardOrderUrl } from "../notification-urls";
-import { formatNotificationEstimatedWindow } from "@workspace/api-zod";
+import {
+  formatNotificationEstimatedWindow,
+  formatOrderReferenceLabel,
+  formatOrderReferenceNumber,
+  formatOrderTicketNumber,
+} from "@workspace/api-zod";
 import {
   formatOrderDateTime,
   fulfillmentLabel,
@@ -12,11 +17,23 @@ import { renderEmailLayout } from "./layout";
 import type { EmailContent, OrderNotificationData } from "./types";
 import { formatOrderTotalsTextLines, orderTotalsSummaryFromNotification } from "./types";
 
+function ownerOrderDetailRows(order: OrderNotificationData): Array<{ label: string; value: string }> {
+  const rows: Array<{ label: string; value: string }> = [
+    { label: "Order", value: formatOrderTicketNumber(order.orderId) },
+  ];
+  const reference = formatOrderReferenceNumber(order.orderNumber);
+  if (reference) {
+    rows.push({ label: "Reference", value: reference });
+  }
+  return rows;
+}
+
 export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailContent {
   const openUrl = dashboardOrderUrl(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
 
   const detailRows = [
-    { label: "Order number", value: order.orderNumber },
+    ...ownerOrderDetailRows(order),
     { label: "Customer", value: order.customerName },
     { label: "Phone", value: order.customerPhone?.trim() ?? "—" },
     { label: "Email", value: order.customerEmail?.trim() ?? "—" },
@@ -40,7 +57,7 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
   const bodyHtml = `${renderDetailTable(detailRows)}${renderOrderItems(order.items, orderTotalsSummaryFromNotification(order))}`;
 
   const html = renderEmailLayout({
-    preheader: `New order ${order.orderNumber} from ${order.customerName}.`,
+    preheader: `New ${ticketLabel} from ${order.customerName}.`,
     businessName: order.businessName,
     businessLogoUrl: order.businessLogoUrl,
     heading: "New Order Received",
@@ -50,11 +67,13 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
   });
 
   const itemLines = order.items.map((i) => `  - ${i.productName} x${i.quantity}`).join("\n");
+  const referenceLine = formatOrderReferenceLabel(order.orderNumber);
   const text = [
     "New Order Received",
     "",
     `Business: ${order.businessName}`,
-    `Order #: ${order.orderNumber}`,
+    `Order: ${ticketLabel}`,
+    referenceLine,
     `Customer: ${order.customerName}`,
     order.customerPhone ? `Phone: ${order.customerPhone}` : "",
     order.customerEmail ? `Email: ${order.customerEmail}` : "",
@@ -78,7 +97,7 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
     .join("\n");
 
   return {
-    subject: `New order ${order.orderNumber} — ${order.businessName}`,
+    subject: `New ${ticketLabel} — ${order.businessName}`,
     text,
     html,
   };
@@ -90,15 +109,16 @@ export function buildOwnerRefundFailedEmail(
 ): EmailContent {
   const openUrl = dashboardOrderUrl(order.orderId);
   const refundAmount = (refundAmountCents / 100).toFixed(2);
+  const ticketLabel = formatOrderTicketNumber(order.orderId);
 
   const bodyHtml = renderDetailTable([
-    { label: "Order number", value: order.orderNumber },
+    ...ownerOrderDetailRows(order),
     { label: "Customer", value: order.customerName },
     { label: "Refund amount", value: `$${refundAmount}` },
   ]);
 
   const html = renderEmailLayout({
-    preheader: `Refund failed for order ${order.orderNumber}.`,
+    preheader: `Refund failed for ${ticketLabel}.`,
     businessName: order.businessName,
     businessLogoUrl: order.businessLogoUrl,
     heading: "Refund failed",
@@ -108,18 +128,22 @@ export function buildOwnerRefundFailedEmail(
     footerNote: "Stripe could not process this refund. Review the order in your dashboard and try again, or contact support.",
   });
 
+  const referenceLine = formatOrderReferenceLabel(order.orderNumber);
   const text = [
     "Refund failed",
     "",
-    `Order #: ${order.orderNumber}`,
+    `Order: ${ticketLabel}`,
+    referenceLine,
     `Customer: ${order.customerName}`,
     `Refund amount: $${refundAmount}`,
     "",
     `Review Order: ${openUrl}`,
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   return {
-    subject: `Refund failed for order ${order.orderNumber}`,
+    subject: `Refund failed for ${ticketLabel}`,
     text,
     html,
   };

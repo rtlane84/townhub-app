@@ -1,4 +1,5 @@
 import type { Order } from "@workspace/api-client-react";
+import { formatOrderTicketNumber } from "@workspace/api-zod";
 
 export function formatFulfillmentType(type: Order["fulfillmentType"]): string {
   return type === "DELIVERY" ? "Delivery" : "Pickup";
@@ -15,7 +16,7 @@ export function formatPaymentMethod(method?: string): string {
 export function orderAlertDescription(order: Order): string {
   const parts = [
     order.customerName,
-    order.orderNumber ?? `#${order.id}`,
+    formatOrderTicketNumber(order.id),
     `$${order.total.toFixed(2)}`,
     formatFulfillmentType(order.fulfillmentType),
     formatPaymentMethod(order.paymentMethod),
@@ -24,7 +25,7 @@ export function orderAlertDescription(order: Order): string {
 }
 
 export function orderBannerHeadline(order: Order, extraCount = 0): string {
-  const label = order.orderNumber ?? `Order #${order.id}`;
+  const label = formatOrderTicketNumber(order.id);
   if (extraCount > 0) {
     return `New order · ${label} (+${extraCount} more)`;
   }

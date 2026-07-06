@@ -113,7 +113,7 @@ export async function notifyCustomerLifecycleEvent(
 
   const email = buildCustomerLifecycleEmail(event, order);
   const sms = buildCustomerLifecycleSms(event, order);
-  const tasks: Promise<void>[] = [];
+  const tasks: Promise<unknown>[] = [];
 
   if (order.customerEmail?.trim()) {
     tasks.push(
@@ -175,7 +175,7 @@ export async function notifyOwnerNewOrderFromOrderId(orderId: number): Promise<v
   const email = buildOwnerNewOrderEmail(order);
   const sms = buildOwnerNewOrderSms(order);
 
-  const tasks: Promise<void>[] = [];
+  const tasks: Promise<unknown>[] = [];
 
   const ownerEmail =
     business.notificationEmail?.trim() || business.orderNotificationEmail?.trim() || null;

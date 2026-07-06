@@ -1,4 +1,5 @@
 import type { Request, RequestHandler, Response } from "express";
+import { getAuth } from "@clerk/express";
 import rateLimit from "express-rate-limit";
 import { logger } from "../lib/logger";
 import {
@@ -14,6 +15,7 @@ import {
 } from "../lib/rate-limit-config";
 import {
   isOrderLookupRoute,
+  isOwnerDashboardRoute,
   isReadLimitedRoute,
   isWriteLimitedRoute,
   RATE_LIMIT_ERROR_MESSAGE,
@@ -126,6 +128,11 @@ export function createApiRateLimitMiddleware(): RequestHandler {
     const path = req.path;
 
     if (shouldSkipRateLimit(path, req.method)) {
+      next();
+      return;
+    }
+
+    if (isOwnerDashboardRoute(path, req.method) && getAuth(req).userId) {
       next();
       return;
     }

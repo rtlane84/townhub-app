@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useListBusinessOrders, getListBusinessOrdersQueryKey, type Order } from "@workspace/api-client-react";
+import { formatOrderTicketNumber } from "@workspace/api-zod";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { BusinessOrderListToolbar } from "@/components/business-order-list-toolbar";
@@ -37,6 +38,7 @@ import {
   type OrderCustomDateRange,
   type OrderDateFilterPreset,
 } from "@/lib/business-order-filters";
+import { parseOrdersPageSearch } from "@/lib/business-order-list-url";
 import { cn } from "@/lib/utils";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -44,7 +46,7 @@ const STATUS_COLORS: Record<string, string> = {
   CONFIRMED: "bg-indigo-100 text-indigo-700",
   PREPARING: "bg-amber-100 text-amber-700",
   READY_FOR_PICKUP: "bg-green-100 text-green-700",
-  OUT_FOR_DELIVERY: "bg-cyan-100 text-cyan-700",
+  OUT_FOR_DELIVERY: "bg-purple-100 text-purple-700",
   COMPLETED: "bg-emerald-100 text-emerald-700",
   CANCELED: "bg-red-100 text-red-700",
 };
@@ -96,6 +98,15 @@ export default function BusinessOrders() {
   const [datePreset, setDatePreset] = useState<OrderDateFilterPreset>("today");
   const [customRange, setCustomRange] = useState<OrderCustomDateRange>({});
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const { datePreset: urlDate, statusFilter: urlStatus } = parseOrdersPageSearch(
+      window.location.search,
+    );
+    if (urlDate) setDatePreset(urlDate);
+    if (urlStatus) setStatusFilter(urlStatus);
+  }, []);
+
   const { selectedBusinessId, business } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? 0;
 
@@ -286,7 +297,7 @@ export default function BusinessOrders() {
                       >
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                            <p className="font-medium text-sm">{order.orderNumber}</p>
+                            <p className="font-medium text-sm">{formatOrderTicketNumber(order.id)}</p>
                             <OrderStatusBadge orderId={order.id} status={order.status} />
                             <PaymentStatusBadge
                               paymentMethod={order.paymentMethod}

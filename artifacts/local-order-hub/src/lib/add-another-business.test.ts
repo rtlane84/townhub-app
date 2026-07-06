@@ -25,7 +25,7 @@ describe("add another business discoverability", () => {
     assert.match(switcher, /AddAnotherBusinessMenuItem/);
   });
 
-  it("surfaces on overview and settings pages", () => {
+  it("surfaces on settings page and business switcher", () => {
     const overview = readFileSync(
       join(packageRoot, "src/pages/dashboard/business/overview.tsx"),
       "utf8",
@@ -34,7 +34,7 @@ describe("add another business discoverability", () => {
       join(packageRoot, "src/pages/dashboard/business/settings.tsx"),
       "utf8",
     );
-    assert.match(overview, /AddAnotherBusinessLink/);
+    assert.doesNotMatch(overview, /AddAnotherBusinessLink/);
     assert.match(settings, /AddAnotherBusinessButton/);
     assert.match(settings, /Your businesses/);
   });

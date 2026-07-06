@@ -169,17 +169,18 @@ export type KitchenQuickAction = {
 export function getKitchenQuickAction(order: Pick<Order, "status" | "fulfillmentType">): KitchenQuickAction | null {
   switch (order.status) {
     case "NEW":
-      return { label: "Confirm", nextStatus: "CONFIRMED" };
+      return { label: "Confirm order", nextStatus: "CONFIRMED" };
     case "CONFIRMED":
-      return { label: "Start Preparing", nextStatus: "PREPARING" };
+      return { label: "Start preparing", nextStatus: "PREPARING" };
     case "PREPARING":
       return {
-        label: "Ready",
+        label:
+          order.fulfillmentType === "DELIVERY" ? "Out for delivery" : "Ready for pickup",
         nextStatus: order.fulfillmentType === "DELIVERY" ? "OUT_FOR_DELIVERY" : "READY_FOR_PICKUP",
       };
     case "READY_FOR_PICKUP":
     case "OUT_FOR_DELIVERY":
-      return { label: "Complete", nextStatus: "COMPLETED" };
+      return { label: "Complete order", nextStatus: "COMPLETED" };
     default:
       return null;
   }

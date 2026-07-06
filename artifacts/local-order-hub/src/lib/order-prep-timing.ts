@@ -72,3 +72,11 @@ export function getBusinessOrderTimingLabel(
   if (overdueMinutes < 1) return "Overdue";
   return `Overdue by ${overdueMinutes} min`;
 }
+
+export function isOrderOverdue(
+  order: Pick<Order, "status" | "estimatedWindowEnd">,
+  now: Date = new Date(),
+): boolean {
+  const label = getBusinessOrderTimingLabel(order, now);
+  return Boolean(label?.startsWith("Overdue"));
+}

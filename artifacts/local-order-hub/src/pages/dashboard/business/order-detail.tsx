@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useGetOrder, useUpdateOrderStatus, getGetOrderQueryKey, getListBusinessOrdersQueryKey } from "@workspace/api-client-react";
+import { formatOrderTicketNumber, formatOrderReferenceLabel } from "@workspace/api-zod";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -119,7 +120,12 @@ export default function BusinessOrderDetail({ params }: Props) {
           <>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h1 className="font-serif text-3xl font-bold">{order.orderNumber}</h1>
+                <h1 className="font-serif text-3xl font-bold">{formatOrderTicketNumber(order.id)}</h1>
+                {order.orderNumber ? (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {formatOrderReferenceLabel(order.orderNumber)}
+                  </p>
+                ) : null}
                 <p className="text-muted-foreground mt-1">
                   {order.createdAt ? new Date(order.createdAt).toLocaleString() : ""} · {order.fulfillmentType}
                 </p>
@@ -339,7 +345,7 @@ export default function BusinessOrderDetail({ params }: Props) {
         }}
         copy={
           order && statusConfirm
-            ? changeOrderStatusCopy(order.orderNumber ?? `Order #${order.id}`, statusConfirm)
+            ? changeOrderStatusCopy(formatOrderTicketNumber(order.id), statusConfirm)
             : null
         }
         onConfirm={confirmStatusChange}

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   BUSINESS_HUB_NAV_ITEMS,
+  BUSINESS_HUB_NAV_SECTIONS,
   getVisibleBusinessHubNavItems,
   isBusinessHubRouteHiddenByStorefrontMode,
   resolveBusinessHubFeatureKey,
@@ -32,6 +33,15 @@ describe("business-hub-features", () => {
     assert.ok(hrefs.includes("/dashboard/business/orders"));
     assert.ok(hrefs.includes("/dashboard/business/appointments"));
     assert.ok(hrefs.includes("/dashboard/business/locations"));
+  });
+
+  it("groups sidebar items into business, catalog, and configuration sections", () => {
+    const labels = BUSINESS_HUB_NAV_SECTIONS.map((section) => section.label);
+    assert.deepEqual(labels, ["Business", "Catalog", "Configuration"]);
+    const grouped = new Set(BUSINESS_HUB_NAV_SECTIONS.flatMap((section) => section.hrefs));
+    for (const item of BUSINESS_HUB_NAV_ITEMS) {
+      assert.ok(grouped.has(item.href), `missing nav section for ${item.href}`);
+    }
   });
 
   it("shows ordering tabs only for ORDERING storefront mode", () => {

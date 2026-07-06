@@ -73,7 +73,7 @@ export function BusinessOrderListToolbar({
         <Input
           value={searchQuery}
           onChange={(event) => onSearchQueryChange(event.target.value)}
-          placeholder="Search order #, customer, phone, or email"
+          placeholder="Search orders..."
           className="pl-9"
           data-testid="order-search-input"
         />

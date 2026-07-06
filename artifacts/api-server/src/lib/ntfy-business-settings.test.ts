@@ -28,11 +28,12 @@ describe("ntfy-business-settings", () => {
     assert.equal(update.ntfyConnectedAt, connectedAt);
   });
 
-  it("regenerates topic with a new connected timestamp", () => {
+  it("regenerates topic with a new connected timestamp and clears last test", () => {
     const first = ntfySettingsForRegenerate();
     const second = ntfySettingsForRegenerate();
     assert.notEqual(first.ntfyTopic, second.ntfyTopic);
     assert.ok(isValidNtfyTopic(first.ntfyTopic));
+    assert.equal(first.ntfyLastTestAt, null);
   });
 });
 

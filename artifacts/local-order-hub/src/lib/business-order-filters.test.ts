@@ -38,6 +38,15 @@ describe("business-order-filters", () => {
     assert.equal(isActiveOrderStatus("COMPLETED"), false);
   });
 
+  it("filters active orders via the active status preset", () => {
+    const orders = [
+      order({ id: 1, status: "NEW" }),
+      order({ id: 2, status: "COMPLETED" }),
+      order({ id: 3, status: "READY_FOR_PICKUP" }),
+    ];
+    assert.deepEqual(filterOrdersByStatus(orders, "active").map((o) => o.id), [1, 3]);
+  });
+
   it("today view filters by order date for every status", () => {
     const orders = [
       order({ id: 1, status: "PREPARING", createdAt: "2026-06-10T12:00:00.000Z" }),

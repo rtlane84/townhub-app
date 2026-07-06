@@ -5,6 +5,14 @@ import {
   type QueueSummaryStatus,
 } from "@/lib/business-order-display";
 
+const QUEUE_SUMMARY_ACCENT: Record<QueueSummaryStatus, string> = {
+  NEW: "border-l-blue-500 bg-blue-50/40",
+  CONFIRMED: "border-l-indigo-500 bg-indigo-50/40",
+  PREPARING: "border-l-amber-500 bg-amber-50/40",
+  READY_FOR_PICKUP: "border-l-green-500 bg-green-50/40",
+  OUT_FOR_DELIVERY: "border-l-purple-500 bg-purple-50/40",
+};
+
 interface BusinessOrderQueueSummaryProps {
   counts: Record<QueueSummaryStatus, number>;
   activeStatus: string;
@@ -32,10 +40,11 @@ export function BusinessOrderQueueSummary({
                 type="button"
                 onClick={() => onSelectStatus(status)}
                 className={cn(
-                  "flex flex-col items-start rounded-xl border px-3 py-2.5 text-left transition-colors min-w-[7.5rem] sm:min-w-0",
+                  "flex flex-col items-start rounded-xl border border-l-4 px-3 py-2.5 text-left transition-colors min-w-[7.5rem] sm:min-w-0",
+                  QUEUE_SUMMARY_ACCENT[status],
                   active
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-border bg-card hover:bg-muted/40",
+                    ? "shadow-sm ring-1 ring-primary/25"
+                    : "hover:bg-muted/50",
                 )}
                 data-testid={`queue-count-${status.toLowerCase()}`}
               >

@@ -6,6 +6,41 @@ export type BusinessHubNavItem = {
   featureKey: string | null;
 };
 
+export type BusinessHubNavSection = {
+  label: string;
+  hrefs: string[];
+};
+
+/** Sidebar groupings — order within each section matches BUSINESS_HUB_NAV_ITEMS. */
+export const BUSINESS_HUB_NAV_SECTIONS: BusinessHubNavSection[] = [
+  {
+    label: "Business",
+    hrefs: [
+      "/dashboard/business",
+      "/dashboard/business/orders",
+      "/dashboard/business/kitchen",
+      "/dashboard/business/appointments",
+    ],
+  },
+  {
+    label: "Catalog",
+    hrefs: [
+      "/dashboard/business/products",
+      "/dashboard/business/categories",
+      "/dashboard/business/product-options",
+    ],
+  },
+  {
+    label: "Configuration",
+    hrefs: [
+      "/dashboard/business/locations",
+      "/dashboard/business/notifications",
+      "/dashboard/business/settings",
+      "/dashboard/business/subscription",
+    ],
+  },
+];
+
 /** Feature-gated Business Hub nav sections (null featureKey = always available). */
 export const BUSINESS_HUB_NAV_ITEMS: BusinessHubNavItem[] = [
   { href: "/dashboard/business", label: "Overview", featureKey: null },

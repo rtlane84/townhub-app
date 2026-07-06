@@ -1,6 +1,10 @@
 import type { OrderNotificationData } from "./email-templates/types";
 import { dashboardAppointmentsUrl, dashboardOrderUrl } from "./notification-urls";
-import { formatTime12h } from "@workspace/api-zod";
+import {
+  formatOrderReferenceLabel,
+  formatOrderTicketNumber,
+  formatTime12h,
+} from "@workspace/api-zod";
 import { postDiscordWebhook } from "./discord-webhook";
 
 const ORDER_EMBED_COLOR = 0x2563eb;
@@ -11,6 +15,18 @@ function fulfillmentLabel(type: string): string {
 
 export function buildOwnerNewOrderDiscordPayload(order: OrderNotificationData) {
   const orderUrl = dashboardOrderUrl(order.orderId);
+  const fields: Array<{ name: string; value: string; inline?: boolean }> = [
+    { name: "Order", value: formatOrderTicketNumber(order.orderId), inline: true },
+    { name: "Customer", value: order.customerName, inline: true },
+    { name: "Total", value: `$${order.total.toFixed(2)}`, inline: true },
+    { name: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType), inline: true },
+  ];
+  const reference = formatOrderReferenceLabel(order.orderNumber);
+  if (reference) {
+    fields.push({ name: "Reference", value: reference.replace(/^Reference: /, ""), inline: true });
+  }
+  fields.push({ name: "Open in TownHub", value: orderUrl });
+
   return {
     embeds: [
       {
@@ -18,13 +34,7 @@ export function buildOwnerNewOrderDiscordPayload(order: OrderNotificationData) {
         description: `**${order.businessName}** received a new order.`,
         url: orderUrl,
         color: ORDER_EMBED_COLOR,
-        fields: [
-          { name: "Order", value: order.orderNumber, inline: true },
-          { name: "Customer", value: order.customerName, inline: true },
-          { name: "Total", value: `$${order.total.toFixed(2)}`, inline: true },
-          { name: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType), inline: true },
-          { name: "Open in TownHub", value: orderUrl },
-        ],
+        fields,
       },
     ],
   };
@@ -72,11 +82,19 @@ export function buildOwnerDiscordTestPayload(businessName: string) {
 
 export async function sendOwnerDiscordWebhook(input: {
   webhookUrl: string;
-  payload: ReturnType<typeof buildOwnerNewOrderDiscordPayload>;
+  payload: {
+    embeds: Array<{
+      title?: string;
+      description?: string;
+      url?: string;
+      color?: number;
+      fields?: Array<{ name: string; value: string; inline?: boolean }>;
+    }>;
+  };
 }): Promise<{ sent: boolean; error?: string }> {
   const result = await postDiscordWebhook({
     webhookUrl: input.webhookUrl,
-    embeds: input.payload.embeds,
+    embeds: input.payload.embeds as NonNullable<Parameters<typeof postDiscordWebhook>[0]["embeds"]>,
   });
   if (!result.ok) return { sent: false, error: result.error };
   return { sent: true };

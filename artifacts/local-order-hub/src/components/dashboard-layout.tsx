@@ -27,6 +27,7 @@ import { BusinessSwitcher } from "@/components/business-switcher";
 import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
 import {
   BUSINESS_HUB_NAV_ITEMS,
+  BUSINESS_HUB_NAV_SECTIONS,
   getVisibleBusinessHubNavItems,
   isBusinessHubRouteHiddenByStorefrontMode,
   resolveBusinessHubFeatureKey,
@@ -123,6 +124,44 @@ function BusinessNavLinks({
   );
 }
 
+function BusinessNavSections({
+  location,
+  onNavigate,
+  navItems,
+}: {
+  location: string;
+  onNavigate?: () => void;
+  navItems: BusinessHubNavItem[];
+}) {
+  const navByHref = useMemo(() => new Map(navItems.map((item) => [item.href, item])), [navItems]);
+
+  return (
+    <>
+      {BUSINESS_HUB_NAV_SECTIONS.map((section, index) => {
+        const sectionItems = section.hrefs
+          .map((href) => navByHref.get(href))
+          .filter((item): item is BusinessHubNavItem => Boolean(item));
+        if (!sectionItems.length) return null;
+
+        return (
+          <div
+            key={section.label}
+            className={cn(index > 0 && "pt-4 mt-4 border-t border-border/50")}
+            data-testid={`nav-section-${section.label.toLowerCase()}`}
+          >
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/75">
+              {section.label}
+            </p>
+            <div className="space-y-1">
+              <BusinessNavLinks location={location} navItems={sectionItems} onNavigate={onNavigate} />
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export function BusinessDashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <OrderDashboardRefreshProvider>
@@ -175,8 +214,8 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
         <div className="p-6">
           <h2 className="font-serif font-bold text-lg mb-4">Business Hub</h2>
           <BusinessSwitcher />
-          <nav className="space-y-1 mt-6">
-            <BusinessNavLinks location={location} navItems={visibleNavItems} />
+          <nav className="mt-6">
+            <BusinessNavSections location={location} navItems={visibleNavItems} />
           </nav>
         </div>
       </aside>
@@ -201,8 +240,8 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
             <div className="px-6 pb-4">
               <BusinessSwitcher compact onNavigate={() => setOpen(false)} />
             </div>
-            <nav className="px-3 space-y-1">
-              <BusinessNavLinks
+            <nav className="px-3 pb-6">
+              <BusinessNavSections
                 location={location}
                 navItems={visibleNavItems}
                 onNavigate={() => setOpen(false)}

@@ -87,6 +87,7 @@ type ProviderActionButtonsProps = {
   testLabel: string;
   testTestId?: string;
   testDisabled?: boolean;
+  testDisabledTitle?: string;
 };
 
 export function ProviderActionButtons({
@@ -100,6 +101,7 @@ export function ProviderActionButtons({
   testLabel,
   testTestId,
   testDisabled = false,
+  testDisabledTitle,
 }: ProviderActionButtonsProps) {
   return (
     <div className="flex flex-wrap items-center gap-2 border-t pt-4">
@@ -119,6 +121,7 @@ export function ProviderActionButtons({
         loading={testLoading}
         loadingText="Sending…"
         disabled={testDisabled}
+        title={testDisabled ? testDisabledTitle : undefined}
         data-testid={testTestId}
       >
         {testLabel}

@@ -55,7 +55,6 @@ export * from './highlight';
 export * from './highlightInput';
 export * from './listAllOrdersParams';
 export * from './listBusinessesParams';
-export * from './listBusinessOrdersParams';
 export * from './listEventsParams';
 export * from './listMediaAssetsParams';
 export * from './listNotificationLogsChannel';

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   useTestBusinessNotificationEmail,
   useTestBusinessNotificationSms,
@@ -44,6 +44,14 @@ import {
   type NotificationPreferences,
 } from "@/lib/notification-preferences";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
+import {
+  deliveryFormFromBusiness,
+  isDiscordSettingsDirty,
+  isEmailSettingsDirty,
+  isSmsSettingsDirty,
+  UNSAVED_SETTINGS_TEST_HINT,
+  type NotificationDeliveryForm,
+} from "@/lib/notification-settings-form";
 import {
   getProviderTestSnapshot,
   recordProviderTestFailure,
@@ -99,18 +107,7 @@ function extractErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback;
 }
 
-type DeliveryForm = {
-  notificationEmail: string;
-  notificationPhone: string;
-  discordWebhookUrl: string;
-  discordEnabled: boolean;
-  notifyNewOrdersByEmail: boolean;
-  notifyNewOrdersBySms: boolean;
-  notifyNewOrdersByDiscord: boolean;
-  notifyAppointmentRequestsByEmail: boolean;
-  notifyAppointmentRequestsBySms: boolean;
-  notifyAppointmentRequestsByDiscord: boolean;
-};
+type DeliveryForm = NotificationDeliveryForm;
 
 export default function BusinessNotifications() {
   const { selectedBusinessId, business, isLoading } = useSelectedBusiness();
@@ -134,23 +131,24 @@ export default function BusinessNotifications() {
 
   useEffect(() => {
     if (!business) return;
-    const b = business as unknown as Record<string, unknown>;
-    const notifyNewOrdersByDiscord = b.notifyNewOrdersByDiscord === true;
-    const notifyAppointmentRequestsByDiscord = b.notifyAppointmentRequestsByDiscord === true;
-    setDeliveryForm({
-      notificationEmail: String(b.notificationEmail ?? b.orderNotificationEmail ?? ""),
-      notificationPhone: String(b.notificationPhone ?? ""),
-      discordWebhookUrl: String(b.discordWebhookUrl ?? ""),
-      discordEnabled: notifyNewOrdersByDiscord || notifyAppointmentRequestsByDiscord,
-      notifyNewOrdersByEmail: b.notifyNewOrdersByEmail !== false,
-      notifyNewOrdersBySms: b.notifyNewOrdersBySms === true,
-      notifyNewOrdersByDiscord,
-      notifyAppointmentRequestsByEmail: b.notifyAppointmentRequestsByEmail !== false,
-      notifyAppointmentRequestsBySms: b.notifyAppointmentRequestsBySms === true,
-      notifyAppointmentRequestsByDiscord,
-    });
+    setDeliveryForm(deliveryFormFromBusiness(business as unknown as Record<string, unknown>));
     setNtfyTestError(null);
   }, [business]);
+
+  const savedDeliveryForm = useMemo(
+    () => (business ? deliveryFormFromBusiness(business as unknown as Record<string, unknown>) : null),
+    [business],
+  );
+
+  const emailSettingsDirty = savedDeliveryForm
+    ? isEmailSettingsDirty(deliveryForm, savedDeliveryForm)
+    : false;
+  const smsSettingsDirty = savedDeliveryForm
+    ? isSmsSettingsDirty(deliveryForm, savedDeliveryForm)
+    : false;
+  const discordSettingsDirty = savedDeliveryForm
+    ? isDiscordSettingsDirty(deliveryForm, savedDeliveryForm)
+    : false;
 
   const acceptsAppointments = acceptsAppointmentRequests(business ?? {});
 
@@ -213,14 +211,6 @@ export default function BusinessNotifications() {
         notifyAppointmentRequestsByDiscord:
           discordOn && deliveryForm.notifyAppointmentRequestsByDiscord,
       },
-    });
-  }
-
-  function saveNtfySettings() {
-    if (!business) return;
-    updateBusiness.mutate({
-      id: business.id,
-      data: { ntfyEnabled: ntfyEnabled },
     });
   }
 
@@ -379,6 +369,12 @@ export default function BusinessNotifications() {
   const emailConfigured = Boolean(deliveryForm.notificationEmail.trim());
   const smsConfigured = Boolean(deliveryForm.notificationPhone.trim());
   const discordConfigured = Boolean(deliveryForm.discordWebhookUrl.trim());
+  const settingsSaving = updateBusiness.isPending;
+
+  const emailTestDisabled = !emailConfigured || emailSettingsDirty || settingsSaving;
+  const smsTestDisabled = !smsConfigured || smsSettingsDirty || settingsSaving;
+  const discordTestDisabled =
+    !deliveryForm.discordEnabled || !discordConfigured || discordSettingsDirty || settingsSaving;
 
   const emailConnection = resolveConnectionDisplay(snapshots.email);
   const smsConnection = resolveConnectionDisplay(snapshots.sms);
@@ -467,7 +463,10 @@ export default function BusinessNotifications() {
             testLoading={testEmail.isPending}
             testLabel="Send test email"
             testTestId="test-notification-email"
-            testDisabled={!emailConfigured}
+            testDisabled={emailTestDisabled}
+            testDisabledTitle={
+              emailSettingsDirty ? UNSAVED_SETTINGS_TEST_HINT : !emailConfigured ? "Add an email address first" : undefined
+            }
           />
         </NotificationProviderCard>
 
@@ -518,7 +517,10 @@ export default function BusinessNotifications() {
             testLoading={testSms.isPending}
             testLabel="Send test SMS"
             testTestId="test-notification-sms"
-            testDisabled={!smsConfigured}
+            testDisabled={smsTestDisabled}
+            testDisabledTitle={
+              smsSettingsDirty ? UNSAVED_SETTINGS_TEST_HINT : !smsConfigured ? "Add a phone number first" : undefined
+            }
           />
         </NotificationProviderCard>
 
@@ -664,14 +666,13 @@ export default function BusinessNotifications() {
           />
 
           <ProviderActionButtons
-            onSave={saveNtfySettings}
-            saveLoading={updateBusiness.isPending}
-            saveTestId="save-ntfy-settings"
+            showSave={false}
             onTest={() => selectedBusinessId && testNtfy.mutate({ businessId: selectedBusinessId })}
             testLoading={testNtfy.isPending}
             testLabel="Send test notification"
             testTestId="test-notification-ntfy"
-            testDisabled={!ntfyEnabled || !ntfyTopic}
+            testDisabled={!ntfyEnabled || !ntfyTopic || settingsSaving}
+            testDisabledTitle={!ntfyEnabled || !ntfyTopic ? "Enable phone notifications and copy your topic first" : undefined}
           />
         </NotificationProviderCard>
 
@@ -759,7 +760,14 @@ export default function BusinessNotifications() {
             testLoading={testDiscord.isPending}
             testLabel="Send test notification"
             testTestId="test-notification-discord"
-            testDisabled={!deliveryForm.discordEnabled || !discordConfigured}
+            testDisabled={discordTestDisabled}
+            testDisabledTitle={
+              discordSettingsDirty
+                ? UNSAVED_SETTINGS_TEST_HINT
+                : !deliveryForm.discordEnabled || !discordConfigured
+                  ? "Enable Discord and add a webhook URL first"
+                  : undefined
+            }
           />
         </NotificationProviderCard>
 

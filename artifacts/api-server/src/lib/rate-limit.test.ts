@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import express from "express";
 import {
   isOrderLookupRoute,
+  isOwnerDashboardRoute,
   isReadLimitedRoute,
   isStripeWebhookPath,
   isWriteLimitedRoute,
@@ -54,6 +55,14 @@ describe("rate-limit paths", () => {
   it("routes guest order lookup to dedicated limiter", () => {
     assert.equal(isOrderLookupRoute("/orders/42", "GET"), true);
     assert.equal(isReadLimitedRoute("/orders/42", "GET"), false);
+  });
+
+  it("recognizes authenticated owner dashboard polling routes", () => {
+    assert.equal(isOwnerDashboardRoute("/businesses/1/orders", "GET"), true);
+    assert.equal(isOwnerDashboardRoute("/businesses/1/orders/summary", "GET"), true);
+    assert.equal(isOwnerDashboardRoute("/businesses/1/appointment-requests", "GET"), true);
+    assert.equal(isOwnerDashboardRoute("/businesses/1/orders", "POST"), false);
+    assert.equal(isOwnerDashboardRoute("/orders/42", "GET"), false);
   });
 });
 

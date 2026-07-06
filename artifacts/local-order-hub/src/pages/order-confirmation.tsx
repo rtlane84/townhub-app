@@ -20,6 +20,7 @@ import {
 } from "@/lib/stripe-checkout-return";
 import { getCustomerEstimatedWindowLabel } from "@/lib/order-prep-timing";
 import { OrderTotalsSummary } from "@/components/order-totals-summary";
+import { formatOrderTicketNumber, formatOrderReferenceLabel } from "@workspace/api-zod";
 
 export default function OrderConfirmation() {
   const [, params] = useRoute("/order/:id");
@@ -100,8 +101,11 @@ export default function OrderConfirmation() {
         </div>
         <h1 className="text-4xl font-serif font-bold text-foreground mb-4">Order Received!</h1>
         <p className="text-lg text-muted-foreground">
-          Thank you for supporting local. {order.businessName} has received your order #{order.orderNumber}.
+          Thank you for supporting local. {order.businessName} has received {formatOrderTicketNumber(order.id)}.
         </p>
+        {order.orderNumber ? (
+          <p className="text-sm text-muted-foreground mt-2">{formatOrderReferenceLabel(order.orderNumber)}</p>
+        ) : null}
         {paymentPendingMessage ? (
           <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">{paymentPendingMessage}</p>
         ) : null}

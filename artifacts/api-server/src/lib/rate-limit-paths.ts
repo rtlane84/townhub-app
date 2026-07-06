@@ -10,6 +10,15 @@ export function isStripeWebhookPath(path: string): boolean {
   return path === "/checkout/webhook";
 }
 
+/** Authenticated owner dashboard polling — authorized in route handlers. */
+export function isOwnerDashboardRoute(path: string, method: string): boolean {
+  if (method !== "GET") return false;
+  if (/^\/businesses\/\d+\/orders$/.test(path)) return true;
+  if (/^\/businesses\/\d+\/orders\/summary$/.test(path)) return true;
+  if (/^\/businesses\/\d+\/appointment-requests$/.test(path)) return true;
+  return false;
+}
+
 export function shouldSkipRateLimit(path: string, _method: string): boolean {
   return isStripeWebhookPath(path);
 }

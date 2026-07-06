@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  ApiError,
   getBusinessOrderSummary,
   getGetBusinessOrderSummaryQueryKey,
   type Order,
@@ -23,7 +24,8 @@ import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh
 import { getNotificationPreferences } from "@/lib/notification-preferences";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
 
-const POLL_INTERVAL_MS = 5000;
+export const OWNER_ORDER_POLL_INTERVAL_MS = 12_000;
+const RATE_LIMIT_BACKOFF_MS = 60_000;
 
 function maxOrderId(orders: Order[]): number {
   if (!orders.length) return 0;
@@ -47,6 +49,7 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
   const latestKnownIdRef = useRef(0);
   const alertedIdsRef = useRef(new Set<number>());
   const pollingRef = useRef(false);
+  const rateLimitedUntilRef = useRef(0);
 
   const syncDashboardCache = useCallback(
     (orders: Order[], summary: BusinessOrderSummary) => {
@@ -127,12 +130,22 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
 
     const poll = async () => {
       if (cancelled || pollingRef.current || document.hidden) return;
+      if (Date.now() < rateLimitedUntilRef.current) return;
       pollingRef.current = true;
 
       try {
+        const staleTime = OWNER_ORDER_POLL_INTERVAL_MS - 1_000;
         const [orders, summary] = await Promise.all([
-          listKitchenBusinessOrders(businessId),
-          getBusinessOrderSummary(businessId),
+          queryClient.fetchQuery({
+            queryKey: getKitchenBusinessOrdersQueryKey(businessId),
+            queryFn: ({ signal }) => listKitchenBusinessOrders(businessId, { signal }),
+            staleTime,
+          }),
+          queryClient.fetchQuery({
+            queryKey: getGetBusinessOrderSummaryQueryKey(businessId),
+            queryFn: () => getBusinessOrderSummary(businessId),
+            staleTime,
+          }),
         ]);
 
         if (cancelled) return;
@@ -167,15 +180,17 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
         }
 
         syncDashboardCache(orders, summary);
-      } catch {
-        // ignore transient poll failures
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 429) {
+          rateLimitedUntilRef.current = Date.now() + RATE_LIMIT_BACKOFF_MS;
+        }
       } finally {
         pollingRef.current = false;
       }
     };
 
     void poll();
-    intervalId = setInterval(() => void poll(), POLL_INTERVAL_MS);
+    intervalId = setInterval(() => void poll(), OWNER_ORDER_POLL_INTERVAL_MS);
 
     const onVisibilityChange = () => {
       if (!document.hidden) void poll();
@@ -187,5 +202,5 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
       if (intervalId) clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [businessId, syncDashboardCache, showMultipleOrdersAlert, showNewOrderAlert, addNewOrderBanners]);
+  }, [businessId, queryClient, syncDashboardCache, showMultipleOrdersAlert, showNewOrderAlert, addNewOrderBanners]);
 }

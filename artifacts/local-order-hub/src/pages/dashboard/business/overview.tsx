@@ -1,5 +1,6 @@
 import { keepPreviousData } from "@tanstack/react-query";
 import { useGetBusinessOrderSummary, getGetBusinessOrderSummaryQueryKey } from "@workspace/api-client-react";
+import { formatOrderTicketNumber } from "@workspace/api-zod";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,14 +12,18 @@ import { useOrderHighlight } from "@/hooks/order-dashboard-refresh-context";
 import { cn } from "@/lib/utils";
 import { LockedFeatureSection } from "@/components/locked-feature-section";
 import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
-import { AddAnotherBusinessLink } from "@/components/add-another-business-link";
+import { OverviewStatCard } from "@/components/overview-stat-card";
+import {
+  OVERVIEW_KITCHEN_HREF,
+  OVERVIEW_ORDERS_LINKS,
+} from "@/lib/business-order-list-url";
 
 const STATUS_COLORS: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-700",
   CONFIRMED: "bg-indigo-100 text-indigo-700",
   PREPARING: "bg-amber-100 text-amber-700",
   READY_FOR_PICKUP: "bg-green-100 text-green-700",
-  OUT_FOR_DELIVERY: "bg-cyan-100 text-cyan-700",
+  OUT_FOR_DELIVERY: "bg-purple-100 text-purple-700",
   COMPLETED: "bg-emerald-100 text-emerald-700",
   CANCELED: "bg-red-100 text-red-700",
 };
@@ -63,7 +68,6 @@ export default function BusinessOverview() {
             <p className="text-muted-foreground mt-1">
               {business?.name ? `${business.name} at a glance` : "Your business at a glance"}
             </p>
-            <AddAnotherBusinessLink className="mt-3" />
           </div>
           {isFetching && summary && (
             <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 pt-1">
@@ -82,50 +86,58 @@ export default function BusinessOverview() {
             ))
           ) : (
             <>
-              <Card data-testid="stat-today-orders">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <ShoppingBag className="h-4 w-4 text-primary" />
-                    </div>
+              <OverviewStatCard
+                href={OVERVIEW_ORDERS_LINKS.today}
+                locked={ordersLocked}
+                onLockedClick={() => openLockedFeature("online_ordering")}
+                testId="stat-today-orders"
+                value={summary?.todayCount ?? 0}
+                label="Orders today"
+                icon={
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <ShoppingBag className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="text-3xl font-serif font-bold">{summary?.todayCount ?? 0}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Orders today</p>
-                </CardContent>
-              </Card>
-              <Card data-testid="stat-pending-orders">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <Clock className="h-4 w-4 text-amber-600" />
-                    </div>
+                }
+              />
+              <OverviewStatCard
+                href={OVERVIEW_KITCHEN_HREF}
+                locked={ordersLocked}
+                onLockedClick={() => openLockedFeature("online_ordering")}
+                testId="stat-pending-orders"
+                value={summary?.pendingCount ?? 0}
+                label="Pending"
+                icon={
+                  <div className="p-2 bg-amber-100 rounded-lg">
+                    <Clock className="h-4 w-4 text-amber-600" />
                   </div>
-                  <p className="text-3xl font-serif font-bold">{summary?.pendingCount ?? 0}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Pending</p>
-                </CardContent>
-              </Card>
-              <Card data-testid="stat-today-revenue">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <DollarSign className="h-4 w-4 text-green-600" />
-                    </div>
+                }
+              />
+              <OverviewStatCard
+                href={OVERVIEW_ORDERS_LINKS.todayCompleted}
+                locked={ordersLocked}
+                onLockedClick={() => openLockedFeature("online_ordering")}
+                testId="stat-today-revenue"
+                value={`$${(summary?.todayRevenue ?? 0).toFixed(2)}`}
+                label="Today's revenue"
+                icon={
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <DollarSign className="h-4 w-4 text-green-600" />
                   </div>
-                  <p className="text-3xl font-serif font-bold">${(summary?.todayRevenue ?? 0).toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Today's revenue</p>
-                </CardContent>
-              </Card>
-              <Card data-testid="stat-upcoming-orders">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                      <TrendingUp className="h-4 w-4 text-indigo-600" />
-                    </div>
+                }
+              />
+              <OverviewStatCard
+                href={OVERVIEW_ORDERS_LINKS.active}
+                locked={ordersLocked}
+                onLockedClick={() => openLockedFeature("online_ordering")}
+                testId="stat-upcoming-orders"
+                value={summary?.upcomingCount ?? 0}
+                label="Upcoming"
+                icon={
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <TrendingUp className="h-4 w-4 text-indigo-600" />
                   </div>
-                  <p className="text-3xl font-serif font-bold">{summary?.upcomingCount ?? 0}</p>
-                  <p className="text-sm text-muted-foreground mt-1">Upcoming</p>
-                </CardContent>
-              </Card>
+                }
+              />
             </>
           )}
         </div>
@@ -167,7 +179,7 @@ export default function BusinessOverview() {
                       className="flex items-center justify-between py-3 hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
                     >
                       <div>
-                        <p className="font-medium text-sm">{order.orderNumber}</p>
+                        <p className="font-medium text-sm">{formatOrderTicketNumber(order.id)}</p>
                         <p className="text-xs text-muted-foreground">{order.customerName} · {order.fulfillmentType}</p>
                       </div>
                       <div className="flex items-center gap-3">

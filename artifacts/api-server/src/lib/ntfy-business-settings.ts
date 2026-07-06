@@ -22,9 +22,11 @@ export function ntfySettingsForEnable(business: BusinessNtfyRow): {
 export function ntfySettingsForRegenerate(): {
   ntfyTopic: string;
   ntfyConnectedAt: Date;
+  ntfyLastTestAt: null;
 } {
   return {
     ntfyTopic: generateNtfyTopic(),
     ntfyConnectedAt: new Date(),
+    ntfyLastTestAt: null,
   };
 }
