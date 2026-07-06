@@ -21,6 +21,10 @@ import {
   notifyOwnerNewAppointmentRequest,
 } from "../lib/notifications";
 import {
+  publishAppointmentCreatedLiveEvent,
+  publishAppointmentUpdatedLiveEvent,
+} from "../lib/business-live-events";
+import {
   BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE,
   isBusinessOpenForPublicCommerce,
   requireAppointmentRequestsFeature,
@@ -174,6 +178,8 @@ router.post("/appointment-requests", async (req, res): Promise<void> => {
     requestedTime: request.requestedTime,
     notes: request.notes,
   }).catch(() => {});
+
+  publishAppointmentCreatedLiveEvent(request.businessId, request.id, request.status);
 });
 
 // GET /api/businesses/:businessId/appointment-requests
@@ -250,6 +256,7 @@ router.post("/businesses/:businessId/appointment-requests", requireAuth, async (
   });
 
   res.status(201).json(serializeAppointmentRequest(request));
+  publishAppointmentCreatedLiveEvent(request.businessId, request.id, request.status);
 });
 
 // PATCH /api/businesses/:businessId/appointment-requests/:id
@@ -331,6 +338,12 @@ router.patch(
         statusNote: updated!.statusNote,
       }).catch(() => {});
     }
+
+    publishAppointmentUpdatedLiveEvent(
+      params.data.businessId,
+      updated!.id,
+      nextStatus,
+    );
   },
 );
 

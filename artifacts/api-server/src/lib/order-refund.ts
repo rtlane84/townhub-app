@@ -22,6 +22,7 @@ import {
   type OrderRefundRecordStatus,
   type RefundStatus,
 } from "./order-refund-logic";
+import { publishOrderRefundedLiveEvent } from "./business-live-events";
 
 export {
   computeAggregateRefundStatus,
@@ -352,6 +353,17 @@ export async function syncRefundFromStripe(input: {
     .where(eq(orderRefundsTable.id, refundRecord.id));
 
   await syncOrderRefundAggregates(refundRecord.orderId);
+
+  if (input.status === "SUCCEEDED") {
+    const [order] = await db
+      .select({ businessId: ordersTable.businessId })
+      .from(ordersTable)
+      .where(eq(ordersTable.id, refundRecord.orderId));
+    if (order) {
+      publishOrderRefundedLiveEvent(order.businessId, refundRecord.orderId, "REFUNDED");
+    }
+  }
+
   return { updated: true, orderId: refundRecord.orderId };
 }
 

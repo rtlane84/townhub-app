@@ -65,6 +65,25 @@ const APPOINTMENT_BUSINESS_HUB_PATHS = new Set([
   "/dashboard/business/appointments",
 ]);
 
+/** Routes that subscribe to Business Hub SSE live events. */
+const BUSINESS_HUB_LIVE_EVENTS_PATHS = new Set([
+  "/dashboard/business",
+  "/dashboard/business/orders",
+  "/dashboard/business/kitchen",
+  "/dashboard/business/appointments",
+]);
+
+export function isBusinessHubLiveEventsRoute(pathname: string): boolean {
+  const normalized = pathname.split("?")[0] ?? pathname;
+  if (BUSINESS_HUB_LIVE_EVENTS_PATHS.has(normalized)) return true;
+  for (const base of BUSINESS_HUB_LIVE_EVENTS_PATHS) {
+    if (base !== "/dashboard/business" && normalized.startsWith(`${base}/`)) {
+      return true;
+    }
+  }
+  return normalized === "/dashboard/business";
+}
+
 export function isBusinessHubNavVisibleForStorefrontMode(
   href: string,
   storefrontMode: HubStorefrontMode,

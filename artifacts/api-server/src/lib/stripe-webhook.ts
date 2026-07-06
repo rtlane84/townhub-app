@@ -9,6 +9,7 @@ import {
 } from "./stripe-config";
 import { handleAccountUpdatedEvent } from "./stripe-connect";
 import { notifyCustomerOrderReceived } from "./notification-service";
+import { publishOrderPaidLiveEvent } from "./business-live-events";
 import { claimStripeWebhookEvent } from "./stripe-webhook-dedup";
 import {
   evaluateCheckoutSessionPayment,
@@ -114,6 +115,7 @@ export async function markOrderPaidFromCheckoutSession(
   }
 
   notifyCustomerOrderReceived(evaluation.orderId).catch(() => {});
+  publishOrderPaidLiveEvent(order.businessId, evaluation.orderId);
 
   return { ok: true, orderId: evaluation.orderId, alreadyPaid: false };
 }

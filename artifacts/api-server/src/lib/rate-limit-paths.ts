@@ -16,6 +16,7 @@ export function isOwnerDashboardRoute(path: string, method: string): boolean {
   if (/^\/businesses\/\d+\/orders$/.test(path)) return true;
   if (/^\/businesses\/\d+\/orders\/summary$/.test(path)) return true;
   if (/^\/businesses\/\d+\/appointment-requests$/.test(path)) return true;
+  if (/^\/businesses\/\d+\/live-events$/.test(path)) return true;
   return false;
 }
 

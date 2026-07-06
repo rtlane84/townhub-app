@@ -61,6 +61,7 @@ describe("rate-limit paths", () => {
     assert.equal(isOwnerDashboardRoute("/businesses/1/orders", "GET"), true);
     assert.equal(isOwnerDashboardRoute("/businesses/1/orders/summary", "GET"), true);
     assert.equal(isOwnerDashboardRoute("/businesses/1/appointment-requests", "GET"), true);
+    assert.equal(isOwnerDashboardRoute("/businesses/1/live-events", "GET"), true);
     assert.equal(isOwnerDashboardRoute("/businesses/1/orders", "POST"), false);
     assert.equal(isOwnerDashboardRoute("/orders/42", "GET"), false);
   });

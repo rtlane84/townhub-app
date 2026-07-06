@@ -56,6 +56,25 @@ Guest order `?token=` is documented in the OpenAPI operation description (not as
 
 Overview, orders, kitchen display, products, product options (modifier groups), categories, locations (food trucks), appointments, billing, subscription, settings.
 
+### Business Hub live updates (SSE)
+
+While an owner or admin has Business Hub open on **Overview**, **Orders**, **Kitchen**, or **Appointments**, the frontend opens a single Server-Sent Events stream per selected business:
+
+```text
+GET /api/businesses/:businessId/live-events
+  → requireAuth + authorizeBusinessOwnerOrAdmin
+  → text/event-stream with heartbeat every ~25s
+  → minimal JSON payload (ids + status only, no PII)
+```
+
+**Push notifications remain the urgency channel** (browser toast/sound, email, SMS, ntfy, Discord). SSE only refreshes dashboard React Query caches so lists feel near real-time without constant polling.
+
+**Event bus (beta):** `business-live-events.ts` is an in-process pub/sub map keyed by `businessId`. Order and appointment routes publish after successful mutations; the Stripe webhook publishes `order.paid` / refund events. This is correct for a **single API instance**. Multi-instance production requires a shared bus (Redis pub/sub, Postgres `LISTEN/NOTIFY`, or another message broker) so every instance can fan out to its local SSE connections.
+
+**Frontend fallback:** If SSE is unavailable, returns 401/403, or fails after repeated reconnect attempts, `useLiveOrderAlerts` / `useLiveAppointmentAlerts` resume route-aware polling (12s interval, 429 backoff, paused when `document.hidden`). A small status dot shows Live / Reconnecting / Polling / Offline on live pages.
+
+**Security:** Customers and guests cannot subscribe. Events are scoped to one business; payloads exclude customer PII, Stripe IDs, tokens, and notes.
+
 ### Admin dashboard
 
 Overview, businesses, applications, orders, users, events, highlights, plans, features, settings, system status (health + notification logs).
@@ -85,6 +104,7 @@ Build: esbuild CJS bundle. Sentry instrument loaded before app via `--import ./d
 | `businesses.ts` | Public directory, manage CRUD, register |
 | `products.ts`, `modifier-groups.ts` | Catalog (mutations guarded) |
 | `orders.ts` | Orders, checkout, webhooks, refunds |
+| `business-live-events.ts` | Owner/admin SSE stream for dashboard live updates |
 | `appointment-requests.ts` | Salon/service appointments |
 | `subscriptions.ts` | Plans, billing, feature access |
 | `applications.ts` | Business applications |

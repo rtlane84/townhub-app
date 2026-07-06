@@ -4,6 +4,7 @@ import {
   BUSINESS_HUB_NAV_ITEMS,
   BUSINESS_HUB_NAV_SECTIONS,
   getVisibleBusinessHubNavItems,
+  isBusinessHubLiveEventsRoute,
   isBusinessHubRouteHiddenByStorefrontMode,
   resolveBusinessHubFeatureKey,
 } from "./business-hub-features.ts";
@@ -77,5 +78,21 @@ describe("business-hub-features", () => {
       isBusinessHubRouteHiddenByStorefrontMode("/dashboard/business/orders", "ORDERING"),
       false,
     );
+  });
+
+  it("enables SSE live events only on overview, orders, kitchen, and appointments", () => {
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business"), true);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/orders"), true);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/orders/42"), true);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/kitchen"), true);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/appointments"), true);
+
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/products"), false);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/categories"), false);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/product-options"), false);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/settings"), false);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/notifications"), false);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/subscription"), false);
+    assert.equal(isBusinessHubLiveEventsRoute("/dashboard/business/locations"), false);
   });
 });

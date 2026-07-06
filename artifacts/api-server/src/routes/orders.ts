@@ -40,6 +40,11 @@ import {
   notifyCustomerOrderReceived,
   notifyCustomerOrderStatusChange,
 } from "../lib/notifications";
+import {
+  publishOrderCreatedLiveEvent,
+  publishOrderRefundedLiveEvent,
+  publishOrderUpdatedLiveEvent,
+} from "../lib/business-live-events";
 import { authorizeOrderStatusUpdate } from "../lib/order-access";
 import { validateGuestOrderContact } from "../lib/guest-checkout";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
@@ -461,6 +466,7 @@ router.post("/orders", async (req, res): Promise<void> => {
 
   // ── Fire-and-forget notifications (never block the response) ──────────────
   notifyOwnerNewOrderFromOrderId(order.id).catch(() => {});
+  publishOrderCreatedLiveEvent(order.businessId, order.id, order.status ?? "NEW");
 
   // Pay-at-pickup: notify customer immediately. Stripe orders notify after payment webhook.
   if (paymentMethod === "IN_PERSON") {
@@ -607,6 +613,7 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
   // ── Notify customer of meaningful status changes (fire-and-forget) ────────
   if (parsed.data.status !== order.status) {
     notifyCustomerOrderStatusChange(result.id, parsed.data.status).catch(() => {});
+    publishOrderUpdatedLiveEvent(order.businessId, result.id, parsed.data.status);
   }
 });
 
@@ -689,6 +696,7 @@ router.post("/orders/:id/refund", requireAuth, async (req, res): Promise<void> =
 
   if (result.refund.status === "SUCCEEDED") {
     notifyCustomerOrderRefund(order.id, result.refund.amountCents).catch(() => {});
+    publishOrderRefundedLiveEvent(order.businessId, order.id, "REFUNDED");
   }
 });
 

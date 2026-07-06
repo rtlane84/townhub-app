@@ -42,13 +42,15 @@ describe("kitchen polling deduplication wiring", () => {
     assert.doesNotMatch(kitchen, /useListBusinessOrders/);
   });
 
-  it("live order alerts poll the same scoped kitchen query key", async () => {
+  it("live order alerts poll the same scoped kitchen query key when SSE fallback is active", async () => {
     const alerts = await readFile(
       new URL("../../../local-order-hub/src/hooks/use-live-order-alerts.tsx", import.meta.url),
       "utf8",
     );
     assert.match(alerts, /getKitchenBusinessOrdersQueryKey/);
-    assert.match(alerts, /listKitchenBusinessOrders/);
+    assert.match(alerts, /fetchOwnerOrderDashboardData/);
+    assert.match(alerts, /usePollingFallback/);
+    assert.match(alerts, /registerOrderRefresh/);
     assert.doesNotMatch(alerts, /listBusinessOrders\(/);
   });
 });

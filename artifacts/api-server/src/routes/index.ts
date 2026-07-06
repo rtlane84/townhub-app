@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import authRouter from "./auth";
+import businessLiveEventsRouter from "./business-live-events";
 import businessesRouter from "./businesses";
 import productsRouter from "./products";
 import modifierGroupsRouter from "./modifier-groups";
@@ -55,6 +56,7 @@ router.use(devRouter);
 if (process.env.NODE_ENV !== "production") {
   router.use(debugRouter);
 }
+router.use(businessLiveEventsRouter);
 router.use(businessesRouter);
 router.use(stripeConnectRouter);
 router.use(internalJobsRouter);

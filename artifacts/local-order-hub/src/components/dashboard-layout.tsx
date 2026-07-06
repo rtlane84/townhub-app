@@ -19,6 +19,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Button } from "@/components/ui/button";
 import { useLiveOrderAlerts } from "@/hooks/use-live-order-alerts";
 import { useLiveAppointmentAlerts } from "@/hooks/use-live-appointment-alerts";
+import {
+  BusinessLiveEventsProvider,
+  useBusinessLiveEvents,
+} from "@/hooks/business-live-events-provider";
+import { BusinessLiveStatusIndicator } from "@/components/business-live-status-indicator";
+import { resolveLiveIndicatorStatus } from "@/lib/business-live-indicator-status";
+import { isBusinessHubLiveEventsRoute } from "@/lib/business-hub-features";
 import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
 import { NewOrderAlertBanner } from "@/components/new-order-alert-banner";
 import { NewAppointmentAlertBanner } from "@/components/new-appointment-alert-banner";
@@ -165,8 +172,19 @@ function BusinessNavSections({
 export function BusinessDashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <OrderDashboardRefreshProvider>
-      <BusinessDashboardLayoutInner>{children}</BusinessDashboardLayoutInner>
+      <BusinessDashboardLayoutWithLiveEvents>{children}</BusinessDashboardLayoutWithLiveEvents>
     </OrderDashboardRefreshProvider>
+  );
+}
+
+function BusinessDashboardLayoutWithLiveEvents({ children }: { children: React.ReactNode }) {
+  const { selectedBusinessId } = useSelectedBusiness();
+  const businessId = selectedBusinessId ?? undefined;
+
+  return (
+    <BusinessLiveEventsProvider businessId={businessId} enabled={!!businessId}>
+      <BusinessDashboardLayoutInner>{children}</BusinessDashboardLayoutInner>
+    </BusinessLiveEventsProvider>
   );
 }
 
@@ -186,6 +204,10 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
     hasFeature("appointment_requests") && isAppointmentStorefrontMode(business ?? {});
   const orderingEnabled =
     hasFeature("online_ordering") && isOrderingStorefrontMode(business ?? {});
+
+  const showLiveStatus = isBusinessHubLiveEventsRoute(location);
+  const { status: liveStatus, usePollingFallback } = useBusinessLiveEvents(businessId);
+  const liveIndicatorStatus = resolveLiveIndicatorStatus(liveStatus, usePollingFallback);
 
   useLiveOrderAlerts(orderingEnabled ? businessId : undefined);
   useLiveAppointmentAlerts(businessId, appointmentsEnabled);
@@ -212,7 +234,12 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
     <div className="flex min-h-[calc(100vh-var(--site-header-height,4rem))] print:block print:min-h-0">
       <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0 print:hidden">
         <div className="p-6">
-          <h2 className="font-serif font-bold text-lg mb-4">Business Hub</h2>
+          <div className="flex items-start justify-between gap-2 mb-4">
+            <h2 className="font-serif font-bold text-lg">Business Hub</h2>
+            {showLiveStatus ? (
+              <BusinessLiveStatusIndicator status={liveIndicatorStatus} className="shrink-0 pt-0.5" />
+            ) : null}
+          </div>
           <BusinessSwitcher />
           <nav className="mt-6">
             <BusinessNavSections location={location} navItems={visibleNavItems} />
@@ -250,6 +277,9 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
           </SheetContent>
         </Sheet>
         <span className="text-sm font-semibold truncate">{business?.name ?? activeLabel}</span>
+        {showLiveStatus ? (
+          <BusinessLiveStatusIndicator status={liveIndicatorStatus} className="ml-auto shrink-0" />
+        ) : null}
       </div>
 
       <main className={cn("flex-1 p-4 md:p-10 print:p-0 overflow-x-hidden", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>

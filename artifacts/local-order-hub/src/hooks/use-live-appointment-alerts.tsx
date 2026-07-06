@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  listBusinessAppointmentRequests,
   getListBusinessAppointmentRequestsQueryKey,
   ApiError,
   type AppointmentRequest,
@@ -10,22 +9,19 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { appointmentAlertDescription } from "@/lib/appointment-alert-format";
-import {
-  appointmentListsEqual,
-  detectAppointmentListChanges,
-  isAlertableNewAppointmentRequest,
-} from "@/lib/appointment-dashboard-sync";
 import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh-context";
 import { getNotificationPreferences } from "@/lib/notification-preferences";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
+import { useBusinessLiveEventsContext } from "@/hooks/business-live-events-provider";
+import {
+  fetchOwnerAppointmentDashboardData,
+  findNewAppointmentRequestsSince,
+  maxAppointmentRequestId,
+} from "@/lib/owner-appointment-live-refresh";
+import type { BusinessLiveEvent } from "@/lib/business-live-event-types";
 
 const POLL_INTERVAL_MS = 12_000;
 const RATE_LIMIT_BACKOFF_MS = 60_000;
-
-function maxRequestId(requests: AppointmentRequest[]): number {
-  if (!requests.length) return 0;
-  return Math.max(...requests.map((r) => r.id));
-}
 
 function playAppointmentAlertSound(businessId: number): void {
   const prefs = getNotificationPreferences(businessId);
@@ -41,10 +37,8 @@ export function useLiveAppointmentAlerts(
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const {
-    markAppointmentHighlights,
-    addNewAppointmentBanners,
-  } = useOrderDashboardRefreshActions();
+  const { markAppointmentHighlights, addNewAppointmentBanners } = useOrderDashboardRefreshActions();
+  const { usePollingFallback, registerAppointmentRefresh } = useBusinessLiveEventsContext();
 
   const baselineSetRef = useRef(false);
   const latestKnownIdRef = useRef(0);
@@ -52,69 +46,94 @@ export function useLiveAppointmentAlerts(
   const pollingRef = useRef(false);
   const rateLimitedUntilRef = useRef(0);
 
-  const syncAppointmentsCache = useCallback(
+  const processNewRequests = useCallback(
     (requests: AppointmentRequest[]) => {
-      if (!businessId || !Array.isArray(requests)) return;
+      if (!businessId) return;
 
-      const listKey = getListBusinessAppointmentRequestsQueryKey(businessId);
-      const previous = queryClient.getQueryData<AppointmentRequest[]>(listKey);
-      const changes = detectAppointmentListChanges(previous, requests);
-
-      if (!appointmentListsEqual(previous, requests)) {
-        queryClient.setQueryData(listKey, requests);
+      if (!baselineSetRef.current) {
+        latestKnownIdRef.current = maxAppointmentRequestId(requests);
+        baselineSetRef.current = true;
+        return;
       }
 
-      if (changes.newRequestIds.length || changes.updatedRequestIds.length) {
-        markAppointmentHighlights(changes.newRequestIds, changes.updatedRequestIds);
-      }
-    },
-    [businessId, markAppointmentHighlights, queryClient],
-  );
+      const newRequests = findNewAppointmentRequestsSince(
+        requests,
+        latestKnownIdRef.current,
+        alertedIdsRef.current,
+      );
+      if (!newRequests.length) return;
 
-  const showNewRequestAlert = useCallback(
-    (request: AppointmentRequest) => {
-      toast({
-        title: "New appointment request",
-        description: appointmentAlertDescription(request),
-        action: (
-          <ToastAction
-            altText="View appointments"
-            onClick={() => setLocation("/dashboard/business/appointments")}
-          >
-            View
-          </ToastAction>
-        ),
-      });
-
-      if (businessId) {
+      if (newRequests.length === 1) {
+        const request = newRequests[0]!;
+        toast({
+          title: "New appointment request",
+          description: appointmentAlertDescription(request),
+          action: (
+            <ToastAction
+              altText="View appointments"
+              onClick={() => setLocation("/dashboard/business/appointments")}
+            >
+              View
+            </ToastAction>
+          ),
+        });
+        playAppointmentAlertSound(businessId);
+      } else {
+        const latest = newRequests[newRequests.length - 1]!;
+        toast({
+          title: `${newRequests.length} new appointment requests`,
+          description: `Latest: ${appointmentAlertDescription(latest)}`,
+          action: (
+            <ToastAction
+              altText="View appointments"
+              onClick={() => setLocation("/dashboard/business/appointments")}
+            >
+              View appointments
+            </ToastAction>
+          ),
+        });
         playAppointmentAlertSound(businessId);
       }
+
+      addNewAppointmentBanners(newRequests);
+      for (const request of newRequests) {
+        alertedIdsRef.current.add(request.id);
+      }
+      latestKnownIdRef.current = Math.max(
+        latestKnownIdRef.current,
+        maxAppointmentRequestId(newRequests),
+      );
     },
-    [businessId, setLocation, toast],
+    [addNewAppointmentBanners, businessId, setLocation, toast],
   );
 
-  const showMultipleRequestsAlert = useCallback(
-    (requests: AppointmentRequest[]) => {
-      const latest = requests[requests.length - 1]!;
-      toast({
-        title: `${requests.length} new appointment requests`,
-        description: `Latest: ${appointmentAlertDescription(latest)}`,
-        action: (
-          <ToastAction
-            altText="View appointments"
-            onClick={() => setLocation("/dashboard/business/appointments")}
-          >
-            View appointments
-          </ToastAction>
-        ),
-      });
+  const handleAppointmentLiveEvent = useCallback(
+    async (event: BusinessLiveEvent) => {
+      if (!businessId) return;
 
-      if (businessId) {
-        playAppointmentAlertSound(businessId);
+      if (event.type === "appointment.created") {
+        const requests =
+          queryClient.getQueryData<AppointmentRequest[]>(
+            getListBusinessAppointmentRequestsQueryKey(businessId),
+          ) ?? [];
+        processNewRequests(requests);
+        return;
+      }
+
+      if (event.type === "appointment.updated") {
+        const appointmentId = event.data.appointmentId;
+        if (appointmentId != null) {
+          markAppointmentHighlights([], [appointmentId]);
+        }
       }
     },
-    [businessId, setLocation, toast],
+    [businessId, markAppointmentHighlights, processNewRequests, queryClient],
   );
+
+  useEffect(() => {
+    if (!businessId || !enabled || usePollingFallback) return;
+    return registerAppointmentRefresh(handleAppointmentLiveEvent);
+  }, [businessId, enabled, handleAppointmentLiveEvent, registerAppointmentRefresh, usePollingFallback]);
 
   useEffect(() => {
     if (!businessId || !enabled) {
@@ -123,6 +142,8 @@ export function useLiveAppointmentAlerts(
       alertedIdsRef.current = new Set();
       return;
     }
+
+    if (!usePollingFallback) return;
 
     let cancelled = false;
     let intervalId: ReturnType<typeof setInterval> | undefined;
@@ -133,48 +154,17 @@ export function useLiveAppointmentAlerts(
       pollingRef.current = true;
 
       try {
-        const requests = await queryClient.fetchQuery({
-          queryKey: getListBusinessAppointmentRequestsQueryKey(businessId),
-          queryFn: () => listBusinessAppointmentRequests(businessId),
-          staleTime: POLL_INTERVAL_MS - 1_000,
-        });
+        const { requests, changes } = await fetchOwnerAppointmentDashboardData(
+          queryClient,
+          businessId,
+        );
         if (cancelled) return;
 
-        if (!baselineSetRef.current) {
-          latestKnownIdRef.current = maxRequestId(requests);
-          baselineSetRef.current = true;
-          syncAppointmentsCache(requests);
-          return;
+        if (changes.newRequestIds.length || changes.updatedRequestIds.length) {
+          markAppointmentHighlights(changes.newRequestIds, changes.updatedRequestIds);
         }
 
-        const newRequests = requests
-          .filter(
-            (r) =>
-              r.id > latestKnownIdRef.current &&
-              !alertedIdsRef.current.has(r.id) &&
-              isAlertableNewAppointmentRequest(r),
-          )
-          .sort((a, b) => a.id - b.id);
-
-        if (newRequests.length === 1) {
-          showNewRequestAlert(newRequests[0]!);
-        } else if (newRequests.length > 1) {
-          showMultipleRequestsAlert(newRequests);
-        }
-
-        if (newRequests.length > 0) {
-          addNewAppointmentBanners(newRequests);
-        }
-
-        for (const request of newRequests) {
-          alertedIdsRef.current.add(request.id);
-        }
-
-        if (newRequests.length > 0) {
-          latestKnownIdRef.current = Math.max(latestKnownIdRef.current, maxRequestId(newRequests));
-        }
-
-        syncAppointmentsCache(requests);
+        processNewRequests(requests);
       } catch (error) {
         if (error instanceof ApiError && error.status === 429) {
           rateLimitedUntilRef.current = Date.now() + RATE_LIMIT_BACKOFF_MS;
@@ -200,10 +190,9 @@ export function useLiveAppointmentAlerts(
   }, [
     businessId,
     enabled,
+    markAppointmentHighlights,
+    processNewRequests,
     queryClient,
-    syncAppointmentsCache,
-    showNewRequestAlert,
-    showMultipleRequestsAlert,
-    addNewAppointmentBanners,
+    usePollingFallback,
   ]);
 }

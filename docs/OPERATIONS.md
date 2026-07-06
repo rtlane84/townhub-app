@@ -51,6 +51,24 @@ Secondary indexes for hot query paths live in `lib/db/src/schema/` via Drizzle `
 
 ---
 
+## Business Hub live updates (SSE)
+
+The API exposes `GET /api/businesses/:id/live-events` for authenticated owners/admins. See [ARCHITECTURE.md](ARCHITECTURE.md#business-hub-live-updates-sse) for the full design.
+
+### Beta limitation (single instance)
+
+Live events use an **in-process event bus** in `artifacts/api-server/src/lib/business-live-events.ts`. Publishing and SSE subscriptions must run in the same Node process. If you scale to multiple API replicas behind a load balancer, SSE clients will only receive events published on the instance they are connected to unless you add a shared bus (Redis pub/sub, Postgres `LISTEN/NOTIFY`, etc.).
+
+### Polling fallback
+
+The frontend keeps the previous polling loop as a fallback when SSE cannot be established. Owner dashboard GETs (`/orders`, `/summary`, `/appointment-requests`, `/live-events`) are excluded from the general rate limiter so live dashboards do not hit 429 during normal use.
+
+### Proxies
+
+Ensure reverse proxies (nginx, Cloudflare, Replit) do not buffer `text/event-stream` responses. The API sets `X-Accel-Buffering: no` for nginx. If SSE fails only in a specific environment, check proxy buffering and timeout settings before disabling the feature.
+
+---
+
 ## Related
 
 - [PRODUCTION.md](../PRODUCTION.md) — production checklist

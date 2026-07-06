@@ -1,36 +1,24 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  ApiError,
-  getBusinessOrderSummary,
-  getGetBusinessOrderSummaryQueryKey,
-  type Order,
-  type BusinessOrderSummary,
-} from "@workspace/api-client-react";
-import {
-  getKitchenBusinessOrdersQueryKey,
-  listKitchenBusinessOrders,
-} from "@/lib/business-orders-api";
+import { ApiError, type Order } from "@workspace/api-client-react";
+import { getKitchenBusinessOrdersQueryKey } from "@/lib/business-orders-api";
 import { useToast } from "@/hooks/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { orderAlertDescription } from "@/lib/order-alert-format";
-import {
-  detectOrderListChanges,
-  orderListsEqual,
-  orderSummariesEqual,
-} from "@/lib/order-dashboard-sync";
 import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh-context";
 import { getNotificationPreferences } from "@/lib/notification-preferences";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
+import { useBusinessLiveEventsContext } from "@/hooks/business-live-events-provider";
+import {
+  fetchOwnerOrderDashboardData,
+  findNewOrdersSince,
+  maxOrderId,
+} from "@/lib/owner-order-live-refresh";
+import type { BusinessLiveEvent } from "@/lib/business-live-event-types";
 
 export const OWNER_ORDER_POLL_INTERVAL_MS = 12_000;
 const RATE_LIMIT_BACKOFF_MS = 60_000;
-
-function maxOrderId(orders: Order[]): number {
-  if (!orders.length) return 0;
-  return Math.max(...orders.map((o) => o.id));
-}
 
 function playOrderAlertSound(businessId: number): void {
   const prefs = getNotificationPreferences(businessId);
@@ -44,6 +32,7 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { markHighlights, addNewOrderBanners } = useOrderDashboardRefreshActions();
+  const { usePollingFallback, registerOrderRefresh } = useBusinessLiveEventsContext();
 
   const baselineSetRef = useRef(false);
   const latestKnownIdRef = useRef(0);
@@ -51,135 +40,107 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
   const pollingRef = useRef(false);
   const rateLimitedUntilRef = useRef(0);
 
-  const syncDashboardCache = useCallback(
-    (orders: Order[], summary: BusinessOrderSummary) => {
-      if (!Array.isArray(orders) || !summary) return;
+  const processNewOrders = useCallback(
+    (orders: Order[]) => {
+      if (!businessId) return;
 
-      const listKey = getKitchenBusinessOrdersQueryKey(businessId!);
-      const summaryKey = getGetBusinessOrderSummaryQueryKey(businessId!);
-
-      const previousOrders = queryClient.getQueryData<Order[]>(listKey);
-      const changes = detectOrderListChanges(previousOrders, orders);
-
-      if (!orderListsEqual(previousOrders, orders)) {
-        queryClient.setQueryData(listKey, orders);
+      if (!baselineSetRef.current) {
+        latestKnownIdRef.current = maxOrderId(orders);
+        baselineSetRef.current = true;
+        return;
       }
 
-      const previousSummary = queryClient.getQueryData<BusinessOrderSummary>(summaryKey);
-      if (!orderSummariesEqual(previousSummary, summary)) {
-        queryClient.setQueryData(summaryKey, summary);
-      }
+      const newOrders = findNewOrdersSince(orders, latestKnownIdRef.current, alertedIdsRef.current);
+      if (!newOrders.length) return;
 
-      if (changes.newOrderIds.length || changes.updatedOrderIds.length) {
-        markHighlights(changes.newOrderIds, changes.updatedOrderIds);
-      }
-    },
-    [businessId, markHighlights, queryClient],
-  );
-
-  const showNewOrderAlert = useCallback(
-    (order: Order) => {
-      toast({
-        title: "New order received",
-        description: orderAlertDescription(order),
-        action: (
-          <ToastAction
-            altText="View order"
-            onClick={() => setLocation(`/dashboard/business/orders/${order.id}`)}
-          >
-            View order
-          </ToastAction>
-        ),
-      });
-
-      if (businessId) {
+      if (newOrders.length === 1) {
+        const order = newOrders[0]!;
+        toast({
+          title: "New order received",
+          description: orderAlertDescription(order),
+          action: (
+            <ToastAction
+              altText="View order"
+              onClick={() => setLocation(`/dashboard/business/orders/${order.id}`)}
+            >
+              View order
+            </ToastAction>
+          ),
+        });
+        playOrderAlertSound(businessId);
+      } else {
+        const latest = newOrders[newOrders.length - 1]!;
+        toast({
+          title: `${newOrders.length} new orders`,
+          description: `Latest: ${orderAlertDescription(latest)}`,
+          action: (
+            <ToastAction
+              altText="View orders"
+              onClick={() => setLocation("/dashboard/business/orders")}
+            >
+              View orders
+            </ToastAction>
+          ),
+        });
         playOrderAlertSound(businessId);
       }
+
+      addNewOrderBanners(newOrders);
+      for (const order of newOrders) {
+        alertedIdsRef.current.add(order.id);
+      }
+      latestKnownIdRef.current = Math.max(latestKnownIdRef.current, maxOrderId(newOrders));
     },
-    [businessId, setLocation, toast],
+    [addNewOrderBanners, businessId, setLocation, toast],
   );
 
-  const showMultipleOrdersAlert = useCallback(
-    (newOrders: Order[]) => {
-      const latest = newOrders[newOrders.length - 1]!;
-      toast({
-        title: `${newOrders.length} new orders`,
-        description: `Latest: ${orderAlertDescription(latest)}`,
-        action: (
-          <ToastAction
-            altText="View orders"
-            onClick={() => setLocation("/dashboard/business/orders")}
-          >
-            View orders
-          </ToastAction>
-        ),
-      });
+  const handleOrderLiveEvent = useCallback(
+    async (event: BusinessLiveEvent) => {
+      if (!businessId) return;
 
-      if (businessId) {
-        playOrderAlertSound(businessId);
+      if (event.type === "order.created") {
+        const orders =
+          queryClient.getQueryData<Order[]>(getKitchenBusinessOrdersQueryKey(businessId)) ?? [];
+        processNewOrders(orders);
+        return;
+      }
+
+      if (event.type === "order.updated") {
+        const orderId = event.data.orderId;
+        if (orderId != null) {
+          markHighlights([], [orderId]);
+        }
       }
     },
-    [businessId, setLocation, toast],
+    [businessId, markHighlights, processNewOrders, queryClient],
   );
 
   useEffect(() => {
-    if (!businessId) return;
+    if (!businessId || usePollingFallback) return;
+    return registerOrderRefresh(handleOrderLiveEvent);
+  }, [businessId, handleOrderLiveEvent, registerOrderRefresh, usePollingFallback]);
+
+  useEffect(() => {
+    if (!businessId || !usePollingFallback) return;
 
     let cancelled = false;
     let intervalId: ReturnType<typeof setInterval> | undefined;
 
     const poll = async () => {
+      if (!usePollingFallback) return;
       if (cancelled || pollingRef.current || document.hidden) return;
       if (Date.now() < rateLimitedUntilRef.current) return;
       pollingRef.current = true;
 
       try {
-        const staleTime = OWNER_ORDER_POLL_INTERVAL_MS - 1_000;
-        const [orders, summary] = await Promise.all([
-          queryClient.fetchQuery({
-            queryKey: getKitchenBusinessOrdersQueryKey(businessId),
-            queryFn: ({ signal }) => listKitchenBusinessOrders(businessId, { signal }),
-            staleTime,
-          }),
-          queryClient.fetchQuery({
-            queryKey: getGetBusinessOrderSummaryQueryKey(businessId),
-            queryFn: () => getBusinessOrderSummary(businessId),
-            staleTime,
-          }),
-        ]);
-
+        const { orders, changes } = await fetchOwnerOrderDashboardData(queryClient, businessId);
         if (cancelled) return;
 
-        if (!baselineSetRef.current) {
-          latestKnownIdRef.current = maxOrderId(orders);
-          baselineSetRef.current = true;
-          syncDashboardCache(orders, summary);
-          return;
+        if (changes.newOrderIds.length || changes.updatedOrderIds.length) {
+          markHighlights(changes.newOrderIds, changes.updatedOrderIds);
         }
 
-        const newOrders = orders
-          .filter((o) => o.id > latestKnownIdRef.current && !alertedIdsRef.current.has(o.id))
-          .sort((a, b) => a.id - b.id);
-
-        if (newOrders.length === 1) {
-          showNewOrderAlert(newOrders[0]!);
-        } else if (newOrders.length > 1) {
-          showMultipleOrdersAlert(newOrders);
-        }
-
-        if (newOrders.length > 0) {
-          addNewOrderBanners(newOrders);
-        }
-
-        for (const order of newOrders) {
-          alertedIdsRef.current.add(order.id);
-        }
-
-        if (newOrders.length > 0) {
-          latestKnownIdRef.current = Math.max(latestKnownIdRef.current, maxOrderId(newOrders));
-        }
-
-        syncDashboardCache(orders, summary);
+        processNewOrders(orders);
       } catch (error) {
         if (error instanceof ApiError && error.status === 429) {
           rateLimitedUntilRef.current = Date.now() + RATE_LIMIT_BACKOFF_MS;
@@ -193,7 +154,7 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
     intervalId = setInterval(() => void poll(), OWNER_ORDER_POLL_INTERVAL_MS);
 
     const onVisibilityChange = () => {
-      if (!document.hidden) void poll();
+      if (!document.hidden && usePollingFallback) void poll();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -202,5 +163,5 @@ export function useLiveOrderAlerts(businessId: number | undefined) {
       if (intervalId) clearInterval(intervalId);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [businessId, queryClient, syncDashboardCache, showMultipleOrdersAlert, showNewOrderAlert, addNewOrderBanners]);
+  }, [businessId, markHighlights, processNewOrders, queryClient, usePollingFallback]);
 }
