@@ -12,6 +12,8 @@ type ToasterToast = ToastProps & {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
+  mobileTitle?: React.ReactNode
+  notificationLayout?: "owner-alert"
   action?: ToastActionElement
   onToastClick?: () => void
 }

@@ -7,21 +7,26 @@ import { useOrderDashboardRefreshActions } from "@/hooks/order-dashboard-refresh
 import { getNotificationPreferences } from "@/lib/notification-preferences";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
 import {
-  appointmentAlertDescription,
-  appointmentToastBody,
-  appointmentToastTitle,
-  appointmentToastTitleMultiple,
-} from "@/lib/appointment-alert-format";
-import {
   orderAlertDescription,
   orderToastBody,
+  orderToastMobileTitle,
+  orderToastMobileTitleMultiple,
   orderToastTitle,
   orderToastTitleMultiple,
 } from "@/lib/order-alert-format";
 import {
+  appointmentAlertDescription,
+  appointmentToastBody,
+  appointmentToastMobileTitle,
+  appointmentToastMobileTitleMultiple,
+  appointmentToastTitle,
+  appointmentToastTitleMultiple,
+} from "@/lib/appointment-alert-format";
+import {
   BUSINESS_HUB_APPOINTMENTS_PATH,
   BUSINESS_HUB_ORDERS_PATH,
   OWNER_NOTIFICATION_TOAST_DURATION_MS,
+  OWNER_NOTIFICATION_TOAST_LAYOUT,
   resolveOrderDetailPath,
   shouldShowAppointmentNotificationBanner,
   shouldShowOrderNotificationBanner,
@@ -76,7 +81,9 @@ export function useBusinessHubNotifications(businessId: number | undefined) {
 
         toast({
           duration: OWNER_NOTIFICATION_TOAST_DURATION_MS,
+          notificationLayout: OWNER_NOTIFICATION_TOAST_LAYOUT,
           title: orderToastTitle(order),
+          mobileTitle: orderToastMobileTitle(order),
           description: orderToastBody(order),
           className: "cursor-pointer",
           onToastClick: handleOpen,
@@ -95,7 +102,9 @@ export function useBusinessHubNotifications(businessId: number | undefined) {
 
         toast({
           duration: OWNER_NOTIFICATION_TOAST_DURATION_MS,
+          notificationLayout: OWNER_NOTIFICATION_TOAST_LAYOUT,
           title: orderToastTitleMultiple(orders.length),
+          mobileTitle: orderToastMobileTitleMultiple(orders.length, latest),
           description: `Latest: ${orderAlertDescription(latest)}`,
           className: "cursor-pointer",
           onToastClick: handleOpen,
@@ -139,7 +148,9 @@ export function useBusinessHubNotifications(businessId: number | undefined) {
 
         toast({
           duration: OWNER_NOTIFICATION_TOAST_DURATION_MS,
+          notificationLayout: OWNER_NOTIFICATION_TOAST_LAYOUT,
           title: appointmentToastTitle(request),
+          mobileTitle: appointmentToastMobileTitle(request),
           description: appointmentToastBody(request),
           className: "cursor-pointer",
           onToastClick: handleOpen,
@@ -158,7 +169,9 @@ export function useBusinessHubNotifications(businessId: number | undefined) {
 
         toast({
           duration: OWNER_NOTIFICATION_TOAST_DURATION_MS,
+          notificationLayout: OWNER_NOTIFICATION_TOAST_LAYOUT,
           title: appointmentToastTitleMultiple(requests.length),
+          mobileTitle: appointmentToastMobileTitleMultiple(requests.length, latest),
           description: `Latest: ${appointmentAlertDescription(latest)}`,
           className: "cursor-pointer",
           onToastClick: handleOpen,

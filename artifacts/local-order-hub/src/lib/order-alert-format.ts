@@ -36,6 +36,15 @@ export function orderToastTitleMultiple(count: number): string {
   return `${count} new orders`;
 }
 
+/** Single-line copy for compact mobile owner toasts. */
+export function orderToastMobileTitle(order: Order): string {
+  return `New ${formatOrderTicketNumber(order.id)} · ${order.customerName} · $${order.total.toFixed(2)}`;
+}
+
+export function orderToastMobileTitleMultiple(count: number, latest: Order): string {
+  return `${count} new orders · Latest ${formatOrderTicketNumber(latest.id)}`;
+}
+
 export function orderBannerHeadline(order: Order, totalCount: number): string {
   if (totalCount > 1) {
     return `${totalCount} New Orders Waiting`;

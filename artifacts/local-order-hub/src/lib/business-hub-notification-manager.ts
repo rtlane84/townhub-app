@@ -6,6 +6,7 @@ import {
 import { businessOrderDetailPath } from "./business-order-list-url.ts";
 
 export const OWNER_NOTIFICATION_TOAST_DURATION_MS = 6_000;
+export const OWNER_NOTIFICATION_TOAST_LAYOUT = "owner-alert" as const;
 
 export type OwnerDashboardSseStatus =
   | "disconnected"
