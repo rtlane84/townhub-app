@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import { ResponsiveHeroImage } from "@/components/responsive-hero-image";
 import {
   heroImageObjectClasses,
@@ -11,7 +10,6 @@ type HeroImageLayersProps = {
   src: string;
   fit: HeroImageFit;
   position: HeroImagePosition;
-  overlayStyle?: CSSProperties | null;
   imageLoaded?: boolean;
   /** Use optimized responsive picture element (live homepage). Default false for admin preview. */
   responsive?: boolean;
@@ -21,11 +19,11 @@ type HeroImageLayersProps = {
 
 const IMAGE_BASE_CLASS = "absolute inset-0 h-full w-full transition-opacity duration-500";
 
+/** Layer 1 — the hero background image. Crops normally (object-cover) unless "Show full image". */
 export function HeroImageLayers({
   src,
   fit,
   position,
-  overlayStyle,
   imageLoaded = true,
   responsive = false,
   onLoad,
@@ -33,7 +31,6 @@ export function HeroImageLayers({
 }: HeroImageLayersProps) {
   const objectClasses = heroImageObjectClasses(fit, position);
   const imageOpacityClass = imageLoaded ? "opacity-100" : "opacity-0";
-
   const imageClassName = cn(IMAGE_BASE_CLASS, objectClasses, imageOpacityClass);
 
   return (
@@ -62,17 +59,6 @@ export function HeroImageLayers({
           onError={onError}
         />
       )}
-
-      {overlayStyle ? (
-        <div
-          className={cn(
-            "absolute inset-0 transition-opacity duration-500",
-            imageLoaded ? "opacity-100" : "opacity-70",
-          )}
-          style={overlayStyle}
-          aria-hidden
-        />
-      ) : null}
     </>
   );
 }

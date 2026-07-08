@@ -3,6 +3,7 @@ export type ImageSurface =
   | "business-logo"
   | "business-hero"
   | "homepage-hero"
+  | "homepage-hero-overlay"
   | "event"
   | "highlight"
   | "platform-logo";
@@ -38,6 +39,12 @@ export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> 
     recommendedSize: "1920 × 800 px (wide banner)",
     aspectClass: "aspect-[21/9]",
     hint: "Background image for the main homepage hero section.",
+  },
+  "homepage-hero-overlay": {
+    label: "Hero overlay image",
+    recommendedSize: "1200 × 600 px transparent PNG",
+    aspectClass: "aspect-[2/1]",
+    hint: "Transparent logo + text that sits over the hero background. Never cropped.",
   },
   event: {
     label: "Event image",

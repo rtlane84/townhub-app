@@ -48,6 +48,10 @@ describe("frontend load performance wiring", () => {
       new URL("../components/home-hero-section.tsx", import.meta.url),
       "utf8",
     );
+    const stage = await readFile(
+      new URL("../components/hero-stage.tsx", import.meta.url),
+      "utf8",
+    );
     const layers = await readFile(
       new URL("../components/hero-image-layers.tsx", import.meta.url),
       "utf8",
@@ -56,8 +60,10 @@ describe("frontend load performance wiring", () => {
       new URL("../components/responsive-hero-image.tsx", import.meta.url),
       "utf8",
     );
-    assert.match(hero, /HeroImageLayers/);
+    assert.match(hero, /HeroStage/);
+    assert.match(hero, /responsive/);
     assert.doesNotMatch(hero, /link\.rel = "preload"/);
+    assert.match(stage, /HeroImageLayers/);
     assert.match(layers, /ResponsiveHeroImage/);
     assert.match(responsive, /<picture>/);
     assert.match(responsive, /image\/avif/);

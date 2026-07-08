@@ -1,45 +1,44 @@
-import { createContext, useContext, useEffect, useMemo, type CSSProperties } from "react";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import { useGetPlatformTheme, getGetPlatformThemeQueryKey } from "@workspace/api-client-react";
 import type { PlatformTheme } from "@workspace/api-client-react";
 import {
   DEFAULT_PLATFORM_NAME,
-  heroOverlayBackgroundStyle,
-  heroPrimaryButtonStyle,
   resolveFooterTagline,
-  resolveHeroHeadline,
-  resolveHeroButtonColor,
-  resolveHeroHeadlineAccentColor,
+  resolveHeroButtonPlacement,
   resolveHeroImageFit,
   resolveHeroImagePosition,
-  resolveHeroOverlayColor,
-  resolveHeroOverlayOpacity,
+  resolveHeroOverlayAlign,
+  resolveHeroOverlaySize,
   resolveLogoSizePx,
   resolvePlatformName,
   resolveShopCtaLabel,
-  resolveShowHeroButtons,
-  resolveShowHeroText,
+  resolveShowListBusinessButton,
+  resolveShowShopButton,
   resolveTagline,
   resolveWeatherEnabled,
   resolveWeatherLocation,
+  type HeroButtonPlacement,
   type HeroImageFit,
   type HeroImagePosition,
+  type HeroOverlayAlign,
+  type HeroOverlaySize,
 } from "@/lib/platform-branding";
 import { applyPlatformThemeToRoot } from "@/lib/theme-colors";
 
 export type PlatformBranding = {
   theme: PlatformTheme | undefined;
   platformName: string;
-  heroHeadline: { line1: string; line2: string };
-  heroHeadlineAccentColor: string;
-  heroTagline: string;
   heroImageUrl: string | null;
+  heroOverlayImageUrl: string | null;
   heroImageFit: HeroImageFit;
   heroImagePosition: HeroImagePosition;
-  showHeroText: boolean;
-  showHeroButtons: boolean;
-  heroOverlayStyle: CSSProperties | null;
-  heroPrimaryButtonStyle: CSSProperties | null;
+  heroOverlaySize: HeroOverlaySize;
+  heroOverlayAlign: HeroOverlayAlign;
+  showShopButton: boolean;
+  showListBusinessButton: boolean;
+  heroButtonPlacement: HeroButtonPlacement;
   footerTagline: string;
+  metaDescription: string;
   shopCtaLabel: string;
   logoUrl: string | null;
   logoSizePx: number;
@@ -52,17 +51,17 @@ export type PlatformBranding = {
 const PlatformBrandingContext = createContext<PlatformBranding>({
   theme: undefined,
   platformName: DEFAULT_PLATFORM_NAME,
-  heroHeadline: resolveHeroHeadline(null),
-  heroHeadlineAccentColor: resolveHeroHeadlineAccentColor(null),
-  heroTagline: resolveTagline(null),
   heroImageUrl: null,
+  heroOverlayImageUrl: null,
   heroImageFit: "cover",
   heroImagePosition: "center",
-  showHeroText: true,
-  showHeroButtons: true,
-  heroOverlayStyle: null,
-  heroPrimaryButtonStyle: null,
+  heroOverlaySize: "medium",
+  heroOverlayAlign: "center",
+  showShopButton: true,
+  showListBusinessButton: true,
+  heroButtonPlacement: "bottom-center",
   footerTagline: resolveFooterTagline(null),
+  metaDescription: resolveTagline(null),
   shopCtaLabel: resolveShopCtaLabel(null),
   logoUrl: null,
   logoSizePx: 24,
@@ -87,26 +86,20 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
   });
 
   const branding = useMemo<PlatformBranding>(() => {
-    const heroImage = theme?.heroImageUrl?.trim() || null;
-    const overlayColor = resolveHeroOverlayColor(theme);
-    const overlayOpacity = resolveHeroOverlayOpacity(theme);
-    const heroButtonColor = resolveHeroButtonColor(theme);
     return {
       theme,
       platformName: resolvePlatformName(theme),
-      heroHeadline: resolveHeroHeadline(theme),
-      heroHeadlineAccentColor: resolveHeroHeadlineAccentColor(theme),
-      heroTagline: resolveTagline(theme),
-      heroImageUrl: heroImage,
+      heroImageUrl: theme?.heroImageUrl?.trim() || null,
+      heroOverlayImageUrl: theme?.heroOverlayImageUrl?.trim() || null,
       heroImageFit: resolveHeroImageFit(theme),
       heroImagePosition: resolveHeroImagePosition(theme),
-      showHeroText: resolveShowHeroText(theme),
-      showHeroButtons: resolveShowHeroButtons(theme),
-      heroOverlayStyle: heroImage
-        ? heroOverlayBackgroundStyle(overlayColor, overlayOpacity)
-        : null,
-      heroPrimaryButtonStyle: heroImage ? heroPrimaryButtonStyle(heroButtonColor) : null,
+      heroOverlaySize: resolveHeroOverlaySize(theme),
+      heroOverlayAlign: resolveHeroOverlayAlign(theme),
+      showShopButton: resolveShowShopButton(theme),
+      showListBusinessButton: resolveShowListBusinessButton(theme),
+      heroButtonPlacement: resolveHeroButtonPlacement(theme),
       footerTagline: resolveFooterTagline(theme),
+      metaDescription: resolveTagline(theme),
       shopCtaLabel: resolveShopCtaLabel(theme),
       logoUrl: theme?.logoUrl?.trim() || null,
       logoSizePx: resolveLogoSizePx(theme),
@@ -123,7 +116,7 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     document.title = branding.platformName;
-    const description = branding.heroTagline;
+    const description = branding.metaDescription;
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
       metaDescription.setAttribute("content", description);
@@ -136,7 +129,7 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
     if (ogDescription) {
       ogDescription.setAttribute("content", description);
     }
-  }, [branding.platformName, branding.heroTagline]);
+  }, [branding.platformName, branding.metaDescription]);
 
   return (
     <PlatformBrandingContext.Provider value={branding}>

@@ -1,14 +1,6 @@
-import type { CSSProperties } from "react";
 import type { PlatformTheme } from "@workspace/api-client-react";
-import { contrastingTextColor, normalizeHex, PLATFORM_THEME_DEFAULTS } from "./theme-colors";
 
 export const DEFAULT_PLATFORM_NAME = "LocalOrderHub";
-
-export const DEFAULT_HERO_OVERLAY_COLOR = "#000000";
-export const DEFAULT_HERO_OVERLAY_OPACITY = 45;
-export const DEFAULT_HERO_BUTTON_COLOR = "#ffffff";
-export const DEFAULT_HERO_HEADLINE_LINE1 = "Order Local.";
-export const DEFAULT_HERO_HEADLINE_LINE2 = "Support Local.";
 
 export const DEFAULT_HERO_TAGLINE =
   "Your town's best bakeries, florists, markets, and shops—all in one place. Fresh, local, and community-driven.";
@@ -57,11 +49,17 @@ export const LOGO_SIZE_OPTIONS = LOGO_SIZE_PRESETS.map((p) => p.value);
 
 export type HeroImageFit = "cover" | "contain";
 export type HeroImagePosition = "center" | "top" | "bottom";
+export type HeroOverlaySize = "small" | "medium" | "large";
+export type HeroOverlayAlign = "left" | "center" | "right";
+export type HeroButtonPlacement = "bottom-left" | "bottom-center" | "bottom-right";
 
 export const DEFAULT_HERO_IMAGE_FIT: HeroImageFit = "cover";
 export const DEFAULT_HERO_IMAGE_POSITION: HeroImagePosition = "center";
-export const DEFAULT_SHOW_HERO_TEXT = true;
-export const DEFAULT_SHOW_HERO_BUTTONS = true;
+export const DEFAULT_HERO_OVERLAY_SIZE: HeroOverlaySize = "medium";
+export const DEFAULT_HERO_OVERLAY_ALIGN: HeroOverlayAlign = "center";
+export const DEFAULT_SHOW_SHOP_BUTTON = true;
+export const DEFAULT_SHOW_LIST_BUSINESS_BUTTON = true;
+export const DEFAULT_HERO_BUTTON_PLACEMENT: HeroButtonPlacement = "bottom-center";
 
 export const HERO_IMAGE_FIT_OPTIONS = [
   {
@@ -82,6 +80,30 @@ export function heroImageFitHelperText(fit: HeroImageFit): string {
   return HERO_IMAGE_FIT_OPTIONS.find((option) => option.value === fit)?.helperText ?? "";
 }
 
+export const HERO_IMAGE_POSITION_OPTIONS = [
+  { value: "top" as const, label: "Top" },
+  { value: "center" as const, label: "Center" },
+  { value: "bottom" as const, label: "Bottom" },
+] as const;
+
+export const HERO_OVERLAY_SIZE_OPTIONS = [
+  { value: "small" as const, label: "Small" },
+  { value: "medium" as const, label: "Medium" },
+  { value: "large" as const, label: "Large" },
+] as const;
+
+export const HERO_OVERLAY_ALIGN_OPTIONS = [
+  { value: "left" as const, label: "Left" },
+  { value: "center" as const, label: "Center" },
+  { value: "right" as const, label: "Right" },
+] as const;
+
+export const HERO_BUTTON_PLACEMENT_OPTIONS = [
+  { value: "bottom-left" as const, label: "Bottom Left" },
+  { value: "bottom-center" as const, label: "Bottom Center" },
+  { value: "bottom-right" as const, label: "Bottom Right" },
+] as const;
+
 /** Matches the live homepage hero section min-height (desktop) */
 export const HERO_SECTION_MIN_HEIGHT_PX = 420;
 /** Shorter hero on mobile (~28% then −10% then −15% vs 420px desktop) */
@@ -92,20 +114,6 @@ export const HERO_SECTION_MIN_HEIGHT_CLASS =
 export function resolvePlatformName(theme?: Pick<PlatformTheme, "platformName"> | null): string {
   const name = theme?.platformName?.trim();
   return name || DEFAULT_PLATFORM_NAME;
-}
-
-export function resolveHeroHeadline(
-  theme?: Pick<PlatformTheme, "heroHeadlineLine1" | "heroHeadlineLine2"> | null,
-): {
-  line1: string;
-  line2: string;
-} {
-  const line1 = theme?.heroHeadlineLine1?.trim();
-  const line2 = theme?.heroHeadlineLine2?.trim();
-  return {
-    line1: line1 || DEFAULT_HERO_HEADLINE_LINE1,
-    line2: line2 || DEFAULT_HERO_HEADLINE_LINE2,
-  };
 }
 
 export function resolveTagline(theme?: Pick<PlatformTheme, "tagline" | "townName"> | null): string {
@@ -172,19 +180,43 @@ export function resolveHeroImagePosition(
   return DEFAULT_HERO_IMAGE_POSITION;
 }
 
-export function resolveShowHeroText(
-  theme?: Pick<PlatformTheme, "showHeroText"> | null,
-): boolean {
-  return theme?.showHeroText !== false;
+export function resolveHeroOverlaySize(
+  theme?: Pick<PlatformTheme, "heroOverlaySize"> | null,
+): HeroOverlaySize {
+  const size = theme?.heroOverlaySize;
+  if (size === "small" || size === "large") return size;
+  return DEFAULT_HERO_OVERLAY_SIZE;
 }
 
-export function resolveShowHeroButtons(
-  theme?: Pick<PlatformTheme, "showHeroButtons"> | null,
-): boolean {
-  return theme?.showHeroButtons !== false;
+export function resolveHeroOverlayAlign(
+  theme?: Pick<PlatformTheme, "heroOverlayAlign"> | null,
+): HeroOverlayAlign {
+  const align = theme?.heroOverlayAlign;
+  if (align === "left" || align === "right") return align;
+  return DEFAULT_HERO_OVERLAY_ALIGN;
 }
 
-/** Tailwind classes for hero image object-fit and object-position */
+export function resolveShowShopButton(
+  theme?: Pick<PlatformTheme, "showShopButton"> | null,
+): boolean {
+  return theme?.showShopButton !== false;
+}
+
+export function resolveShowListBusinessButton(
+  theme?: Pick<PlatformTheme, "showListBusinessButton"> | null,
+): boolean {
+  return theme?.showListBusinessButton !== false;
+}
+
+export function resolveHeroButtonPlacement(
+  theme?: Pick<PlatformTheme, "heroButtonPlacement"> | null,
+): HeroButtonPlacement {
+  const placement = theme?.heroButtonPlacement;
+  if (placement === "bottom-left" || placement === "bottom-right") return placement;
+  return DEFAULT_HERO_BUTTON_PLACEMENT;
+}
+
+/** Tailwind classes for hero background image object-fit and object-position */
 export function heroImageObjectClasses(
   fit: HeroImageFit,
   position: HeroImagePosition,
@@ -195,137 +227,88 @@ export function heroImageObjectClasses(
   return `${fitClass} ${positionClass}`;
 }
 
-export function resolveHeroOverlayColor(
-  theme?: Pick<PlatformTheme, "heroOverlayColor"> | null,
-): string {
-  return normalizeHex(theme?.heroOverlayColor) ?? DEFAULT_HERO_OVERLAY_COLOR;
+/**
+ * Max-size constraints for the transparent overlay image. The overlay is never
+ * cropped (object-contain), it only scales down responsively within a safe area.
+ */
+export function heroOverlaySizeClasses(size: HeroOverlaySize): string {
+  switch (size) {
+    case "small":
+      return "max-h-[45%] max-w-[70%] md:max-w-[38%]";
+    case "large":
+      return "max-h-[78%] max-w-[92%] md:max-w-[72%]";
+    case "medium":
+    default:
+      return "max-h-[62%] max-w-[85%] md:max-w-[55%]";
+  }
 }
 
-export function resolveHeroOverlayOpacity(
-  theme?: Pick<PlatformTheme, "heroOverlayOpacity"> | null,
-): number {
-  const raw = theme?.heroOverlayOpacity;
-  if (raw == null) return DEFAULT_HERO_OVERLAY_OPACITY;
-  const n = typeof raw === "number" ? raw : parseInt(String(raw), 10);
-  if (Number.isNaN(n)) return DEFAULT_HERO_OVERLAY_OPACITY;
-  return Math.min(100, Math.max(0, Math.round(n)));
+/** Flexbox horizontal-justify class for a given left/center/right alignment. */
+export function heroHorizontalJustifyClass(align: HeroOverlayAlign): string {
+  return align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center";
 }
 
-/** CSS background for the homepage hero tint layer */
-export function heroOverlayBackgroundStyle(
-  color: string,
-  opacityPercent: number,
-): { backgroundColor: string } {
-  const hex = normalizeHex(color) ?? DEFAULT_HERO_OVERLAY_COLOR;
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const alpha = resolveHeroOverlayOpacity({ heroOverlayOpacity: opacityPercent }) / 100;
-  return { backgroundColor: `rgba(${r}, ${g}, ${b}, ${alpha})` };
+/** Flexbox horizontal-justify class for the CTA button row placement. */
+export function heroButtonPlacementJustifyClass(placement: HeroButtonPlacement): string {
+  return placement === "bottom-left"
+    ? "justify-start"
+    : placement === "bottom-right"
+      ? "justify-end"
+      : "justify-center";
 }
 
-export function resolveHeroButtonColor(
-  theme?: Pick<PlatformTheme, "heroButtonColor"> | null,
-): string {
-  return normalizeHex(theme?.heroButtonColor) ?? DEFAULT_HERO_BUTTON_COLOR;
-}
-
-/** "Support Local." accent — custom color or platform primary */
-export function resolveHeroHeadlineAccentColor(
-  theme?: Pick<PlatformTheme, "heroHeadlineAccentColor" | "primaryColor"> | null,
-): string {
-  return (
-    normalizeHex(theme?.heroHeadlineAccentColor) ??
-    normalizeHex(theme?.primaryColor) ??
-    PLATFORM_THEME_DEFAULTS.primaryColor
-  );
-}
-
-/** Inline styles for the homepage hero primary CTA */
-export function heroPrimaryButtonStyle(buttonColor: string): CSSProperties {
-  const bg = normalizeHex(buttonColor) ?? DEFAULT_HERO_BUTTON_COLOR;
-  return {
-    backgroundColor: bg,
-    color: contrastingTextColor(bg),
-    borderColor: bg,
-  };
-}
-
-export function themeToBrandingFields(theme: PlatformTheme): {
+export type BrandingFields = {
   platformName: string;
   townName: string;
   tagline: string;
   logoUrl: string;
+  logoSizePx: number;
   heroImageUrl: string;
-  heroOverlayColor: string;
-  heroOverlayOpacity: number;
-  heroButtonColor: string;
-  heroHeadlineAccentColor: string;
-  heroHeadlineLine1: string;
-  heroHeadlineLine2: string;
+  heroOverlayImageUrl: string;
   heroImageFit: HeroImageFit;
   heroImagePosition: HeroImagePosition;
-  showHeroText: boolean;
-  showHeroButtons: boolean;
-  logoSizePx: number;
-} {
+  heroOverlaySize: HeroOverlaySize;
+  heroOverlayAlign: HeroOverlayAlign;
+  showShopButton: boolean;
+  showListBusinessButton: boolean;
+  heroButtonPlacement: HeroButtonPlacement;
+};
+
+export function themeToBrandingFields(theme: PlatformTheme): BrandingFields {
   return {
     platformName: theme.platformName?.trim() || DEFAULT_PLATFORM_NAME,
     townName: theme.townName?.trim() || "",
     tagline: theme.tagline?.trim() || "",
     logoUrl: theme.logoUrl?.trim() || "",
+    logoSizePx: resolveLogoSizePx(theme),
     heroImageUrl: theme.heroImageUrl?.trim() || "",
-    heroOverlayColor: resolveHeroOverlayColor(theme),
-    heroOverlayOpacity: resolveHeroOverlayOpacity(theme),
-    heroButtonColor: resolveHeroButtonColor(theme),
-    heroHeadlineAccentColor: resolveHeroHeadlineAccentColor(theme),
-    heroHeadlineLine1: theme.heroHeadlineLine1?.trim() || "",
-    heroHeadlineLine2: theme.heroHeadlineLine2?.trim() || "",
+    heroOverlayImageUrl: theme.heroOverlayImageUrl?.trim() || "",
     heroImageFit: resolveHeroImageFit(theme),
     heroImagePosition: resolveHeroImagePosition(theme),
-    showHeroText: resolveShowHeroText(theme),
-    showHeroButtons: resolveShowHeroButtons(theme),
-    logoSizePx: resolveLogoSizePx(theme),
+    heroOverlaySize: resolveHeroOverlaySize(theme),
+    heroOverlayAlign: resolveHeroOverlayAlign(theme),
+    showShopButton: resolveShowShopButton(theme),
+    showListBusinessButton: resolveShowListBusinessButton(theme),
+    heroButtonPlacement: resolveHeroButtonPlacement(theme),
   };
 }
 
 /** Build API payload — empty strings clear nullable DB fields (undefined is stripped by JSON). */
-export function buildBrandingPayload(fields: {
-  platformName: string;
-  townName: string;
-  tagline: string;
-  logoUrl: string;
-  heroImageUrl: string;
-  heroOverlayColor: string;
-  heroOverlayOpacity: number;
-  heroButtonColor: string;
-  heroHeadlineAccentColor: string;
-  heroHeadlineLine1: string;
-  heroHeadlineLine2: string;
-  heroImageFit: HeroImageFit;
-  heroImagePosition: HeroImagePosition;
-  showHeroText: boolean;
-  showHeroButtons: boolean;
-  logoSizePx: number;
-}) {
+export function buildBrandingPayload(fields: BrandingFields) {
   return {
     platformName: fields.platformName.trim(),
     townName: fields.townName.trim(),
     tagline: fields.tagline.trim(),
     logoUrl: fields.logoUrl.trim(),
+    logoSizePx: fields.logoSizePx,
     heroImageUrl: fields.heroImageUrl.trim(),
-    heroOverlayColor: fields.heroOverlayColor.trim(),
-    heroOverlayOpacity: resolveHeroOverlayOpacity({
-      heroOverlayOpacity: fields.heroOverlayOpacity,
-    }),
-    heroButtonColor: fields.heroButtonColor.trim(),
-    heroHeadlineAccentColor: fields.heroHeadlineAccentColor.trim(),
-    heroHeadlineLine1: fields.heroHeadlineLine1.trim(),
-    heroHeadlineLine2: fields.heroHeadlineLine2.trim(),
+    heroOverlayImageUrl: fields.heroOverlayImageUrl.trim(),
     heroImageFit: fields.heroImageFit,
     heroImagePosition: fields.heroImagePosition,
-    showHeroText: fields.showHeroText,
-    showHeroButtons: fields.showHeroButtons,
-    logoSizePx: fields.logoSizePx,
+    heroOverlaySize: fields.heroOverlaySize,
+    heroOverlayAlign: fields.heroOverlayAlign,
+    showShopButton: fields.showShopButton,
+    showListBusinessButton: fields.showListBusinessButton,
+    heroButtonPlacement: fields.heroButtonPlacement,
   };
 }

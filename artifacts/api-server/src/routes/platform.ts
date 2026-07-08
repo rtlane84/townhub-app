@@ -17,16 +17,17 @@ const THEME_DEFAULTS = {
   tagline: null as string | null,
   logoUrl: null as string | null,
   heroImageUrl: null as string | null,
-  heroOverlayColor: "#000000",
-  heroOverlayOpacity: 45,
-  heroButtonColor: "#ffffff",
-  heroHeadlineAccentColor: null as string | null,
-  heroHeadlineLine1: null as string | null,
-  heroHeadlineLine2: null as string | null,
+  heroOverlayImageUrl: null as string | null,
   heroImageFit: "cover" as "cover" | "contain",
   heroImagePosition: "center" as "center" | "top" | "bottom",
-  showHeroText: true,
-  showHeroButtons: true,
+  heroOverlaySize: "medium" as "small" | "medium" | "large",
+  heroOverlayAlign: "center" as "left" | "center" | "right",
+  showShopButton: true,
+  showListBusinessButton: true,
+  heroButtonPlacement: "bottom-center" as
+    | "bottom-left"
+    | "bottom-center"
+    | "bottom-right",
   logoSizePx: 24,
   weatherEnabled: false,
   weatherLocation: null as string | null,
@@ -38,12 +39,6 @@ function clampLogoSize(value: unknown): number {
   return Math.min(192, Math.max(16, Math.round(n)));
 }
 
-function clampHeroOverlayOpacity(value: unknown): number {
-  const n = typeof value === "number" ? value : parseInt(String(value), 10);
-  if (Number.isNaN(n)) return THEME_DEFAULTS.heroOverlayOpacity;
-  return Math.min(100, Math.max(0, Math.round(n)));
-}
-
 function normalizeHeroImageFit(value: unknown): "cover" | "contain" {
   return value === "contain" ? "contain" : THEME_DEFAULTS.heroImageFit;
 }
@@ -51,6 +46,23 @@ function normalizeHeroImageFit(value: unknown): "cover" | "contain" {
 function normalizeHeroImagePosition(value: unknown): "center" | "top" | "bottom" {
   if (value === "top" || value === "bottom") return value;
   return THEME_DEFAULTS.heroImagePosition;
+}
+
+function normalizeHeroOverlaySize(value: unknown): "small" | "medium" | "large" {
+  if (value === "small" || value === "large") return value;
+  return THEME_DEFAULTS.heroOverlaySize;
+}
+
+function normalizeHeroOverlayAlign(value: unknown): "left" | "center" | "right" {
+  if (value === "left" || value === "right") return value;
+  return THEME_DEFAULTS.heroOverlayAlign;
+}
+
+function normalizeHeroButtonPlacement(
+  value: unknown,
+): "bottom-left" | "bottom-center" | "bottom-right" {
+  if (value === "bottom-left" || value === "bottom-right") return value;
+  return THEME_DEFAULTS.heroButtonPlacement;
 }
 
 function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelect) {
@@ -66,16 +78,15 @@ function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelec
     tagline: row.tagline,
     logoUrl: row.logoUrl,
     heroImageUrl: row.heroImageUrl,
-    heroOverlayColor: row.heroOverlayColor,
-    heroOverlayOpacity: row.heroOverlayOpacity ?? THEME_DEFAULTS.heroOverlayOpacity,
-    heroButtonColor: row.heroButtonColor,
-    heroHeadlineAccentColor: row.heroHeadlineAccentColor,
-    heroHeadlineLine1: row.heroHeadlineLine1,
-    heroHeadlineLine2: row.heroHeadlineLine2,
+    heroOverlayImageUrl: row.heroOverlayImageUrl,
     heroImageFit: normalizeHeroImageFit(row.heroImageFit),
     heroImagePosition: normalizeHeroImagePosition(row.heroImagePosition),
-    showHeroText: row.showHeroText ?? THEME_DEFAULTS.showHeroText,
-    showHeroButtons: row.showHeroButtons ?? THEME_DEFAULTS.showHeroButtons,
+    heroOverlaySize: normalizeHeroOverlaySize(row.heroOverlaySize),
+    heroOverlayAlign: normalizeHeroOverlayAlign(row.heroOverlayAlign),
+    showShopButton: row.showShopButton ?? THEME_DEFAULTS.showShopButton,
+    showListBusinessButton:
+      row.showListBusinessButton ?? THEME_DEFAULTS.showListBusinessButton,
+    heroButtonPlacement: normalizeHeroButtonPlacement(row.heroButtonPlacement),
     logoSizePx: row.logoSizePx ?? THEME_DEFAULTS.logoSizePx,
     weatherEnabled: row.weatherEnabled ?? THEME_DEFAULTS.weatherEnabled,
     weatherLocation: row.weatherLocation,
@@ -122,16 +133,14 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     "tagline",
     "logoUrl",
     "heroImageUrl",
-    "heroOverlayColor",
-    "heroOverlayOpacity",
-    "heroButtonColor",
-    "heroHeadlineAccentColor",
-    "heroHeadlineLine1",
-    "heroHeadlineLine2",
+    "heroOverlayImageUrl",
     "heroImageFit",
     "heroImagePosition",
-    "showHeroText",
-    "showHeroButtons",
+    "heroOverlaySize",
+    "heroOverlayAlign",
+    "showShopButton",
+    "showListBusinessButton",
+    "heroButtonPlacement",
     "logoSizePx",
     "weatherEnabled",
     "weatherLocation",
@@ -149,19 +158,11 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
         }
         continue;
       }
-      if (key === "heroOverlayOpacity") {
-        if (value === "" || value === undefined || value === null) {
-          updates[key] = THEME_DEFAULTS.heroOverlayOpacity;
-        } else {
-          updates[key] = clampHeroOverlayOpacity(value);
-        }
-        continue;
-      }
       if (key === "weatherEnabled") {
         updates[key] = Boolean(value);
         continue;
       }
-      if (key === "showHeroText" || key === "showHeroButtons") {
+      if (key === "showShopButton" || key === "showListBusinessButton") {
         updates[key] = Boolean(value);
         continue;
       }
@@ -171,6 +172,18 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
       }
       if (key === "heroImagePosition") {
         updates[key] = normalizeHeroImagePosition(value);
+        continue;
+      }
+      if (key === "heroOverlaySize") {
+        updates[key] = normalizeHeroOverlaySize(value);
+        continue;
+      }
+      if (key === "heroOverlayAlign") {
+        updates[key] = normalizeHeroOverlayAlign(value);
+        continue;
+      }
+      if (key === "heroButtonPlacement") {
+        updates[key] = normalizeHeroButtonPlacement(value);
         continue;
       }
       if (value === "" || value === undefined) {

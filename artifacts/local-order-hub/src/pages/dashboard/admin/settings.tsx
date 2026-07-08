@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Palette, Save, RotateCcw, CheckCircle, Type, CloudSun } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { ImageField } from "@/components/image-field";
@@ -24,31 +23,34 @@ import { HeroPreviewFrame } from "@/components/hero-preview-frame";
 import { PLATFORM_THEME_DEFAULTS } from "@/lib/theme-colors";
 
 import {
-  DEFAULT_HERO_BUTTON_COLOR,
-  DEFAULT_HERO_HEADLINE_LINE1,
-  DEFAULT_HERO_HEADLINE_LINE2,
+  DEFAULT_HERO_BUTTON_PLACEMENT,
   DEFAULT_HERO_IMAGE_FIT,
   DEFAULT_HERO_IMAGE_POSITION,
-  DEFAULT_HERO_OVERLAY_COLOR,
-  DEFAULT_HERO_OVERLAY_OPACITY,
+  DEFAULT_HERO_OVERLAY_ALIGN,
+  DEFAULT_HERO_OVERLAY_SIZE,
   DEFAULT_PLATFORM_NAME,
-  DEFAULT_SHOW_HERO_BUTTONS,
-  DEFAULT_SHOW_HERO_TEXT,
+  DEFAULT_SHOW_LIST_BUSINESS_BUTTON,
+  DEFAULT_SHOW_SHOP_BUTTON,
   buildBrandingPayload,
   DEFAULT_LOGO_SIZE_PX,
+  HERO_BUTTON_PLACEMENT_OPTIONS,
   HERO_IMAGE_FIT_OPTIONS,
+  HERO_IMAGE_POSITION_OPTIONS,
+  HERO_OVERLAY_ALIGN_OPTIONS,
+  HERO_OVERLAY_SIZE_OPTIONS,
   heroImageFitHelperText,
-  heroOverlayBackgroundStyle,
-  heroPrimaryButtonStyle,
   LOGO_SIZE_PRESETS,
   resolveFooterTagline,
-  resolveHeroHeadline,
   resolveShopCtaLabel,
   resolveTagline,
   resolveWeatherLocation,
   themeToBrandingFields,
+  type BrandingFields,
+  type HeroButtonPlacement,
   type HeroImageFit,
   type HeroImagePosition,
+  type HeroOverlayAlign,
+  type HeroOverlaySize,
 } from "@/lib/platform-branding";
 
 const DEFAULTS: Record<ColorKey, string> = {
@@ -69,42 +71,21 @@ const COLOR_FIELDS: Array<{ key: ColorKey; label: string; description: string }>
   { key: "headingColor", label: "Heading Color", description: "Optional — overrides heading text color" },
 ];
 
-type BrandingFields = {
-  platformName: string;
-  townName: string;
-  tagline: string;
-  logoUrl: string;
-  heroImageUrl: string;
-  heroOverlayColor: string;
-  heroOverlayOpacity: number;
-  heroButtonColor: string;
-  heroHeadlineAccentColor: string;
-  heroHeadlineLine1: string;
-  heroHeadlineLine2: string;
-  heroImageFit: HeroImageFit;
-  heroImagePosition: HeroImagePosition;
-  showHeroText: boolean;
-  showHeroButtons: boolean;
-  logoSizePx: number;
-};
-
 const BRANDING_DEFAULTS: BrandingFields = {
   platformName: DEFAULT_PLATFORM_NAME,
   townName: "",
   tagline: "",
   logoUrl: "",
+  logoSizePx: DEFAULT_LOGO_SIZE_PX,
   heroImageUrl: "",
-  heroOverlayColor: DEFAULT_HERO_OVERLAY_COLOR,
-  heroOverlayOpacity: DEFAULT_HERO_OVERLAY_OPACITY,
-  heroButtonColor: DEFAULT_HERO_BUTTON_COLOR,
-  heroHeadlineAccentColor: PLATFORM_THEME_DEFAULTS.primaryColor,
-  heroHeadlineLine1: "",
-  heroHeadlineLine2: "",
+  heroOverlayImageUrl: "",
   heroImageFit: DEFAULT_HERO_IMAGE_FIT,
   heroImagePosition: DEFAULT_HERO_IMAGE_POSITION,
-  showHeroText: DEFAULT_SHOW_HERO_TEXT,
-  showHeroButtons: DEFAULT_SHOW_HERO_BUTTONS,
-  logoSizePx: DEFAULT_LOGO_SIZE_PX,
+  heroOverlaySize: DEFAULT_HERO_OVERLAY_SIZE,
+  heroOverlayAlign: DEFAULT_HERO_OVERLAY_ALIGN,
+  showShopButton: DEFAULT_SHOW_SHOP_BUTTON,
+  showListBusinessButton: DEFAULT_SHOW_LIST_BUSINESS_BUTTON,
+  heroButtonPlacement: DEFAULT_HERO_BUTTON_PLACEMENT,
 };
 
 type WeatherFields = {
@@ -116,13 +97,6 @@ const WEATHER_DEFAULTS: WeatherFields = {
   weatherEnabled: false,
   weatherLocation: "",
 };
-
-function brandingHeadlinePreview(branding: BrandingFields) {
-  return resolveHeroHeadline({
-    heroHeadlineLine1: branding.heroHeadlineLine1 || null,
-    heroHeadlineLine2: branding.heroHeadlineLine2 || null,
-  });
-}
 
 function logoSizeOptions(currentPx: number): Array<{ value: number; label: string }> {
   const presets: Array<{ value: number; label: string }> = LOGO_SIZE_PRESETS.map((p) => ({
@@ -354,7 +328,8 @@ export default function AdminSettings() {
               <CardTitle className="font-serif">Platform Branding</CardTitle>
             </div>
             <CardDescription>
-              Customize how the marketplace appears to visitors — homepage hero, site name, tagline, and logo.
+              Build the homepage hero from a background image and an optional logo/text overlay, then
+              choose which call-to-action buttons appear. Site name, logo, and tagline are below.
               Leave fields blank to use defaults.
             </CardDescription>
           </CardHeader>
@@ -409,9 +384,64 @@ export default function AdminSettings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="center">Center</SelectItem>
-                        <SelectItem value="top">Top</SelectItem>
-                        <SelectItem value="bottom">Bottom</SelectItem>
+                        {HERO_IMAGE_POSITION_OPTIONS.map(({ value, label }) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <ImageField
+                  surface="homepage-hero-overlay"
+                  label="Hero overlay image (logo + text)"
+                  value={branding.heroOverlayImageUrl}
+                  onChange={(url) => handleBrandingChange("heroOverlayImageUrl", url)}
+                  testId="homepage-hero-overlay"
+                />
+                <p className="text-xs text-muted-foreground -mt-4">
+                  Optional transparent PNG combining your logo, town name, and tagline. It sits on
+                  top of the background and is never cropped. Leave blank to show only the background.
+                </p>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="heroOverlaySize">Overlay size</Label>
+                    <Select
+                      value={branding.heroOverlaySize}
+                      onValueChange={(value) =>
+                        handleBrandingChange("heroOverlaySize", value as HeroOverlaySize)
+                      }
+                    >
+                      <SelectTrigger id="heroOverlaySize">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {HERO_OVERLAY_SIZE_OPTIONS.map(({ value, label }) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="heroOverlayAlign">Overlay alignment</Label>
+                    <Select
+                      value={branding.heroOverlayAlign}
+                      onValueChange={(value) =>
+                        handleBrandingChange("heroOverlayAlign", value as HeroOverlayAlign)
+                      }
+                    >
+                      <SelectTrigger id="heroOverlayAlign">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {HERO_OVERLAY_ALIGN_OPTIONS.map(({ value, label }) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -419,114 +449,83 @@ export default function AdminSettings() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
                     <div>
-                      <p className="font-medium text-foreground">Show hero text</p>
+                      <p className="font-medium text-foreground">Shop button</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Headline and tagline on the homepage hero.
+                        Links visitors to the marketplace.
                       </p>
                     </div>
                     <Switch
-                      checked={branding.showHeroText}
-                      onCheckedChange={(value) => handleBrandingChange("showHeroText", value)}
+                      checked={branding.showShopButton}
+                      onCheckedChange={(value) => handleBrandingChange("showShopButton", value)}
                     />
                   </div>
                   <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
                     <div>
-                      <p className="font-medium text-foreground">Show hero buttons</p>
+                      <p className="font-medium text-foreground">List Your Business button</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Shop and List Your Business CTAs.
+                        Invites owners to join the platform.
                       </p>
                     </div>
                     <Switch
-                      checked={branding.showHeroButtons}
-                      onCheckedChange={(value) => handleBrandingChange("showHeroButtons", value)}
+                      checked={branding.showListBusinessButton}
+                      onCheckedChange={(value) =>
+                        handleBrandingChange("showListBusinessButton", value)
+                      }
                     />
                   </div>
                 </div>
-                {!branding.showHeroText && !branding.showHeroButtons ? (
-                  <p className="text-xs text-muted-foreground rounded-lg bg-muted/40 border border-border/60 px-3 py-2">
-                    Use image-only mode if your hero image already contains text.
-                  </p>
-                ) : null}
-                <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
-                  <div>
-                    <p className="text-sm font-medium">Hero overlay</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Tint over the homepage hero image so headline text and buttons stay readable.
-                      Applies when a hero image is set.
-                    </p>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <ColorPickerField
-                      id="heroOverlayColor"
-                      label="Overlay color"
-                      description="Usually black or a dark brand color."
-                      value={branding.heroOverlayColor}
-                      onChange={(value) => handleBrandingChange("heroOverlayColor", value)}
-                    />
-                    <div className="space-y-3">
-                      <Label htmlFor="heroOverlayOpacity">Overlay opacity</Label>
-                      <Slider
-                        id="heroOverlayOpacity"
-                        value={[branding.heroOverlayOpacity]}
-                        min={0}
-                        max={100}
-                        step={5}
-                        onValueChange={([value]) =>
-                          handleBrandingChange("heroOverlayOpacity", value ?? DEFAULT_HERO_OVERLAY_OPACITY)
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">{branding.heroOverlayOpacity}%</p>
-                    </div>
-                    <ColorPickerField
-                      id="heroButtonColor"
-                      label="Primary button color"
-                      description="Shop button on the homepage hero. Text color adjusts automatically."
-                      value={branding.heroButtonColor}
-                      onChange={(value) => handleBrandingChange("heroButtonColor", value)}
-                    />
-                    <ColorPickerField
-                      id="heroHeadlineAccentColor"
-                      label="Headline accent (line 2)"
-                      description="Accent color for the second headline line. Works with or without a hero image."
-                      value={branding.heroHeadlineAccentColor}
-                      onChange={(value) => handleBrandingChange("heroHeadlineAccentColor", value)}
-                    />
-                  </div>
-                  {branding.heroImageUrl ? (
-                    <>
+                <div className="space-y-2 md:max-w-xs">
+                  <Label htmlFor="heroButtonPlacement">Button placement</Label>
+                  <Select
+                    value={branding.heroButtonPlacement}
+                    onValueChange={(value) =>
+                      handleBrandingChange("heroButtonPlacement", value as HeroButtonPlacement)
+                    }
+                  >
+                    <SelectTrigger id="heroButtonPlacement">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HERO_BUTTON_PLACEMENT_OPTIONS.map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {branding.heroImageUrl || branding.heroOverlayImageUrl ? (
+                  <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">
-                      The preview uses the same crop behavior as the live homepage.
+                      Live preview — matches the homepage hero crop and layout.
                     </p>
                     <HeroPreviewFrame
-                      heroImageUrl={branding.heroImageUrl}
+                      heroImageUrl={branding.heroImageUrl || null}
+                      heroOverlayImageUrl={branding.heroOverlayImageUrl || null}
                       heroImageFit={branding.heroImageFit}
                       heroImagePosition={branding.heroImagePosition}
-                      overlayStyle={heroOverlayBackgroundStyle(
-                        branding.heroOverlayColor,
-                        branding.heroOverlayOpacity,
-                      )}
-                      showHeroText={branding.showHeroText}
-                      showHeroButtons={branding.showHeroButtons}
-                      heroText={
-                        <p className="text-center font-serif text-lg font-semibold text-white drop-shadow-sm">
-                          {brandingHeadlinePreview(branding).line1}{" "}
-                          <span style={{ color: branding.heroHeadlineAccentColor }}>
-                            {brandingHeadlinePreview(branding).line2}
-                          </span>
-                        </p>
-                      }
-                      heroButtons={
-                        <span
-                          className="inline-flex items-center rounded-full px-8 py-3 text-sm font-semibold shadow-lg"
-                          style={heroPrimaryButtonStyle(branding.heroButtonColor)}
-                        >
-                          {resolveShopCtaLabel({ townName: branding.townName || null })}
-                        </span>
+                      heroOverlaySize={branding.heroOverlaySize}
+                      heroOverlayAlign={branding.heroOverlayAlign}
+                      heroButtonPlacement={branding.heroButtonPlacement}
+                      buttons={
+                        branding.showShopButton || branding.showListBusinessButton ? (
+                          <>
+                            {branding.showShopButton ? (
+                              <span className="inline-flex items-center rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-slate-900 shadow-xl ring-1 ring-black/5">
+                                {resolveShopCtaLabel({ townName: branding.townName || null })}
+                              </span>
+                            ) : null}
+                            {branding.showListBusinessButton ? (
+                              <span className="inline-flex items-center rounded-full border-2 bg-white/90 px-6 py-2.5 text-sm font-semibold text-foreground shadow-lg">
+                                List Your Business
+                              </span>
+                            ) : null}
+                          </>
+                        ) : null
                       }
                     />
-                    </>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
                 <Separator />
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2 md:col-span-2">
@@ -551,27 +550,6 @@ export default function AdminSettings() {
                     />
                     <p className="text-xs text-muted-foreground">
                       Personalizes the shop button, tagline, and footer defaults.
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="heroHeadlineLine1">Hero headline — line 1</Label>
-                    <Input
-                      id="heroHeadlineLine1"
-                      value={branding.heroHeadlineLine1}
-                      onChange={(e) => handleBrandingChange("heroHeadlineLine1", e.target.value)}
-                      placeholder={DEFAULT_HERO_HEADLINE_LINE1}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="heroHeadlineLine2">Hero headline — line 2</Label>
-                    <Input
-                      id="heroHeadlineLine2"
-                      value={branding.heroHeadlineLine2}
-                      onChange={(e) => handleBrandingChange("heroHeadlineLine2", e.target.value)}
-                      placeholder={DEFAULT_HERO_HEADLINE_LINE2}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Shown in the accent color. Leave blank for the default headline.
                     </p>
                   </div>
                   <ImageField
@@ -646,13 +624,7 @@ export default function AdminSettings() {
                         {branding.platformName.trim() || DEFAULT_PLATFORM_NAME}
                       </span>
                     </div>
-                    <p className="text-sm font-serif font-semibold mt-4">
-                      {brandingHeadlinePreview(branding).line1}{" "}
-                      <span style={{ color: branding.heroHeadlineAccentColor }}>
-                        {brandingHeadlinePreview(branding).line2}
-                      </span>
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-3">
                       {resolveTagline({ tagline: branding.tagline || null, townName: branding.townName || null })}
                     </p>
                     <p className="text-xs text-muted-foreground mt-2">

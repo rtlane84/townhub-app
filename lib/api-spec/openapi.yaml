@@ -4239,19 +4239,7 @@ components:
           type: ["string", "null"]
         heroImageUrl:
           type: ["string", "null"]
-        heroOverlayColor:
-          type: ["string", "null"]
-        heroOverlayOpacity:
-          type: integer
-          minimum: 0
-          maximum: 100
-        heroButtonColor:
-          type: ["string", "null"]
-        heroHeadlineAccentColor:
-          type: ["string", "null"]
-        heroHeadlineLine1:
-          type: ["string", "null"]
-        heroHeadlineLine2:
+        heroOverlayImageUrl:
           type: ["string", "null"]
         heroImageFit:
           type: string
@@ -4259,10 +4247,19 @@ components:
         heroImagePosition:
           type: string
           enum: [center, top, bottom]
-        showHeroText:
+        heroOverlaySize:
+          type: string
+          enum: [small, medium, large]
+        heroOverlayAlign:
+          type: string
+          enum: [left, center, right]
+        showShopButton:
           type: boolean
-        showHeroButtons:
+        showListBusinessButton:
           type: boolean
+        heroButtonPlacement:
+          type: string
+          enum: [bottom-left, bottom-center, bottom-right]
         logoSizePx:
           type: integer
           minimum: 16
@@ -4298,30 +4295,27 @@ components:
           type: string
         heroImageUrl:
           type: string
-        heroOverlayColor:
+        heroOverlayImageUrl:
           type: string
-        heroOverlayOpacity:
-          type: integer
-          minimum: 0
-          maximum: 100
-        heroButtonColor:
-          type: ["string", "null"]
-        heroHeadlineAccentColor:
-          type: ["string", "null"]
-        heroHeadlineLine1:
-          type: ["string", "null"]
-        heroHeadlineLine2:
-          type: ["string", "null"]
         heroImageFit:
           type: string
           enum: [cover, contain]
         heroImagePosition:
           type: string
           enum: [center, top, bottom]
-        showHeroText:
+        heroOverlaySize:
+          type: string
+          enum: [small, medium, large]
+        heroOverlayAlign:
+          type: string
+          enum: [left, center, right]
+        showShopButton:
           type: boolean
-        showHeroButtons:
+        showListBusinessButton:
           type: boolean
+        heroButtonPlacement:
+          type: string
+          enum: [bottom-left, bottom-center, bottom-right]
         logoSizePx:
           type: integer
           minimum: 16

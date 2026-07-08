@@ -5,8 +5,11 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { PlatformThemeHeroButtonPlacement } from './platformThemeHeroButtonPlacement';
 import type { PlatformThemeHeroImageFit } from './platformThemeHeroImageFit';
 import type { PlatformThemeHeroImagePosition } from './platformThemeHeroImagePosition';
+import type { PlatformThemeHeroOverlayAlign } from './platformThemeHeroOverlayAlign';
+import type { PlatformThemeHeroOverlaySize } from './platformThemeHeroOverlaySize';
 
 export interface PlatformTheme {
   id: number;
@@ -27,24 +30,14 @@ export interface PlatformTheme {
   /** @nullable */
   heroImageUrl?: string | null;
   /** @nullable */
-  heroOverlayColor?: string | null;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  heroOverlayOpacity?: number;
-  /** @nullable */
-  heroButtonColor?: string | null;
-  /** @nullable */
-  heroHeadlineAccentColor?: string | null;
-  /** @nullable */
-  heroHeadlineLine1?: string | null;
-  /** @nullable */
-  heroHeadlineLine2?: string | null;
+  heroOverlayImageUrl?: string | null;
   heroImageFit?: PlatformThemeHeroImageFit;
   heroImagePosition?: PlatformThemeHeroImagePosition;
-  showHeroText?: boolean;
-  showHeroButtons?: boolean;
+  heroOverlaySize?: PlatformThemeHeroOverlaySize;
+  heroOverlayAlign?: PlatformThemeHeroOverlayAlign;
+  showShopButton?: boolean;
+  showListBusinessButton?: boolean;
+  heroButtonPlacement?: PlatformThemeHeroButtonPlacement;
   /**
      * @minimum 16
      * @maximum 192

@@ -3218,9 +3218,6 @@ export const ListUpcomingFoodTrucksResponse = zod.array(ListUpcomingFoodTrucksRe
 /**
  * @summary Get platform-wide theme settings (public read)
  */
-export const getPlatformThemeResponseHeroOverlayOpacityMin = 0;
-export const getPlatformThemeResponseHeroOverlayOpacityMax = 100;
-
 export const getPlatformThemeResponseLogoSizePxMin = 16;
 export const getPlatformThemeResponseLogoSizePxMax = 192;
 
@@ -3238,16 +3235,14 @@ export const GetPlatformThemeResponse = zod.object({
   "tagline": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
-  "heroOverlayColor": zod.string().nullish(),
-  "heroOverlayOpacity": zod.number().min(getPlatformThemeResponseHeroOverlayOpacityMin).max(getPlatformThemeResponseHeroOverlayOpacityMax).optional(),
-  "heroButtonColor": zod.string().nullish(),
-  "heroHeadlineAccentColor": zod.string().nullish(),
-  "heroHeadlineLine1": zod.string().nullish(),
-  "heroHeadlineLine2": zod.string().nullish(),
+  "heroOverlayImageUrl": zod.string().nullish(),
   "heroImageFit": zod.enum(['cover', 'contain']).optional(),
   "heroImagePosition": zod.enum(['center', 'top', 'bottom']).optional(),
-  "showHeroText": zod.boolean().optional(),
-  "showHeroButtons": zod.boolean().optional(),
+  "heroOverlaySize": zod.enum(['small', 'medium', 'large']).optional(),
+  "heroOverlayAlign": zod.enum(['left', 'center', 'right']).optional(),
+  "showShopButton": zod.boolean().optional(),
+  "showListBusinessButton": zod.boolean().optional(),
+  "heroButtonPlacement": zod.enum(['bottom-left', 'bottom-center', 'bottom-right']).optional(),
   "logoSizePx": zod.number().min(getPlatformThemeResponseLogoSizePxMin).max(getPlatformThemeResponseLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().nullish(),
@@ -3258,9 +3253,6 @@ export const GetPlatformThemeResponse = zod.object({
 /**
  * @summary Update platform-wide theme settings (admin only)
  */
-export const updatePlatformThemeBodyHeroOverlayOpacityMin = 0;
-export const updatePlatformThemeBodyHeroOverlayOpacityMax = 100;
-
 export const updatePlatformThemeBodyLogoSizePxMin = 16;
 export const updatePlatformThemeBodyLogoSizePxMax = 192;
 
@@ -3277,23 +3269,18 @@ export const UpdatePlatformThemeBody = zod.object({
   "tagline": zod.string().optional(),
   "logoUrl": zod.string().optional(),
   "heroImageUrl": zod.string().optional(),
-  "heroOverlayColor": zod.string().optional(),
-  "heroOverlayOpacity": zod.number().min(updatePlatformThemeBodyHeroOverlayOpacityMin).max(updatePlatformThemeBodyHeroOverlayOpacityMax).optional(),
-  "heroButtonColor": zod.string().nullish(),
-  "heroHeadlineAccentColor": zod.string().nullish(),
-  "heroHeadlineLine1": zod.string().nullish(),
-  "heroHeadlineLine2": zod.string().nullish(),
+  "heroOverlayImageUrl": zod.string().optional(),
   "heroImageFit": zod.enum(['cover', 'contain']).optional(),
   "heroImagePosition": zod.enum(['center', 'top', 'bottom']).optional(),
-  "showHeroText": zod.boolean().optional(),
-  "showHeroButtons": zod.boolean().optional(),
+  "heroOverlaySize": zod.enum(['small', 'medium', 'large']).optional(),
+  "heroOverlayAlign": zod.enum(['left', 'center', 'right']).optional(),
+  "showShopButton": zod.boolean().optional(),
+  "showListBusinessButton": zod.boolean().optional(),
+  "heroButtonPlacement": zod.enum(['bottom-left', 'bottom-center', 'bottom-right']).optional(),
   "logoSizePx": zod.number().min(updatePlatformThemeBodyLogoSizePxMin).max(updatePlatformThemeBodyLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().optional()
 })
-
-export const updatePlatformThemeResponseHeroOverlayOpacityMin = 0;
-export const updatePlatformThemeResponseHeroOverlayOpacityMax = 100;
 
 export const updatePlatformThemeResponseLogoSizePxMin = 16;
 export const updatePlatformThemeResponseLogoSizePxMax = 192;
@@ -3312,16 +3299,14 @@ export const UpdatePlatformThemeResponse = zod.object({
   "tagline": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
-  "heroOverlayColor": zod.string().nullish(),
-  "heroOverlayOpacity": zod.number().min(updatePlatformThemeResponseHeroOverlayOpacityMin).max(updatePlatformThemeResponseHeroOverlayOpacityMax).optional(),
-  "heroButtonColor": zod.string().nullish(),
-  "heroHeadlineAccentColor": zod.string().nullish(),
-  "heroHeadlineLine1": zod.string().nullish(),
-  "heroHeadlineLine2": zod.string().nullish(),
+  "heroOverlayImageUrl": zod.string().nullish(),
   "heroImageFit": zod.enum(['cover', 'contain']).optional(),
   "heroImagePosition": zod.enum(['center', 'top', 'bottom']).optional(),
-  "showHeroText": zod.boolean().optional(),
-  "showHeroButtons": zod.boolean().optional(),
+  "heroOverlaySize": zod.enum(['small', 'medium', 'large']).optional(),
+  "heroOverlayAlign": zod.enum(['left', 'center', 'right']).optional(),
+  "showShopButton": zod.boolean().optional(),
+  "showListBusinessButton": zod.boolean().optional(),
+  "heroButtonPlacement": zod.enum(['bottom-left', 'bottom-center', 'bottom-right']).optional(),
   "logoSizePx": zod.number().min(updatePlatformThemeResponseLogoSizePxMin).max(updatePlatformThemeResponseLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().nullish(),

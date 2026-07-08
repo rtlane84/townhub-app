@@ -5,8 +5,11 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { PlatformThemeInputHeroButtonPlacement } from './platformThemeInputHeroButtonPlacement';
 import type { PlatformThemeInputHeroImageFit } from './platformThemeInputHeroImageFit';
 import type { PlatformThemeInputHeroImagePosition } from './platformThemeInputHeroImagePosition';
+import type { PlatformThemeInputHeroOverlayAlign } from './platformThemeInputHeroOverlayAlign';
+import type { PlatformThemeInputHeroOverlaySize } from './platformThemeInputHeroOverlaySize';
 
 export interface PlatformThemeInput {
   primaryColor?: string;
@@ -19,24 +22,14 @@ export interface PlatformThemeInput {
   tagline?: string;
   logoUrl?: string;
   heroImageUrl?: string;
-  heroOverlayColor?: string;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  heroOverlayOpacity?: number;
-  /** @nullable */
-  heroButtonColor?: string | null;
-  /** @nullable */
-  heroHeadlineAccentColor?: string | null;
-  /** @nullable */
-  heroHeadlineLine1?: string | null;
-  /** @nullable */
-  heroHeadlineLine2?: string | null;
+  heroOverlayImageUrl?: string;
   heroImageFit?: PlatformThemeInputHeroImageFit;
   heroImagePosition?: PlatformThemeInputHeroImagePosition;
-  showHeroText?: boolean;
-  showHeroButtons?: boolean;
+  heroOverlaySize?: PlatformThemeInputHeroOverlaySize;
+  heroOverlayAlign?: PlatformThemeInputHeroOverlayAlign;
+  showShopButton?: boolean;
+  showListBusinessButton?: boolean;
+  heroButtonPlacement?: PlatformThemeInputHeroButtonPlacement;
   /**
      * @minimum 16
      * @maximum 192

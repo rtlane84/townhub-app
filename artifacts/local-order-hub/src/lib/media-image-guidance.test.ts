@@ -11,7 +11,7 @@ import { validateImageFile } from "./media-upload.ts";
 
 describe("media-image-guidance", () => {
   it("defines guidance for every launch image surface", () => {
-    assert.equal(LAUNCH_IMAGE_SURFACES.length, 7);
+    assert.equal(LAUNCH_IMAGE_SURFACES.length, 8);
     for (const surface of LAUNCH_IMAGE_SURFACES) {
       const guidance = IMAGE_SURFACE_GUIDANCE[surface];
       assert.ok(guidance.label.length > 0);

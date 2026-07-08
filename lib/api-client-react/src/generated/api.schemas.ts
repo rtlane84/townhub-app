@@ -1350,6 +1350,33 @@ export const PlatformThemeHeroImagePosition = {
   bottom: 'bottom',
 } as const;
 
+export type PlatformThemeHeroOverlaySize = typeof PlatformThemeHeroOverlaySize[keyof typeof PlatformThemeHeroOverlaySize];
+
+
+export const PlatformThemeHeroOverlaySize = {
+  small: 'small',
+  medium: 'medium',
+  large: 'large',
+} as const;
+
+export type PlatformThemeHeroOverlayAlign = typeof PlatformThemeHeroOverlayAlign[keyof typeof PlatformThemeHeroOverlayAlign];
+
+
+export const PlatformThemeHeroOverlayAlign = {
+  left: 'left',
+  center: 'center',
+  right: 'right',
+} as const;
+
+export type PlatformThemeHeroButtonPlacement = typeof PlatformThemeHeroButtonPlacement[keyof typeof PlatformThemeHeroButtonPlacement];
+
+
+export const PlatformThemeHeroButtonPlacement = {
+  'bottom-left': 'bottom-left',
+  'bottom-center': 'bottom-center',
+  'bottom-right': 'bottom-right',
+} as const;
+
 export interface PlatformTheme {
   id: number;
   primaryColor: string;
@@ -1369,24 +1396,14 @@ export interface PlatformTheme {
   /** @nullable */
   heroImageUrl?: string | null;
   /** @nullable */
-  heroOverlayColor?: string | null;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  heroOverlayOpacity?: number;
-  /** @nullable */
-  heroButtonColor?: string | null;
-  /** @nullable */
-  heroHeadlineAccentColor?: string | null;
-  /** @nullable */
-  heroHeadlineLine1?: string | null;
-  /** @nullable */
-  heroHeadlineLine2?: string | null;
+  heroOverlayImageUrl?: string | null;
   heroImageFit?: PlatformThemeHeroImageFit;
   heroImagePosition?: PlatformThemeHeroImagePosition;
-  showHeroText?: boolean;
-  showHeroButtons?: boolean;
+  heroOverlaySize?: PlatformThemeHeroOverlaySize;
+  heroOverlayAlign?: PlatformThemeHeroOverlayAlign;
+  showShopButton?: boolean;
+  showListBusinessButton?: boolean;
+  heroButtonPlacement?: PlatformThemeHeroButtonPlacement;
   /**
      * @minimum 16
      * @maximum 192
@@ -1415,6 +1432,33 @@ export const PlatformThemeInputHeroImagePosition = {
   bottom: 'bottom',
 } as const;
 
+export type PlatformThemeInputHeroOverlaySize = typeof PlatformThemeInputHeroOverlaySize[keyof typeof PlatformThemeInputHeroOverlaySize];
+
+
+export const PlatformThemeInputHeroOverlaySize = {
+  small: 'small',
+  medium: 'medium',
+  large: 'large',
+} as const;
+
+export type PlatformThemeInputHeroOverlayAlign = typeof PlatformThemeInputHeroOverlayAlign[keyof typeof PlatformThemeInputHeroOverlayAlign];
+
+
+export const PlatformThemeInputHeroOverlayAlign = {
+  left: 'left',
+  center: 'center',
+  right: 'right',
+} as const;
+
+export type PlatformThemeInputHeroButtonPlacement = typeof PlatformThemeInputHeroButtonPlacement[keyof typeof PlatformThemeInputHeroButtonPlacement];
+
+
+export const PlatformThemeInputHeroButtonPlacement = {
+  'bottom-left': 'bottom-left',
+  'bottom-center': 'bottom-center',
+  'bottom-right': 'bottom-right',
+} as const;
+
 export interface PlatformThemeInput {
   primaryColor?: string;
   accentColor?: string;
@@ -1426,24 +1470,14 @@ export interface PlatformThemeInput {
   tagline?: string;
   logoUrl?: string;
   heroImageUrl?: string;
-  heroOverlayColor?: string;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  heroOverlayOpacity?: number;
-  /** @nullable */
-  heroButtonColor?: string | null;
-  /** @nullable */
-  heroHeadlineAccentColor?: string | null;
-  /** @nullable */
-  heroHeadlineLine1?: string | null;
-  /** @nullable */
-  heroHeadlineLine2?: string | null;
+  heroOverlayImageUrl?: string;
   heroImageFit?: PlatformThemeInputHeroImageFit;
   heroImagePosition?: PlatformThemeInputHeroImagePosition;
-  showHeroText?: boolean;
-  showHeroButtons?: boolean;
+  heroOverlaySize?: PlatformThemeInputHeroOverlaySize;
+  heroOverlayAlign?: PlatformThemeInputHeroOverlayAlign;
+  showShopButton?: boolean;
+  showListBusinessButton?: boolean;
+  heroButtonPlacement?: PlatformThemeInputHeroButtonPlacement;
   /**
      * @minimum 16
      * @maximum 192

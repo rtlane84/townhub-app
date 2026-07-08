@@ -1,56 +1,46 @@
-import type { CSSProperties, ReactNode } from "react";
-import { HeroImageLayers } from "@/components/hero-image-layers";
+import type { ReactNode } from "react";
+import { HeroStage } from "@/components/hero-stage";
 import {
-  HERO_SECTION_MIN_HEIGHT_CLASS,
+  type HeroButtonPlacement,
   type HeroImageFit,
   type HeroImagePosition,
+  type HeroOverlayAlign,
+  type HeroOverlaySize,
 } from "@/lib/platform-branding";
-import { cn } from "@/lib/utils";
 
 type HeroPreviewFrameProps = {
-  heroImageUrl: string;
+  heroImageUrl: string | null;
+  heroOverlayImageUrl: string | null;
   heroImageFit: HeroImageFit;
   heroImagePosition: HeroImagePosition;
-  overlayStyle: CSSProperties;
-  showHeroText: boolean;
-  showHeroButtons: boolean;
-  heroText?: ReactNode;
-  heroButtons?: ReactNode;
+  heroOverlaySize: HeroOverlaySize;
+  heroOverlayAlign: HeroOverlayAlign;
+  heroButtonPlacement: HeroButtonPlacement;
+  buttons?: ReactNode;
 };
 
-/** Admin preview frame — matches live homepage hero dimensions and image treatment */
+/** Admin preview — uses the exact same HeroStage as the live homepage. */
 export function HeroPreviewFrame({
   heroImageUrl,
+  heroOverlayImageUrl,
   heroImageFit,
   heroImagePosition,
-  overlayStyle,
-  showHeroText,
-  showHeroButtons,
-  heroText,
-  heroButtons,
+  heroOverlaySize,
+  heroOverlayAlign,
+  heroButtonPlacement,
+  buttons,
 }: HeroPreviewFrameProps) {
-  const showContent = (showHeroText && heroText) || (showHeroButtons && heroButtons);
-
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-lg border bg-primary/20 flex items-center",
-        HERO_SECTION_MIN_HEIGHT_CLASS,
-      )}
-    >
-      <HeroImageLayers
-        src={heroImageUrl}
-        fit={heroImageFit}
-        position={heroImagePosition}
-        overlayStyle={overlayStyle}
-      />
-
-      {showContent ? (
-        <div className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-4 p-6">
-          {showHeroText && heroText}
-          {showHeroButtons && heroButtons}
-        </div>
-      ) : null}
-    </div>
+    <HeroStage
+      className="rounded-lg border"
+      heroImageUrl={heroImageUrl}
+      heroImageFit={heroImageFit}
+      heroImagePosition={heroImagePosition}
+      overlayImageUrl={heroOverlayImageUrl}
+      overlaySize={heroOverlaySize}
+      overlayAlign={heroOverlayAlign}
+      buttonPlacement={heroButtonPlacement}
+      buttons={buttons}
+    />
   );
 }
