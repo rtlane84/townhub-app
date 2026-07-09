@@ -120,7 +120,21 @@ export function initCapacitorShell(): void {
   void App.addListener("appUrlOpen", ({ url }) => {
     void closeExternalBrowser();
     if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
-      window.location.href = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
+      const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
+      // Full navigation so Clerk reloads with OAuth query params and finishes the session.
+      window.location.assign(next);
+    }
+  });
+
+  // Cold-start deep link (app launched via townhub:// while not running).
+  void App.getLaunchUrl().then((result) => {
+    const url = result?.url;
+    if (!url) return;
+    if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
+      const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
+      if (next !== window.location.href) {
+        window.location.assign(next);
+      }
     }
   });
 

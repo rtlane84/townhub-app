@@ -111,6 +111,23 @@ const nativeClerkAuthAppearance = {
 
 function SignInPage() {
   const native = isNativeApp();
+  const { isSignedIn, isLoaded } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      setLocation("/");
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
+
+  if (isLoaded && isSignedIn) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+        <p className="text-sm text-muted-foreground">You’re signed in — taking you home…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-4">
@@ -128,6 +145,23 @@ function SignInPage() {
 
 function SignUpPage() {
   const native = isNativeApp();
+  const { isSignedIn, isLoaded } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      setLocation("/");
+    }
+  }, [isLoaded, isSignedIn, setLocation]);
+
+  if (isLoaded && isSignedIn) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+        <p className="text-sm text-muted-foreground">You’re signed in — taking you home…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-4">
@@ -143,28 +177,43 @@ function SignUpPage() {
   );
 }
 
-/** Safari-only: Clerk redirects here after Google OAuth, then we open the app. */
+/**
+ * Safari-only after native Google OAuth.
+ * Clerk redirects here (HTTPS), then we open the app via townhub://.
+ * Must stay a separate path from /sso-callback so web Google login still works.
+ */
 function NativeSsoBouncePage() {
+  const deepLink = buildNativeSsoDeepLinkFromLocation(
+    typeof window !== "undefined" ? window.location.search : "",
+    typeof window !== "undefined" ? window.location.hash : "",
+  );
+
   useEffect(() => {
-    const deepLink = buildNativeSsoDeepLinkFromLocation(
-      window.location.search,
-      window.location.hash,
-    );
     window.location.replace(deepLink);
-  }, []);
+  }, [deepLink]);
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-background px-4 py-12 text-center">
       <p className="text-sm text-muted-foreground">Returning to TownHub…</p>
+      <a
+        href={deepLink}
+        className="text-sm font-medium text-primary underline underline-offset-4"
+      >
+        Tap here if the app doesn’t open
+      </a>
     </div>
   );
 }
 
-/** WebView / web: finish Clerk OAuth session. */
+/** WebView / web: finish Clerk OAuth session, then go home. */
 function SsoCallbackPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
-      <AuthenticateWithRedirectCallback />
+      <AuthenticateWithRedirectCallback
+        signInForceRedirectUrl="/"
+        signUpForceRedirectUrl="/"
+        continueSignUpUrl="/sign-up"
+      />
       <p className="text-sm text-muted-foreground">Finishing sign-in…</p>
     </div>
   );

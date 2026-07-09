@@ -28,10 +28,10 @@ function clerkErrorMessage(err: unknown): string {
  * Clerk also rejects custom-scheme redirect_url (invalid_url_scheme).
  *
  * Flow:
- * 1. Create SignIn with oauth_google + https://{app}/sso-callback
+ * 1. Create SignIn with oauth_google + https://{app}/native-sso-callback
  * 2. Open externalVerificationRedirectURL in Safari
- * 3. Clerk redirects to HTTPS /sso-callback in Safari
- * 4. That page bounces to townhub://sso-callback → WebView finishes session
+ * 3. Clerk redirects to HTTPS /native-sso-callback in Safari
+ * 4. That page bounces to townhub://sso-callback → WebView finishes session on /sso-callback
  */
 export function NativeGoogleSignInButton({
   className,

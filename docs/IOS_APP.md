@@ -86,7 +86,7 @@ pnpm --filter @workspace/local-order-hub exec cap run ios
 
 | Flow | Behavior |
 |------|----------|
-| Clerk login | Email/password can use the in-app Clerk UI. **Google OAuth must use Safari** (Google blocks WKWebView — `disallowed_useragent`). Native Google uses HTTPS `https://your-app/native-sso-callback` (Clerk rejects custom schemes), then bounces to `townhub://sso-callback` so the WebView finishes the session. Allowlist that HTTPS URL under **Native applications → Allowlist for mobile SSO redirect** (not Paths). |
+| Clerk login | Email/password can use the in-app Clerk UI. **Google OAuth must use Safari** (Google blocks WKWebView — `disallowed_useragent`). Native Google uses HTTPS `https://your-app/native-sso-callback` (Clerk rejects custom schemes), then bounces to `townhub://sso-callback` so the WebView finishes on `/sso-callback`. Allowlist that HTTPS URL under **Native applications → Allowlist for mobile SSO redirect** (not Paths). Deploy the frontend before testing — otherwise Safari shows the app 404 page. |
 | In-app navigation | Same routes as the web app (`/`, `/dashboard/business`, `/sign-in`, etc.). On native dashboards, a **Back** control returns to Home. |
 | Stripe Checkout / Connect | Opens in the system browser via `@capacitor/browser` on native. Success/cancel URLs must use the same host as `CAPACITOR_SERVER_URL` / `APP_BASE_URL`. |
 | External links | `mailto:`, `tel:`, Stripe, Google Maps, Facebook, privacy/terms pages open in Safari. Google OAuth also opens in Safari (required by Google). |
