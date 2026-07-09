@@ -38,11 +38,11 @@ export function NativePullToRefresh({ enabled, children }: NativePullToRefreshPr
     }
   }, [queryClient, refreshing, resetPull]);
 
+  const pullDistanceRef = useRef(0);
+  pullDistanceRef.current = pullDistance;
+
   useEffect(() => {
-    if (!enabled) {
-      resetPull();
-      return;
-    }
+    if (!enabled) return;
 
     const container = containerRef.current;
     if (!container) return;
@@ -63,7 +63,7 @@ export function NativePullToRefresh({ enabled, children }: NativePullToRefreshPr
       const currentY = event.touches[0]?.clientY ?? 0;
       const delta = currentY - startY.current;
       if (delta <= 0) {
-        setPullDistance(0);
+        if (pullDistanceRef.current !== 0) setPullDistance(0);
         return;
       }
       if (getScrollTop() > 0) {
@@ -76,7 +76,7 @@ export function NativePullToRefresh({ enabled, children }: NativePullToRefreshPr
 
     const onTouchEnd = () => {
       if (!pulling.current) return;
-      if (pullDistance >= PULL_THRESHOLD_PX) {
+      if (pullDistanceRef.current >= PULL_THRESHOLD_PX) {
         void runRefresh();
         return;
       }
@@ -94,7 +94,7 @@ export function NativePullToRefresh({ enabled, children }: NativePullToRefreshPr
       container.removeEventListener("touchend", onTouchEnd);
       container.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [enabled, pullDistance, refreshing, resetPull, runRefresh]);
+  }, [enabled, refreshing, resetPull, runRefresh]);
 
   if (!enabled) {
     return <>{children}</>;

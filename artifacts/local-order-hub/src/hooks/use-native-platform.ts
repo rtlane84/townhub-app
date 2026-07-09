@@ -1,4 +1,3 @@
-import { useSyncExternalStore } from "react";
 import {
   isAndroid,
   isIOS,
@@ -9,28 +8,23 @@ import {
 } from "@/lib/native-platform";
 import { useLocation } from "wouter";
 
-function subscribeNativePlatform(onStoreChange: () => void) {
-  window.addEventListener("resize", onStoreChange);
-  return () => window.removeEventListener("resize", onStoreChange);
-}
+/**
+ * Platform flags are fixed for the page lifetime.
+ * Cached so callers always get a stable object reference.
+ *
+ * Important: do not use useSyncExternalStore with a getSnapshot that
+ * allocates a new object each call — that causes an infinite re-render
+ * loop (React minified error #185 / "Maximum update depth exceeded").
+ */
+const NATIVE_PLATFORM = {
+  isNative: isNativeApp(),
+  isIOS: isIOS(),
+  isAndroid: isAndroid(),
+  isWeb: isWeb(),
+} as const;
 
-function getNativePlatformSnapshot() {
-  return {
-    isNative: isNativeApp(),
-    isIOS: isIOS(),
-    isAndroid: isAndroid(),
-    isWeb: isWeb(),
-  };
-}
-
-/** Reactive native platform detection for Capacitor shells. */
 export function useNativePlatform() {
-  return useSyncExternalStore(subscribeNativePlatform, getNativePlatformSnapshot, () => ({
-    isNative: false,
-    isIOS: false,
-    isAndroid: false,
-    isWeb: true,
-  }));
+  return NATIVE_PLATFORM;
 }
 
 export function useNativeBottomTabs() {
