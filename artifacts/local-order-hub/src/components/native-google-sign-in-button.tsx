@@ -3,7 +3,7 @@ import { useSignIn } from "@clerk/react";
 import { Browser } from "@capacitor/browser";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { isNativeApp } from "@/lib/native-platform";
-import { NATIVE_SSO_CALLBACK_URL } from "@/lib/native-oauth";
+import { getNativeSsoHttpsCallbackUrl } from "@/lib/native-oauth";
 
 function clerkErrorMessage(err: unknown): string {
   if (err && typeof err === "object") {
@@ -25,10 +25,13 @@ function clerkErrorMessage(err: unknown): string {
  * Native-only Google OAuth.
  *
  * Google blocks OAuth inside WKWebView (Error 403: disallowed_useragent).
+ * Clerk also rejects custom-scheme redirect_url (invalid_url_scheme).
+ *
  * Flow:
- * 1. Create a Clerk SignIn with oauth_google + townhub://sso-callback
- * 2. Open externalVerificationRedirectURL in the system browser
- * 3. Deep link returns to /sso-callback where Clerk finishes the session
+ * 1. Create SignIn with oauth_google + https://{app}/sso-callback
+ * 2. Open externalVerificationRedirectURL in Safari
+ * 3. Clerk redirects to HTTPS /sso-callback in Safari
+ * 4. That page bounces to townhub://sso-callback → WebView finishes session
  */
 export function NativeGoogleSignInButton({
   className,
@@ -51,10 +54,11 @@ export function NativeGoogleSignInButton({
     setError(null);
 
     try {
+      const callbackUrl = getNativeSsoHttpsCallbackUrl();
       const { error: createError } = await signIn.create({
         strategy: "oauth_google",
-        redirectUrl: NATIVE_SSO_CALLBACK_URL,
-        actionCompleteRedirectUrl: NATIVE_SSO_CALLBACK_URL,
+        redirectUrl: callbackUrl,
+        actionCompleteRedirectUrl: callbackUrl,
       });
 
       if (createError) {

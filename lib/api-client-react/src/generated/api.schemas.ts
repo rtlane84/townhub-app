@@ -155,6 +155,20 @@ export const StorefrontMode = {
   INFORMATION: 'INFORMATION',
 } as const;
 
+/**
+ * ALWAYS accepts orders whenever the business is active. BUSINESS_HOURS requires structured hours to be open now. MOBILE_LOCATION_SCHEDULE requires an active food-truck location window. MANUAL uses the orderingEnabled owner toggle.
+
+ */
+export type OrderingAvailabilityMode = typeof OrderingAvailabilityMode[keyof typeof OrderingAvailabilityMode];
+
+
+export const OrderingAvailabilityMode = {
+  ALWAYS: 'ALWAYS',
+  BUSINESS_HOURS: 'BUSINESS_HOURS',
+  MOBILE_LOCATION_SCHEDULE: 'MOBILE_LOCATION_SCHEDULE',
+  MANUAL: 'MANUAL',
+} as const;
+
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
 
@@ -427,6 +441,16 @@ export interface Business {
   ntfySubscriptionUrl?: string | null;
   eventLocationEnabled?: boolean;
   storefrontMode?: StorefrontMode | null;
+  orderingAvailabilityMode?: OrderingAvailabilityMode;
+  /** MANUAL mode toggle — when false, checkout is blocked. */
+  orderingEnabled?: boolean;
+  /** Server-evaluated whether the business is accepting orders right now. */
+  orderingAvailable?: boolean;
+  /**
+     * Human-readable reason when orderingAvailable is false.
+     * @nullable
+     */
+  orderingUnavailableReason?: string | null;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */
@@ -531,6 +555,8 @@ export interface BusinessInput {
   orderCutoffTime?: string;
   /** @minimum 1 */
   defaultPrepMinutes?: number;
+  orderingAvailabilityMode?: OrderingAvailabilityMode;
+  orderingEnabled?: boolean;
   ownerId?: string;
 }
 
@@ -585,6 +611,8 @@ export interface BusinessUpdate {
   ntfyEnabled?: boolean;
   eventLocationEnabled?: boolean;
   storefrontMode?: StorefrontMode | null;
+  orderingAvailabilityMode?: OrderingAvailabilityMode;
+  orderingEnabled?: boolean;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */
@@ -774,7 +802,13 @@ export interface Order {
   id: number;
   businessId: number;
   businessName: string;
+  /** Global unique reference (TH-YYYYMMDD-XXXXX). */
   orderNumber?: string;
+  /**
+     * Per-business sequential customer-facing order number (e.g. 101, 102).
+     * @nullable
+     */
+  businessOrderNumber?: number | null;
   status: OrderStatus;
   fulfillmentType: FulfillmentType;
   customerName: string;

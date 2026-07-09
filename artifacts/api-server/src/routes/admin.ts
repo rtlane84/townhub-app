@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, businessesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import {
   UpdateUserRoleParams,
   UpdateUserRoleBody,
@@ -94,6 +94,17 @@ router.get("/admin/users", async (req, res): Promise<void> => {
       serializeAdminUser(u, bizIdsByOwner.get(u.id)?.[0] ?? null, bizIdsByOwner.get(u.id) ?? []),
     ),
   );
+});
+
+// GET /api/admin/businesses — includes ownerId (public list strips it)
+router.get("/admin/businesses", async (_req, res): Promise<void> => {
+  const businesses = await db
+    .select()
+    .from(businessesTable)
+    .where(isNull(businessesTable.archivedAt))
+    .orderBy(businessesTable.name);
+
+  res.json(businesses.map((business) => serializeBusiness(business)));
 });
 
 // PATCH /api/admin/users/:id/role

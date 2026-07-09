@@ -9,6 +9,7 @@ import {
   productsTable,
   businessesTable,
   usersTable,
+  foodTruckLocationsTable,
 } from "@workspace/db";
 import { eq, and, sql, inArray, gte } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
@@ -74,9 +75,10 @@ import {
 } from "../lib/order-request-access";
 import {
   BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE,
-  isBusinessOpenForPublicCommerce,
+  evaluateBusinessOrderingAvailability,
   requireOnlineOrderingFeature,
 } from "../lib/business-commerce-guards";
+import { allocateBusinessOrderNumber } from "../lib/business-order-number";
 import {
   calculateOrderPrepEstimate,
   serializePrepEstimate,
@@ -319,8 +321,29 @@ router.post("/orders", async (req, res): Promise<void> => {
     return;
   }
 
-  if (!isBusinessOpenForPublicCommerce(business)) {
-    res.status(400).json({ error: BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE });
+  let mobileLocations: Array<{
+    locationDate: string;
+    startTime: string | null;
+    endTime: string | null;
+    isActive: boolean;
+  }> | undefined;
+  if (business.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE") {
+    mobileLocations = await db
+      .select({
+        locationDate: foodTruckLocationsTable.locationDate,
+        startTime: foodTruckLocationsTable.startTime,
+        endTime: foodTruckLocationsTable.endTime,
+        isActive: foodTruckLocationsTable.isActive,
+      })
+      .from(foodTruckLocationsTable)
+      .where(eq(foodTruckLocationsTable.businessId, business.id));
+  }
+
+  const availability = evaluateBusinessOrderingAvailability(business, { mobileLocations });
+  if (!availability.available) {
+    res.status(400).json({
+      error: availability.reason ?? BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE,
+    });
     return;
   }
 
@@ -380,11 +403,13 @@ router.post("/orders", async (req, res): Promise<void> => {
   let order;
   try {
     order = await db.transaction(async (tx) => {
+    const businessOrderNumber = await allocateBusinessOrderNumber(tx, d.businessId);
     const [created] = await tx
       .insert(ordersTable)
       .values({
         businessId: d.businessId,
         orderNumber: generateOrderNumber(),
+        businessOrderNumber,
         fulfillmentType: d.fulfillmentType as never,
         customerName: d.customerName.trim(),
         customerEmail: d.customerEmail.trim(),

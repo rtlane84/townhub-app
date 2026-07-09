@@ -49,7 +49,8 @@ describe("order and commerce guard wiring", () => {
     assert.match(source, /authorizeOrderAccess/);
     assert.match(source, /respondOrderNotFound/);
     assert.match(source, /paymentStatus === "PAID"/);
-    assert.match(source, /isBusinessOpenForPublicCommerce/);
+    assert.match(source, /evaluateBusinessOrderingAvailability/);
+    assert.match(source, /allocateBusinessOrderNumber/);
     assert.match(source, /requireOnlineOrderingFeature/);
     assert.match(source, /db\.transaction/);
     assert.match(source, /findOrderIdByIdempotencyKey/);

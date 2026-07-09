@@ -53,7 +53,7 @@ export function KitchenOrderCard({ order, updating, onAdvance }: Props) {
   const timingLabel = getBusinessOrderTimingLabel(order);
   const overdue = isOrderOverdue(order);
   const ActionIcon = quickAction ? kitchenActionIcon(quickAction.nextStatus) : Check;
-  const ticketLabel = formatOrderTicketNumber(order.id, "Ticket");
+  const ticketLabel = formatOrderTicketNumber(order.id, "Ticket", order.businessOrderNumber);
   const referenceLabel = formatOrderReferenceLabel(order.orderNumber);
 
   function openOrderDetail() {

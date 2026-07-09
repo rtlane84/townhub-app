@@ -265,7 +265,7 @@ export default function BusinessKitchen() {
         setUpdatingId(null);
         toast({
           title: "Order updated",
-          description: `${formatOrderTicketNumber(updated.id)} is now ${updated.status.replace(/_/g, " ").toLowerCase()}`,
+          description: `${formatOrderTicketNumber(updated.id, "Order", updated.businessOrderNumber)} is now ${updated.status.replace(/_/g, " ").toLowerCase()}`,
         });
         setStatusConfirm(null);
       },
@@ -286,7 +286,7 @@ export default function BusinessKitchen() {
         setStatusConfirm({
           orderId,
           nextStatus,
-          orderLabel: formatOrderTicketNumber(targetOrder.id),
+          orderLabel: formatOrderTicketNumber(targetOrder.id, "Order", targetOrder.businessOrderNumber),
         });
         return;
       }

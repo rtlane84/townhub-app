@@ -74,7 +74,7 @@ export default function AdminOrders() {
                   <div key={order.id} className="flex items-center justify-between p-4" data-testid={`row-order-${order.id}`}>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <p className="font-medium text-sm">{formatOrderTicketNumber(order.id)}</p>
+                        <p className="font-medium text-sm">{formatOrderTicketNumber(order.id, "Order", order.businessOrderNumber)}</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status] ?? "bg-muted"}`}>
                           {order.status.replace(/_/g, " ")}
                         </span>

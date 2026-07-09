@@ -335,7 +335,7 @@ export default function BusinessOrders() {
                       >
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                            <p className="font-medium text-sm">{formatOrderTicketNumber(order.id)}</p>
+                            <p className="font-medium text-sm">{formatOrderTicketNumber(order.id, "Order", order.businessOrderNumber)}</p>
                             <OrderStatusBadge orderId={order.id} status={order.status} />
                             <PaymentStatusBadge
                               paymentMethod={order.paymentMethod}

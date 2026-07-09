@@ -101,7 +101,7 @@ export default function OrderConfirmation() {
         </div>
         <h1 className="text-4xl font-serif font-bold text-foreground mb-4">Order Received!</h1>
         <p className="text-lg text-muted-foreground">
-          Thank you for supporting local. {order.businessName} has received {formatOrderTicketNumber(order.id)}.
+          Thank you for supporting local. {order.businessName} has received {formatOrderTicketNumber(order.id, "Order", order.businessOrderNumber)}.
         </p>
         {order.orderNumber ? (
           <p className="text-sm text-muted-foreground mt-2">{formatOrderReferenceLabel(order.orderNumber)}</p>

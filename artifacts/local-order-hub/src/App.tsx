@@ -17,6 +17,10 @@ import { PlatformThemeProvider } from "@/components/theme-provider";
 import { RoutePageLoader } from "@/components/route-page-loader";
 import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
 import { isNativeApp } from "@/lib/native-platform";
+import {
+  buildNativeSsoDeepLinkFromLocation,
+  NATIVE_SSO_HTTPS_BOUNCE_PATH,
+} from "@/lib/native-oauth";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -139,6 +143,24 @@ function SignUpPage() {
   );
 }
 
+/** Safari-only: Clerk redirects here after Google OAuth, then we open the app. */
+function NativeSsoBouncePage() {
+  useEffect(() => {
+    const deepLink = buildNativeSsoDeepLinkFromLocation(
+      window.location.search,
+      window.location.hash,
+    );
+    window.location.replace(deepLink);
+  }, []);
+
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+      <p className="text-sm text-muted-foreground">Returning to TownHub…</p>
+    </div>
+  );
+}
+
+/** WebView / web: finish Clerk OAuth session. */
 function SsoCallbackPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
@@ -362,6 +384,7 @@ function ClerkProviderWithRoutes() {
 
                 <Route path="/sign-in/*?" component={SignInPage} />
                 <Route path="/sign-up/*?" component={SignUpPage} />
+                <Route path={NATIVE_SSO_HTTPS_BOUNCE_PATH} component={NativeSsoBouncePage} />
                 <Route path="/sso-callback" component={SsoCallbackPage} />
                 <Route path="/sso-callback/*?" component={SsoCallbackPage} />
                 <SuspenseRoute path="/setup" component={Setup} />

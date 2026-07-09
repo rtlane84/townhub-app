@@ -164,7 +164,8 @@ export default function Storefront() {
     addToCartLockRef.current = true;
     setAddingProductId(product.id);
     try {
-      addToCart(product, b.id, { quantity: 1 });
+      const added = addToCart(product, b.id, { quantity: 1 });
+      if (!added) return;
       toast({ title: copy.addToastTitle, description: copy.addToastDescription(product.name) });
       await new Promise((resolve) => setTimeout(resolve, 400));
     } finally {
@@ -182,12 +183,13 @@ export default function Storefront() {
     addToCartLockRef.current = true;
     setAddingProductId(optionsProduct.id);
     try {
-      addToCart(optionsProduct, b.id, {
+      const added = addToCart(optionsProduct, b.id, {
         quantity: 1,
         selectedOptionIds: payload.selectedOptionIds,
         selectedOptions: payload.selectedOptions,
         unitPrice: payload.unitPrice,
       });
+      if (!added) return;
       toast({
         title: copy.addToastTitle,
         description: copy.addToastDescription(optionsProduct.name),

@@ -69,7 +69,7 @@ export default function MyOrders() {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {formatOrderTicketNumber(order.id)}
+                      {formatOrderTicketNumber(order.id, "Order", order.businessOrderNumber)}
                       {order.orderNumber ? ` · ${formatOrderReferenceLabel(order.orderNumber)}` : ""}
                       {order.createdAt ? ` · ${new Date(order.createdAt).toLocaleString()}` : ""}
                     </p>

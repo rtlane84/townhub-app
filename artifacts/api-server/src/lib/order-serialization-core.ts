@@ -28,6 +28,7 @@ export type SerializableOrder = {
   id: number;
   businessId: number;
   orderNumber: string;
+  businessOrderNumber?: number | null;
   status: string;
   fulfillmentType: string;
   customerName: string;
@@ -114,6 +115,7 @@ export function buildSerializedOrder(
     businessId: order.businessId,
     businessName,
     orderNumber: order.orderNumber,
+    businessOrderNumber: order.businessOrderNumber ?? null,
     status: order.status,
     fulfillmentType: order.fulfillmentType,
     customerName: order.customerName,

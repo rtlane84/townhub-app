@@ -10,6 +10,7 @@ export {
   ONLINE_ORDERING_LOCKED_MESSAGE,
   APPOINTMENT_REQUESTS_LOCKED_MESSAGE,
   isBusinessOpenForPublicCommerce,
+  evaluateBusinessOrderingAvailability,
 } from "./business-commerce-eligibility";
 
 export async function requireOnlineOrderingFeature(

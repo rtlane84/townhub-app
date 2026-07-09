@@ -115,6 +115,17 @@ export default function Cart() {
 
   const performCheckout = useCallback(
     async (payAtPickup: boolean) => {
+      if (business?.orderingAvailable === false) {
+        toast({
+          title: "Ordering unavailable",
+          description:
+            business.orderingUnavailableReason ??
+            "This business is not accepting orders right now.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const order = await createOrder.mutateAsync({
         data: {
           businessId: cart.businessId!,
@@ -163,6 +174,8 @@ export default function Cart() {
       toast({ title: "Order placed successfully!" });
     },
     [
+      business?.orderingAvailable,
+      business?.orderingUnavailableReason,
       cart.businessId,
       cart.items,
       clearCart,
@@ -261,6 +274,9 @@ export default function Cart() {
   const showPayAtPickup = allowsPayAtPickup(paymentMode);
   const onlineUnavailable =
     allowsOnlinePayment(paymentMode) && !onlinePaymentsAvailable;
+  const orderingBlocked = business?.orderingAvailable === false;
+  const orderingBlockedReason =
+    business?.orderingUnavailableReason ?? "This business is not accepting orders right now.";
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -270,6 +286,12 @@ export default function Cart() {
           ? "Your account details are prefilled below. You can edit them before placing your order."
           : "No account needed — enter your contact details to place your order."}
       </p>
+
+      {orderingBlocked && (
+        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {orderingBlockedReason}
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-12 gap-8">
         <div className="lg:col-span-7 space-y-6">
@@ -481,7 +503,11 @@ export default function Cart() {
                   <LoadingButton
                     className="w-full h-12 text-lg rounded-full"
                     onClick={() => handleCheckout(false)}
-                    disabled={(fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) || isSubmitting}
+                    disabled={
+                      orderingBlocked ||
+                      (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) ||
+                      isSubmitting
+                    }
                     loading={isSubmitting && checkoutTarget === "card"}
                     loadingText="Processing…"
                   >
@@ -495,7 +521,11 @@ export default function Cart() {
                     variant={showOnlinePayment ? "outline" : "default"}
                     className="w-full h-12 text-lg rounded-full"
                     onClick={() => handleCheckout(true)}
-                    disabled={(fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) || isSubmitting}
+                    disabled={
+                      orderingBlocked ||
+                      (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) ||
+                      isSubmitting
+                    }
                     loading={isSubmitting && checkoutTarget === "pickup"}
                     loadingText="Placing order…"
                   >

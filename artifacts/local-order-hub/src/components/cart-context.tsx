@@ -1,6 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Product } from "@workspace/api-client-react";
 import { buildCartLineKey, type SelectedCartOption } from "@/components/product-options-dialog";
+import {
+  CLEAR_CART_FOR_OTHER_BUSINESS_MESSAGE,
+  mergeCartAdd,
+  needsClearCartConfirmation,
+} from "@/lib/cart-business";
 
 export interface CartItem extends Product {
   quantity: number;
@@ -24,7 +29,8 @@ interface AddToCartOptions {
 
 interface CartContextType {
   cart: CartState;
-  addToCart: (product: Product, businessId: number, options?: AddToCartOptions) => void;
+  /** Returns false when the user cancels clearing another business's cart. */
+  addToCart: (product: Product, businessId: number, options?: AddToCartOptions) => boolean;
   removeFromCart: (lineKey: string) => void;
   updateQuantity: (lineKey: string, quantity: number) => void;
   clearCart: () => void;
@@ -74,39 +80,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("local-order-hub-cart", JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (product: Product, businessId: number, options?: AddToCartOptions) => {
+  const addToCart = (product: Product, businessId: number, options?: AddToCartOptions): boolean => {
     const quantity = options?.quantity ?? 1;
     const line = normalizeCartItem(product, quantity, options);
 
+    // Confirm outside setState so cancel does not toast "added" and React stays pure.
+    const needsConfirm = needsClearCartConfirmation(cart.businessId, businessId);
+    const clearOtherBusinessConfirmed = needsConfirm
+      ? window.confirm(CLEAR_CART_FOR_OTHER_BUSINESS_MESSAGE)
+      : true;
+
+    if (needsConfirm && !clearOtherBusinessConfirmed) {
+      return false;
+    }
+
     setCart((prev) => {
-      if (prev.businessId !== null && prev.businessId !== businessId) {
-        if (!window.confirm("You have items from another business in your cart. Clear it and start fresh?")) {
-          return prev;
-        }
-        return {
-          businessId,
-          items: [line],
-        };
-      }
-
-      const existing = prev.items.find((item) => item.lineKey === line.lineKey);
-      if (existing) {
-        return {
-          ...prev,
-          businessId,
-          items: prev.items.map((item) =>
-            item.lineKey === line.lineKey
-              ? { ...item, quantity: item.quantity + quantity }
-              : item,
-          ),
-        };
-      }
-
-      return {
-        businessId,
-        items: [...prev.items, line],
-      };
+      const next = mergeCartAdd(prev, businessId, line, { clearOtherBusinessConfirmed });
+      return next ?? prev;
     });
+    return true;
   };
 
   const removeFromCart = (lineKey: string) => {

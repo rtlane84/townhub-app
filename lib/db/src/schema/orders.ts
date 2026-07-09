@@ -7,6 +7,7 @@ import {
   timestamp,
   pgEnum,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -31,6 +32,8 @@ export const ordersTable = pgTable("orders", {
   id: serial("id").primaryKey(),
   businessId: integer("business_id").notNull(),
   orderNumber: text("order_number").notNull().unique(),
+  /** Per-business sequential customer-facing order number (independent across businesses). */
+  businessOrderNumber: integer("business_order_number"),
   status: orderStatusEnum("status").notNull().default("NEW"),
   fulfillmentType: fulfillmentTypeEnum("fulfillment_type")
     .notNull()
@@ -82,6 +85,11 @@ export const ordersTable = pgTable("orders", {
   ),
   // Admin global order list ORDER BY created_at DESC
   index("orders_created_at_idx").on(table.createdAt),
+  // Unique per-business sequential ticket numbers
+  uniqueIndex("orders_business_order_number_uidx").on(
+    table.businessId,
+    table.businessOrderNumber,
+  ),
 ]);
 
 export const orderItemsTable = pgTable("order_items", {

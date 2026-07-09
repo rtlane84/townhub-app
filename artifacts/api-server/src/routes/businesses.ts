@@ -6,6 +6,7 @@ import {
   productsTable,
   ordersTable,
   usersTable,
+  foodTruckLocationsTable,
 } from "@workspace/db";
 import { eq, and, ilike, count, isNull } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
@@ -23,7 +24,11 @@ import { nullsToUndefinedTopLevel } from "../lib/request-body";
 import { parseStructuredHours } from "@workspace/api-zod";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import { isValidDiscordWebhookUrl } from "../lib/discord-webhook";
-import { allowsOnlinePayment, resolvePaymentMode } from "@workspace/api-zod";
+import {
+  allowsOnlinePayment,
+  resolvePaymentMode,
+  resolveOrderingAvailabilityMode,
+} from "@workspace/api-zod";
 import {
   loadOptionGroupsByProductIds,
   loadAssignedModifierGroupsByProductIds,
@@ -43,13 +48,21 @@ import {
   resolveUniqueBusinessSlug,
   slugifyFromBusinessName,
 } from "../lib/business-slug";
+import { evaluateBusinessOrderingAvailability } from "../lib/business-commerce-eligibility";
+import type { FoodTruckLocationWindow } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
+export function serializeBusiness(
+  b: typeof businessesTable.$inferSelect,
+  options?: { mobileLocations?: FoodTruckLocationWindow[] },
+) {
   const paymentMode = resolvePaymentMode(b);
   const onlinePaymentsAvailable =
     allowsOnlinePayment(paymentMode) && businessHasOnlinePaymentsReady(b);
+  const availability = evaluateBusinessOrderingAvailability(b, {
+    mobileLocations: options?.mobileLocations,
+  });
 
   return {
     id: b.id,
@@ -102,6 +115,10 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
     ntfySubscriptionUrl: b.ntfyTopic ? buildNtfySubscriptionUrl(b.ntfyTopic) : null,
     eventLocationEnabled: b.eventLocationEnabled,
     storefrontMode: b.storefrontMode,
+    orderingAvailabilityMode: resolveOrderingAvailabilityMode(b),
+    orderingEnabled: b.orderingEnabled ?? true,
+    orderingAvailable: availability.available,
+    orderingUnavailableReason: availability.reason,
     accentColor: b.accentColor,
     buttonColor: b.buttonColor,
     bannerText: b.bannerText,
@@ -111,7 +128,10 @@ export function serializeBusiness(b: typeof businessesTable.$inferSelect) {
 }
 
 /** Public storefront/checkout responses — omits owner PII and internal notification settings. */
-export function serializePublicBusiness(b: typeof businessesTable.$inferSelect) {
+export function serializePublicBusiness(
+  b: typeof businessesTable.$inferSelect,
+  options?: { mobileLocations?: FoodTruckLocationWindow[] },
+) {
   const {
     ownerId: _ownerId,
     orderNotificationEmail: _orderNotificationEmail,
@@ -131,8 +151,23 @@ export function serializePublicBusiness(b: typeof businessesTable.$inferSelect) 
     ntfySubscriptionUrl: _ntfySubscriptionUrl,
     createdAt: _createdAt,
     ...publicBusiness
-  } = serializeBusiness(b);
+  } = serializeBusiness(b, options);
   return publicBusiness;
+}
+
+async function loadMobileLocationsForBusiness(
+  businessId: number,
+): Promise<FoodTruckLocationWindow[]> {
+  const locs = await db
+    .select({
+      locationDate: foodTruckLocationsTable.locationDate,
+      startTime: foodTruckLocationsTable.startTime,
+      endTime: foodTruckLocationsTable.endTime,
+      isActive: foodTruckLocationsTable.isActive,
+    })
+    .from(foodTruckLocationsTable)
+    .where(eq(foodTruckLocationsTable.businessId, businessId));
+  return locs;
 }
 
 export function serializeProduct(
@@ -176,7 +211,7 @@ router.get("/businesses", async (req, res): Promise<void> => {
     .where(and(...conditions))
     .orderBy(businessesTable.featured, businessesTable.name);
 
-  res.json(businesses.map(serializePublicBusiness));
+  res.json(businesses.map((business) => serializePublicBusiness(business)));
 });
 
 // POST /api/businesses/register — admin-only direct business creation
@@ -315,7 +350,11 @@ router.get("/businesses/checkout/:businessId", async (req, res): Promise<void> =
     return;
   }
 
-  res.json(serializePublicBusiness(business));
+  const mobileLocations =
+    business.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE"
+      ? await loadMobileLocationsForBusiness(business.id)
+      : undefined;
+  res.json(serializePublicBusiness(business, { mobileLocations }));
 });
 
 // GET /api/businesses/:slug — storefront
@@ -370,8 +409,13 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
     { activeOnly: true },
   );
 
+  const mobileLocations =
+    business.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE"
+      ? await loadMobileLocationsForBusiness(business.id)
+      : undefined;
+
   res.json({
-    business: serializePublicBusiness(business),
+    business: serializePublicBusiness(business, { mobileLocations }),
     categories,
     products: products.map((p) =>
       serializeProduct(p, optionGroupsByProduct.get(p.id) ?? []),
@@ -578,6 +622,10 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.eventLocationEnabled = (d as Record<string, unknown>).eventLocationEnabled;
   if ((d as Record<string, unknown>).storefrontMode !== undefined)
     updateData.storefrontMode = (d as Record<string, unknown>).storefrontMode;
+  if ((d as Record<string, unknown>).orderingAvailabilityMode !== undefined)
+    updateData.orderingAvailabilityMode = (d as Record<string, unknown>).orderingAvailabilityMode;
+  if ((d as Record<string, unknown>).orderingEnabled !== undefined)
+    updateData.orderingEnabled = (d as Record<string, unknown>).orderingEnabled;
   if ((d as Record<string, unknown>).websiteUrl !== undefined) {
     const raw = (d as Record<string, unknown>).websiteUrl;
     updateData.websiteUrl =

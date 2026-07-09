@@ -33,14 +33,20 @@ describe("kitchen-order-card navigation", () => {
 
 describe("business order detail heading", () => {
   it("shows short ticket number with reference subtext", () => {
-    assert.match(orderDetailSource, /formatOrderTicketNumber\(order\.id\)/);
+    assert.match(
+      orderDetailSource,
+      /formatOrderTicketNumber\(order\.id, "Order", order\.businessOrderNumber\)/,
+    );
     assert.match(orderDetailSource, /formatOrderReferenceLabel\(order\.orderNumber\)/);
   });
 });
 
 describe("kitchen ticket print", () => {
   it("prints short ticket number with optional reference line", () => {
-    assert.match(kitchenTicketPrintSource, /formatOrderTicketNumber\(order\.id, "Ticket"\)/);
+    assert.match(
+      kitchenTicketPrintSource,
+      /formatOrderTicketNumber\(order\.id, "Ticket", order\.businessOrderNumber\)/,
+    );
     assert.match(kitchenTicketPrintSource, /formatOrderReferenceLabel\(order\.orderNumber\)/);
   });
 });

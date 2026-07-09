@@ -7,6 +7,7 @@
  */
 import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
+import type { OrderingAvailabilityMode } from './orderingAvailabilityMode';
 import type { PaymentMode } from './paymentMode';
 import type { StorefrontMode } from './storefrontMode';
 import type { StripeConnectPaymentStatus } from './stripeConnectPaymentStatus';
@@ -101,6 +102,16 @@ export interface Business {
   ntfySubscriptionUrl?: string | null;
   eventLocationEnabled?: boolean;
   storefrontMode?: StorefrontMode | null;
+  orderingAvailabilityMode?: OrderingAvailabilityMode;
+  /** MANUAL mode toggle — when false, checkout is blocked. */
+  orderingEnabled?: boolean;
+  /** Server-evaluated whether the business is accepting orders right now. */
+  orderingAvailable?: boolean;
+  /**
+     * Human-readable reason when orderingAvailable is false.
+     * @nullable
+     */
+  orderingUnavailableReason?: string | null;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */

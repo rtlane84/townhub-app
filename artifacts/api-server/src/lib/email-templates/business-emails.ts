@@ -19,7 +19,7 @@ import { formatOrderTotalsTextLines, orderTotalsSummaryFromNotification } from "
 
 function ownerOrderDetailRows(order: OrderNotificationData): Array<{ label: string; value: string }> {
   const rows: Array<{ label: string; value: string }> = [
-    { label: "Order", value: formatOrderTicketNumber(order.orderId) },
+    { label: "Order", value: formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber) },
   ];
   const reference = formatOrderReferenceNumber(order.orderNumber);
   if (reference) {
@@ -30,7 +30,7 @@ function ownerOrderDetailRows(order: OrderNotificationData): Array<{ label: stri
 
 export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailContent {
   const openUrl = dashboardOrderUrl(order.orderId);
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
 
   const detailRows = [
     ...ownerOrderDetailRows(order),
@@ -109,7 +109,7 @@ export function buildOwnerRefundFailedEmail(
 ): EmailContent {
   const openUrl = dashboardOrderUrl(order.orderId);
   const refundAmount = (refundAmountCents / 100).toFixed(2);
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
 
   const bodyHtml = renderDetailTable([
     ...ownerOrderDetailRows(order),

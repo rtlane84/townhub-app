@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@clerk/react";
 import {
-  useListBusinesses,
+  useListAdminBusinesses,
   useCreateBusiness,
   useUpdateBusiness,
   useDeleteBusiness,
   useListUsers,
   useAssignBusinessOwner,
   useListSubscriptionPlans,
-  getListBusinessesQueryKey,
+  getListAdminBusinessesQueryKey,
   BusinessType,
 } from "@workspace/api-client-react";
 import { planAssignmentLabel } from "@/lib/subscription-plans";
@@ -97,11 +97,19 @@ export default function AdminBusinesses() {
   const [form, setForm] = useState<BizForm>(EMPTY_FORM);
   const [deactivatePending, setDeactivatePending] = useState(false);
 
-  const { data: businesses, isLoading } = useListBusinesses();
+  const { data: businesses, isLoading } = useListAdminBusinesses();
   const { data: users } = useListUsers();
   const { data: plans = [] } = useListSubscriptionPlans({});
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListBusinessesQueryKey() });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListAdminBusinessesQueryKey() });
+
+  const ownerLabelById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const u of users ?? []) {
+      map.set(u.id, u.name?.trim() || u.email);
+    }
+    return map;
+  }, [users]);
 
   const createBusiness = useCreateBusiness({
     mutation: {
@@ -286,7 +294,11 @@ export default function AdminBusinesses() {
                       </div>
                       <p className="text-xs text-muted-foreground">
                         {biz.type.replace(/_/g, " ")} · /{biz.slug}
-                        {biz.ownerId && <> · owner assigned</>}
+                        {biz.ownerId ? (
+                          <> · Owner: {ownerLabelById.get(biz.ownerId) ?? "assigned"}</>
+                        ) : (
+                          <> · No owner</>
+                        )}
                       </p>
                     </div>
                     <div className="flex gap-1 shrink-0">
@@ -506,7 +518,7 @@ export default function AdminBusinesses() {
                 <SelectValue placeholder="Choose a user" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none">No owner</SelectItem>
+                {assignOwnerId ? null : <SelectItem value="__none">No owner</SelectItem>}
                 {users?.map((u) => (
                   <SelectItem key={u.id} value={u.id}>{u.name ?? u.email} ({u.role})</SelectItem>
                 ))}

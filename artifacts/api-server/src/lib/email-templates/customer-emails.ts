@@ -20,7 +20,7 @@ import { formatOrderTotalsTextLines, orderTotalsSummaryFromNotification } from "
 function orderSummaryRows(order: OrderNotificationData): Array<{ label: string; value: string }> {
   const rows: Array<{ label: string; value: string }> = [
     { label: "Business", value: order.businessName },
-    { label: "Order", value: formatOrderTicketNumber(order.orderId) },
+    { label: "Order", value: formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber) },
   ];
   const reference = formatOrderReferenceNumber(order.orderNumber);
   if (reference) {
@@ -86,7 +86,7 @@ function buildEmail(
     footerNote: config.footerNote,
   });
 
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   const referenceLine = formatOrderReferenceLabel(order.orderNumber);
   const textLines = [
     greeting,
@@ -125,7 +125,7 @@ function buildEmail(
 
 export function buildCustomerOrderReceivedEmail(order: OrderNotificationData): EmailContent {
   const business = escapeHtml(order.businessName);
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   return buildEmail(order, {
     subject: "We received your order",
     preheader: `${order.businessName} received ${ticketLabel}.`,
@@ -143,7 +143,7 @@ export function buildCustomerOrderReceivedEmail(order: OrderNotificationData): E
 
 export function buildCustomerOrderAcceptedEmail(order: OrderNotificationData): EmailContent {
   const business = escapeHtml(order.businessName);
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   return buildEmail(order, {
     subject: `${order.businessName} accepted your order`,
     preheader: `${order.businessName} accepted ${ticketLabel}.`,
@@ -158,7 +158,7 @@ export function buildCustomerOrderAcceptedEmail(order: OrderNotificationData): E
 }
 
 export function buildCustomerOrderPreparingEmail(order: OrderNotificationData): EmailContent {
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   return buildEmail(order, {
     subject: "Your order is being prepared",
     preheader: `${order.businessName} is preparing ${ticketLabel}.`,
@@ -179,7 +179,7 @@ export function buildCustomerOrderReadyEmail(order: OrderNotificationData): Emai
       ? renderDetailTable([{ label: "Pickup location", value: pickup }])
       : "";
 
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   return buildEmail(order, {
     subject: "Your order is ready for pickup",
     preheader: `${ticketLabel} is ready for pickup at ${order.businessName}.`,
@@ -194,7 +194,7 @@ export function buildCustomerOrderReadyEmail(order: OrderNotificationData): Emai
 }
 
 export function buildCustomerOrderOutForDeliveryEmail(order: OrderNotificationData): EmailContent {
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   return buildEmail(order, {
     subject: "Your order is on the way",
     preheader: `${ticketLabel} from ${order.businessName} is on the way.`,
@@ -210,7 +210,7 @@ export function buildCustomerOrderOutForDeliveryEmail(order: OrderNotificationDa
 }
 
 export function buildCustomerOrderCompletedEmail(order: OrderNotificationData): EmailContent {
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   return buildEmail(order, {
     subject: `Thanks for ordering from ${order.businessName}`,
     preheader: `Thanks for ${ticketLabel}.`,
@@ -233,7 +233,7 @@ export function buildCustomerOrderRefundEmail(
   const timingNote =
     "Refunds are returned to your original payment method. Depending on your bank, it may take 5–10 business days to appear on your statement.";
 
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   const referenceLabel = formatOrderReferenceLabel(order.orderNumber);
 
   return buildEmail(order, {
@@ -256,7 +256,7 @@ export function buildCustomerOrderCancelledEmail(order: OrderNotificationData): 
       ? "If you were charged, a refund will be processed. Please allow 5–10 business days for it to appear on your statement."
       : undefined;
 
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   const intro = [
     `We're sorry — ${escapeHtml(order.businessName)} had to cancel ${ticketLabel}.`,
     refundNote ?? "If you have questions, please contact the business directly.",

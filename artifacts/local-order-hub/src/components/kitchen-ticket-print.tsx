@@ -23,7 +23,7 @@ export function KitchenTicketPrint({ order }: Props) {
   const totals = resolveDisplayedOrderTotals(order);
   const fulfillment = formatKitchenFulfillment(order);
 
-  const ticketLabel = formatOrderTicketNumber(order.id, "Ticket");
+  const ticketLabel = formatOrderTicketNumber(order.id, "Ticket", order.businessOrderNumber);
   const referenceLabel = formatOrderReferenceLabel(order.orderNumber);
 
   return (

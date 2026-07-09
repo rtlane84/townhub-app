@@ -37,6 +37,7 @@ export function formatOrderTotalsTextLines(totals: OrderTotalsSummary): string[]
 export type OrderNotificationData = {
   orderId: number;
   orderNumber: string;
+  businessOrderNumber?: number | null;
   businessId: number;
   businessName: string;
   businessLogoUrl?: string | null;

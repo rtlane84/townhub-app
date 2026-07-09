@@ -3954,6 +3954,83 @@ export const useAssignBusinessOwner = <TError = ErrorType<unknown>,
       return useMutation(getAssignBusinessOwnerMutationOptions(options));
     }
 
+export const getListAdminBusinessesUrl = () => {
+
+
+
+
+  return `/api/admin/businesses`
+}
+
+/**
+ * @summary List all businesses including owner assignment (admin)
+ */
+export const listAdminBusinesses = async ( options?: RequestInit): Promise<Business[]> => {
+
+  return customFetch<Business[]>(getListAdminBusinessesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminBusinessesQueryKey = () => {
+    return [
+    `/api/admin/businesses`
+    ] as const;
+    }
+
+
+export const getListAdminBusinessesQueryOptions = <TData = Awaited<ReturnType<typeof listAdminBusinesses>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminBusinesses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminBusinessesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminBusinesses>>> = ({ signal }) => listAdminBusinesses({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminBusinesses>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminBusinessesQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminBusinesses>>>
+export type ListAdminBusinessesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List all businesses including owner assignment (admin)
+ */
+
+export function useListAdminBusinesses<TData = Awaited<ReturnType<typeof listAdminBusinesses>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminBusinesses>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminBusinessesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getListEventsUrl = (params?: ListEventsParams,) => {
   const normalizedParams = new URLSearchParams();
 

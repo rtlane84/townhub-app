@@ -179,7 +179,7 @@ export default function BusinessOverview() {
                       className="flex items-center justify-between py-3 hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors cursor-pointer"
                     >
                       <div>
-                        <p className="font-medium text-sm">{formatOrderTicketNumber(order.id)}</p>
+                        <p className="font-medium text-sm">{formatOrderTicketNumber(order.id, "Order", order.businessOrderNumber)}</p>
                         <p className="text-xs text-muted-foreground">{order.customerName} · {order.fulfillmentType}</p>
                       </div>
                       <div className="flex items-center gap-3">

@@ -7,6 +7,16 @@ import {
 } from "../../../../lib/api-zod/src/order-ticket-display.ts";
 
 describe("order-ticket-display", () => {
+  it("formatOrderTicketNumber prefers businessOrderNumber when provided", () => {
+    assert.equal(formatOrderTicketNumber(109, "Order", 101), "Order #101");
+    assert.equal(formatOrderTicketNumber(109, "Ticket", 102), "Ticket #102");
+  });
+
+  it("formatOrderTicketNumber falls back to id when businessOrderNumber is missing", () => {
+    assert.equal(formatOrderTicketNumber(109), "Order #109");
+    assert.equal(formatOrderTicketNumber(109, "Ticket", null), "Ticket #109");
+  });
+
   it("formatOrderTicketNumber uses numeric id with Order prefix by default", () => {
     assert.equal(formatOrderTicketNumber(109), "Order #109");
   });

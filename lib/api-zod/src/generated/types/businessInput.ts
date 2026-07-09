@@ -7,6 +7,7 @@
  */
 import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
+import type { OrderingAvailabilityMode } from './orderingAvailabilityMode';
 import type { PaymentMode } from './paymentMode';
 
 export interface BusinessInput {
@@ -31,5 +32,7 @@ export interface BusinessInput {
   orderCutoffTime?: string;
   /** @minimum 1 */
   defaultPrepMinutes?: number;
+  orderingAvailabilityMode?: OrderingAvailabilityMode;
+  orderingEnabled?: boolean;
   ownerId?: string;
 }

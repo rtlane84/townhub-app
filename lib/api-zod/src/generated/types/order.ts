@@ -15,7 +15,13 @@ export interface Order {
   id: number;
   businessId: number;
   businessName: string;
+  /** Global unique reference (TH-YYYYMMDD-XXXXX). */
   orderNumber?: string;
+  /**
+     * Per-business sequential customer-facing order number (e.g. 101, 102).
+     * @nullable
+     */
+  businessOrderNumber?: number | null;
   status: OrderStatus;
   fulfillmentType: FulfillmentType;
   customerName: string;

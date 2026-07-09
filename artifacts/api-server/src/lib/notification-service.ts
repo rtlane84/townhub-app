@@ -71,6 +71,7 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
   return {
     orderId: order.id,
     orderNumber: order.orderNumber,
+    businessOrderNumber: order.businessOrderNumber ?? null,
     businessId: order.businessId,
     businessName: business?.name ?? "Local business",
     businessLogoUrl: business?.logoUrl,

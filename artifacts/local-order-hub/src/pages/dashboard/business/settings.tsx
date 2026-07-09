@@ -20,13 +20,15 @@ import {
   parseStructuredHours,
   resolvePaymentMode,
   resolveStorefrontMode,
+  resolveOrderingAvailabilityMode,
   isOrderingStorefrontMode,
   isPaymentMode,
   normalizeOptionalTime,
   normalizeWebsiteUrl,
   BUSINESS_TYPE_OPTIONS,
+  ORDERING_AVAILABILITY_MODES,
 } from "@workspace/api-zod";
-import type { BusinessDayHours, PaymentMode, BusinessType, StorefrontMode } from "@workspace/api-client-react";
+import type { BusinessDayHours, PaymentMode, BusinessType, StorefrontMode, OrderingAvailabilityMode } from "@workspace/api-client-react";
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { PaymentModeSelector } from "@/components/payment-mode-selector";
 import { BusinessStripePaymentsCard } from "@/components/business-stripe-payments-card";
@@ -41,8 +43,10 @@ type FormState = {
   websiteUrl: string; showWebsiteCard: boolean;
   structuredHours: BusinessDayHours[];
   logoUrl: string; heroImageUrl: string;
-  pickupEnabled: boolean; deliveryEnabled: boolean; paymentMode: PaymentMode;
+  pickupEnabled: boolean; deliveryEnabled: boolean;   paymentMode: PaymentMode;
   storefrontMode: StorefrontMode;
+  orderingAvailabilityMode: OrderingAvailabilityMode;
+  orderingEnabled: boolean;
   deliveryFee: string; minimumOrder: string; minimumOrderForDelivery: string;
   deliveryRadiusMiles: string; deliveryNotes: string;
   pickupInstructions: string; deliveryInstructions: string;
@@ -59,6 +63,8 @@ const EMPTY: FormState = {
   logoUrl: "", heroImageUrl: "",
   pickupEnabled: true, deliveryEnabled: false, paymentMode: "ONLINE_ONLY",
   storefrontMode: "ORDERING",
+  orderingAvailabilityMode: "ALWAYS",
+  orderingEnabled: true,
   deliveryFee: "", minimumOrder: "", minimumOrderForDelivery: "",
   deliveryRadiusMiles: "", deliveryNotes: "",
   pickupInstructions: "", deliveryInstructions: "",
@@ -103,6 +109,8 @@ export default function BusinessSettings() {
         deliveryInstructions: String(b.deliveryInstructions ?? ""),
         paymentMode: resolvePaymentMode(business),
         storefrontMode: resolveStorefrontMode(business),
+        orderingAvailabilityMode: resolveOrderingAvailabilityMode(business),
+        orderingEnabled: business.orderingEnabled !== false,
         orderCutoffTime: coerceFormTime(business.orderCutoffTime),
         defaultPrepMinutes:
           business.defaultPrepMinutes != null ? String(business.defaultPrepMinutes) : "15",
@@ -173,6 +181,8 @@ export default function BusinessSettings() {
               deliveryFee: optNum(form.deliveryFee),
               minimumOrder: optNum(form.minimumOrder),
               paymentMode,
+              orderingAvailabilityMode: form.orderingAvailabilityMode,
+              orderingEnabled: form.orderingEnabled,
               orderCutoffTime: normalizeOptionalTime(form.orderCutoffTime) || undefined,
               defaultPrepMinutes: optNum(form.defaultPrepMinutes),
               minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
@@ -406,6 +416,57 @@ export default function BusinessSettings() {
                 <div className="space-y-1 divide-y divide-border">
                   {toggle("Pickup enabled", "Customers can pick up their orders", "pickupEnabled")}
                   {toggle("Delivery enabled", "You offer delivery to customers", "deliveryEnabled")}
+                </div>
+                <Separator className="my-4" />
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">When can customers order?</label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Control when checkout is available. Food trucks can require an active scheduled location; restaurants can use business hours.
+                  </p>
+                  <Select
+                    value={form.orderingAvailabilityMode}
+                    onValueChange={(orderingAvailabilityMode) =>
+                      setForm((f) => ({
+                        ...f,
+                        orderingAvailabilityMode: orderingAvailabilityMode as OrderingAvailabilityMode,
+                      }))
+                    }
+                  >
+                    <SelectTrigger data-testid="select-orderingAvailabilityMode">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ORDERING_AVAILABILITY_MODES.map((mode) => (
+                        <SelectItem key={mode} value={mode}>
+                          {mode === "ALWAYS"
+                            ? "Always (when business is active)"
+                            : mode === "BUSINESS_HOURS"
+                              ? "During business hours"
+                              : mode === "MOBILE_LOCATION_SCHEDULE"
+                                ? "When a scheduled location is active"
+                                : "Manual on/off"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.orderingAvailabilityMode === "MANUAL" && (
+                    <div className="flex items-center justify-between py-3 mt-2">
+                      <div>
+                        <p className="text-sm font-medium">Accepting orders</p>
+                        <p className="text-xs text-muted-foreground">Turn online ordering on or off</p>
+                      </div>
+                      <Switch
+                        checked={form.orderingEnabled}
+                        onCheckedChange={(orderingEnabled) => setForm((f) => ({ ...f, orderingEnabled }))}
+                        data-testid="switch-orderingEnabled"
+                      />
+                    </div>
+                  )}
+                  {form.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE" && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Manage today&apos;s location under Locations. Checkout is blocked when no active schedule window matches now.
+                    </p>
+                  )}
                 </div>
                 <Separator className="my-4" />
                 <div>

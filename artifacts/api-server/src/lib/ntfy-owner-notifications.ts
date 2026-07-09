@@ -13,7 +13,7 @@ function fulfillmentLabel(type: string): string {
 
 export function buildOwnerNewOrderNtfyMessage(order: OrderNotificationData) {
   const orderUrl = dashboardOrderUrl(order.orderId);
-  const ticketLabel = formatOrderTicketNumber(order.orderId);
+  const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   const messageLines = [
     "**New Order**",
     order.businessName,

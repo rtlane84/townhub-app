@@ -1206,6 +1206,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Business"
 
+  /admin/businesses:
+    get:
+      operationId: listAdminBusinesses
+      tags: [admin]
+      summary: List all businesses including owner assignment (admin)
+      responses:
+        "200":
+          description: All businesses with ownerId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
   # ─── Events ────────────────────────────────────────────────────
   /events:
     get:
@@ -2467,6 +2486,19 @@ components:
         - INFORMATION
       description: ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu/products without online ordering.
 
+    OrderingAvailabilityMode:
+      type: string
+      enum:
+        - ALWAYS
+        - BUSINESS_HOURS
+        - MOBILE_LOCATION_SCHEDULE
+        - MANUAL
+      description: >
+        ALWAYS accepts orders whenever the business is active.
+        BUSINESS_HOURS requires structured hours to be open now.
+        MOBILE_LOCATION_SCHEDULE requires an active food-truck location window.
+        MANUAL uses the orderingEnabled owner toggle.
+
     OrderStatus:
       type: string
       enum:
@@ -2780,6 +2812,17 @@ components:
           allOf:
             - $ref: "#/components/schemas/StorefrontMode"
           nullable: true
+        orderingAvailabilityMode:
+          $ref: "#/components/schemas/OrderingAvailabilityMode"
+        orderingEnabled:
+          type: boolean
+          description: MANUAL mode toggle — when false, checkout is blocked.
+        orderingAvailable:
+          type: boolean
+          description: Server-evaluated whether the business is accepting orders right now.
+        orderingUnavailableReason:
+          type: ["string", "null"]
+          description: Human-readable reason when orderingAvailable is false.
         accentColor:
           type: ["string", "null"]
         buttonColor:
@@ -2874,6 +2917,10 @@ components:
         defaultPrepMinutes:
           type: integer
           minimum: 1
+        orderingAvailabilityMode:
+          $ref: "#/components/schemas/OrderingAvailabilityMode"
+        orderingEnabled:
+          type: boolean
         ownerId:
           type: string
 
@@ -2966,6 +3013,10 @@ components:
           allOf:
             - $ref: "#/components/schemas/StorefrontMode"
           nullable: true
+        orderingAvailabilityMode:
+          $ref: "#/components/schemas/OrderingAvailabilityMode"
+        orderingEnabled:
+          type: boolean
         accentColor:
           type: ["string", "null"]
         buttonColor:
@@ -3343,6 +3394,10 @@ components:
           type: string
         orderNumber:
           type: string
+          description: Global unique reference (TH-YYYYMMDD-XXXXX).
+        businessOrderNumber:
+          type: ["integer", "null"]
+          description: Per-business sequential customer-facing order number (e.g. 101, 102).
         status:
           $ref: "#/components/schemas/OrderStatus"
         fulfillmentType:

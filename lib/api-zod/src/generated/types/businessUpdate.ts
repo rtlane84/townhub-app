@@ -7,6 +7,7 @@
  */
 import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
+import type { OrderingAvailabilityMode } from './orderingAvailabilityMode';
 import type { PaymentMode } from './paymentMode';
 import type { StorefrontMode } from './storefrontMode';
 
@@ -61,6 +62,8 @@ export interface BusinessUpdate {
   ntfyEnabled?: boolean;
   eventLocationEnabled?: boolean;
   storefrontMode?: StorefrontMode | null;
+  orderingAvailabilityMode?: OrderingAvailabilityMode;
+  orderingEnabled?: boolean;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */

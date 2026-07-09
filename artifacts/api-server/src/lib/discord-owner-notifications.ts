@@ -16,7 +16,7 @@ function fulfillmentLabel(type: string): string {
 export function buildOwnerNewOrderDiscordPayload(order: OrderNotificationData) {
   const orderUrl = dashboardOrderUrl(order.orderId);
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [
-    { name: "Order", value: formatOrderTicketNumber(order.orderId), inline: true },
+    { name: "Order", value: formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber), inline: true },
     { name: "Customer", value: order.customerName, inline: true },
     { name: "Total", value: `$${order.total.toFixed(2)}`, inline: true },
     { name: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType), inline: true },

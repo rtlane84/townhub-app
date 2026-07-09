@@ -44,6 +44,13 @@ export const storefrontModeEnum = pgEnum("storefront_mode", [
   "INFORMATION",
 ]);
 
+export const orderingAvailabilityModeEnum = pgEnum("ordering_availability_mode", [
+  "ALWAYS",
+  "BUSINESS_HOURS",
+  "MOBILE_LOCATION_SCHEDULE",
+  "MANUAL",
+]);
+
 export const businessesTable = pgTable("businesses", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -110,6 +117,15 @@ export const businessesTable = pgTable("businesses", {
 
   // Storefront experience: online ordering vs appointment requests
   storefrontMode: storefrontModeEnum("storefront_mode"),
+
+  // When online ordering is accepted (hours / mobile schedule / manual toggle)
+  orderingAvailabilityMode: orderingAvailabilityModeEnum("ordering_availability_mode")
+    .notNull()
+    .default("ALWAYS"),
+  /** MANUAL mode: owner on/off switch for accepting orders. */
+  orderingEnabled: boolean("ordering_enabled").notNull().default(true),
+  /** Next business-local order number to assign (starts at 101). */
+  nextBusinessOrderNumber: integer("next_business_order_number").notNull().default(101),
 
   // Per-business storefront theming
   accentColor: text("accent_color"),

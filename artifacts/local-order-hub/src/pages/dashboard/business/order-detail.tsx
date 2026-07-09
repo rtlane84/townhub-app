@@ -120,7 +120,7 @@ export default function BusinessOrderDetail({ params }: Props) {
           <>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h1 className="font-serif text-3xl font-bold">{formatOrderTicketNumber(order.id)}</h1>
+                <h1 className="font-serif text-3xl font-bold">{formatOrderTicketNumber(order.id, "Order", order.businessOrderNumber)}</h1>
                 {order.orderNumber ? (
                   <p className="text-sm text-muted-foreground mt-1">
                     {formatOrderReferenceLabel(order.orderNumber)}
@@ -345,7 +345,7 @@ export default function BusinessOrderDetail({ params }: Props) {
         }}
         copy={
           order && statusConfirm
-            ? changeOrderStatusCopy(formatOrderTicketNumber(order.id), statusConfirm)
+            ? changeOrderStatusCopy(formatOrderTicketNumber(order.id, "Order", order.businessOrderNumber), statusConfirm)
             : null
         }
         onConfirm={confirmStatusChange}
