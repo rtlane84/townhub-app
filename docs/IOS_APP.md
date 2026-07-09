@@ -1,0 +1,133 @@
+# TownHub iOS App (Capacitor)
+
+Native iOS shell for TownHub. The app loads the deployed TownHub web frontend inside a WKWebView — no native screen rewrites for this MVP.
+
+## Prerequisites
+
+- macOS with [Xcode](https://developer.apple.com/xcode/) installed (**full Xcode app**, not Command Line Tools alone)
+- Point `xcode-select` at Xcode if needed:
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
+
+- Xcode Command Line Tools: `xcode-select --install`
+- [CocoaPods](https://cocoapods.org/): `sudo gem install cocoapods` (or via Homebrew)
+- Node.js and **pnpm** (repo standard)
+- Apple Developer account (for TestFlight / App Store later)
+
+## Configure the deployed URL
+
+The iOS app loads your hosted TownHub frontend, not a local dev server.
+
+1. Copy the root `.env.example` to `.env` if you have not already.
+2. Set the production or beta frontend URL:
+
+```bash
+# Root .env (or export before cap sync)
+CAPACITOR_SERVER_URL=https://your-townhub.netlify.app
+```
+
+Replace the placeholder with your real Netlify (or other) frontend URL. This must match `APP_BASE_URL` on the API so Stripe and notification redirects return to the same host.
+
+3. Re-sync after changing the URL:
+
+```bash
+pnpm --filter @workspace/local-order-hub run ios:sync
+```
+
+## Install dependencies
+
+From the repository root:
+
+```bash
+pnpm install
+```
+
+## Build web assets and sync iOS
+
+Capacitor still needs a local `webDir` bundle for sync, even when `server.url` points at production:
+
+```bash
+pnpm --filter @workspace/local-order-hub run ios:sync
+```
+
+This runs `vite build` and `cap sync ios`.
+
+## Open in Xcode
+
+```bash
+pnpm --filter @workspace/local-order-hub run ios:open
+```
+
+Or manually open `artifacts/local-order-hub/ios/App/App.xcworkspace`.
+
+## Run on the iOS Simulator
+
+1. Open the project in Xcode (command above).
+2. Select a simulator (e.g. iPhone 16) in the scheme toolbar.
+3. Press **Run** (⌘R).
+
+CLI alternative:
+
+```bash
+pnpm --filter @workspace/local-order-hub exec cap run ios
+```
+
+## Run on a physical device
+
+1. Connect your iPhone via USB.
+2. Open `ios/App/App.xcworkspace` in Xcode.
+3. Select your device in the scheme toolbar.
+4. In **Signing & Capabilities**, choose your Apple Developer team.
+5. Press **Run** (⌘R). Trust the developer certificate on the device if prompted.
+
+## Auth, Stripe, and external links
+
+| Flow | Behavior |
+|------|----------|
+| Clerk login | Uses the same origin as your deployed site. Ensure that URL is allowed in the [Clerk Dashboard](https://dashboard.clerk.com) for your application. |
+| In-app navigation | Same routes as the web app (`/`, `/dashboard/business`, `/sign-in`, etc.). |
+| Stripe Checkout / Connect | Allowed inside the WebView via `allowNavigation` for Stripe domains. Checkout success/cancel URLs must use the same host as `CAPACITOR_SERVER_URL` / `APP_BASE_URL`. |
+| External links | `mailto:`, `tel:`, and `_blank` links to other sites open in Safari via `@capacitor/browser`. |
+| Deep links | Custom scheme `townhub://` is registered for future return flows (e.g. OAuth). |
+
+## Useful scripts
+
+All commands run from the repo root:
+
+| Script | Description |
+|--------|-------------|
+| `pnpm --filter @workspace/local-order-hub run cap:sync:ios` | Sync Capacitor plugins and config to iOS |
+| `pnpm --filter @workspace/local-order-hub run ios:sync` | Build frontend + sync iOS |
+| `pnpm --filter @workspace/local-order-hub run ios:open` | Open Xcode workspace |
+| `pnpm --filter @workspace/local-order-hub run ios:run` | Build, sync, and launch on simulator/device |
+
+## TestFlight / App Store (later)
+
+1. Set **Bundle Identifier** to `com.lanetech.townhub` (already configured in `capacitor.config.ts`).
+2. Configure app icons and launch screen in Xcode (`ios/App/App/Assets.xcassets`).
+3. Archive via **Product → Archive** and upload to App Store Connect.
+4. Submit for TestFlight beta review.
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Blank WebView | Confirm `CAPACITOR_SERVER_URL` is reachable in Safari on the same device/simulator. Re-run `ios:sync`. |
+| Clerk auth errors | Add your deployed frontend URL to Clerk allowed origins / redirect URLs. |
+| Stripe redirect fails | Ensure API `APP_BASE_URL` matches `CAPACITOR_SERVER_URL`. |
+| Pod install errors | `cd artifacts/local-order-hub/ios/App && pod install --repo-update` |
+| CORS errors | Should not occur — the WebView origin is your deployed HTTPS URL. If testing a staging URL, add it to API `CORS_ALLOWED_ORIGINS`. |
+
+## Project layout
+
+```
+artifacts/local-order-hub/
+├── capacitor.config.ts    # App id, name, remote server URL
+├── ios/                   # Native Xcode project (generated)
+├── src/lib/capacitor-shell.ts  # Native-only link/deep-link helpers
+└── dist/public/           # Vite build output (Capacitor webDir)
+```
+
+The existing web app code is unchanged; native helpers only run when `Capacitor.isNativePlatform()` is true.

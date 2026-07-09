@@ -89,6 +89,7 @@ Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 cha
 | [docs/SENTRY_SETUP.md](docs/SENTRY_SETUP.md) | Error monitoring |
 | [docs/PRODUCTION_MONITORING.md](docs/PRODUCTION_MONITORING.md) | Health checks and ops logging |
 | [docs/DEV_CLERK_RELINK.md](docs/DEV_CLERK_RELINK.md) | Dev-only Clerk user ID repair |
+| [docs/IOS_APP.md](docs/IOS_APP.md) | iOS app shell (Capacitor) — Xcode, TestFlight |
 
 ---
 

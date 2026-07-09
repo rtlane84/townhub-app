@@ -8,9 +8,17 @@
     "build": "PORT=23032 BASE_PATH=/ vite build --config vite.config.ts",
     "serve": "PORT=23032 BASE_PATH=/ vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/*.test.ts"
+    "test": "node --experimental-strip-types --test src/lib/*.test.ts",
+    "cap:sync": "cap sync",
+    "cap:sync:ios": "cap sync ios",
+    "cap:open:ios": "cap open ios",
+    "ios:sync": "pnpm run build && pnpm run cap:sync:ios",
+    "ios:open": "pnpm run cap:open:ios",
+    "ios:run": "pnpm run ios:sync && cap run ios"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.2.0",
+    "@capacitor/ios": "^7.2.0",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
@@ -77,6 +85,9 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@capacitor/app": "^7.0.1",
+    "@capacitor/browser": "^7.0.1",
+    "@capacitor/core": "^7.2.0",
     "@clerk/react": "^6.10.4",
     "@clerk/themes": "^2.4.57",
     "@sentry/react": "^10.63.0",
