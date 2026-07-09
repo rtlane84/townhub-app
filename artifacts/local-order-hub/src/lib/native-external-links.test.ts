@@ -20,18 +20,12 @@ describe("native-external-links", () => {
     assert.equal(isStripeCheckoutUrl("https://example.com/checkout"), false);
   });
 
-  it("keeps Clerk and Google auth in-app", () => {
-    assert.equal(isInAppAuthUrl("https://accounts.google.com/o/oauth2/v2/auth"), true);
+  it("keeps Clerk auth in-app but not Google OAuth", () => {
     assert.equal(isInAppAuthUrl("https://clerk.example.accounts.dev/sign-in"), true);
-    assert.equal(
-      shouldOpenLinkExternally("https://accounts.google.com/o/oauth2/v2/auth", "townhub.example.com", {
-        target: "_blank",
-      }),
-      false,
-    );
+    assert.equal(isInAppAuthUrl("https://accounts.google.com/o/oauth2/v2/auth"), false);
   });
 
-  it("opens Google Maps externally but not Google auth", () => {
+  it("opens Google Maps externally but not Google auth via maps helper", () => {
     const appHost = "townhub.example.com";
     assert.equal(isGoogleMapsUrl("https://www.google.com/maps/search/?api=1&q=test"), true);
     assert.equal(

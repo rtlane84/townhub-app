@@ -25,6 +25,7 @@ import { useGetAdminBootstrapStatus, getGetAdminBootstrapStatusQueryKey } from "
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
 
 type TabItem = {
   href: string;
@@ -256,11 +257,14 @@ export function NativeBottomTabBar() {
 
           <div className="border-t px-4 py-4 space-y-3">
             {clerkLoaded && !isSignedIn && (
-              <SignInButton mode="modal">
-                <Button className="w-full min-h-11" onClick={closeAccount}>
-                  Sign In
-                </Button>
-              </SignInButton>
+              <div className="space-y-3">
+                <NativeGoogleSignInButton />
+                <SignInButton mode="modal">
+                  <Button className="w-full min-h-11" onClick={closeAccount}>
+                    Sign In with email
+                  </Button>
+                </SignInButton>
+              </div>
             )}
 
             {clerkLoaded && isSignedIn && (

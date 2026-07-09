@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, lazy, Suspense, type ComponentType } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth, AuthenticateWithRedirectCallback } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { clerkAuthAppearance } from "@/lib/clerk-appearance";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
@@ -15,6 +15,8 @@ import { CartProvider } from "@/components/cart-context";
 import { PlatformThemeProvider } from "@/components/theme-provider";
 
 import { RoutePageLoader } from "@/components/route-page-loader";
+import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
+import { isNativeApp } from "@/lib/native-platform";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -93,18 +95,55 @@ const clerkAppearance = {
   },
 };
 
+/** Hide Clerk's built-in Google button on native — it runs in WKWebView and gets disallowed_useragent. */
+const nativeClerkAuthAppearance = {
+  ...clerkAppearance,
+  elements: {
+    ...clerkAuthAppearance.elements,
+    socialButtonsRoot: { display: "none" },
+    dividerRow: { display: "none" },
+  },
+};
+
 function SignInPage() {
+  const native = isNativeApp();
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <div className="w-full max-w-md space-y-4">
+        {native ? <NativeGoogleSignInButton /> : null}
+        <SignIn
+          routing="path"
+          path={`${basePath}/sign-in`}
+          signUpUrl={`${basePath}/sign-up`}
+          appearance={native ? nativeClerkAuthAppearance : clerkAppearance}
+        />
+      </div>
     </div>
   );
 }
 
 function SignUpPage() {
+  const native = isNativeApp();
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      <div className="w-full max-w-md space-y-4">
+        {native ? <NativeGoogleSignInButton label="Continue with Google" /> : null}
+        <SignUp
+          routing="path"
+          path={`${basePath}/sign-up`}
+          signInUrl={`${basePath}/sign-in`}
+          appearance={native ? nativeClerkAuthAppearance : clerkAppearance}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SsoCallbackPage() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+      <AuthenticateWithRedirectCallback />
+      <p className="text-sm text-muted-foreground">Finishing sign-in…</p>
     </div>
   );
 }
@@ -323,6 +362,8 @@ function ClerkProviderWithRoutes() {
 
                 <Route path="/sign-in/*?" component={SignInPage} />
                 <Route path="/sign-up/*?" component={SignUpPage} />
+                <Route path="/sso-callback" component={SsoCallbackPage} />
+                <Route path="/sso-callback/*?" component={SsoCallbackPage} />
                 <SuspenseRoute path="/setup" component={Setup} />
                 <SuspenseRoute path="/list-your-business" component={ListYourBusiness} />
                 <Route path="/help" component={Help} />

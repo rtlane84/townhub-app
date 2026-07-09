@@ -86,11 +86,11 @@ pnpm --filter @workspace/local-order-hub exec cap run ios
 
 | Flow | Behavior |
 |------|----------|
-| Clerk login | Uses the same origin as your deployed site. Ensure that URL is allowed in the [Clerk Dashboard](https://dashboard.clerk.com). Google/Apple OAuth stays **inside the WebView** (not Safari) so the session returns to the app. |
+| Clerk login | Email/password can use the in-app Clerk UI. **Google OAuth must use Safari** (Google blocks WKWebView — `disallowed_useragent`). Native Google button opens Safari and returns via `townhub://sso-callback`. Add `townhub://sso-callback` to Clerk allowed redirect URLs. |
 | In-app navigation | Same routes as the web app (`/`, `/dashboard/business`, `/sign-in`, etc.). On native dashboards, a **Back** control returns to Home. |
 | Stripe Checkout / Connect | Opens in the system browser via `@capacitor/browser` on native. Success/cancel URLs must use the same host as `CAPACITOR_SERVER_URL` / `APP_BASE_URL`. |
-| External links | `mailto:`, `tel:`, Stripe, Google Maps, Facebook, privacy/terms pages, and `_blank` external links open in Safari via `@capacitor/browser`. Auth hosts (Clerk, Google accounts, Apple) stay in-app. |
-| Deep links | Custom scheme `townhub://` is registered for return flows. |
+| External links | `mailto:`, `tel:`, Stripe, Google Maps, Facebook, privacy/terms pages open in Safari. Google OAuth also opens in Safari (required by Google). |
+| Deep links | Custom scheme `townhub://` handles OAuth return (`townhub://sso-callback` → `/sso-callback`). |
 
 ## Useful scripts
 

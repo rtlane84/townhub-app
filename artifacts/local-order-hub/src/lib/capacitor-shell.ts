@@ -6,22 +6,13 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { isNativeApp } from "@/lib/native-platform";
 import {
   isExternalScheme,
-  isInAppAuthUrl,
+  isGoogleMapsUrl,
   isStripeCheckoutUrl,
   shouldOpenLinkExternally,
 } from "@/lib/native-external-links";
+import { resolveNativeDeepLinkToAppUrl } from "@/lib/native-oauth";
 
 const SPLASH_MIN_VISIBLE_MS = 900;
-
-function resolveInAppUrl(rawUrl: string): string {
-  if (/^https?:\/\//i.test(rawUrl)) {
-    return rawUrl;
-  }
-
-  const path = rawUrl.replace(/^townhub:\/\/?/, "");
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${window.location.origin}${normalizedPath}`;
-}
 
 function isDarkThemeActive(): boolean {
   return document.documentElement.classList.contains("dark");
@@ -96,6 +87,15 @@ async function closeExternalBrowser(): Promise<void> {
   }
 }
 
+function isGoogleOAuthUrl(href: string): boolean {
+  try {
+    const url = new URL(href);
+    return /^accounts\.google\./i.test(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Native-only shell: splash, status bar, deep links, and external URL handling.
  * No-op in the browser — web behavior is unchanged.
@@ -120,7 +120,7 @@ export function initCapacitorShell(): void {
   void App.addListener("appUrlOpen", ({ url }) => {
     void closeExternalBrowser();
     if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
-      window.location.href = resolveInAppUrl(url);
+      window.location.href = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
     }
   });
 
@@ -143,8 +143,10 @@ export function initCapacitorShell(): void {
         }
       })();
 
-      // Clerk / Google / Apple OAuth must stay inside the WebView.
-      if (isInAppAuthUrl(absoluteHref)) {
+      // Google OAuth must use the system browser (WKWebView → disallowed_useragent).
+      if (isGoogleOAuthUrl(absoluteHref)) {
+        event.preventDefault();
+        openExternalUrl(absoluteHref);
         return;
       }
 
@@ -159,7 +161,8 @@ export function initCapacitorShell(): void {
       if (
         shouldOpenLinkExternally(absoluteHref, appHost, {
           target: anchor.target,
-        })
+        }) ||
+        isGoogleMapsUrl(absoluteHref)
       ) {
         event.preventDefault();
         openExternalUrl(absoluteHref);

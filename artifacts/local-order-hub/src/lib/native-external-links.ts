@@ -20,7 +20,7 @@ const EXTERNAL_PATH_PATTERNS = [
   /\/legal\//i,
 ];
 
-/** Google Maps / directions — open externally. Auth hosts stay in-app. */
+/** Google Maps / directions — open externally. Auth hosts stay in-app except Google OAuth. */
 const GOOGLE_MAPS_HOST_PATTERNS = [
   /^maps\.google\./i,
   /^www\.google\.[^/]+$/i,
@@ -29,11 +29,13 @@ const GOOGLE_MAPS_HOST_PATTERNS = [
 
 const GOOGLE_MAPS_PATH_PATTERN = /^\/maps(\/|$)/i;
 
-/** Clerk / Google / Apple auth must stay in the WebView for OAuth return. */
+/**
+ * Clerk / Apple auth can stay in the WebView.
+ * Google OAuth must NOT — Google returns Error 403: disallowed_useragent in WKWebView.
+ */
 const IN_APP_AUTH_HOST_PATTERNS = [
   /^(.+\.)?clerk\.com$/i,
   /^(.+\.)?accounts\.dev$/i,
-  /^accounts\.google\.com$/i,
   /^(.+\.)?googleusercontent\.com$/i,
   /^appleid\.apple\.com$/i,
 ];
@@ -65,6 +67,7 @@ function resolveUrl(href: string): URL {
 export function isInAppAuthUrl(href: string): boolean {
   try {
     const link = resolveUrl(href);
+    if (/^accounts\.google\./i.test(link.hostname)) return false;
     return IN_APP_AUTH_HOST_PATTERNS.some((pattern) => pattern.test(link.hostname));
   } catch {
     return false;
@@ -77,7 +80,6 @@ export function isGoogleMapsUrl(href: string): boolean {
     if (!GOOGLE_MAPS_HOST_PATTERNS.some((pattern) => pattern.test(link.hostname))) {
       return false;
     }
-    // accounts.google.com is auth, not maps
     if (/^accounts\.google\./i.test(link.hostname)) return false;
     if (/^maps\.google\./i.test(link.hostname)) return true;
     return GOOGLE_MAPS_PATH_PATTERN.test(link.pathname) || link.searchParams.has("api");
@@ -117,7 +119,6 @@ export function shouldOpenLinkExternally(
   if (isExternalScheme(href)) return true;
   if (isInAppAuthUrl(href)) return false;
   if (options?.target === "_blank" || options?.target === "_system") {
-    // OAuth / Clerk often uses target=_blank — keep auth in-app.
     if (isInAppAuthUrl(href)) return false;
     return isExternalHttpLink(href, appHost) || href.startsWith("http");
   }
