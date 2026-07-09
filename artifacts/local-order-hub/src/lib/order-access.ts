@@ -1,4 +1,5 @@
 import type { Order } from "@workspace/api-client-react";
+import { resolveApiUrl } from "./api-base-url.ts";
 
 export function buildOrderAccessQuery(token: string | null | undefined): string {
   if (!token?.trim()) return "";
@@ -20,7 +21,7 @@ export async function fetchOrderById(
   }
 
   const response = await fetch(
-    `/api/orders/${orderId}${buildOrderAccessQuery(accessToken)}`,
+    resolveApiUrl(`/api/orders/${orderId}${buildOrderAccessQuery(accessToken)}`),
     { credentials: "include", headers },
   );
 

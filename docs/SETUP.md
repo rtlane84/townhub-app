@@ -43,6 +43,7 @@ All variables live in the **repository root `.env`**. Both the API server and Vi
 | `VITE_CLERK_PUBLISHABLE_KEY` | Same publishable key (frontend build-time) |
 | `SESSION_SECRET` | Random string ≥ 32 chars (`openssl rand -base64 32`) — signs guest order access tokens |
 | `APP_BASE_URL` | `http://localhost:23032` for local dev |
+| `VITE_API_BASE_URL` | Leave empty locally (Vite proxies `/api`). On Netlify set to your Railway API origin (no trailing slash). |
 
 ### Required for media uploads
 

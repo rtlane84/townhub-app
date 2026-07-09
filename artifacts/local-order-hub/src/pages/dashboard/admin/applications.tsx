@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { planAssignmentLabel } from "@/lib/subscription-plans";
 import { BusinessHoursDisplay } from "@/components/business-hours-display";
 import type { BusinessDayHours } from "@workspace/api-client-react";
+import { resolveApiUrl } from "@/lib/api-base-url";
 
 interface Application {
   id: number;
@@ -58,7 +59,7 @@ function useApplications(getToken: () => Promise<string | null>) {
     queryKey: ["admin", "applications"],
     queryFn: async () => {
       const token = await getToken();
-      const res = await fetch("/api/admin/applications", {
+      const res = await fetch(resolveApiUrl("/api/admin/applications"), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error("Failed to load applications");
@@ -114,7 +115,7 @@ export default function AdminApplications() {
         body.planId = parseInt(approvePlanId, 10);
       }
       body.billingInterval = approveBillingInterval;
-      const res = await fetch(`/api/admin/applications/${id}/approve`, {
+      const res = await fetch(resolveApiUrl(`/api/admin/applications/${id}/approve`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,7 +146,7 @@ export default function AdminApplications() {
     setActionLoading(rejectDialog.id);
     try {
       const token = await getToken();
-      const res = await fetch(`/api/admin/applications/${rejectDialog.id}/reject`, {
+      const res = await fetch(resolveApiUrl(`/api/admin/applications/${rejectDialog.id}/reject`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

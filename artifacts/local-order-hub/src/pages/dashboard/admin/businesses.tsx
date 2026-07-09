@@ -12,6 +12,7 @@ import {
   BusinessType,
 } from "@workspace/api-client-react";
 import { planAssignmentLabel } from "@/lib/subscription-plans";
+import { resolveApiUrl } from "@/lib/api-base-url";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -177,7 +178,7 @@ export default function AdminBusinesses() {
     setRemoveDialog({ id: businessId, name: businessName, hadActiveSubscription: false, loading: true });
     try {
       const token = await getToken();
-      const res = await fetch(`/api/admin/businesses/${businessId}/subscription`, {
+      const res = await fetch(resolveApiUrl(`/api/admin/businesses/${businessId}/subscription`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       let hadActiveSubscription = false;
@@ -201,7 +202,7 @@ export default function AdminBusinesses() {
     setSubSaving(true);
     try {
       const token = await getToken();
-      const res = await fetch(`/api/admin/businesses/${subBusinessId}/subscription`, {
+      const res = await fetch(resolveApiUrl(`/api/admin/businesses/${subBusinessId}/subscription`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

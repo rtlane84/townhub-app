@@ -46,6 +46,7 @@ import {
   STOREFRONT_URL_APPLY_HELP,
   STOREFRONT_URL_SUPPORT_NOTE,
 } from "@/components/storefront-url-field";
+import { resolveApiUrl } from "@/lib/api-base-url";
 
 const BUSINESS_TYPES = BUSINESS_TYPE_OPTIONS;
 
@@ -238,7 +239,7 @@ export default function ListYourBusiness() {
     setAppLoading(true);
     try {
       const token = await getToken();
-      const res = await fetch("/api/businesses/my-application", {
+      const res = await fetch(resolveApiUrl("/api/businesses/my-application"), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.status === 404) {
@@ -268,7 +269,7 @@ export default function ListYourBusiness() {
     setSlugAvailability({ status: "checking", slug: previewSlug });
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void fetch(`/api/businesses/slug-availability?slug=${encodeURIComponent(previewSlug)}`, {
+      void fetch(resolveApiUrl(`/api/businesses/slug-availability?slug=${encodeURIComponent(previewSlug)}`), {
         signal: controller.signal,
       })
         .then(async (res) => {
@@ -291,7 +292,7 @@ export default function ListYourBusiness() {
   useEffect(() => {
     if (step === 3) {
       setPlansLoading(true);
-      fetch("/api/subscription-plans")
+      fetch(resolveApiUrl("/api/subscription-plans"))
         .then((r) => r.json())
         .then((data: Plan[]) => {
           setPlans(data);
@@ -307,7 +308,7 @@ export default function ListYourBusiness() {
   const submitApplication = useCallback(async () => {
     setError("");
     const token = await getToken();
-    const res = await fetch("/api/businesses/apply", {
+    const res = await fetch(resolveApiUrl("/api/businesses/apply"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

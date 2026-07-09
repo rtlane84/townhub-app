@@ -1,3 +1,5 @@
+import { resolveApiUrl } from "./api-base-url.ts";
+
 export const HOMEPAGE_HERO_IMAGE_WIDTHS = [640, 1024, 1536, 1920] as const;
 
 export type OptimizedImageFormat = "webp" | "avif" | "jpeg";
@@ -28,7 +30,7 @@ export function buildOptimizedMediaUrl(
   if (options.quality != null) {
     params.set("q", String(options.quality));
   }
-  return `/api/media/optimize?${params.toString()}`;
+  return resolveApiUrl(`/api/media/optimize?${params.toString()}`);
 }
 
 export function buildOptimizedSrcSet(

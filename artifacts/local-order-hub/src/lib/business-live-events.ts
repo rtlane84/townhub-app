@@ -1,12 +1,14 @@
+import { resolveApiUrl } from "./api-base-url.ts";
 import type { BusinessLiveEventPayload, BusinessLiveEventType } from "./business-live-event-types";
 
 export type { BusinessLiveEventPayload, BusinessLiveEventType };
 
 export function buildBusinessLiveEventsUrl(businessId: number, token?: string | null): string {
   const base = `/api/businesses/${businessId}/live-events`;
-  if (!token?.trim()) return base;
-  const params = new URLSearchParams({ token: token.trim() });
-  return `${base}?${params.toString()}`;
+  const path = !token?.trim()
+    ? base
+    : `${base}?${new URLSearchParams({ token: token.trim() }).toString()}`;
+  return resolveApiUrl(path);
 }
 
 export const SSE_MAX_RECONNECT_ATTEMPTS = 5;

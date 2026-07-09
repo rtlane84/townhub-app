@@ -6,6 +6,7 @@ import {
   getGetMySubscriptionQueryKey,
   type BusinessSubscription,
 } from "@workspace/api-client-react";
+import { resolveApiUrl } from "@/lib/api-base-url";
 
 export type SubscriptionSyncOptions = {
   mock?: boolean;
@@ -30,7 +31,7 @@ export function useSubscriptionStripeSync(businessId: number | undefined) {
       if (!businessId) return null;
 
       const token = await getToken();
-      const res = await fetch(`/api/businesses/${businessId}/subscription/sync`, {
+      const res = await fetch(resolveApiUrl(`/api/businesses/${businessId}/subscription/sync`), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

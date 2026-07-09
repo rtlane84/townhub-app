@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Sparkles } from "lucide-react";
 import { ImageField } from "@/components/image-field";
+import { resolveApiUrl } from "@/lib/api-base-url";
 
 const ADMIN_HIGHLIGHTS_KEY = ["admin", "highlights"];
 
@@ -40,7 +41,7 @@ function useAdminHighlights(getToken: () => Promise<string | null>) {
     queryKey: ADMIN_HIGHLIGHTS_KEY,
     queryFn: async () => {
       const token = await getToken();
-      const res = await fetch("/api/admin/highlights", {
+      const res = await fetch(resolveApiUrl("/api/admin/highlights"), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error("Failed to load highlights");
