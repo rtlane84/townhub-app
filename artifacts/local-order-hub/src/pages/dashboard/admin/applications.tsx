@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { triggerBusinessApprovedHaptic } from "@/lib/native-haptics";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, Building2, User, Calendar, Layers, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -126,7 +127,8 @@ export default function AdminApplications() {
         toast({ title: "Approval failed", description: String(resBody.error ?? "Failed to approve"), variant: "destructive" });
         return;
       }
-      toast({ title: "Application approved", description: String(resBody.message ?? "Business created successfully.") });
+      triggerBusinessApprovedHaptic();
+      toast({ title: "Application approved", description: String(resBody.message ?? "Business created successfully."), skipNativeHaptic: true });
       setApproveDialog(null);
       setApprovePlanId("");
       await queryClient.invalidateQueries({ queryKey: ["admin", "applications"] });

@@ -55,6 +55,19 @@ const config: CapacitorConfig = {
     CapacitorCookies: {
       enabled: false,
     },
+    SplashScreen: {
+      launchShowDuration: 0,
+      launchAutoHide: false,
+      backgroundColor: "#faf8f5",
+      showSpinner: false,
+      androidSplashResourceName: "splash",
+      androidScaleType: "CENTER_CROP",
+    },
+    StatusBar: {
+      style: "DARK",
+      backgroundColor: "#faf8f5",
+      overlaysWebView: false,
+    },
   },
 };
 

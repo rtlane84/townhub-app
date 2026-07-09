@@ -4,6 +4,7 @@ import type {
   ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
+import { triggerSaveSuccessHaptic } from "@/lib/native-haptics"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -14,6 +15,8 @@ type ToasterToast = ToastProps & {
   description?: React.ReactNode
   mobileTitle?: React.ReactNode
   notificationLayout?: "owner-alert"
+  /** When true, skips native save haptic (e.g. when a stronger haptic was already fired). */
+  skipNativeHaptic?: boolean
   action?: ToastActionElement
   onToastClick?: () => void
 }
@@ -144,6 +147,10 @@ type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
   const id = genId()
+
+  if (props.variant !== "destructive" && props.notificationLayout !== "owner-alert" && !props.skipNativeHaptic) {
+    triggerSaveSuccessHaptic()
+  }
 
   const update = (props: ToasterToast) =>
     dispatch({

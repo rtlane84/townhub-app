@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { openStripeCheckoutUrl } from "@/lib/capacitor-shell";
 import {
   useListPublicPricingPlans,
   getListPublicPricingPlansQueryKey,
@@ -62,7 +63,7 @@ export function ChangePlanDialog({
       });
 
       if (result.mode === "checkout" && result.url) {
-        window.location.href = result.url;
+        openStripeCheckoutUrl(result.url);
         return;
       }
 

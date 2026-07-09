@@ -88,8 +88,8 @@ pnpm --filter @workspace/local-order-hub exec cap run ios
 |------|----------|
 | Clerk login | Uses the same origin as your deployed site. Ensure that URL is allowed in the [Clerk Dashboard](https://dashboard.clerk.com) for your application. |
 | In-app navigation | Same routes as the web app (`/`, `/dashboard/business`, `/sign-in`, etc.). |
-| Stripe Checkout / Connect | Allowed inside the WebView via `allowNavigation` for Stripe domains. Checkout success/cancel URLs must use the same host as `CAPACITOR_SERVER_URL` / `APP_BASE_URL`. |
-| External links | `mailto:`, `tel:`, and `_blank` links to other sites open in Safari via `@capacitor/browser`. |
+| Stripe Checkout / Connect | Opens in the system browser via `@capacitor/browser` on native. Success/cancel URLs must use the same host as `CAPACITOR_SERVER_URL` / `APP_BASE_URL`. |
+| External links | `mailto:`, `tel:`, Stripe, Google Maps, Facebook, privacy/terms pages, and `_blank` external links open in Safari via `@capacitor/browser`. |
 | Deep links | Custom scheme `townhub://` is registered for future return flows (e.g. OAuth). |
 
 ## Useful scripts
@@ -120,13 +120,31 @@ All commands run from the repo root:
 | Pod install errors | `cd artifacts/local-order-hub/ios/App && pod install --repo-update` |
 | CORS errors | Should not occur — the WebView origin is your deployed HTTPS URL. If testing a staging URL, add it to API `CORS_ALLOWED_ORIGINS`. |
 
+## Native mobile experience (Capacitor only)
+
+When `Capacitor.isNativePlatform()` is true, the same React app gains native polish. **Web browsers are unchanged.**
+
+| Feature | Behavior |
+|---------|----------|
+| Bottom tabs | Home, Businesses, Events, Food Trucks, Account — hidden on dashboards, storefronts, cart, and checkout |
+| Safe areas | Notch, Dynamic Island, home indicator, landscape insets via `env(safe-area-inset-*)` |
+| Splash screen | TownHub cream background (`#faf8f5`), fades out after load |
+| Status bar | Dark icons on light theme; syncs when `.dark` class toggles |
+| Pull to refresh | Home, Businesses, Events, Food Trucks only |
+| Haptics | Tab changes, order placed, business approved, save toasts, pull to refresh |
+
+Helpers live in `src/lib/native-platform.ts`, `src/hooks/use-native-platform.ts`, and `src/lib/capacitor-shell.ts`.
+
 ## Project layout
 
 ```
 artifacts/local-order-hub/
 ├── capacitor.config.ts    # App id, name, remote server URL
 ├── ios/                   # Native Xcode project (generated)
-├── src/lib/capacitor-shell.ts  # Native-only link/deep-link helpers
+├── src/lib/capacitor-shell.ts       # Splash, status bar, deep links, external URLs
+├── src/lib/native-platform.ts       # isNativeApp(), isIOS(), isAndroid()
+├── src/components/native-bottom-tab-bar.tsx
+├── src/components/native-pull-to-refresh.tsx
 └── dist/public/           # Vite build output (Capacitor webDir)
 ```
 

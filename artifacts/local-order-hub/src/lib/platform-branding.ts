@@ -31,6 +31,14 @@ export const DASHBOARD_MOBILE_NAV_TOP_CLASS = "top-[var(--site-header-height,4re
 export const DASHBOARD_MOBILE_MAIN_TOP_CLASS =
   "pt-[calc(var(--site-header-height,4rem)+3rem)] md:pt-0";
 
+/** Native bottom tab bar height (excluding safe area) */
+export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 52;
+export const NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR = "--native-bottom-tab-height";
+
+/** Padding for main content when native bottom tabs are visible */
+export const NATIVE_MAIN_BOTTOM_PADDING_CLASS =
+  "native-main-with-tabs pb-[calc(var(--native-bottom-tab-height,52px)+env(safe-area-inset-bottom,0px))]";
+
 export const LOGO_SIZE_PRESETS = [
   { value: 20, label: "Small" },
   { value: 24, label: "Medium" },

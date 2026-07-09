@@ -28,6 +28,8 @@ import {
   dollarsToCents,
 } from "@workspace/api-zod";
 import { parseStripeCheckoutReturn } from "@/lib/stripe-checkout-return";
+import { openStripeCheckoutUrl } from "@/lib/capacitor-shell";
+import { triggerOrderPlacedHaptic } from "@/lib/native-haptics";
 import { getCheckoutAsapLabel } from "@/lib/order-prep-timing";
 import { CheckoutTotalsSummary } from "@/components/order-totals-summary";
 
@@ -133,12 +135,13 @@ export default function Cart() {
 
       if (payAtPickup) {
         clearCart();
+        triggerOrderPlacedHaptic();
         setLocation(
           user
             ? `/my-orders/${order.id}`
             : orderConfirmationPath(order.id, order.accessToken),
         );
-        toast({ title: "Order placed successfully!" });
+        toast({ title: "Order placed successfully!", skipNativeHaptic: true });
         return;
       }
 
@@ -146,11 +149,12 @@ export default function Cart() {
         data: { orderId: order.id, accessToken: order.accessToken },
       });
       if (session.url) {
-        window.location.href = session.url;
+        openStripeCheckoutUrl(session.url);
         return;
       }
 
       clearCart();
+      triggerOrderPlacedHaptic();
       setLocation(
         user
           ? `/my-orders/${order.id}`

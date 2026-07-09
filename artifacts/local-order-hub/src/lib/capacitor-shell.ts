@@ -1,8 +1,14 @@
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
-
-const EXTERNAL_SCHEMES = ["mailto:", "tel:", "sms:", "maps:", "geo:"];
+import { SplashScreen } from "@capacitor/splash-screen";
+import { StatusBar, Style } from "@capacitor/status-bar";
+import { isNativeApp } from "@/lib/native-platform";
+import {
+  isExternalScheme,
+  isStripeCheckoutUrl,
+  shouldOpenLinkExternally,
+} from "@/lib/native-external-links";
 
 function resolveInAppUrl(rawUrl: string): string {
   if (/^https?:\/\//i.test(rawUrl)) {
@@ -14,26 +20,72 @@ function resolveInAppUrl(rawUrl: string): string {
   return `${window.location.origin}${normalizedPath}`;
 }
 
-function isExternalHttpLink(href: string, appHost: string): boolean {
+function isDarkThemeActive(): boolean {
+  return document.documentElement.classList.contains("dark");
+}
+
+async function syncNativeStatusBar(): Promise<void> {
+  if (!isNativeApp()) return;
+
   try {
-    const link = new URL(href);
-    if (link.protocol !== "http:" && link.protocol !== "https:") {
-      return false;
+    const dark = isDarkThemeActive();
+    await StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark });
+    if (Capacitor.getPlatform() === "android") {
+      await StatusBar.setBackgroundColor({
+        color: dark ? "#1a1614" : "#faf8f5",
+      });
     }
-    return link.hostname !== appHost;
+    await StatusBar.setOverlaysWebView({ overlay: false });
   } catch {
-    return false;
+    // Status bar plugin unavailable.
   }
 }
 
+async function hideNativeSplashScreen(): Promise<void> {
+  if (!isNativeApp()) return;
+
+  try {
+    await SplashScreen.hide({ fadeOutDuration: 300 });
+  } catch {
+    // Splash screen already hidden or unavailable.
+  }
+}
+
+function applyNativeDocumentClass(): void {
+  if (!isNativeApp()) return;
+  document.documentElement.classList.add("native-app");
+  if (Capacitor.getPlatform() === "ios") {
+    document.documentElement.classList.add("native-ios");
+  }
+  if (Capacitor.getPlatform() === "android") {
+    document.documentElement.classList.add("native-android");
+  }
+}
+
+function openExternalUrl(url: string): void {
+  void Browser.open({ url });
+}
+
 /**
- * Native-only helpers for deep links and external URLs.
+ * Native-only shell: splash, status bar, deep links, and external URL handling.
  * No-op in the browser — web behavior is unchanged.
  */
 export function initCapacitorShell(): void {
-  if (!Capacitor.isNativePlatform()) {
+  if (!isNativeApp()) {
     return;
   }
+
+  applyNativeDocumentClass();
+  void syncNativeStatusBar();
+  void hideNativeSplashScreen();
+
+  const themeObserver = new MutationObserver(() => {
+    void syncNativeStatusBar();
+  });
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
 
   void App.addListener("appUrlOpen", ({ url }) => {
     if (url.startsWith("townhub://")) {
@@ -47,29 +99,48 @@ export function initCapacitorShell(): void {
       const anchor = (event.target as Element | null)?.closest?.(
         "a[href]",
       ) as HTMLAnchorElement | null;
-      if (!anchor) {
-        return;
-      }
+      if (!anchor) return;
 
       const href = anchor.getAttribute("href");
-      if (!href) {
-        return;
-      }
+      if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
 
-      if (EXTERNAL_SCHEMES.some((scheme) => href.startsWith(scheme))) {
+      const absoluteHref = (() => {
+        try {
+          return new URL(href, window.location.href).toString();
+        } catch {
+          return href;
+        }
+      })();
+
+      if (isExternalScheme(absoluteHref)) {
         event.preventDefault();
-        void Browser.open({ url: href });
+        openExternalUrl(absoluteHref);
         return;
       }
 
       const appHost = window.location.hostname;
       const opensNewTab = anchor.target === "_blank" || anchor.target === "_system";
 
-      if (opensNewTab && isExternalHttpLink(href, appHost)) {
+      if (
+        shouldOpenLinkExternally(absoluteHref, appHost, {
+          target: anchor.target,
+        })
+      ) {
         event.preventDefault();
-        void Browser.open({ url: href });
+        openExternalUrl(absoluteHref);
       }
     },
     true,
   );
 }
+
+/** Open Stripe Checkout in the system browser on native. */
+export function openStripeCheckoutUrl(url: string): void {
+  if (isNativeApp() && isStripeCheckoutUrl(url)) {
+    openExternalUrl(url);
+    return;
+  }
+  window.location.href = url;
+}
+
+export { syncNativeStatusBar };

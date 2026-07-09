@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { openStripeCheckoutUrl } from "@/lib/capacitor-shell";
 import { useLocation } from "wouter";
 import {
   useGetMySubscription,
@@ -218,7 +219,7 @@ export default function BusinessSubscription() {
         id: business.id,
         data: { planId: subscription.planId, interval },
       });
-      window.location.href = result.url;
+      openStripeCheckoutUrl(result.url);
     } catch (err) {
       toast({
         title: "Unable to start checkout",
@@ -232,7 +233,7 @@ export default function BusinessSubscription() {
     if (!business?.id) return;
     try {
       const result = await portalMutation.mutateAsync({ id: business.id });
-      window.location.href = result.url;
+      openStripeCheckoutUrl(result.url);
     } catch (err) {
       toast({
         title: "Unable to open billing portal",

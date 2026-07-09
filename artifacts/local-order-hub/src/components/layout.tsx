@@ -14,8 +14,12 @@ import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { usePlatformBranding } from "@/components/theme-provider";
-import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR } from "@/lib/platform-branding";
+import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, NATIVE_MAIN_BOTTOM_PADDING_CLASS } from "@/lib/platform-branding";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
+import { isDashboardRoute } from "@/lib/native-platform";
+import { useNativeBottomTabs, useNativePlatform, useNativePullToRefresh } from "@/hooks/use-native-platform";
+import { NativeBottomTabBar } from "@/components/native-bottom-tab-bar";
+import { NativePullToRefresh } from "@/components/native-pull-to-refresh";
 
 function PlatformLogo({ className }: { className?: string }) {
   const { logoUrl, platformName, logoSizePx } = usePlatformBranding();
@@ -37,15 +41,6 @@ function PlatformLogo({ className }: { className?: string }) {
   );
 }
 
-function isDashboardRoute(location: string): boolean {
-  return (
-    location === "/dashboard/business" ||
-    location.startsWith("/dashboard/business/") ||
-    location === "/dashboard/admin" ||
-    location.startsWith("/dashboard/admin/")
-  );
-}
-
 export function Layout({ children }: { children: React.ReactNode }) {
   const { platformName, footerTagline, logoSizePx } = usePlatformBranding();
   const headerMinHeightPx = resolveHeaderMinHeightPx(logoSizePx);
@@ -64,6 +59,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [, storefrontParams] = useRoute("/businesses/:slug");
   const storefrontSlug = storefrontParams?.slug;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isNative } = useNativePlatform();
+  const showNativeTabs = useNativeBottomTabs();
+  const showNativePullToRefresh = useNativePullToRefresh();
 
   const { data: bootstrapStatus, isPending: bootstrapPending } = useGetAdminBootstrapStatus({
     query: { queryKey: getGetAdminBootstrapStatusQueryKey() },
@@ -77,7 +75,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const hideCart = !!storefrontSlug && hidesStorefrontCart(storefrontData?.business ?? {});
 
   const hideFooter =
-    location === "/dashboard/admin/system-status" || location.startsWith("/dashboard/admin/system-status/");
+    location === "/dashboard/admin/system-status" ||
+    location.startsWith("/dashboard/admin/system-status/") ||
+    showNativeTabs;
 
   const inDashboard = isDashboardRoute(location);
   const setupAvailable = authResolved && !bootstrapPending && bootstrapStatus?.setupComplete === false;
@@ -133,10 +133,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0"
-      style={{ [SITE_HEADER_HEIGHT_CSS_VAR]: `${headerMinHeightPx}px` } as CSSProperties}
+      className={cn(
+        "min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0",
+        isNative && "native-app-shell",
+      )}
+      style={{
+        [SITE_HEADER_HEIGHT_CSS_VAR]: `${headerMinHeightPx}px`,
+        [NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR]: `${NATIVE_BOTTOM_TAB_HEIGHT_PX}px`,
+      } as CSSProperties}
     >
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden native-site-header">
         <div
           className="container mx-auto px-4 flex items-center justify-between py-0.5"
           style={{ minHeight: headerMinHeightPx }}
@@ -295,7 +301,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <UserButton appearance={clerkUserButtonAppearance} />
             )}
 
-            {/* Mobile hamburger */}
+            {/* Mobile hamburger — hidden in Capacitor (bottom tabs replace it) */}
+            {!isNative && (
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -454,13 +461,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 )}
               </SheetContent>
             </Sheet>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="flex-1">
-        {children}
+      <main className={cn("flex-1 flex flex-col min-h-0", showNativeTabs && NATIVE_MAIN_BOTTOM_PADDING_CLASS)}>
+        <NativePullToRefresh enabled={showNativePullToRefresh}>
+          {children}
+        </NativePullToRefresh>
       </main>
+
+      {showNativeTabs && <NativeBottomTabBar />}
 
       <footer className={cn("border-t py-12 bg-muted/30 mt-auto print:hidden", hideFooter && "hidden")}>
         <div className="container mx-auto px-4 text-center">

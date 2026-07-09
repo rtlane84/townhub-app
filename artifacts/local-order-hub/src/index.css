@@ -208,6 +208,53 @@
   }
 }
 
+/* Native Capacitor shell — safe areas, bottom tabs, touch polish */
+html.native-app {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+}
+
+html.native-app body {
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+}
+
+html.native-app .native-site-header {
+  padding-top: var(--safe-area-top);
+}
+
+html.native-app .native-bottom-tab-bar {
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: max(0px, var(--safe-area-left));
+  padding-right: max(0px, var(--safe-area-right));
+}
+
+html.native-app .native-account-sheet {
+  padding-bottom: calc(1rem + var(--safe-area-bottom));
+}
+
+html.native-app .native-tab-item {
+  min-width: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html.native-app input,
+html.native-app textarea,
+html.native-app select {
+  font-size: 16px;
+}
+
+html.native-app [data-slot="dialog-content"],
+html.native-app [data-slot="sheet-content"] {
+  max-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+}
+
+html.native-app.native-ios .native-main-with-tabs {
+  scroll-padding-bottom: calc(var(--native-bottom-tab-height, 52px) + var(--safe-area-bottom));
+}
+
 @layer clerk {
   .cl-socialButtonsBlockButton {
     background-color: #ffffff !important;

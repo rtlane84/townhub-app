@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { openStripeCheckoutUrl } from "@/lib/capacitor-shell";
 import {
   useGetBusinessStripeStatus,
   useStartBusinessStripeConnect,
@@ -64,7 +65,7 @@ export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) 
     mutation: {
       onSuccess: (result) => {
         if (result.url) {
-          window.location.href = result.url;
+          openStripeCheckoutUrl(result.url);
         }
       },
       onError: (err: unknown) => {
