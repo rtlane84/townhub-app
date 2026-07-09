@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Home,
   Store,
@@ -13,16 +14,17 @@ import {
   HelpCircle,
   Wrench,
   ExternalLink,
+  LogOut,
 } from "lucide-react";
-import { UserButton, SignInButton, useUser } from "@clerk/react";
+import { SignInButton, useClerk, useUser } from "@clerk/react";
 import { cn } from "@/lib/utils";
 import { isAccountRoute, isNavActive } from "@/lib/native-platform";
 import { triggerTabChangeHaptic } from "@/lib/native-haptics";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 import { useGetAdminBootstrapStatus, getGetAdminBootstrapStatusQueryKey } from "@workspace/api-client-react";
-import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 
 type TabItem = {
   href: string;
@@ -35,7 +37,10 @@ type TabItem = {
 export function NativeBottomTabBar() {
   const [location, setLocation] = useLocation();
   const [accountOpen, setAccountOpen] = useState(false);
-  const { isSignedIn, isLoaded: clerkLoaded } = useUser();
+  const [signingOut, setSigningOut] = useState(false);
+  const { isSignedIn, isLoaded: clerkLoaded, user } = useUser();
+  const { signOut } = useClerk();
+  const queryClient = useQueryClient();
   const {
     authResolved,
     isAdmin,
@@ -107,6 +112,22 @@ export function NativeBottomTabBar() {
     setAccountOpen(false);
   }
 
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    triggerTabChangeHaptic();
+    try {
+      await signOut();
+      queryClient.clear();
+      closeAccount();
+      setLocation("/");
+    } catch {
+      // Keep sheet open so the user can retry.
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
   function accountLinkClass(href: string) {
     const active = isNavActive(location, href);
     return cn(
@@ -114,6 +135,11 @@ export function NativeBottomTabBar() {
       active ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted",
     );
   }
+
+  const signedInLabel =
+    user?.fullName?.trim() ||
+    user?.primaryEmailAddress?.emailAddress ||
+    "Signed in";
 
   return (
     <>
@@ -228,24 +254,40 @@ export function NativeBottomTabBar() {
             )}
           </nav>
 
-          <div className="border-t px-4 py-4">
+          <div className="border-t px-4 py-4 space-y-3">
             {clerkLoaded && !isSignedIn && (
               <SignInButton mode="modal">
-                <Button className="w-full" onClick={closeAccount}>
+                <Button className="w-full min-h-11" onClick={closeAccount}>
                   Sign In
                 </Button>
               </SignInButton>
             )}
 
             {clerkLoaded && isSignedIn && (
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">Signed in</p>
-                <UserButton appearance={clerkUserButtonAppearance} />
+              <div className="space-y-3">
+                <div className="px-1">
+                  <p className="text-sm font-medium text-foreground truncate">{signedInLabel}</p>
+                  {user?.fullName && user?.primaryEmailAddress?.emailAddress ? (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {user.primaryEmailAddress.emailAddress}
+                    </p>
+                  ) : null}
+                </div>
+                <LoadingButton
+                  type="button"
+                  variant="outline"
+                  className="w-full min-h-11 justify-center gap-2"
+                  loading={signingOut}
+                  onClick={() => void handleSignOut()}
+                >
+                  <LogOut className="h-4 w-4" aria-hidden />
+                  Sign Out
+                </LoadingButton>
               </div>
             )}
 
             {setupAvailable && (isLoggedOut || isCustomer) && (
-              <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                 <p className="text-xs font-semibold text-primary">First time here?</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Sign in, then visit Admin Setup to claim platform admin access.
