@@ -41,6 +41,10 @@ const config: CapacitorConfig = {
       "clerk.com",
       "*.clerk.accounts.dev",
       "accounts.dev",
+      // Keep Google / Apple OAuth inside the WebView so login returns to the app
+      "accounts.google.com",
+      "*.googleusercontent.com",
+      "appleid.apple.com",
     ],
   },
   ios: {
@@ -56,10 +60,12 @@ const config: CapacitorConfig = {
       enabled: false,
     },
     SplashScreen: {
-      launchShowDuration: 0,
+      launchShowDuration: 2000,
       launchAutoHide: false,
       backgroundColor: "#faf8f5",
       showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_CROP",
     },

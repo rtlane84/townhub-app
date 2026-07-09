@@ -1,10 +1,10 @@
 const EXTERNAL_SCHEMES = ["mailto:", "tel:", "sms:", "maps:", "geo:"];
 
+/** Hosts that should leave the WebView (not OAuth / auth providers). */
 const EXTERNAL_HOST_PATTERNS = [
   /^(.+\.)?stripe\.com$/i,
   /^(.+\.)?facebook\.com$/i,
   /^(.+\.)?fb\.com$/i,
-  /^(.+\.)?google\.com$/i,
   /^maps\.apple\.com$/i,
   /^(.+\.)?instagram\.com$/i,
   /^(.+\.)?twitter\.com$/i,
@@ -18,6 +18,24 @@ const EXTERNAL_PATH_PATTERNS = [
   /\/privacy(?:-policy)?\/?$/i,
   /\/terms(?:-of-(?:service|use))?\/?$/i,
   /\/legal\//i,
+];
+
+/** Google Maps / directions — open externally. Auth hosts stay in-app. */
+const GOOGLE_MAPS_HOST_PATTERNS = [
+  /^maps\.google\./i,
+  /^www\.google\.[^/]+$/i,
+  /^google\.[^/]+$/i,
+];
+
+const GOOGLE_MAPS_PATH_PATTERN = /^\/maps(\/|$)/i;
+
+/** Clerk / Google / Apple auth must stay in the WebView for OAuth return. */
+const IN_APP_AUTH_HOST_PATTERNS = [
+  /^(.+\.)?clerk\.com$/i,
+  /^(.+\.)?accounts\.dev$/i,
+  /^accounts\.google\.com$/i,
+  /^(.+\.)?googleusercontent\.com$/i,
+  /^appleid\.apple\.com$/i,
 ];
 
 export function isExternalScheme(href: string): boolean {
@@ -44,14 +62,41 @@ function resolveUrl(href: string): URL {
   return new URL(href, base);
 }
 
+export function isInAppAuthUrl(href: string): boolean {
+  try {
+    const link = resolveUrl(href);
+    return IN_APP_AUTH_HOST_PATTERNS.some((pattern) => pattern.test(link.hostname));
+  } catch {
+    return false;
+  }
+}
+
+export function isGoogleMapsUrl(href: string): boolean {
+  try {
+    const link = resolveUrl(href);
+    if (!GOOGLE_MAPS_HOST_PATTERNS.some((pattern) => pattern.test(link.hostname))) {
+      return false;
+    }
+    // accounts.google.com is auth, not maps
+    if (/^accounts\.google\./i.test(link.hostname)) return false;
+    if (/^maps\.google\./i.test(link.hostname)) return true;
+    return GOOGLE_MAPS_PATH_PATTERN.test(link.pathname) || link.searchParams.has("api");
+  } catch {
+    return false;
+  }
+}
+
 export function isExternalHttpLink(href: string, appHost: string): boolean {
   if (isExternalScheme(href)) return true;
+  if (isInAppAuthUrl(href)) return false;
 
   try {
     const link = resolveUrl(href);
     if (link.protocol !== "http:" && link.protocol !== "https:") {
       return false;
     }
+
+    if (isGoogleMapsUrl(href)) return true;
 
     if (link.hostname === appHost) {
       return EXTERNAL_PATH_PATTERNS.some((pattern) => pattern.test(link.pathname));
@@ -70,7 +115,10 @@ export function shouldOpenLinkExternally(
 ): boolean {
   if (options?.forceExternal) return true;
   if (isExternalScheme(href)) return true;
+  if (isInAppAuthUrl(href)) return false;
   if (options?.target === "_blank" || options?.target === "_system") {
+    // OAuth / Clerk often uses target=_blank — keep auth in-app.
+    if (isInAppAuthUrl(href)) return false;
     return isExternalHttpLink(href, appHost) || href.startsWith("http");
   }
   return isExternalHttpLink(href, appHost);

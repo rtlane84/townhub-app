@@ -86,11 +86,11 @@ pnpm --filter @workspace/local-order-hub exec cap run ios
 
 | Flow | Behavior |
 |------|----------|
-| Clerk login | Uses the same origin as your deployed site. Ensure that URL is allowed in the [Clerk Dashboard](https://dashboard.clerk.com) for your application. |
-| In-app navigation | Same routes as the web app (`/`, `/dashboard/business`, `/sign-in`, etc.). |
+| Clerk login | Uses the same origin as your deployed site. Ensure that URL is allowed in the [Clerk Dashboard](https://dashboard.clerk.com). Google/Apple OAuth stays **inside the WebView** (not Safari) so the session returns to the app. |
+| In-app navigation | Same routes as the web app (`/`, `/dashboard/business`, `/sign-in`, etc.). On native dashboards, a **Back** control returns to Home. |
 | Stripe Checkout / Connect | Opens in the system browser via `@capacitor/browser` on native. Success/cancel URLs must use the same host as `CAPACITOR_SERVER_URL` / `APP_BASE_URL`. |
-| External links | `mailto:`, `tel:`, Stripe, Google Maps, Facebook, privacy/terms pages, and `_blank` external links open in Safari via `@capacitor/browser`. |
-| Deep links | Custom scheme `townhub://` is registered for future return flows (e.g. OAuth). |
+| External links | `mailto:`, `tel:`, Stripe, Google Maps, Facebook, privacy/terms pages, and `_blank` external links open in Safari via `@capacitor/browser`. Auth hosts (Clerk, Google accounts, Apple) stay in-app. |
+| Deep links | Custom scheme `townhub://` is registered for return flows. |
 
 ## Useful scripts
 
@@ -126,9 +126,10 @@ When `Capacitor.isNativePlatform()` is true, the same React app gains native pol
 
 | Feature | Behavior |
 |---------|----------|
-| Bottom tabs | Home, Businesses, Events, Food Trucks, Account — hidden on dashboards, storefronts, cart, and checkout |
+| Bottom tabs | Home, Businesses, Events, Food Trucks, Account — hidden on dashboards, storefronts, cart, and checkout. Header Sign In / UserButton is hidden while tabs are visible (Account tab owns that). |
+| Dashboard back | Native-only **Back** in the header on Admin / Business Hub |
 | Safe areas | Notch, Dynamic Island, home indicator, landscape insets via `env(safe-area-inset-*)` |
-| Splash screen | TownHub cream background (`#faf8f5`), fades out after load |
+| Splash screen | TownHub cream background (`#faf8f5`); stays until load + short minimum, then fades out |
 | Status bar | Dark icons on light theme; syncs when `.dark` class toggles |
 | Pull to refresh | Home, Businesses, Events, Food Trucks only |
 | Haptics | Tab changes, order placed, business approved, save toasts, pull to refresh |

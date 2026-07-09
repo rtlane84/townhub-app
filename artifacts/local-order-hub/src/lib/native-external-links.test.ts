@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   isExternalScheme,
   isStripeCheckoutUrl,
+  isInAppAuthUrl,
+  isGoogleMapsUrl,
   shouldOpenLinkExternally,
 } from "./native-external-links.ts";
 
@@ -18,12 +20,29 @@ describe("native-external-links", () => {
     assert.equal(isStripeCheckoutUrl("https://example.com/checkout"), false);
   });
 
-  it("opens third-party hosts externally", () => {
+  it("keeps Clerk and Google auth in-app", () => {
+    assert.equal(isInAppAuthUrl("https://accounts.google.com/o/oauth2/v2/auth"), true);
+    assert.equal(isInAppAuthUrl("https://clerk.example.accounts.dev/sign-in"), true);
+    assert.equal(
+      shouldOpenLinkExternally("https://accounts.google.com/o/oauth2/v2/auth", "townhub.example.com", {
+        target: "_blank",
+      }),
+      false,
+    );
+  });
+
+  it("opens Google Maps externally but not Google auth", () => {
     const appHost = "townhub.example.com";
+    assert.equal(isGoogleMapsUrl("https://www.google.com/maps/search/?api=1&q=test"), true);
     assert.equal(
       shouldOpenLinkExternally("https://www.google.com/maps/search/?api=1&q=test", appHost),
       true,
     );
+    assert.equal(isGoogleMapsUrl("https://accounts.google.com/o/oauth2/v2/auth"), false);
+  });
+
+  it("opens third-party hosts externally", () => {
+    const appHost = "townhub.example.com";
     assert.equal(
       shouldOpenLinkExternally("https://facebook.com/page", appHost),
       true,

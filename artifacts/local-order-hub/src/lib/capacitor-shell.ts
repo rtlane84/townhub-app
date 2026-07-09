@@ -6,9 +6,12 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { isNativeApp } from "@/lib/native-platform";
 import {
   isExternalScheme,
+  isInAppAuthUrl,
   isStripeCheckoutUrl,
   shouldOpenLinkExternally,
 } from "@/lib/native-external-links";
+
+const SPLASH_MIN_VISIBLE_MS = 900;
 
 function resolveInAppUrl(rawUrl: string): string {
   if (/^https?:\/\//i.test(rawUrl)) {
@@ -45,10 +48,29 @@ async function hideNativeSplashScreen(): Promise<void> {
   if (!isNativeApp()) return;
 
   try {
-    await SplashScreen.hide({ fadeOutDuration: 300 });
+    await SplashScreen.hide({ fadeOutDuration: 350 });
   } catch {
     // Splash screen already hidden or unavailable.
   }
+}
+
+function scheduleSplashHide(): void {
+  const startedAt = Date.now();
+
+  const finish = () => {
+    const elapsed = Date.now() - startedAt;
+    const wait = Math.max(0, SPLASH_MIN_VISIBLE_MS - elapsed);
+    window.setTimeout(() => {
+      void hideNativeSplashScreen();
+    }, wait);
+  };
+
+  if (document.readyState === "complete") {
+    finish();
+    return;
+  }
+
+  window.addEventListener("load", finish, { once: true });
 }
 
 function applyNativeDocumentClass(): void {
@@ -66,6 +88,14 @@ function openExternalUrl(url: string): void {
   void Browser.open({ url });
 }
 
+async function closeExternalBrowser(): Promise<void> {
+  try {
+    await Browser.close();
+  } catch {
+    // Browser may already be closed.
+  }
+}
+
 /**
  * Native-only shell: splash, status bar, deep links, and external URL handling.
  * No-op in the browser — web behavior is unchanged.
@@ -77,7 +107,7 @@ export function initCapacitorShell(): void {
 
   applyNativeDocumentClass();
   void syncNativeStatusBar();
-  void hideNativeSplashScreen();
+  scheduleSplashHide();
 
   const themeObserver = new MutationObserver(() => {
     void syncNativeStatusBar();
@@ -88,7 +118,8 @@ export function initCapacitorShell(): void {
   });
 
   void App.addListener("appUrlOpen", ({ url }) => {
-    if (url.startsWith("townhub://")) {
+    void closeExternalBrowser();
+    if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
       window.location.href = resolveInAppUrl(url);
     }
   });
@@ -112,6 +143,11 @@ export function initCapacitorShell(): void {
         }
       })();
 
+      // Clerk / Google / Apple OAuth must stay inside the WebView.
+      if (isInAppAuthUrl(absoluteHref)) {
+        return;
+      }
+
       if (isExternalScheme(absoluteHref)) {
         event.preventDefault();
         openExternalUrl(absoluteHref);
@@ -119,7 +155,6 @@ export function initCapacitorShell(): void {
       }
 
       const appHost = window.location.hostname;
-      const opensNewTab = anchor.target === "_blank" || anchor.target === "_system";
 
       if (
         shouldOpenLinkExternally(absoluteHref, appHost, {

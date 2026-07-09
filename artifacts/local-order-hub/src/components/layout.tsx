@@ -130,6 +130,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const showDashboardAction = showRoleNav && showBusinessHubNav;
   const dashboardActive = isNavActive(dashboardHref);
   const listYourBusinessActive = isNavActive("/list-your-business");
+  /** Account lives in the native bottom tab sheet — hide duplicate header auth. */
+  const hideHeaderAccount = isNative && showNativeTabs;
+  /** Native dashboards hide bottom tabs; show an obvious exit control. */
+  const showNativeDashboardBack = isNative && inDashboard;
 
   return (
     <div
@@ -150,12 +154,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Left: logo + desktop nav */}
           <div className="flex items-center gap-6 min-w-0">
+            {showNativeDashboardBack ? (
+              <Link
+                href="/"
+                className={cn(
+                  returnToMarketplaceClass(),
+                  "shrink-0 gap-1.5 px-2 py-2 -ml-1 min-h-11",
+                )}
+                aria-label="Back to app"
+              >
+                <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden />
+                <span className="text-sm font-semibold text-foreground">Back</span>
+              </Link>
+            ) : null}
             <Link
               href="/"
               className="flex items-center gap-2 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
             >
               <PlatformLogo />
-              <span className="font-serif text-xl font-semibold tracking-tight text-primary">
+              <span
+                className={cn(
+                  "font-serif text-xl font-semibold tracking-tight text-primary",
+                  showNativeDashboardBack && "hidden sm:inline",
+                )}
+              >
                 {platformName}
               </span>
             </Link>
@@ -291,13 +313,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             )}
 
-            {clerkLoaded && !isSignedIn && (
+            {!hideHeaderAccount && clerkLoaded && !isSignedIn && (
               <SignInButton mode="modal">
                 <Button size="sm">Sign In</Button>
               </SignInButton>
             )}
 
-            {clerkLoaded && isSignedIn && (
+            {!hideHeaderAccount && clerkLoaded && isSignedIn && (
               <UserButton appearance={clerkUserButtonAppearance} />
             )}
 
