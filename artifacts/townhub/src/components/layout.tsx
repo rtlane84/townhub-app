@@ -14,7 +14,7 @@ import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { usePlatformBranding } from "@/components/theme-provider";
-import { resolveHeaderMinHeightPx, resolveHeaderLogoDisplaySizePx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, NATIVE_MAIN_BOTTOM_PADDING_CLASS } from "@/lib/platform-branding";
+import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, NATIVE_MAIN_BOTTOM_PADDING_CLASS } from "@/lib/platform-branding";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 import { isDashboardRoute } from "@/lib/native-platform";
 import { useNativeBottomTabs, useNativePlatform, useNativePullToRefresh } from "@/hooks/use-native-platform";
@@ -45,7 +45,6 @@ function PlatformLogo({ className, sizePx }: { className?: string; sizePx?: numb
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { platformName, footerTagline, logoSizePx } = usePlatformBranding();
-  const headerLogoSizePx = resolveHeaderLogoDisplaySizePx(logoSizePx);
   const headerMinHeightPx = resolveHeaderMinHeightPx(logoSizePx);
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
   const {
@@ -174,7 +173,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               href="/"
               className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
             >
-              <PlatformLogo sizePx={headerLogoSizePx} />
+              <PlatformLogo />
               <span
                 className={cn(
                   "font-serif text-lg font-semibold tracking-tight text-primary sm:text-xl",

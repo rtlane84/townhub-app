@@ -12,26 +12,13 @@ export const DEFAULT_LOGO_SIZE_PX = 24;
 export const LOGO_SIZE_MIN_PX = 16;
 export const LOGO_SIZE_MAX_PX = 192;
 
-/** Minimum header bar height (~64–72pt native nav) */
+/** Minimum header bar height (~64pt native nav) */
 export const HEADER_BASE_MIN_HEIGHT_PX = 64;
-export const HEADER_MAX_MIN_HEIGHT_PX = 72;
 /** Vertical padding around the logo inside the header (total, both sides) */
 export const HEADER_LOGO_VERTICAL_PADDING_PX = 8;
-/** Display scale so branding stays prominent without crowding the bar */
-export const HEADER_LOGO_DISPLAY_SCALE = 0.8;
-
-export function resolveHeaderLogoDisplaySizePx(logoSizePx: number): number {
-  const scaled = Math.round(logoSizePx * HEADER_LOGO_DISPLAY_SCALE);
-  const maxFit = HEADER_MAX_MIN_HEIGHT_PX - HEADER_LOGO_VERTICAL_PADDING_PX;
-  return Math.max(LOGO_SIZE_MIN_PX, Math.min(scaled, maxFit));
-}
 
 export function resolveHeaderMinHeightPx(logoSizePx: number): number {
-  const displaySize = resolveHeaderLogoDisplaySizePx(logoSizePx);
-  return Math.max(
-    HEADER_BASE_MIN_HEIGHT_PX,
-    Math.min(HEADER_MAX_MIN_HEIGHT_PX, displaySize + HEADER_LOGO_VERTICAL_PADDING_PX),
-  );
+  return Math.max(HEADER_BASE_MIN_HEIGHT_PX, logoSizePx + HEADER_LOGO_VERTICAL_PADDING_PX);
 }
 
 /** Set on the site shell; dashboard mobile nav reads this for positioning below the header */

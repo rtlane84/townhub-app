@@ -141,7 +141,6 @@ describe("hero composition parity between live homepage and admin preview", () =
     const layout = await readFile(new URL("../components/layout.tsx", import.meta.url), "utf8");
     assert.match(adminSettings, /width: branding\.logoSizePx, height: branding\.logoSizePx/);
     assert.match(layout, /width: displaySize, height: displaySize/);
-    assert.match(layout, /resolveHeaderLogoDisplaySizePx/);
     assert.match(layout, /resolveHeaderMinHeightPx/);
     assert.match(layout, /SITE_HEADER_HEIGHT_CSS_VAR/);
     assert.match(layout, /minHeight: headerMinHeightPx/);
