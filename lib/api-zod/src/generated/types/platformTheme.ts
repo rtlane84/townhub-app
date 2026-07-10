@@ -19,6 +19,21 @@ export interface PlatformTheme {
   buttonColor: string;
   /** @nullable */
   headingColor?: string | null;
+  /**
+     * Color for the town prefix in the wordmark (e.g. Clay)
+     * @nullable
+     */
+  brandPrefixColor?: string | null;
+  /**
+     * Color for the Town segment in the wordmark
+     * @nullable
+     */
+  brandTownColor?: string | null;
+  /**
+     * Color for the Hub segment in the wordmark
+     * @nullable
+     */
+  brandHubColor?: string | null;
   /** @nullable */
   platformName?: string | null;
   /** @nullable */

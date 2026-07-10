@@ -4506,6 +4506,15 @@ components:
           type: string
         headingColor:
           type: ["string", "null"]
+        brandPrefixColor:
+          type: ["string", "null"]
+          description: Color for the town prefix in the wordmark (e.g. Clay)
+        brandTownColor:
+          type: ["string", "null"]
+          description: Color for the Town segment in the wordmark
+        brandHubColor:
+          type: ["string", "null"]
+          description: Color for the Hub segment in the wordmark
         platformName:
           type: ["string", "null"]
         townName:
@@ -4562,6 +4571,15 @@ components:
           type: string
         headingColor:
           type: string
+        brandPrefixColor:
+          type: string
+          description: Color for the town prefix in the wordmark (e.g. Clay)
+        brandTownColor:
+          type: string
+          description: Color for the Town segment in the wordmark
+        brandHubColor:
+          type: string
+          description: Color for the Hub segment in the wordmark
         platformName:
           type: string
         townName:

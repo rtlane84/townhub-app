@@ -81,6 +81,9 @@ export function mergePlatformTheme(theme?: PlatformTheme | null) {
       normalizeHex(theme?.primaryColor) ??
       PLATFORM_THEME_DEFAULTS.buttonColor,
     headingColor: normalizeHex(theme?.headingColor),
+    brandPrefixColor: normalizeHex(theme?.brandPrefixColor),
+    brandTownColor: normalizeHex(theme?.brandTownColor),
+    brandHubColor: normalizeHex(theme?.brandHubColor),
   };
 }
 
@@ -119,6 +122,14 @@ export function applyPlatformThemeToRoot(theme?: PlatformTheme | null): void {
   } else {
     root.style.removeProperty("--platform-heading");
   }
+
+  const setBrandVar = (name: string, value: string | null) => {
+    if (value) root.style.setProperty(name, value);
+    else root.style.removeProperty(name);
+  };
+  setBrandVar("--brand-prefix", merged.brandPrefixColor);
+  setBrandVar("--brand-town", merged.brandTownColor);
+  setBrandVar("--brand-hub", merged.brandHubColor);
 }
 
 export function resolveBusinessThemeColors(

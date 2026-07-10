@@ -17,6 +17,12 @@ export interface PlatformThemeInput {
   backgroundColor?: string;
   buttonColor?: string;
   headingColor?: string;
+  /** Color for the town prefix in the wordmark (e.g. Clay) */
+  brandPrefixColor?: string;
+  /** Color for the Town segment in the wordmark */
+  brandTownColor?: string;
+  /** Color for the Hub segment in the wordmark */
+  brandHubColor?: string;
   platformName?: string;
   townName?: string;
   tagline?: string;

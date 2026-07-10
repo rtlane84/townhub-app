@@ -20,7 +20,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { ImageField } from "@/components/image-field";
 import { HeroPreviewFrame } from "@/components/hero-preview-frame";
+import { PlatformBrandMark } from "@/components/platform-brand-mark";
 import { PLATFORM_THEME_DEFAULTS } from "@/lib/theme-colors";
+import { splitPlatformBrandName } from "@/lib/platform-brand-name";
 
 import {
   DEFAULT_HERO_BUTTON_PLACEMENT,
@@ -54,6 +56,7 @@ import {
 } from "@/lib/platform-branding";
 
 type ColorKey = "primaryColor" | "accentColor" | "backgroundColor" | "buttonColor" | "headingColor";
+type BrandWordColorKey = "brandPrefixColor" | "brandTownColor" | "brandHubColor";
 
 const COLOR_DEFAULTS: Record<ColorKey, string> = {
   primaryColor: PLATFORM_THEME_DEFAULTS.primaryColor,
@@ -61,6 +64,12 @@ const COLOR_DEFAULTS: Record<ColorKey, string> = {
   backgroundColor: PLATFORM_THEME_DEFAULTS.backgroundColor,
   buttonColor: PLATFORM_THEME_DEFAULTS.buttonColor,
   headingColor: "",
+};
+
+const BRAND_WORD_COLOR_DEFAULTS: Record<BrandWordColorKey, string> = {
+  brandPrefixColor: "",
+  brandTownColor: "",
+  brandHubColor: "",
 };
 
 const COLOR_FIELDS: Array<{ key: ColorKey; label: string; description: string }> = [
@@ -136,6 +145,7 @@ export default function AdminSettings() {
   const { toast } = useToast();
 
   const [colors, setColors] = useState(COLOR_DEFAULTS);
+  const [brandWordColors, setBrandWordColors] = useState(BRAND_WORD_COLOR_DEFAULTS);
   const [branding, setBranding] = useState<BrandingFields>(BRANDING_DEFAULTS);
   const [weatherSettings, setWeatherSettings] = useState<WeatherFields>(WEATHER_DEFAULTS);
   const [isDirty, setIsDirty] = useState(false);
@@ -152,6 +162,11 @@ export default function AdminSettings() {
       buttonColor: theme.buttonColor || COLOR_DEFAULTS.buttonColor,
       headingColor: theme.headingColor || "",
     });
+    setBrandWordColors({
+      brandPrefixColor: theme.brandPrefixColor || "",
+      brandTownColor: theme.brandTownColor || "",
+      brandHubColor: theme.brandHubColor || "",
+    });
     setBranding(themeToBrandingFields(theme));
     setWeatherSettings({
       weatherEnabled: theme.weatherEnabled ?? false,
@@ -163,6 +178,11 @@ export default function AdminSettings() {
 
   const handleColorChange = (key: ColorKey, value: string) => {
     setColors((prev) => ({ ...prev, [key]: value }));
+    markDirty();
+  };
+
+  const handleBrandWordColorChange = (key: BrandWordColorKey, value: string) => {
+    setBrandWordColors((prev) => ({ ...prev, [key]: value }));
     markDirty();
   };
 
@@ -185,6 +205,9 @@ export default function AdminSettings() {
           backgroundColor: colors.backgroundColor || undefined,
           buttonColor: colors.buttonColor || undefined,
           headingColor: colors.headingColor || undefined,
+          brandPrefixColor: brandWordColors.brandPrefixColor.trim(),
+          brandTownColor: brandWordColors.brandTownColor.trim(),
+          brandHubColor: brandWordColors.brandHubColor.trim(),
           ...buildBrandingPayload(branding),
           weatherEnabled: weatherSettings.weatherEnabled,
           weatherLocation: weatherSettings.weatherLocation.trim(),
@@ -201,6 +224,11 @@ export default function AdminSettings() {
         buttonColor: updated.buttonColor || COLOR_DEFAULTS.buttonColor,
         headingColor: updated.headingColor || "",
       });
+      setBrandWordColors({
+        brandPrefixColor: updated.brandPrefixColor || "",
+        brandTownColor: updated.brandTownColor || "",
+        brandHubColor: updated.brandHubColor || "",
+      });
       setBranding(themeToBrandingFields(updated));
       setWeatherSettings({
         weatherEnabled: updated.weatherEnabled ?? false,
@@ -215,10 +243,16 @@ export default function AdminSettings() {
 
   const handleResetAll = () => {
     setColors(COLOR_DEFAULTS);
+    setBrandWordColors(BRAND_WORD_COLOR_DEFAULTS);
     setBranding(BRANDING_DEFAULTS);
     setWeatherSettings(WEATHER_DEFAULTS);
     markDirty();
   };
+
+  const brandParts = splitPlatformBrandName(branding.platformName.trim() || DEFAULT_PLATFORM_NAME);
+  const prefixLabel = brandParts.prefix.trim() || "Prefix";
+  const townLabel = brandParts.town || "Town";
+  const hubLabel = brandParts.hub || "Hub";
 
   return (
     <AdminDashboardLayout>
@@ -267,8 +301,44 @@ export default function AdminSettings() {
                     id="platformName"
                     value={branding.platformName}
                     onChange={(e) => handleBrandingChange("platformName", e.target.value)}
-                    placeholder={DEFAULT_PLATFORM_NAME}
+                    placeholder="Clay TownHub"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Names ending in TownHub (e.g. Clay TownHub) get a three-color wordmark below.
+                  </p>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <p className="text-sm font-medium">Wordmark colors</p>
+                  <p className="text-xs text-muted-foreground">
+                    Separate colors for each part of the name in the header and footer. Leave blank for defaults
+                    (muted / brand / heading).
+                  </p>
+                  <div className="mt-3 grid gap-5 md:grid-cols-3">
+                    <ColorPickerField
+                      id="brandPrefixColor"
+                      label={`${prefixLabel} color`}
+                      description="First word (e.g. Clay)"
+                      value={brandWordColors.brandPrefixColor}
+                      onChange={(value) => handleBrandWordColorChange("brandPrefixColor", value)}
+                      placeholder="#64748B"
+                    />
+                    <ColorPickerField
+                      id="brandTownColor"
+                      label={`${townLabel} color`}
+                      description="Middle word"
+                      value={brandWordColors.brandTownColor}
+                      onChange={(value) => handleBrandWordColorChange("brandTownColor", value)}
+                      placeholder={PLATFORM_THEME_DEFAULTS.primaryColor}
+                    />
+                    <ColorPickerField
+                      id="brandHubColor"
+                      label={`${hubLabel} color`}
+                      description="Last word"
+                      value={brandWordColors.brandHubColor}
+                      onChange={(value) => handleBrandWordColorChange("brandHubColor", value)}
+                      placeholder="#0F172A"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="townName">Town name</Label>
@@ -351,9 +421,15 @@ export default function AdminSettings() {
                         Logo
                       </div>
                     )}
-                    <span className="font-serif text-lg font-semibold text-primary">
-                      {branding.platformName.trim() || DEFAULT_PLATFORM_NAME}
-                    </span>
+                    <PlatformBrandMark
+                      name={branding.platformName.trim() || DEFAULT_PLATFORM_NAME}
+                      className="text-lg"
+                      colors={{
+                        prefix: brandWordColors.brandPrefixColor || null,
+                        town: brandWordColors.brandTownColor || null,
+                        hub: brandWordColors.brandHubColor || null,
+                      }}
+                    />
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
                     {resolveTagline({

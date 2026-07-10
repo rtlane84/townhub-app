@@ -95,9 +95,8 @@ function BusinessNavLinks({
           "w-full text-left",
           locked && "cursor-not-allowed opacity-60",
           !locked && "cursor-pointer",
-          active && !locked && DASHBOARD_NAV_ACTIVE,
-          !active && !locked && DASHBOARD_NAV_IDLE,
-          active && locked && "flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5 text-sm font-medium text-muted-foreground",
+          active && !locked ? DASHBOARD_NAV_ACTIVE : DASHBOARD_NAV_IDLE,
+          active && locked && "bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground",
         );
 
         const content = (
