@@ -262,9 +262,9 @@ export default function AdminSettings() {
 
       if (droppedWordmarkColors) {
         toast({
-          title: "Settings saved",
+          title: "Wordmark colors did not save",
           description:
-            "Wordmark colors may not have persisted. Restart the API server so the database columns can be created, then save again.",
+            "The API response did not include your Clay/Town/Hub colors. In Railway, use Redeploy on the latest commit (Restart is not enough), wait until the deploy is Active, then save again.",
           variant: "destructive",
         });
       } else {
