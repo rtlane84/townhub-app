@@ -1,6 +1,8 @@
-# Specific routes first — Netlify uses first match.
-# Static OAuth bounce so Safari returns to the app without the SPA (avoids 404
-# when React routes aren't deployed yet).
+# Netlify / hosts that honor _redirects.
+# Do NOT add `/* /index.html 200` here — Cloudflare Workers SPA
+# (assets.not_found_handling) already does that, and the catch-all
+# causes deploy error 100324 (infinite redirect loop).
+#
+# Static OAuth bounce so Safari returns to the app without the SPA.
 /native-sso-callback /native-sso-callback/index.html 200
 /native-sso-callback/ /native-sso-callback/index.html 200
-/* /index.html 200

@@ -20,7 +20,8 @@
 #   SKIP_DEPENDENCY_INSTALL=true
 #   Build command: pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build
 
-name = "townhub"
+# Must match the Workers Builds project name (CI overrides otherwise).
+name = "townhub-app"
 compatibility_date = "2026-07-09"
 
 # Assets-only Worker (SPA). Uses `wrangler deploy`, which matches Workers Builds

@@ -253,7 +253,9 @@ Repo root is a pnpm monorepo. Use **Workers Builds** (not classic Pages `wrangle
 | Node version | `22` |
 | pnpm version | `10.11.1` (matches `packageManager` in root `package.json`) |
 
-Root `wrangler.toml` configures an assets-only Worker (`assets.directory` + SPA `not_found_handling`). Deploy with **`npx wrangler deploy`** — that uses **Workers Scripts Edit**, which the default Build API token already has.
+Root `wrangler.toml` configures an assets-only Worker named `townhub-app` (`assets.directory` + SPA `not_found_handling`). Deploy with **`npx wrangler deploy`** — that uses **Workers Scripts Edit**, which the default Build API token already has.
+
+Do not put a `/* /index.html 200` rule in `public/_redirects` — Workers SPA handling covers that, and the catch-all fails deploy with error `100324` (infinite loop).
 
 **Do not use `npx wrangler pages deploy`.** That needs Cloudflare Pages → Edit and fails with auth `10000` on the default Workers Builds token.
 
