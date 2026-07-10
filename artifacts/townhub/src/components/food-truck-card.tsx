@@ -9,6 +9,8 @@ import {
   foodTruckOrderingEnabled,
   formatFoodTruckTimeWindow,
 } from "@/lib/food-truck-utils";
+import { CARD_INTERACTIVE } from "@/lib/design-tokens";
+import { cn } from "@/lib/utils";
 
 export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusiness }) {
   const timeWindow = formatFoodTruckTimeWindow(truck.startTime, truck.endTime);
@@ -17,7 +19,7 @@ export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusi
   const businessName = truck.businessName ?? "Food truck";
 
   return (
-    <Card className="group flex h-full flex-col overflow-hidden border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)]">
+    <Card className={cn("group flex h-full flex-col overflow-hidden rounded-[1.75rem]", CARD_INTERACTIVE)}>
       <BusinessListingCardMedia
         heroImageUrl={truck.businessHeroImageUrl}
         heroAlt={businessName}
@@ -29,34 +31,34 @@ export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusi
           </div>
         }
       />
-      <CardContent className="flex flex-1 flex-col px-6 pb-6 pt-10">
+      <CardContent className="flex flex-1 flex-col px-5 pb-5 pt-9">
         <h3 className="mb-2 font-serif text-xl font-bold tracking-tight text-foreground">{businessName}</h3>
         <div className="mb-3 flex items-start gap-1.5 text-sm text-muted-foreground">
           <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div className="min-w-0">
             <span>{truck.locationName}</span>
-            {truck.address && <p className="mt-0.5 text-xs">{truck.address}</p>}
-            {timeWindow && (
-              <div className="mt-1 flex items-center gap-1.5 text-xs">
+            {truck.address ? <p className="mt-0.5 text-xs">{truck.address}</p> : null}
+            {timeWindow ? (
+              <div className="mt-1.5 flex items-center gap-1.5 text-xs">
                 <Clock className="h-3.5 w-3.5 shrink-0" />
                 <span>{timeWindow}</span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {description && (
-          <p className="mb-4 line-clamp-2 flex-1 text-sm text-muted-foreground">{description}</p>
-        )}
+        {description ? (
+          <p className="mb-4 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        ) : null}
 
         <div className="mt-auto flex flex-wrap gap-2">
-          {foodTruckOrderingEnabled(truck) && (
+          {foodTruckOrderingEnabled(truck) ? (
             <Link href={`/businesses/${slug}`}>
               <Button size="sm" className="min-h-10 rounded-full px-5">
                 Order
               </Button>
             </Link>
-          )}
+          ) : null}
           <a href={foodTruckDirectionsUrl(truck)} target="_blank" rel="noopener noreferrer">
             <Button size="sm" variant="outline" className="min-h-10 rounded-full px-5">
               <Navigation className="mr-1.5 h-3.5 w-3.5" />
@@ -74,20 +76,20 @@ export function FoodTruckScheduleItem({ truck }: { truck: FoodTruckLocationWithB
   const slug = truck.businessSlug ?? String(truck.businessId);
 
   return (
-    <div className="flex flex-col gap-2 border-b border-border/40 py-3 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex flex-col gap-2 border-b border-border/30 py-3.5 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0">
         <Link href={`/businesses/${slug}`}>
-          <span className="font-medium text-foreground hover:text-primary hover:underline">
+          <span className="font-semibold tracking-tight text-foreground transition-colors hover:text-primary">
             {truck.businessName}
           </span>
         </Link>
-        <p className="text-sm text-muted-foreground">{truck.locationName}</p>
-        {truck.address && <p className="text-xs text-muted-foreground">{truck.address}</p>}
+        <p className="mt-0.5 text-sm text-muted-foreground">{truck.locationName}</p>
+        {truck.address ? <p className="text-xs text-muted-foreground">{truck.address}</p> : null}
       </div>
       <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-        {timeWindow && <p className="text-sm text-muted-foreground">{timeWindow}</p>}
+        {timeWindow ? <p className="text-sm text-muted-foreground">{timeWindow}</p> : null}
         <a href={foodTruckDirectionsUrl(truck)} target="_blank" rel="noopener noreferrer">
-          <Button size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs">
+          <Button size="sm" variant="outline" className="h-9 rounded-full px-3.5 text-xs">
             <Navigation className="mr-1 h-3 w-3" />
             Directions
           </Button>

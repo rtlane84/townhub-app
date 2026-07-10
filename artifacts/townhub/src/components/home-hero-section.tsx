@@ -53,7 +53,7 @@ export function HomeHeroSection() {
                 <Link href="/businesses">
                   <Button
                     size="lg"
-                    className="h-[50px] rounded-2xl border-0 bg-accent px-8 text-base font-bold text-slate-900 shadow-lg ring-1 ring-black/5 transition-transform hover:-translate-y-0.5 hover:bg-accent/90 hover:text-slate-900"
+                    className="h-[52px] rounded-[1.25rem] border-0 bg-primary px-8 text-base font-semibold text-primary-foreground shadow-[0_4px_20px_-4px_rgba(30,58,138,0.45)] transition-transform hover:-translate-y-0.5"
                   >
                     {shopCtaLabel}
                   </Button>
@@ -64,7 +64,7 @@ export function HomeHeroSection() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="h-[50px] rounded-2xl border bg-white/90 px-8 text-base font-semibold text-foreground shadow-md backdrop-blur-xl hover:bg-white"
+                    className="h-[52px] rounded-[1.25rem] border-0 bg-card/95 px-8 text-base font-semibold text-foreground shadow-md backdrop-blur-xl hover:bg-card"
                   >
                     List Your Business
                   </Button>

@@ -89,79 +89,87 @@
   --text-9xl: 8rem;
   --text-9xl--line-height: 1;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+
+  --shadow-card: 0 2px 24px -6px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-card-hover: 0 12px 36px -10px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-float: 0 8px 32px -8px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
-/* LIGHT MODE */
+/* LIGHT MODE — premium Apple-quality community platform */
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(15, 23, 42, 0.08);
+  --badge-outline: rgba(15, 23, 42, 0.06);
   --opaque-button-border-intensity: -8;
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: rgba(15, 23, 42, 0.03);
+  --elevate-2: rgba(15, 23, 42, 0.07);
 
-  /* Warm Earthy Palette */
-  --background: 40 33% 98%;      /* Very light warm cream */
-  --foreground: 20 20% 15%;      /* Deep brown/charcoal */
-  --border: 30 15% 85%;          /* Soft beige border */
-  --card: 0 0% 100%;             /* White for cards */
-  --card-foreground: 20 20% 15%;
-  --card-border: 30 15% 85%;
+  /* Soft cool canvas — calm, spacious, native */
+  --background: 220 16% 96.5%;
+  --foreground: 222 22% 12%;
+  --border: 220 14% 90%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 22% 12%;
+  --card-border: 220 14% 92%;
 
-  --sidebar: 30 20% 96%;
-  --sidebar-foreground: 20 20% 15%;
-  --sidebar-border: 30 15% 85%;
+  --sidebar: 220 18% 97%;
+  --sidebar-foreground: 222 22% 12%;
+  --sidebar-border: 220 14% 90%;
   --sidebar-primary: 221 83% 32%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 210 20% 94%;
-  --sidebar-accent-foreground: 215 25% 20%;
+  --sidebar-accent: 220 16% 94%;
+  --sidebar-accent-foreground: 222 20% 22%;
   --sidebar-ring: 221 83% 32%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 20 20% 15%;
-  --popover-border: 30 15% 85%;
+  --popover-foreground: 222 22% 12%;
+  --popover-border: 220 14% 90%;
 
-  /* Platform defaults — overridden at runtime by PlatformThemeProvider */
+  /* TownHub navy — overridden at runtime by PlatformThemeProvider */
   --primary: 221 83% 32%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary: Sage Green */
-  --secondary: 130 25% 45%;
+  /* Soft sage secondary */
+  --secondary: 152 18% 42%;
   --secondary-foreground: 0 0% 100%;
 
-  --muted: 210 20% 96%;
-  --muted-foreground: 215 16% 40%;
+  --muted: 220 16% 94%;
+  --muted-foreground: 220 10% 42%;
 
-  --accent: 38 92% 50%;
-  --accent-foreground: 221 83% 22%;
+  /* Warm amber accent — used sparingly for status / highlights */
+  --accent: 38 92% 52%;
+  --accent-foreground: 221 83% 18%;
 
-  --destructive: 0 70% 50%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 214 20% 85%;
+  --input: 220 14% 88%;
   --ring: 221 83% 32%;
 
   --platform-button: 221 83% 32%;
-  
+
   --chart-1: 221 83% 32%;
-  --chart-2: 130 25% 45%;
-  --chart-3: 38 92% 50%;
-  --chart-4: 340 50% 50%;
-  --chart-5: 200 40% 45%;
+  --chart-2: 152 18% 42%;
+  --chart-3: 38 92% 52%;
+  --chart-4: 340 55% 52%;
+  --chart-5: 200 45% 45%;
 
-  --radius: 0.75rem;
+  /* Large, friendly radii — inspiration screenshots */
+  --radius: 1.5rem;
 
-  --shadow-2xs: 0px 1px 2px 0px rgba(0,0,0, 0.05);
-  --shadow-xs: 0px 1px 3px 0px rgba(0,0,0, 0.05);
-  --shadow-sm: 0px 2px 4px 0px rgba(0,0,0, 0.05);
-  --shadow: 0px 4px 6px -1px rgba(0,0,0, 0.05), 0px 2px 4px -2px rgba(0,0,0, 0.05);
-  --shadow-md: 0px 10px 15px -3px rgba(0,0,0, 0.05), 0px 4px 6px -4px rgba(0,0,0, 0.05);
-  --shadow-lg: 0px 20px 25px -5px rgba(0,0,0, 0.05), 0px 8px 10px -6px rgba(0,0,0, 0.05);
-  --shadow-xl: 0px 25px 50px -12px rgba(0,0,0, 0.1);
-  --shadow-2xl: 0px 35px 60px -15px rgba(0,0,0, 0.1);
+  --shadow-2xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-xs: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 2px 8px -2px rgba(15, 23, 42, 0.06);
+  --shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 24px -6px rgba(15, 23, 42, 0.1), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 16px 40px -10px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 24px 50px -12px rgba(15, 23, 42, 0.14);
+  --shadow-2xl: 0 32px 64px -16px rgba(15, 23, 42, 0.16);
 }
 
 .dark {
@@ -202,9 +210,56 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary;
+    font-feature-settings: "ss01" on, "cv11" on;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif tracking-tight;
+  }
+}
+
+@layer utilities {
+  .th-card {
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-card);
+  }
+  .th-card-interactive {
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 280ms ease;
+  }
+  .th-card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+  .th-fade-up {
+    animation: th-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .th-fade-up-delay-1 { animation-delay: 60ms; }
+  .th-fade-up-delay-2 { animation-delay: 120ms; }
+  .th-fade-up-delay-3 { animation-delay: 180ms; }
+  .th-press {
+    transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease;
+  }
+  .th-press:active {
+    transform: scale(0.97);
+    opacity: 0.92;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes th-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -224,31 +279,41 @@ html.native-app body {
 
 html.native-app .native-site-header {
   padding-top: var(--safe-area-top);
-  border-bottom-color: hsl(var(--border) / 0.35);
-  background: hsl(var(--background) / 0.72);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
+  border-bottom-color: transparent;
+  background: hsl(var(--background) / 0.78);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
 }
 
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+@supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
   html.native-app .native-site-header {
-    background: hsl(var(--background) / 0.55);
+    background: hsl(var(--background) / 0.62);
   }
 }
 
+/* Floating pill tab bar — Apple Maps / Wallet inspired */
 html.native-app .native-bottom-tab-bar {
-  padding-bottom: var(--safe-area-bottom);
-  padding-left: max(0px, var(--safe-area-left));
-  padding-right: max(0px, var(--safe-area-right));
-  border-top-color: hsl(var(--border) / 0.35);
-  background: hsl(var(--background) / 0.72);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
+  padding-bottom: max(0.5rem, var(--safe-area-bottom));
+  padding-left: max(0.75rem, var(--safe-area-left));
+  padding-right: max(0.75rem, var(--safe-area-right));
+  border-top: none;
+  background: transparent;
+  pointer-events: none;
 }
 
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-  html.native-app .native-bottom-tab-bar {
-    background: hsl(var(--background) / 0.55);
+html.native-app .native-bottom-tab-bar-inner {
+  pointer-events: auto;
+  border-radius: 1.75rem;
+  background: hsl(var(--card) / 0.88);
+  -webkit-backdrop-filter: saturate(200%) blur(28px);
+  backdrop-filter: saturate(200%) blur(28px);
+  box-shadow: var(--shadow-float);
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+@supports (backdrop-filter: blur(28px)) or (-webkit-backdrop-filter: blur(28px)) {
+  html.native-app .native-bottom-tab-bar-inner {
+    background: hsl(var(--card) / 0.72);
   }
 }
 
@@ -259,15 +324,20 @@ html.native-app .native-account-sheet {
 html.native-app .native-tab-item {
   min-width: 48px;
   -webkit-tap-highlight-color: transparent;
-  transition: color 180ms ease, transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: color 200ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html.native-app .native-tab-item[aria-current="page"] {
   color: hsl(var(--primary));
 }
 
+html.native-app .native-tab-item[aria-current="page"] .native-tab-icon-wrap {
+  background: hsl(var(--primary) / 0.12);
+  transform: scale(1.04);
+}
+
 html.native-app .native-tab-item[aria-current="page"] .native-tab-icon {
-  transform: scale(1.06);
+  transform: scale(1.02);
 }
 
 html.native-app input,
@@ -387,9 +457,9 @@ html.native-app .native-pressable:active {
 }
 
 .food-truck-map-popup .leaflet-popup-content-wrapper {
-  border-radius: 0.75rem;
-  border: 1px solid hsl(var(--border) / 0.5);
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+  border-radius: 1.25rem;
+  border: none;
+  box-shadow: 0 8px 28px -6px rgb(0 0 0 / 0.14);
 }
 
 .food-truck-map-popup .leaflet-popup-content {

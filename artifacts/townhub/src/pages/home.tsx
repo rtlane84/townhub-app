@@ -14,6 +14,7 @@ import {
   getGetMarketplaceStatsQueryKey,
 } from "@workspace/api-client-react";
 import { Link } from "wouter";
+import { useUser } from "@clerk/react";
 import {
   Store, ArrowRight, Leaf, Coffee, Utensils, Calendar, Sparkles, MapPin, Clock, Truck,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { EventCard } from "@/components/event-card";
 import { QuickTownInfoSection } from "@/components/quick-town-info-section";
 import { HomeHeroSection } from "@/components/home-hero-section";
+import { SectionHeader } from "@/components/section-header";
 import {
   HighlightCardSkeleton,
   HomeEventsSkeleton,
@@ -40,20 +42,29 @@ import {
   businessListingCardVars,
 } from "@/lib/theme-colors";
 import { formatFoodTruckTimeWindow } from "@/lib/food-truck-utils";
-
-const LISTING_CARD_CLASS =
-  "h-full hover-elevate cursor-pointer border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] group transition-all duration-200 native-pressable";
+import { LISTING_CARD_CLASS, PAGE_CONTAINER, SECTION_Y } from "@/lib/design-tokens";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
-  { name: "Food & Drink", type: BusinessType.FOOD_VENDOR, icon: <Utensils className="h-7 w-7" />, tint: "from-amber-500/15 to-orange-500/5" },
-  { name: "Flowers", type: BusinessType.FLORIST, icon: <Leaf className="h-7 w-7 text-green-600" />, tint: "from-emerald-500/15 to-green-500/5" },
-  { name: "Plants & Market", type: BusinessType.GARDEN_MARKET, icon: <Store className="h-7 w-7 text-primary" />, tint: "from-primary/15 to-primary/5" },
-  { name: "Salon / Beauty", type: BusinessType.SALON, icon: <Sparkles className="h-7 w-7 text-pink-500" />, tint: "from-pink-500/15 to-rose-500/5" },
-  { name: "Retail & General", type: BusinessType.RETAIL_STORE, icon: <Coffee className="h-7 w-7 text-sky-600" />, tint: "from-sky-500/15 to-blue-500/5" },
+  { name: "Food & Drink", type: BusinessType.FOOD_VENDOR, icon: Utensils, tint: "bg-amber-500/10 text-amber-700" },
+  { name: "Flowers", type: BusinessType.FLORIST, icon: Leaf, tint: "bg-emerald-500/10 text-emerald-700" },
+  { name: "Plants & Market", type: BusinessType.GARDEN_MARKET, icon: Store, tint: "bg-primary/10 text-primary" },
+  { name: "Salon / Beauty", type: BusinessType.SALON, icon: Sparkles, tint: "bg-pink-500/10 text-pink-600" },
+  { name: "Retail & General", type: BusinessType.RETAIL_STORE, icon: Coffee, tint: "bg-sky-500/10 text-sky-700" },
 ];
 
+function greetingForHour(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function Home() {
-  const { weatherEnabled } = usePlatformBranding();
+  const { weatherEnabled, platformName, townName } = usePlatformBranding();
+  const { user, isSignedIn } = useUser();
+  const firstName = user?.firstName?.trim();
+  const greeting = greetingForHour(new Date().getHours());
+  const placeLabel = townName || platformName;
 
   const { data: weather, isError: weatherError, isPending: weatherPending } = useGetWeather({
     query: {
@@ -126,8 +137,21 @@ export default function Home() {
   const featuredBusinesses = businesses?.slice(0, 6) ?? [];
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <HomeHeroSection />
+
+      {/* Personalized dashboard greeting */}
+      <section className={cn(PAGE_CONTAINER, "pt-8 pb-2 th-fade-up md:pt-10")}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          Today in {placeLabel}
+        </p>
+        <h1 className="mt-1.5 font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+          {isSignedIn && firstName ? `${greeting}, ${firstName}` : greeting}
+        </h1>
+        <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground md:text-[15px]">
+          Your local favorites, events, and food trucks — all in one calm place.
+        </p>
+      </section>
 
       <QuickTownInfoSection
         weatherEnabled={weatherEnabled}
@@ -142,13 +166,35 @@ export default function Home() {
         marketplaceStatsLoading={marketplaceStatsPending && !marketplaceStats}
       />
 
+      {/* Categories — horizontal on mobile, grid on desktop */}
+      <section className={cn(SECTION_Y, "th-fade-up th-fade-up-delay-1")}>
+        <div className={PAGE_CONTAINER}>
+          <SectionHeader title="Browse by category" size="sm" />
+          <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar md:grid md:grid-cols-5 md:gap-4 md:overflow-visible md:pb-0">
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <Link key={cat.type} href={`/businesses?type=${cat.type}`} className="min-w-[140px] shrink-0 md:min-w-0">
+                  <Card className={cn(LISTING_CARD_CLASS, "rounded-[1.5rem]")}>
+                    <CardContent className="flex flex-col items-center gap-3 p-5 text-center md:p-6">
+                      <div className={cn("flex h-14 w-14 items-center justify-center rounded-2xl", cat.tint)}>
+                        <Icon className="h-6 w-6" strokeWidth={1.85} />
+                      </div>
+                      <span className="text-sm font-semibold tracking-tight text-foreground">{cat.name}</span>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Seasonal highlights */}
       {highlightsPending ? (
-        <section className="border-y border-primary/20 bg-primary/10 py-8">
-          <div className="container mx-auto px-4">
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Seasonal Highlights</h2>
-            </div>
+        <section className="pb-4">
+          <div className={PAGE_CONTAINER}>
+            <SectionHeader title="Seasonal highlights" eyebrow="Community" icon={<Sparkles className="h-4 w-4" />} size="sm" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
                 <HighlightCardSkeleton key={index} />
@@ -157,74 +203,59 @@ export default function Home() {
           </div>
         </section>
       ) : featuredHighlights.length > 0 ? (
-        <section className="border-y border-primary/20 bg-primary/10 py-8">
-          <div className="container mx-auto px-4">
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Seasonal Highlights</h2>
-            </div>
+        <section className="pb-4 th-fade-up">
+          <div className={PAGE_CONTAINER}>
+            <SectionHeader title="Seasonal highlights" eyebrow="Community" icon={<Sparkles className="h-4 w-4" />} size="sm" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {featuredHighlights.map((h) => (
-                <div key={h.id} className="flex items-start gap-3 rounded-[1.25rem] border-0 bg-card/90 p-5 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)]">
-                  {h.imageUrl && (
-                    <img
-                      src={h.imageUrl}
-                      alt={h.title}
-                      width={64}
-                      height={64}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-16 w-16 shrink-0 rounded-lg object-cover"
-                    />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground">{h.title}</p>
-                    {h.description && (
-                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{h.description}</p>
+                <Card key={h.id} className="overflow-hidden rounded-[1.5rem]">
+                  <CardContent className="flex items-start gap-4 p-5">
+                    {h.imageUrl ? (
+                      <img
+                        src={h.imageUrl}
+                        alt={h.title}
+                        width={72}
+                        height={72}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-[72px] w-[72px] shrink-0 rounded-2xl object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <Sparkles className="h-6 w-6" />
+                      </div>
                     )}
-                    {h.buttonText && h.buttonUrl && (
-                      <Link href={h.buttonUrl}>
-                        <span className="mt-1 block text-xs font-medium text-primary hover:underline">
-                          {h.buttonText} →
-                        </span>
-                      </Link>
-                    )}
-                  </div>
-                </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold tracking-tight text-foreground">{h.title}</p>
+                      {h.description ? (
+                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{h.description}</p>
+                      ) : null}
+                      {h.buttonText && h.buttonUrl ? (
+                        <Link href={h.buttonUrl}>
+                          <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+                            {h.buttonText}
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </span>
+                        </Link>
+                      ) : null}
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
         </section>
       ) : null}
 
-      <section className="bg-background py-16 native-animate-in native-animate-in-delay-1">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-8 text-center font-serif text-3xl font-bold tracking-tight">Browse by Category</h2>
-          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
-            {CATEGORIES.map((cat) => (
-              <Link key={cat.type} href={`/businesses?type=${cat.type}`}>
-                <Card className="group cursor-pointer overflow-hidden border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] transition-all duration-200 hover-elevate native-pressable">
-                  <CardContent className={`flex flex-col items-center gap-4 bg-gradient-to-br ${cat.tint} p-7 text-center`}>
-                    <div className="rounded-2xl bg-background/80 p-3.5 shadow-sm transition-transform duration-200 group-hover:scale-105">
-                      {cat.icon}
-                    </div>
-                    <span className="text-sm font-semibold tracking-tight text-foreground">{cat.name}</span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-muted/15 py-16 native-animate-in native-animate-in-delay-2">
-        <div className="container mx-auto px-4">
-          <div className="mb-10 flex items-center justify-between">
-            <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Featured Local Favorites</h2>
-            <Link href="/businesses" className="hidden items-center font-medium text-primary hover:underline sm:flex">
-              View all <ArrowRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
+      {/* Featured businesses */}
+      <section className={cn(SECTION_Y, "th-fade-up th-fade-up-delay-2")}>
+        <div className={PAGE_CONTAINER}>
+          <SectionHeader
+            title="Featured local favorites"
+            description="Hand-picked shops and makers around town."
+            actionHref="/businesses"
+            actionLabel="View all"
+          />
 
           {businessesPending && featuredBusinesses.length === 0 ? (
             <HomeFeaturedBusinessesSkeleton />
@@ -240,7 +271,7 @@ export default function Home() {
               }
             />
           ) : featuredBusinesses.length > 0 ? (
-            <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
               {featuredBusinesses.map((business) => (
                 <Link key={business.id} href={`/businesses/${business.slug}`}>
                   <Card className={LISTING_CARD_CLASS} style={businessListingCardVars(business.accentColor)}>
@@ -258,12 +289,12 @@ export default function Home() {
                         </div>
                       }
                     />
-                    <CardContent className="px-6 pb-6 pt-10">
-                      <div className="mb-2 flex items-start justify-between">
+                    <CardContent className="px-5 pb-5 pt-9">
+                      <div className="mb-2 flex items-start justify-between gap-2">
                         <h3 className="line-clamp-1 font-serif text-xl font-bold text-foreground">{business.name}</h3>
                         {!business.active && <Badge variant="secondary">Closed</Badge>}
                       </div>
-                      <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
+                      <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                         {business.description || "A local favorite."}
                       </p>
                       <BusinessTags
@@ -290,7 +321,7 @@ export default function Home() {
             />
           )}
 
-          <div className="mt-8 text-center sm:hidden">
+          <div className="mt-6 sm:hidden">
             <Link href="/businesses">
               <Button variant="outline" className="w-full min-h-11">View all businesses</Button>
             </Link>
@@ -298,29 +329,39 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Food trucks today */}
       {todayTrucksPending && todayTrucks.length === 0 ? (
-        <section className="border-y border-accent/20 bg-accent/10 py-12">
-          <div className="container mx-auto px-4">
-            <div className="mb-6 flex items-center gap-2">
-              <Truck className="h-5 w-5 text-primary" />
-              <h2 className="font-serif text-2xl font-bold text-foreground">Food Trucks Today</h2>
-            </div>
+        <section className="pb-10">
+          <div className={PAGE_CONTAINER}>
+            <SectionHeader
+              title="Food trucks today"
+              actionHref="/food-trucks"
+              icon={<Truck className="h-4 w-4" />}
+              size="sm"
+            />
             <HomeFoodTrucksSkeleton />
           </div>
         </section>
       ) : todayTrucks.length > 0 ? (
-        <section id="food-trucks-today" className="border-y border-accent/20 bg-accent/10 py-12">
-          <div className="container mx-auto px-4">
-            <div className="mb-6 flex items-center gap-2">
-              <Truck className="h-5 w-5 text-primary" />
-              <h2 className="font-serif text-2xl font-bold text-foreground">Food Trucks Today</h2>
-              <Badge className="ml-1 border-0 bg-primary/10 text-primary">Live</Badge>
+        <section id="food-trucks-today" className="pb-10 th-fade-up">
+          <div className={PAGE_CONTAINER}>
+            <SectionHeader
+              title="Food trucks today"
+              actionHref="/food-trucks"
+              icon={<Truck className="h-4 w-4" />}
+              size="sm"
+            />
+            <div className="mb-4">
+              <Badge variant="soft" className="gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+                Live now
+              </Badge>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {todayTrucks.map((truck) => (
                 <Link key={truck.id} href={`/businesses/${truck.businessSlug}`}>
-                  <Card className="group cursor-pointer border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] hover-elevate native-pressable">
-                    <CardContent className="p-6">
+                  <Card className={cn(LISTING_CARD_CLASS, "rounded-[1.5rem]")}>
+                    <CardContent className="p-5">
                       <div className="flex items-start gap-3.5">
                         {truck.businessLogoUrl ? (
                           <BusinessLogoBadge
@@ -334,19 +375,19 @@ export default function Home() {
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-foreground transition-colors group-hover:text-primary">
+                          <p className="font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
                             {truck.businessName}
                           </p>
-                          <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5" />
+                          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
                             <span className="truncate">{truck.locationName}</span>
                           </div>
-                          {formatFoodTruckTimeWindow(truck.startTime, truck.endTime) && (
-                            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3.5 w-3.5" />
+                          {formatFoodTruckTimeWindow(truck.startTime, truck.endTime) ? (
+                            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5 shrink-0" />
                               <span>{formatFoodTruckTimeWindow(truck.startTime, truck.endTime)}</span>
                             </div>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     </CardContent>
@@ -358,73 +399,58 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="border-t bg-white py-16">
-        <div className="container mx-auto px-4">
-          {eventsPending && featuredEvents.length === 0 ? (
-            <div className="rounded-2xl border border-primary/10 bg-primary/5 p-6 md:p-8">
-              <div className="mb-6">
-                <div className="mb-1 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <h2 className="font-serif text-2xl font-bold text-foreground">Featured Events</h2>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Promoted highlights picked by the platform — don&apos;t miss these.
-                </p>
-              </div>
+      {/* Featured events */}
+      {(eventsPending && featuredEvents.length === 0) || featuredEvents.length > 0 ? (
+        <section className={cn(SECTION_Y, "bg-card/50")}>
+          <div className={PAGE_CONTAINER}>
+            <SectionHeader
+              title="Featured events"
+              description="Promoted highlights you won't want to miss."
+              actionHref="/events"
+              icon={<Sparkles className="h-4 w-4" />}
+            />
+            {eventsPending && featuredEvents.length === 0 ? (
               <HomeEventsSkeleton />
-            </div>
-          ) : featuredEvents.length > 0 ? (
-            <div className="rounded-2xl border border-primary/10 bg-primary/5 p-6 md:p-8">
-              <div className="mb-6">
-                <div className="mb-1 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <h2 className="font-serif text-2xl font-bold text-foreground">Featured Events</h2>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Promoted highlights picked by the platform — don&apos;t miss these.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {featuredEvents.map((event) => (
                   <EventCard key={event.id} event={event} />
                 ))}
               </div>
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="border-t bg-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-6">
-            <div className="mb-1 flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              <h2 className="font-serif text-2xl font-bold text-foreground">Upcoming Events</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              More local events happening soon in the community.
-            </p>
+            )}
           </div>
+        </section>
+      ) : null}
+
+      {/* Upcoming events */}
+      <section className={SECTION_Y}>
+        <div className={PAGE_CONTAINER}>
+          <SectionHeader
+            title="Upcoming events"
+            description="More happening soon in the community."
+            actionHref="/events"
+            icon={<Calendar className="h-4 w-4" />}
+          />
 
           {eventsPending && upcomingEvents.length === 0 ? (
             <HomeEventsSkeleton count={6} />
           ) : upcomingEvents.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {upcomingEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}
             </div>
-          ) : (
+          ) : featuredEvents.length === 0 ? (
             <NativeEmptyState
               icon={Calendar}
-              title="No other upcoming events right now"
+              title="No upcoming events right now"
               description="Check back soon or browse the full events calendar."
             />
-          )}
+          ) : null}
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center sm:hidden">
             <Link href="/events">
-              <Button variant="outline" className="min-h-11">View All Events</Button>
+              <Button variant="outline" className="min-h-11">View all events</Button>
             </Link>
           </div>
         </div>

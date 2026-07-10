@@ -1,9 +1,9 @@
 import { shadcn } from "@clerk/themes";
 
-const clerkForeground = "hsl(20, 20%, 15%)";
-const clerkMutedForeground = "hsl(20, 10%, 45%)";
-const clerkBorder = "hsl(214, 20%, 88%)";
-const clerkPrimary = "hsl(221, 64%, 33%)";
+const clerkForeground = "hsl(222, 22%, 12%)";
+const clerkMutedForeground = "hsl(220, 10%, 42%)";
+const clerkBorder = "hsl(220, 14%, 90%)";
+const clerkPrimary = "hsl(221, 83%, 32%)";
 const clerkPrimaryForeground = "#ffffff";
 
 /** Sign-in / sign-up card styling (ClerkProvider). */
@@ -15,17 +15,17 @@ export const clerkAuthAppearance = {
     colorPrimaryForeground: clerkPrimaryForeground,
     colorForeground: clerkForeground,
     colorMutedForeground: clerkMutedForeground,
-    colorDanger: "hsl(0, 70%, 50%)",
+    colorDanger: "hsl(0, 72%, 51%)",
     colorBackground: "hsl(0, 0%, 100%)",
-    colorInput: "hsl(214, 20%, 88%)",
+    colorInput: "hsl(220, 14%, 88%)",
     colorInputForeground: clerkForeground,
-    colorNeutral: "hsl(214, 20%, 96%)",
+    colorNeutral: "hsl(220, 16%, 96%)",
     fontFamily: "'Outfit', sans-serif",
-    borderRadius: "0.75rem",
+    borderRadius: "1.25rem",
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-white rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg",
+    cardBox: "bg-white rounded-[1.75rem] w-[440px] max-w-full overflow-hidden shadow-[0_8px_40px_-12px_rgba(15,23,42,0.16)]",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-2xl font-serif text-foreground font-semibold tracking-tight",
@@ -81,15 +81,15 @@ export const nativeClerkAuthAppearance = {
 export const clerkUserButtonAppearance = {
   variables: {
     colorBackground: "hsl(0, 0%, 100%)",
-    colorForeground: "hsl(20, 20%, 12%)",
-    colorMutedForeground: "hsl(20, 10%, 40%)",
-    colorNeutral: "hsl(30, 15%, 88%)",
-    colorPrimary: "hsl(25, 80%, 45%)",
-    colorDanger: "hsl(0, 70%, 50%)",
+    colorForeground: "hsl(222, 22%, 12%)",
+    colorMutedForeground: "hsl(220, 10%, 42%)",
+    colorNeutral: "hsl(220, 14%, 90%)",
+    colorPrimary: "hsl(221, 83%, 32%)",
+    colorDanger: "hsl(0, 72%, 51%)",
   },
   elements: {
     userButtonPopoverCard:
-      "!bg-white !text-foreground border border-border shadow-xl rounded-xl overflow-hidden",
+      "!bg-white !text-foreground border-0 shadow-[0_8px_40px_-12px_rgba(15,23,42,0.16)] rounded-[1.5rem] overflow-hidden",
     userButtonPopoverMain: "!bg-white",
     userButtonPopoverHeader: "!bg-white border-b border-border",
     userButtonPopoverActions: "!bg-white p-2",

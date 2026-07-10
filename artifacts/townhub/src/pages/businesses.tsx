@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Search, MapPin, Store, Filter } from "lucide-react";
+import { Search, MapPin, Store } from "lucide-react";
 import { useListBusinesses } from "@workspace/api-client-react";
 import { PUBLIC_BUSINESS_FILTERS } from "@workspace/api-zod";
 import {
@@ -16,12 +16,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BusinessListingCardMedia } from "@/components/business-logo-badge";
 import { BusinessTags } from "@/components/business-tags";
 import { NativeEmptyState } from "@/components/native-empty-state";
+import { SectionHeader } from "@/components/section-header";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { LISTING_CARD_CLASS, PAGE_CONTAINER } from "@/lib/design-tokens";
+import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
-
-const LISTING_CARD_CLASS =
-  "h-full hover-elevate cursor-pointer border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] group transition-all duration-200 native-pressable";
 
 export default function Businesses() {
   const [searchInput, setSearchInput] = useState("");
@@ -36,45 +36,53 @@ export default function Businesses() {
   const categories = PUBLIC_BUSINESS_FILTERS;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-foreground">Local Businesses</h1>
-          <p className="text-muted-foreground mt-1">Discover and support the best of our community.</p>
-        </div>
-      </div>
+    <div className={cn(PAGE_CONTAINER, "py-8 md:py-10 native-animate-in")}>
+      <SectionHeader
+        title="Local businesses"
+        description="Discover and support the best of our community."
+        size="lg"
+        className="mb-8"
+      />
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search businesses..." 
-            className="pl-9 h-11"
+      {/* Search + filters */}
+      <div className="mb-8 space-y-4">
+        <div className="relative max-w-xl">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search businesses..."
+            className="h-12 pl-11 text-base"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
+            aria-label="Search businesses"
           />
         </div>
-        <div className="flex overflow-x-auto pb-2 -mb-2 gap-2 hide-scrollbar">
-          {categories.map((cat) => (
-            <Button
-              key={cat.value}
-              variant={selectedType === cat.value ? "default" : "outline"}
-              onClick={() => setSelectedType(cat.value)}
-              className="rounded-full whitespace-nowrap"
-            >
-              {cat.label}
-            </Button>
-          ))}
+        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+          {categories.map((cat) => {
+            const active = selectedType === cat.value;
+            return (
+              <Button
+                key={cat.value}
+                variant={active ? "default" : "outline"}
+                onClick={() => setSelectedType(cat.value)}
+                className={cn(
+                  "shrink-0 rounded-full whitespace-nowrap",
+                  !active && "bg-card",
+                )}
+              >
+                {cat.label}
+              </Button>
+            );
+          })}
         </div>
       </div>
 
       {isLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="flex flex-col space-y-3">
-              <Skeleton className="h-[200px] w-full rounded-xl" />
-              <Skeleton className="h-4 w-[250px]" />
-              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="aspect-[16/10] w-full rounded-[1.75rem]" />
+              <Skeleton className="h-4 w-[70%]" />
+              <Skeleton className="h-4 w-[50%]" />
             </div>
           ))}
         </div>
@@ -97,7 +105,7 @@ export default function Businesses() {
           }
         />
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {businesses?.map((business) => (
             <Link key={business.id} href={`/businesses/${business.slug}`}>
               <Card className={LISTING_CARD_CLASS} style={businessListingCardVars(business.accentColor)}>
@@ -115,21 +123,21 @@ export default function Businesses() {
                     </div>
                   }
                 />
-                <CardContent className="pt-10 pb-6 px-6 flex flex-col h-[calc(100%-56.25%)]">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-serif font-bold text-foreground line-clamp-1">{business.name}</h3>
+                <CardContent className="flex h-[calc(100%-56.25%)] flex-col px-5 pb-5 pt-9">
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <h3 className="line-clamp-1 font-serif text-xl font-bold text-foreground">{business.name}</h3>
                     {!business.active && <Badge variant="secondary">Closed</Badge>}
                   </div>
-                  
-                  <div className="flex items-center text-sm text-muted-foreground mb-3 gap-1">
+
+                  <div className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5 shrink-0" style={businessIconAccentStyle(business.accentColor)} />
                     <span className="line-clamp-1">{business.address || "Online"}</span>
                   </div>
 
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
+                  <p className="mb-4 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
                     {business.description || "A local favorite in our community."}
                   </p>
-                  
+
                   <BusinessTags
                     business={business}
                     accentColor={business.accentColor}

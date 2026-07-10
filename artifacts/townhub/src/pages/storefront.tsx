@@ -29,13 +29,13 @@ import { usePlatformBranding } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const categoryPillActiveClass =
-  "rounded-full whitespace-nowrap bg-platform-button text-white border border-platform-button !shadow-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-platform-button hover:text-white hover:!shadow-none active:!shadow-none";
+  "rounded-full whitespace-nowrap bg-platform-button text-white border-0 !shadow-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-platform-button hover:text-white hover:!shadow-none active:!shadow-none";
 
 const storefrontPrimaryButtonClass =
-  "rounded-full bg-platform-button text-white border border-platform-button hover:bg-platform-button/90 hover:text-white";
+  "rounded-full bg-platform-button text-white border-0 shadow-[0_2px_12px_-2px_rgba(30,58,138,0.35)] hover:bg-platform-button/90 hover:text-white";
 
 const categoryPillInactiveClass =
-  "rounded-full whitespace-nowrap border border-border bg-white text-foreground shadow-sm hover:bg-muted outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 active:shadow-sm";
+  "rounded-full whitespace-nowrap border-0 bg-card text-foreground shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04] hover:bg-muted outline-none focus-visible:ring-0 focus-visible:ring-offset-0";
 
 export default function Storefront() {
   const [, params] = useRoute("/businesses/:slug");
@@ -205,7 +205,7 @@ export default function Storefront() {
   const accentHex = normalizeHex(b.accentColor) ?? mergePlatformTheme(theme).accentColor;
 
   return (
-    <BusinessThemeScope business={b} className="min-h-screen bg-muted/10 pb-20">
+    <BusinessThemeScope business={b} className="min-h-screen bg-background pb-24">
       {/* Banner text */}
       {bannerText && (
         <div className="bg-primary text-primary-foreground text-sm font-medium text-center py-2.5 px-4">
@@ -213,13 +213,13 @@ export default function Storefront() {
         </div>
       )}
 
-      <div className="container mx-auto max-w-[1400px] px-4 md:pt-6">
-        {/* Hero — full-bleed banner on mobile; centered overlap style from md up */}
+      <div className="container mx-auto max-w-[1400px] px-0 md:px-6 md:pt-6">
+        {/* Hero — full-bleed on mobile; large rounded stage on desktop */}
         <div
           className={cn(
-            "relative aspect-video overflow-hidden bg-muted",
-            "-mx-4 w-auto rounded-none shadow-none ring-0",
-            "md:mx-auto md:w-[86%] md:rounded-2xl md:shadow-lg md:shadow-black/[0.08] md:ring-1 md:ring-black/[0.05]",
+            "relative aspect-[16/10] overflow-hidden bg-muted sm:aspect-video",
+            "w-full rounded-none",
+            "md:mx-auto md:rounded-[2rem] md:shadow-[0_12px_40px_-12px_rgba(15,23,42,0.2)]",
           )}
         >
           {b.heroImageUrl ? (
@@ -236,9 +236,10 @@ export default function Storefront() {
               <Store className="h-16 w-16 text-primary/30 md:h-20 md:w-20" />
             </div>
           )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent md:from-black/15" />
         </div>
 
-        <div className="relative z-10 -mt-14 md:-mt-[7.125rem]">
+        <div className="relative z-10 -mt-16 px-5 md:-mt-[7.125rem] md:px-0">
           <div className={cn("flex flex-col gap-8", showCatalogColumn && "md:flex-row")}>
           {/* Business details */}
           <div
@@ -248,8 +249,8 @@ export default function Storefront() {
               showCatalogColumn && "md:w-1/3 lg:w-1/4 flex-shrink-0",
             )}
           >
-            <Card className="sticky top-24 overflow-visible border-border/40 shadow-xl">
-              <div className="flex flex-col items-center rounded-t-xl border-b bg-white p-6 pt-10 text-center md:pt-12">
+            <Card className="sticky top-24 overflow-visible rounded-[1.75rem] shadow-[0_8px_40px_-12px_rgba(15,23,42,0.16)]">
+              <div className="flex flex-col items-center rounded-t-[1.75rem] border-b border-border/40 bg-card p-6 pt-10 text-center md:pt-12">
                 <BusinessLogoBadge
                   src={b.logoUrl}
                   alt={`${b.name} logo`}
@@ -257,63 +258,65 @@ export default function Storefront() {
                   ringClassName="ring-4"
                   className="-mt-12 md:-mt-[4.5rem] relative z-20 mb-4 shadow-md"
                 />
-                <h1 className="text-2xl font-serif font-bold text-foreground mb-1">{b.name}</h1>
+                <h1 className="mb-1 font-serif text-2xl font-bold tracking-tight text-foreground md:text-3xl">{b.name}</h1>
                 <BusinessTags business={b} accentColor={b.accentColor} variant="storefront" />
                 {isInformationMode && copy.informationTagline && (
-                  <p className="text-sm text-muted-foreground mt-2">{copy.informationTagline}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{copy.informationTagline}</p>
                 )}
                 {!isAppointmentMode && !isInformationMode && (
-                  <p className="text-xs text-muted-foreground mb-2">{paymentNote}</p>
+                  <p className="mb-2 text-xs text-muted-foreground">{paymentNote}</p>
                 )}
                 {isAppointmentMode && (
                   <Button
-                    className={cn("w-full mt-2", storefrontPrimaryButtonClass)}
+                    className={cn("mt-3 w-full", storefrontPrimaryButtonClass)}
                     onClick={handleBookAppointment}
                     data-testid="button-book-appointment"
                   >
-                    <CalendarDays className="h-4 w-4 mr-2" />
+                    <CalendarDays className="mr-2 h-4 w-4" />
                     {copy.primaryCtaLabel}
                   </Button>
                 )}
                 {isInformationMode && (
                   b.phone?.trim() ? (
-                    <Button asChild className={cn("w-full mt-2", storefrontPrimaryButtonClass)}>
+                    <Button asChild className={cn("mt-3 w-full", storefrontPrimaryButtonClass)}>
                       <a href={`tel:${b.phone.replace(/\s/g, "")}`} data-testid="button-call-to-order">
-                        <Phone className="h-4 w-4 mr-2" />
+                        <Phone className="mr-2 h-4 w-4" />
                         {contactCtaLabel}
                       </a>
                     </Button>
                   ) : (
                     <Button
                       variant="outline"
-                      className="w-full rounded-full mt-2"
+                      className="mt-3 w-full rounded-full"
                       onClick={() => document.getElementById("business-contact")?.scrollIntoView({ behavior: "smooth" })}
                       data-testid="button-contact-business"
                     >
-                      <Phone className="h-4 w-4 mr-2" />
+                      <Phone className="mr-2 h-4 w-4" />
                       {contactCtaLabel}
                     </Button>
                   )
                 )}
               </div>
 
-              <CardContent className="p-0 overflow-hidden rounded-b-xl">
-                <div className="divide-y divide-border/50">
+              <CardContent className="overflow-hidden rounded-b-[1.75rem] p-0">
+                <div className="divide-y divide-border/40">
                   {b.description && (
-                    <div className="p-5 text-sm text-foreground/90 leading-relaxed">
+                    <div className="p-5 text-sm leading-relaxed text-foreground/90">
                       {b.description}
                     </div>
                   )}
 
-                  <div id="business-contact" className="p-5 space-y-4">
+                  <div id="business-contact" className="space-y-4 p-5">
                     {b.address && (
                       <div className="flex items-start gap-3 text-sm">
-                        <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <MapPin className="h-4 w-4" />
+                        </span>
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.address)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-foreground/80 hover:text-primary transition-colors"
+                          className="pt-1.5 text-foreground/80 transition-colors hover:text-primary"
                         >
                           {b.address}
                         </a>
@@ -321,16 +324,20 @@ export default function Storefront() {
                     )}
                     {b.phone && (
                       <div className="flex items-start gap-3 text-sm">
-                        <Phone className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <a href={`tel:${b.phone.replace(/\s/g, "")}`} className="text-foreground/80 hover:text-primary transition-colors">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <Phone className="h-4 w-4" />
+                        </span>
+                        <a href={`tel:${b.phone.replace(/\s/g, "")}`} className="pt-1.5 text-foreground/80 transition-colors hover:text-primary">
                           {b.phone}
                         </a>
                       </div>
                     )}
                     {businessHours.hasHours && (
                       <div className="flex items-start gap-3 text-sm">
-                        <Clock className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <div className="min-w-0 flex-1">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <Clock className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1 pt-1">
                           <BusinessHoursDisplay
                             structuredHours={businessHours.structuredHours}
                             fallbackHours={businessHours.fallbackHours}
@@ -341,8 +348,10 @@ export default function Storefront() {
                     )}
                     {b.orderCutoffTime && !isAppointmentMode && !isInformationMode && (
                       <div className="flex items-start gap-3 text-sm">
-                        <Clock className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                        <span className="text-foreground/80">{copy.cutoffLabel(formatTime12h(b.orderCutoffTime))}</span>
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent-foreground">
+                          <Clock className="h-4 w-4" />
+                        </span>
+                        <span className="pt-1.5 text-foreground/80">{copy.cutoffLabel(formatTime12h(b.orderCutoffTime))}</span>
                       </div>
                     )}
                   </div>
@@ -450,27 +459,27 @@ export default function Storefront() {
             )}
 
             {displayedProducts.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-xl border border-dashed border-border">
-                <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-30" />
-                <h3 className="text-lg font-medium text-foreground">
+              <div className="rounded-[1.75rem] bg-card px-6 py-16 text-center shadow-[0_2px_24px_-6px_rgba(15,23,42,0.1)]">
+                <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-30" />
+                <h3 className="font-serif text-lg font-bold text-foreground">
                   {categoryFilterEmpty ? copy.emptyCategoryTitle : copy.emptyTitle}
                 </h3>
-                <p className="text-muted-foreground text-sm mt-1">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {categoryFilterEmpty ? copy.emptyCategoryDescription : copy.emptyDescription}
                 </p>
                 {!isInformationMode && !categoryFilterEmpty && b.phone?.trim() ? (
-                  <Button asChild size="sm" className={cn("mt-6 h-8", storefrontPrimaryButtonClass)}>
+                  <Button asChild size="sm" className={cn("mt-6", storefrontPrimaryButtonClass)}>
                     <a href={`tel:${b.phone.replace(/\s/g, "")}`} data-testid="button-call-empty-shop">
-                      <Phone className="h-4 w-4 mr-1" />
+                      <Phone className="mr-1 h-4 w-4" />
                       {contactCtaLabel}
                     </a>
                   </Button>
                 ) : null}
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {displayedProducts.map((product) => (
-                  <Card key={product.id} className="overflow-hidden flex flex-col border-border/40 shadow-sm hover:shadow-md transition-shadow">
+                  <Card key={product.id} className="flex flex-col overflow-hidden rounded-[1.5rem] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_-10px_rgba(15,23,42,0.14)]">
                     {product.imageUrl && (
                       <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
                         <img
@@ -478,25 +487,25 @@ export default function Storefront() {
                           alt={product.name}
                           loading="lazy"
                           decoding="async"
-                          className="h-full w-full object-cover transition-transform hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                         />
                       </div>
                     )}
-                    <CardContent className="p-4 flex flex-col flex-1">
-                      <div className="flex justify-between items-start mb-2 gap-2">
-                        <h4 className="font-medium leading-tight text-foreground">{product.name}</h4>
+                    <CardContent className="flex flex-1 flex-col p-4">
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <h4 className="font-semibold leading-tight tracking-tight text-foreground">{product.name}</h4>
                         {!isAppointmentMode && (
-                          <span className="font-semibold text-primary shrink-0">${product.price.toFixed(2)}</span>
+                          <span className="shrink-0 font-semibold text-primary">${product.price.toFixed(2)}</span>
                         )}
                       </div>
 
                       {product.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{product.description}</p>
+                        <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{product.description}</p>
                       )}
 
-                      <div className="mt-auto pt-4 flex items-center justify-between">
+                      <div className="mt-auto flex items-center justify-between pt-4">
                         {product.prepTimeMinutes ? (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" /> {copy.prepTimeLabel(product.prepTimeMinutes)}
                           </span>
                         ) : (
@@ -506,13 +515,13 @@ export default function Storefront() {
                           <LoadingButton
                             size="sm"
                             variant="default"
-                            className={cn("h-8", storefrontPrimaryButtonClass)}
+                            className={cn("h-9 rounded-full", storefrontPrimaryButtonClass)}
                             onClick={() => void handleAddToCart(product)}
                             disabled={!product.available || !b.active || addingProductId !== null}
                             loading={addingProductId === product.id}
                             loadingText="Adding…"
                           >
-                            <Plus className="h-4 w-4 mr-1" /> {copy.addButtonLabel}
+                            <Plus className="mr-1 h-4 w-4" /> {copy.addButtonLabel}
                           </LoadingButton>
                         )}
                       </div>

@@ -32,13 +32,13 @@ export const DASHBOARD_MOBILE_NAV_TOP_CLASS =
 export const DASHBOARD_MOBILE_MAIN_TOP_CLASS =
   "pt-[calc(var(--site-header-height,4rem)+env(safe-area-inset-top,0px)+3rem)] md:pt-0";
 
-/** Native bottom tab bar height (excluding safe area) */
-export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 56;
+/** Native bottom tab bar height (excluding safe area) — floating pill + padding */
+export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 72;
 export const NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR = "--native-bottom-tab-height";
 
 /** Padding for main content when native bottom tabs are visible */
 export const NATIVE_MAIN_BOTTOM_PADDING_CLASS =
-  "native-main-with-tabs pb-[calc(var(--native-bottom-tab-height,56px)+env(safe-area-inset-bottom,0px))]";
+  "native-main-with-tabs pb-[calc(var(--native-bottom-tab-height,72px)+env(safe-area-inset-bottom,0px)+0.75rem)]";
 
 export const LOGO_SIZE_PRESETS = [
   { value: 20, label: "Small" },

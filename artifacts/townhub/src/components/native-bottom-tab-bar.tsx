@@ -156,7 +156,7 @@ export function NativeBottomTabBar() {
   function accountRowClass(href: string) {
     const active = isNavActive(location, href);
     return cn(
-      "flex min-h-12 items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors w-full native-pressable",
+      "flex min-h-12 items-center gap-3 px-4 py-3.5 rounded-2xl text-[15px] font-medium transition-colors w-full native-pressable",
       active ? "bg-primary/10 text-primary" : "text-foreground active:bg-muted/80",
     );
   }
@@ -177,10 +177,10 @@ export function NativeBottomTabBar() {
   return (
     <>
       <nav
-        className="native-bottom-tab-bar fixed inset-x-0 bottom-0 z-50 border-t border-border/40 print:hidden"
+        className="native-bottom-tab-bar fixed inset-x-0 bottom-0 z-50 print:hidden"
         aria-label="Main navigation"
       >
-        <div className="mx-auto flex max-w-lg items-stretch justify-around gap-0.5 px-2">
+        <div className="native-bottom-tab-bar-inner mx-auto flex max-w-md items-stretch justify-around gap-0.5 px-2 py-1.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = tab.isActive(location);
@@ -191,16 +191,23 @@ export function NativeBottomTabBar() {
                 type="button"
                 onClick={() => handleTabPress(tab)}
                 className={cn(
-                  "native-tab-item flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 px-1.5 py-1.5",
+                  "native-tab-item flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
                 aria-current={active ? "page" : undefined}
                 aria-label={tab.label}
               >
-                <Icon
-                  className={cn("native-tab-icon h-6 w-6 transition-transform duration-200", active && "scale-105")}
-                  strokeWidth={active ? 2.4 : 1.9}
-                />
+                <span
+                  className={cn(
+                    "native-tab-icon-wrap flex h-9 w-9 items-center justify-center rounded-2xl transition-all duration-200",
+                    active ? "bg-primary/12" : "bg-transparent",
+                  )}
+                >
+                  <Icon
+                    className="native-tab-icon h-[22px] w-[22px] transition-transform duration-200"
+                    strokeWidth={active ? 2.35 : 1.85}
+                  />
+                </span>
                 <span className={cn("text-[10px] font-medium leading-none tracking-wide", active && "font-semibold")}>
                   {tab.label}
                 </span>
@@ -218,7 +225,7 @@ export function NativeBottomTabBar() {
 
           <div className="px-5 pb-2 pt-1">
             {clerkLoaded && isSignedIn ? (
-              <div className="flex items-center gap-4 rounded-2xl bg-muted/40 px-4 py-4">
+              <div className="flex items-center gap-4 rounded-[1.5rem] bg-card px-4 py-4 shadow-[0_2px_20px_-6px_rgba(15,23,42,0.1)] ring-1 ring-black/[0.03]">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -226,21 +233,21 @@ export function NativeBottomTabBar() {
                     className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-background shadow-sm"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/15 text-base font-semibold text-primary ring-2 ring-background">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/12 text-base font-semibold text-primary ring-2 ring-background">
                     {initials}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-lg font-semibold tracking-tight text-foreground">{displayName}</p>
+                  <p className="truncate font-serif text-xl font-semibold tracking-tight text-foreground">{displayName}</p>
                   {email && displayName !== email ? (
                     <p className="mt-0.5 truncate text-sm text-muted-foreground">{email}</p>
                   ) : null}
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-muted/40 px-4 py-5">
-                <p className="text-lg font-semibold tracking-tight text-foreground">Account</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+              <div className="rounded-[1.5rem] bg-card px-5 py-5 shadow-[0_2px_20px_-6px_rgba(15,23,42,0.1)] ring-1 ring-black/[0.03]">
+                <p className="font-serif text-xl font-semibold tracking-tight text-foreground">Welcome</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                   Sign in to track orders and manage your business.
                 </p>
               </div>

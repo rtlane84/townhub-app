@@ -5,34 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-[colors,transform,opacity] duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0" +
-" hover-elevate active-elevate-2",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-sm font-semibold tracking-tight transition-[colors,transform,box-shadow,opacity] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-           // @replit: no hover, and add primary border
-           "bg-platform-button text-primary-foreground border border-primary-border",
+          "bg-platform-button text-primary-foreground shadow-[0_2px_12px_-2px_rgba(30,58,138,0.35)] hover:opacity-95",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm border-destructive-border",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
-          // @replit Shows the background color of whatever card / sidebar / accent background it is inside of.
-          // Inherits the current text color. Uses shadow-xs. no shadow on active
-          // No hover state
-          " border [border-color:var(--button-outline)] bg-primary/[0.04] shadow-xs active:shadow-none ",
+          "border border-border/80 bg-card text-foreground shadow-[0_1px_3px_rgba(15,23,42,0.04)] hover:bg-muted/60",
         secondary:
-          // @replit border, no hover, no shadow, secondary border.
-          "border bg-secondary text-secondary-foreground border border-secondary-border ",
-        // @replit no hover, transparent border
-        ghost: "border border-transparent",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/90",
+        ghost: "text-foreground hover:bg-muted/70",
+        link: "text-primary underline-offset-4 hover:underline rounded-md",
       },
       size: {
-        // Touch-friendly defaults; lg meets ~50pt primary CTA height
         default: "min-h-11 px-5 py-2.5",
-        sm: "min-h-9 rounded-lg px-3.5 text-xs",
-        lg: "min-h-[50px] rounded-2xl px-8 text-base",
-        icon: "h-11 w-11",
+        sm: "min-h-9 rounded-xl px-3.5 text-xs",
+        lg: "min-h-[52px] rounded-[1.25rem] px-8 text-base",
+        icon: "h-11 w-11 rounded-2xl",
       },
     },
     defaultVariants: {

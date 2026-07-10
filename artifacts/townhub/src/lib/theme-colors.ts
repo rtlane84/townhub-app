@@ -4,7 +4,7 @@ import type { PlatformTheme } from "@workspace/api-client-react";
 export const PLATFORM_THEME_DEFAULTS = {
   primaryColor: "#1E3A8A",
   accentColor: "#F59E0B",
-  backgroundColor: "#F8FAFC",
+  backgroundColor: "#F4F5F8",
   buttonColor: "#1E3A8A",
 } as const;
 

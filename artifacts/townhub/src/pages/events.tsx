@@ -1,8 +1,12 @@
 import { useMemo } from "react";
 import { useListEvents } from "@workspace/api-client-react";
-import { Calendar, Loader2 } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { NativeEmptyState } from "@/components/native-empty-state";
+import { SectionHeader } from "@/components/section-header";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PAGE_CONTAINER } from "@/lib/design-tokens";
+import { cn } from "@/lib/utils";
 
 export default function Events() {
   const { data: events = [], isLoading } = useListEvents({ upcoming: true });
@@ -12,24 +16,28 @@ export default function Events() {
     [events],
   );
 
+  const featured = sortedEvents.filter((e) => e.featured);
+  const rest = sortedEvents.filter((e) => !e.featured);
+
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 native-animate-in">
-      <div className="mb-8">
-        <div className="mb-2 flex items-center gap-2.5">
-          <Calendar className="h-6 w-6 text-primary" strokeWidth={1.9} />
-          <h1 className="text-3xl font-serif font-bold tracking-tight text-foreground">
-            Community Events
-          </h1>
-        </div>
-        <p className="max-w-2xl text-muted-foreground leading-relaxed">
-          Upcoming local events around town — including promoted highlights and regular community
-          happenings.
-        </p>
-      </div>
+    <div className={cn(PAGE_CONTAINER, "py-8 md:py-10 native-animate-in")}>
+      <SectionHeader
+        title="Community events"
+        description="Upcoming local events around town — including promoted highlights and regular community happenings."
+        size="lg"
+        className="mb-8"
+        icon={<Calendar className="h-4 w-4" />}
+      />
 
       {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="space-y-3">
+              <Skeleton className="aspect-[16/10] w-full rounded-[1.75rem]" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          ))}
         </div>
       ) : sortedEvents.length === 0 ? (
         <NativeEmptyState
@@ -39,10 +47,28 @@ export default function Events() {
           centered
         />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedEvents.map((event) => (
-            <EventCard key={event.id} event={event} showFeaturedBadge />
-          ))}
+        <div className="space-y-12">
+          {featured.length > 0 ? (
+            <section>
+              <SectionHeader title="Featured" size="sm" className="mb-5" />
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {featured.map((event) => (
+                  <EventCard key={event.id} event={event} showFeaturedBadge />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section>
+            {featured.length > 0 ? (
+              <SectionHeader title="All upcoming" size="sm" className="mb-5" />
+            ) : null}
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {(featured.length > 0 ? rest : sortedEvents).map((event) => (
+                <EventCard key={event.id} event={event} showFeaturedBadge />
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </div>

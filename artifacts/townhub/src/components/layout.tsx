@@ -95,9 +95,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   function navLinkClass(href: string) {
     const active = isNavActive(href);
     return cn(
-      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+      "flex items-center gap-2 px-3.5 py-2 rounded-full text-sm font-semibold tracking-tight transition-colors",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted",
+      active
+        ? "bg-primary/10 text-primary"
+        : "text-muted-foreground hover:text-foreground hover:bg-muted/70",
     );
   }
 
@@ -148,9 +150,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         [NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR]: `${NATIVE_BOTTOM_TAB_HEIGHT_PX}px`,
       } as CSSProperties}
     >
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/55 print:hidden native-site-header">
+      <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 print:hidden native-site-header">
         <div
-          className="container mx-auto flex items-center justify-between px-5 sm:px-6"
+          className="container mx-auto flex items-center justify-between px-5 sm:px-6 lg:px-8"
           style={{ minHeight: headerMinHeightPx }}
         >
 
@@ -503,17 +505,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {showNativeTabs && <NativeBottomTabBar />}
 
-      <footer className={cn("border-t py-12 bg-muted/30 mt-auto print:hidden", hideFooter && "hidden")}>
-        <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
+      <footer className={cn("border-t border-border/40 py-14 bg-card/40 mt-auto print:hidden", hideFooter && "hidden")}>
+        <div className="container mx-auto px-5 sm:px-6 text-center">
+          <div className="mb-4 flex items-center justify-center gap-2.5">
             <PlatformLogo className="h-5 w-5 text-muted-foreground" sizePx={20} />
-            <span className="font-serif text-lg font-medium text-muted-foreground">{platformName}</span>
+            <span className="font-serif text-lg font-semibold tracking-tight text-foreground/80">{platformName}</span>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
             {footerTagline}
           </p>
-          <p className="text-muted-foreground text-sm mt-3">
-            <Link href="/help" className="hover:text-foreground transition-colors underline-offset-4 hover:underline">
+          <p className="mt-4 text-sm text-muted-foreground">
+            <Link href="/help" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
               Help Center
             </Link>
           </p>
