@@ -1,0 +1,17 @@
+# Cloudflare Pages — frontend static site
+# Dashboard settings (recommended):
+#   Root directory: (repo root — leave empty)
+#   Build command:  pnpm --filter @workspace/local-order-hub run build
+#   Build output:   artifacts/local-order-hub/dist/public
+#   Environment:    NODE_VERSION=22
+#                   VITE_CLERK_PUBLISHABLE_KEY=...
+#                   VITE_API_BASE_URL=https://your-api.example.com
+#
+# If Cloudflare's auto `pnpm install --frozen-lockfile` fails with
+# ERR_PNPM_LOCKFILE_CONFIG_MISMATCH, set SKIP_DEPENDENCY_INSTALL=true and use:
+#   Build command: pnpm install --no-frozen-lockfile && pnpm --filter @workspace/local-order-hub run build
+
+name = "townhub"
+compatibility_date = "2026-07-09"
+
+pages_build_output_dir = "artifacts/local-order-hub/dist/public"
