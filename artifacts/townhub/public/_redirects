@@ -1,8 +1,10 @@
-# Netlify / hosts that honor _redirects.
-# Do NOT add `/* /index.html 200` here — Cloudflare Workers SPA
-# (assets.not_found_handling) already does that, and the catch-all
-# causes deploy error 100324 (infinite redirect loop).
+# Intentionally empty for Cloudflare Workers.
 #
-# Static OAuth bounce so Safari returns to the app without the SPA.
-/native-sso-callback /native-sso-callback/index.html 200
-/native-sso-callback/ /native-sso-callback/index.html 200
+# Do NOT add `/* /index.html 200` — Workers SPA mode
+# (assets.not_found_handling = single-page-application) already does that;
+# a catch-all fails deploy with error 100324.
+#
+# Do NOT rewrite /native-sso-callback → …/index.html — that fights Workers’
+# HTML trailing-slash handling and causes ERR_TOO_MANY_REDIRECTS.
+# The static file at public/native-sso-callback/index.html is served as
+# /native-sso-callback/ automatically.
