@@ -41,7 +41,7 @@ export function SectionHeader({
           ) : null}
           <h2
             className={cn(
-              "font-serif font-bold tracking-tight text-foreground",
+              "font-serif font-bold tracking-tight text-platform-heading",
               size === "lg" && "text-3xl md:text-4xl",
               size === "default" && "text-2xl md:text-3xl",
               size === "sm" && "text-xl md:text-2xl",

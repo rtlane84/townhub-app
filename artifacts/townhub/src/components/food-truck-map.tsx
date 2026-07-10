@@ -26,7 +26,7 @@ export function FoodTruckMapSection({ todayTrucks }: FoodTruckMapSectionProps) {
 
   return (
     <section>
-      <h2 className="mb-5 font-serif text-2xl font-bold tracking-tight text-foreground">
+      <h2 className="mb-5 font-serif text-2xl font-bold tracking-tight text-platform-heading">
         Today&apos;s Map
       </h2>
       <Card className="border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)]">

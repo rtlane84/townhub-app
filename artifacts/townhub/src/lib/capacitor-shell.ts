@@ -29,15 +29,28 @@ async function syncNativeStatusBar(): Promise<void> {
     const dark = isDarkThemeActive();
     const platform = Capacitor.getPlatform();
     await StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark });
-    // iOS: overlay so the nav material extends under the status bar (no white gap).
-    // Android: keep a solid bar color for contrast with system UI.
+    // iOS: overlay so CSS background extends under the status bar (no color gap).
+    // Android: solid bar color matched to the live theme background.
     if (platform === "ios") {
       await StatusBar.setOverlaysWebView({ overlay: true });
     } else if (platform === "android") {
       await StatusBar.setOverlaysWebView({ overlay: false });
-      await StatusBar.setBackgroundColor({
-        color: dark ? "#1a1614" : "#faf8f5",
-      });
+      const bg = getComputedStyle(document.documentElement)
+        .getPropertyValue("--background")
+        .trim();
+      // --background is "H S% L%" — convert to a usable hex via a temp element when possible
+      const probe = document.createElement("div");
+      probe.style.color = bg ? `hsl(${bg})` : "";
+      document.body.appendChild(probe);
+      const rgb = getComputedStyle(probe).color;
+      document.body.removeChild(probe);
+      const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      const color = match
+        ? `#${[match[1], match[2], match[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join("")}`
+        : dark
+          ? "#1a1614"
+          : "#F4F5F8";
+      await StatusBar.setBackgroundColor({ color });
     }
   } catch {
     // Status bar plugin unavailable.

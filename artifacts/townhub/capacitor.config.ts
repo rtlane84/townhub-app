@@ -48,7 +48,9 @@ const config: CapacitorConfig = {
     ],
   },
   ios: {
-    contentInset: "automatic",
+    // Edge-to-edge WebView — safe areas are handled in CSS so the app
+    // background extends behind the status bar and home indicator.
+    contentInset: "never",
     preferredContentMode: "mobile",
     scheme: "App",
   },
@@ -62,7 +64,7 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: false,
-      backgroundColor: "#faf8f5",
+      backgroundColor: "#F4F5F8",
       showSpinner: false,
       splashFullScreen: true,
       splashImmersive: true,
@@ -71,8 +73,8 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: "DARK",
-      backgroundColor: "#faf8f5",
-      overlaysWebView: false,
+      backgroundColor: "#F4F5F8",
+      overlaysWebView: true,
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],

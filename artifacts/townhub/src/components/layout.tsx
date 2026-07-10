@@ -14,7 +14,8 @@ import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { usePlatformBranding } from "@/components/theme-provider";
-import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, NATIVE_HEADER_LOGO_MAX_PX } from "@/lib/platform-branding";
+import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, resolveNativeHeaderLogoPx } from "@/lib/platform-branding";
+import { PlatformBrandMark } from "@/components/platform-brand-mark";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 import { isDashboardRoute } from "@/lib/native-platform";
 import { useNativeBottomTabs, useNativePlatform, useNativePullToRefresh } from "@/hooks/use-native-platform";
@@ -48,9 +49,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
   const { isNative } = useNativePlatform();
   const headerMinHeightPx = resolveHeaderMinHeightPx(logoSizePx, { native: isNative });
-  const nativeHeaderLogoPx = isNative
-    ? Math.min(logoSizePx, NATIVE_HEADER_LOGO_MAX_PX)
-    : logoSizePx;
+  const nativeHeaderLogoPx = isNative ? resolveNativeHeaderLogoPx(logoSizePx) : logoSizePx;
   const {
     authResolved,
     isAdmin,
@@ -155,7 +154,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     >
       <header
         className={cn(
-          "sticky top-0 z-50 w-full border-b border-border/30 bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 print:hidden native-site-header",
+          "sticky top-0 z-50 w-full border-b border-border/30 bg-background print:hidden native-site-header",
+          !isNative && "bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60",
           isNative && "!sticky relative top-auto",
         )}
       >
@@ -187,15 +187,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
               className="flex items-center gap-2 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
             >
               <PlatformLogo sizePx={nativeHeaderLogoPx} />
-              <span
+              <PlatformBrandMark
+                name={platformName}
+                compact={isNative}
                 className={cn(
-                  "font-serif font-semibold tracking-tight text-primary",
-                  isNative ? "text-[17px]" : "text-lg sm:text-xl",
-                  showNativeDashboardBack && "hidden sm:inline",
+                  !isNative && "text-lg sm:text-xl",
+                  showNativeDashboardBack && "hidden sm:inline-flex",
                 )}
-              >
-                {platformName}
-              </span>
+              />
             </Link>
 
             {/* Desktop nav */}
@@ -357,7 +356,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <SheetHeader className="p-6 pb-4 border-b">
                   <SheetTitle className="font-serif text-left flex items-center gap-2">
                     <PlatformLogo className="h-5 w-5" sizePx={20} />
-                    {platformName}
+                    <PlatformBrandMark name={platformName} />
                   </SheetTitle>
                 </SheetHeader>
 
@@ -523,7 +522,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="container mx-auto px-5 text-center sm:px-6">
               <div className="mb-4 flex items-center justify-center gap-2.5">
                 <PlatformLogo className="h-5 w-5 text-muted-foreground" sizePx={20} />
-                <span className="font-serif text-lg font-semibold tracking-tight text-foreground/80">{platformName}</span>
+                <span className="font-serif text-lg font-semibold tracking-tight">
+                <PlatformBrandMark name={platformName} className="text-foreground/80" />
+              </span>
               </div>
               <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
                 {footerTagline}

@@ -112,6 +112,10 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     applyPlatformThemeToRoot(theme);
+    // Keep Android status bar / native chrome matched to the live canvas color.
+    void import("@/lib/capacitor-shell").then((mod) => {
+      void mod.syncNativeStatusBar();
+    });
   }, [theme]);
 
   useEffect(() => {

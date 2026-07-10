@@ -36,8 +36,8 @@ export default function FoodTrucks() {
     <div className={cn(PAGE_CONTAINER, "py-8 md:py-10 native-animate-in")}>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <SectionHeader
-          title="Food trucks"
-          description="See who's serving today and where to find them."
+          title="Food Trucks"
+          description="Mobile food vendors around town — trucks, trailers, pop-ups, and more."
           size="lg"
           className="mb-0"
           icon={<Truck className="h-4 w-4" />}

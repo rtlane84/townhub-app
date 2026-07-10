@@ -157,7 +157,7 @@ export default function Home() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Today in {placeLabel}
         </p>
-        <h1 className="mt-1 font-serif text-[1.75rem] font-bold leading-tight tracking-tight text-foreground md:text-4xl">
+        <h1 className="mt-1 font-serif text-[1.75rem] font-bold leading-tight tracking-tight text-platform-heading md:text-4xl">
           {isSignedIn && firstName ? `${greeting}, ${firstName}` : greeting}
         </h1>
       </section>

@@ -214,6 +214,7 @@
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif tracking-tight;
+    color: var(--platform-heading, hsl(var(--foreground)));
   }
 }
 
@@ -243,6 +244,10 @@
     transform: scale(0.97);
     opacity: 0.92;
   }
+  /* Platform heading color from admin theme (hex) with foreground fallback */
+  .text-platform-heading {
+    color: var(--platform-heading, hsl(var(--foreground)));
+  }
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -271,6 +276,7 @@ html.native-app {
   --safe-area-left: env(safe-area-inset-left, 0px);
   height: 100%;
   overflow: hidden;
+  /* Solid canvas behind status bar + home indicator */
   background-color: hsl(var(--background));
   overscroll-behavior: none;
 }
@@ -278,8 +284,8 @@ html.native-app {
 html.native-app body {
   height: 100%;
   overflow: hidden;
-  padding-left: var(--safe-area-left);
-  padding-right: var(--safe-area-right);
+  /* Do not pad the body for safe areas — that creates color gaps.
+     Header / tab bar apply insets so the same background paints edge-to-edge. */
   overscroll-behavior: none;
   background-color: hsl(var(--background));
   position: fixed;
@@ -322,22 +328,17 @@ html.native-app .native-scroll-root {
   touch-action: pan-y;
 }
 
+/* Opaque header so status-bar region matches the app canvas */
 html.native-app .native-site-header {
   flex-shrink: 0;
   padding-top: var(--safe-area-top);
   border-bottom: 1px solid hsl(var(--border) / 0.35);
-  background: hsl(var(--background) / 0.92);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
+  background-color: hsl(var(--background));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-  html.native-app .native-site-header {
-    background: hsl(var(--background) / 0.78);
-  }
-}
-
-/* In-flow tab bar — always visible at the bottom of the shell */
+/* In-flow tab bar — opaque canvas behind home indicator */
 html.native-app .native-bottom-tab-bar {
   position: relative;
   inset: auto;
@@ -347,7 +348,7 @@ html.native-app .native-bottom-tab-bar {
   padding-right: max(0.75rem, var(--safe-area-right));
   padding-top: 0.35rem;
   border-top: none;
-  background: hsl(var(--background));
+  background-color: hsl(var(--background));
   pointer-events: none;
   z-index: 50;
 }
@@ -410,15 +411,9 @@ html.native-app.native-ios .native-scroll-root {
 html.native-app .dashboard-mobile-subnav {
   z-index: 45;
   border-bottom-color: hsl(var(--border) / 0.35);
-  background: hsl(var(--background) / 0.72);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-}
-
-@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
-  html.native-app .dashboard-mobile-subnav {
-    background: hsl(var(--background) / 0.55);
-  }
+  background-color: hsl(var(--background));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 @keyframes native-fade-up {

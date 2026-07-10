@@ -8,8 +8,9 @@ import { PAGE_CONTAINER } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
 /**
- * Compact brand hero — kept on native as an inset card (not a tall landing banner)
- * so users still see branding/CTAs without delaying the dashboard content.
+ * Compact homepage hero — same composition on desktop web, mobile web, and iOS.
+ * Admin image / overlay / alignment / CTA settings still apply; only spacing
+ * and crop respond slightly on narrow viewports.
  */
 export function HomeHeroSection() {
   const { isNative } = useNativePlatform();
@@ -42,7 +43,7 @@ export function HomeHeroSection() {
   return (
     <section
       aria-label={`${platformName} homepage hero`}
-      className={cn(isNative ? cn(PAGE_CONTAINER, "pt-3 pb-1") : "overflow-hidden")}
+      className={cn(PAGE_CONTAINER, isNative ? "pt-3 pb-1" : "pt-4 pb-2 md:pt-6 md:pb-3")}
     >
       <HeroStage
         heroImageUrl={showHeroImage ? heroImageUrl : null}
@@ -53,27 +54,21 @@ export function HomeHeroSection() {
         onImageLoad={() => setImageLoaded(true)}
         onImageError={() => setImageFailed(true)}
         overlayImageUrl={heroOverlayImageUrl}
-        overlaySize={isNative ? "small" : heroOverlaySize}
+        overlaySize={heroOverlaySize}
         overlayAlign={heroOverlayAlign}
         overlayAlt={`${platformName} hero`}
         buttonPlacement={heroButtonPlacement}
-        className={cn(
-          isNative
-            ? "min-h-[132px] max-h-[160px] md:min-h-[132px] md:max-h-[160px] rounded-[1.5rem] shadow-[0_8px_28px_-10px_rgba(15,23,42,0.18)]"
-            : "rounded-none md:rounded-none",
-        )}
+        className="max-h-[180px] rounded-[1.5rem] shadow-[0_8px_28px_-10px_rgba(15,23,42,0.16)] md:max-h-[200px]"
         buttons={
           showButtons ? (
             <>
               {showShopButton ? (
                 <Link href="/businesses">
                   <Button
-                    size={isNative ? "sm" : "lg"}
+                    size="sm"
                     className={cn(
-                      "border-0 bg-primary font-semibold text-primary-foreground shadow-[0_4px_16px_-4px_rgba(30,58,138,0.45)]",
-                      isNative
-                        ? "h-9 rounded-full px-4 text-xs"
-                        : "h-11 rounded-2xl px-6 text-sm md:h-[52px] md:px-8 md:text-base",
+                      "h-9 rounded-full border-0 bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-[0_4px_16px_-4px_rgba(30,58,138,0.45)]",
+                      "md:h-10 md:px-5 md:text-sm",
                     )}
                   >
                     {shopCtaLabel}
@@ -83,13 +78,11 @@ export function HomeHeroSection() {
               {showListBusinessButton ? (
                 <Link href="/list-your-business">
                   <Button
-                    size={isNative ? "sm" : "lg"}
+                    size="sm"
                     variant="outline"
                     className={cn(
-                      "border-0 bg-card/95 font-semibold text-foreground shadow-md backdrop-blur-xl hover:bg-card",
-                      isNative
-                        ? "h-9 rounded-full px-4 text-xs"
-                        : "h-11 rounded-2xl px-6 text-sm md:h-[52px] md:px-8 md:text-base",
+                      "h-9 rounded-full border-0 bg-card/95 px-4 text-xs font-semibold text-foreground shadow-md backdrop-blur-xl hover:bg-card",
+                      "md:h-10 md:px-5 md:text-sm",
                     )}
                   >
                     List Your Business
