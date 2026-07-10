@@ -374,7 +374,9 @@ export default function Storefront() {
                           <div className="space-y-1">
                             <span className="font-medium text-foreground block">Delivery</span>
                             {deliveryInstructions && <p>{deliveryInstructions}</p>}
-                            {deliveryNotes && <p>{deliveryNotes}</p>}
+                            {deliveryNotes && deliveryNotes !== deliveryInstructions && (
+                              <p>{deliveryNotes}</p>
+                            )}
                             {minimumOrderForDelivery && (
                               <p>Minimum ${minimumOrderForDelivery.toFixed(2)} for delivery</p>
                             )}

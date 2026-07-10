@@ -31,3 +31,19 @@ export const PILL =
 /** Icon button circle (header / quick actions) */
 export const ICON_BUTTON_CIRCLE =
   "flex h-11 w-11 items-center justify-center rounded-2xl bg-card text-foreground shadow-[0_1px_3px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-transform active:scale-95";
+
+/** Dashboard sidebar shell */
+export const DASHBOARD_SIDEBAR =
+  "w-64 shrink-0 border-r border-black/[0.04] bg-card/70 backdrop-blur-sm hidden md:block";
+
+/** Dashboard nav link — idle */
+export const DASHBOARD_NAV_IDLE =
+  "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground";
+
+/** Dashboard nav link — active */
+export const DASHBOARD_NAV_ACTIVE =
+  "flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium bg-primary text-primary-foreground shadow-[0_4px_14px_-4px_rgba(30,58,138,0.45)]";
+
+/** Dashboard main canvas */
+export const DASHBOARD_MAIN =
+  "flex-1 overflow-x-hidden bg-[hsl(var(--background))]";

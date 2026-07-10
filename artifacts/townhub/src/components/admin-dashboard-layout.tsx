@@ -17,6 +17,12 @@ import {
   DASHBOARD_MOBILE_MAIN_TOP_CLASS,
   DASHBOARD_MOBILE_NAV_TOP_CLASS,
 } from "@/lib/platform-branding";
+import {
+  DASHBOARD_MAIN,
+  DASHBOARD_NAV_ACTIVE,
+  DASHBOARD_NAV_IDLE,
+  DASHBOARD_SIDEBAR,
+} from "@/lib/design-tokens";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -41,10 +47,8 @@ function NavLinks({ items, location, onNavigate }: { items: NavItem[]; location:
             <span
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                "cursor-pointer",
+                active ? DASHBOARD_NAV_ACTIVE : DASHBOARD_NAV_IDLE,
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
@@ -84,9 +88,14 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="flex min-h-[calc(100vh-var(--site-header-height,4rem))]">
-      <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0">
-        <div className="p-6">
-          <h2 className="font-serif font-bold text-lg mb-6">Platform Admin</h2>
+      <aside className={DASHBOARD_SIDEBAR}>
+        <div className="p-5 md:p-6">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/75">
+            Admin
+          </p>
+          <h2 className="mb-6 font-serif text-xl font-bold tracking-tight text-platform-heading">
+            Platform
+          </h2>
           <nav className="space-y-1">
             <NavLinks items={navItems} location={location} />
           </nav>
@@ -95,30 +104,30 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
 
       <div
         className={cn(
-          "md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-background border-b shadow-sm",
+          "md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 border-b border-black/[0.04] bg-card/95 px-4 py-2 shadow-[0_1px_12px_-4px_rgba(15,23,42,0.08)] backdrop-blur-md",
           DASHBOARD_MOBILE_NAV_TOP_CLASS,
         )}
       >
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="min-h-10 gap-1.5 px-3 shrink-0">
+            <Button variant="outline" size="sm" className="min-h-10 shrink-0 gap-1.5 rounded-2xl px-3">
               <Menu className="h-4 w-4" />
               <span className="text-xs font-medium">Sections</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
+          <SheetContent side="left" className="w-72 border-0 bg-card p-0">
             <SheetHeader className="p-6 pb-4">
-              <SheetTitle className="font-serif text-left">Platform Admin</SheetTitle>
+              <SheetTitle className="text-left font-serif text-platform-heading">Platform Admin</SheetTitle>
             </SheetHeader>
-            <nav className="px-3 space-y-1">
+            <nav className="space-y-1 px-3 pb-6">
               <NavLinks items={navItems} location={location} onNavigate={() => setOpen(false)} />
             </nav>
           </SheetContent>
         </Sheet>
-        <span className="text-sm font-semibold">{activeLabel}</span>
+        <span className="text-sm font-semibold text-platform-heading">{activeLabel}</span>
       </div>
 
-      <main className={cn("flex-1 p-4 md:p-10 overflow-x-hidden", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
+      <main className={cn(DASHBOARD_MAIN, "p-4 md:p-8 lg:p-10", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
         {children}
       </main>
     </div>

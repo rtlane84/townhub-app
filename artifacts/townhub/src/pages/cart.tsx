@@ -33,6 +33,8 @@ import { triggerCheckoutHaptic, triggerOrderPlacedHaptic } from "@/lib/native-ha
 import { getCheckoutAsapLabel } from "@/lib/order-prep-timing";
 import { CheckoutTotalsSummary } from "@/components/order-totals-summary";
 import { NativeEmptyState } from "@/components/native-empty-state";
+import { PAGE_CONTAINER } from "@/lib/design-tokens";
+import { cn } from "@/lib/utils";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
@@ -227,7 +229,7 @@ export default function Cart() {
 
   if (!cart.businessId || cart.items.length === 0) {
     return (
-      <div className="container mx-auto max-w-lg px-4 py-10 native-animate-in">
+      <div className={cn(PAGE_CONTAINER, "max-w-lg py-10 native-animate-in")}>
         <NativeEmptyState
           icon={ShoppingBag}
           title="Your cart is empty"
@@ -285,8 +287,8 @@ export default function Cart() {
     business?.orderingUnavailableReason ?? "This business is not accepting orders right now.";
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-6 md:py-10 native-animate-in">
-      <h1 className="mb-1 text-3xl font-serif font-bold tracking-tight text-foreground">Checkout</h1>
+    <div className={cn(PAGE_CONTAINER, "max-w-6xl py-6 md:py-10 native-animate-in")}>
+      <h1 className="mb-1 font-serif text-3xl font-bold tracking-tight text-platform-heading">Checkout</h1>
       <p className="mb-6 text-muted-foreground">
         {user
           ? "Your account details are prefilled below. You can edit them before placing your order."
@@ -294,16 +296,16 @@ export default function Cart() {
       </p>
 
       {orderingBlocked && (
-        <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-6 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {orderingBlockedReason}
         </div>
       )}
 
-      <div className="grid lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-7 space-y-6">
+      <div className="grid gap-8 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-7">
           <Card>
             <CardHeader>
-              <CardTitle className="font-serif">Order Details</CardTitle>
+              <CardTitle className="font-serif text-platform-heading">Order Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Fulfillment type selector */}
@@ -312,25 +314,25 @@ export default function Cart() {
                 <RadioGroup
                   value={fulfillmentType}
                   onValueChange={(v) => setFulfillmentType(v as FulfillmentType)}
-                  className="flex flex-col sm:flex-row gap-3"
+                  className="flex flex-col gap-3 sm:flex-row"
                 >
                   {showPickup && (
                     <div
-                      className={`flex items-center space-x-2 border rounded-lg p-4 flex-1 cursor-pointer transition-colors ${fulfillmentType === "PICKUP" ? "border-primary bg-primary/5" : "border-border"}`}
+                      className={`flex flex-1 cursor-pointer items-center space-x-2 rounded-2xl border p-4 transition-colors ${fulfillmentType === "PICKUP" ? "border-primary bg-primary/5" : "border-border/60"}`}
                       onClick={() => setFulfillmentType("PICKUP")}
                     >
                       <RadioGroupItem value="PICKUP" id="pickup" />
                       <div>
                         <Label htmlFor="pickup" className="cursor-pointer font-medium">Store Pickup</Label>
                         {business?.orderCutoffTime && (
-                          <p className="text-xs text-muted-foreground mt-0.5">Order by {formatTime12h(business.orderCutoffTime)}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">Order by {formatTime12h(business.orderCutoffTime)}</p>
                         )}
                       </div>
                     </div>
                   )}
                   {showDelivery && (
                     <div
-                      className={`flex items-center space-x-2 border rounded-lg p-4 flex-1 cursor-pointer transition-colors ${fulfillmentType === "DELIVERY" ? "border-primary bg-primary/5" : "border-border"}`}
+                      className={`flex flex-1 cursor-pointer items-center space-x-2 rounded-2xl border p-4 transition-colors ${fulfillmentType === "DELIVERY" ? "border-primary bg-primary/5" : "border-border/60"}`}
                       onClick={() => setFulfillmentType("DELIVERY")}
                     >
                       <RadioGroupItem value="DELIVERY" id="delivery" />
@@ -340,7 +342,7 @@ export default function Cart() {
                           {business?.deliveryFee ? ` (+$${business.deliveryFee.toFixed(2)})` : " (Free)"}
                         </Label>
                         {minimumOrderForDelivery && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          <p className="mt-0.5 text-xs text-muted-foreground">
                             ${minimumOrderForDelivery.toFixed(2)} minimum
                           </p>
                         )}
@@ -351,20 +353,20 @@ export default function Cart() {
 
                 {/* Fulfillment instructions */}
                 {fulfillmentType === "PICKUP" && pickupInstructions && (
-                  <div className="flex items-start gap-2 text-xs text-muted-foreground bg-primary/5 border border-primary/20 rounded-lg p-3">
-                    <Info className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                  <div className="flex items-start gap-2 rounded-2xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                     <span>{pickupInstructions}</span>
                   </div>
                 )}
                 {fulfillmentType === "DELIVERY" && deliveryInstructions && (
-                  <div className="flex items-start gap-2 text-xs text-muted-foreground bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 shrink-0" />
+                  <div className="flex items-start gap-2 rounded-2xl border border-blue-200 bg-blue-50 p-3 text-xs text-muted-foreground">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-500" />
                     <span>{deliveryInstructions}</span>
                   </div>
                 )}
                 {fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum && minimumOrderForDelivery && (
-                  <div className="flex items-start gap-2 text-xs bg-amber-50 border border-amber-200 text-amber-700 rounded-lg p-3">
-                    <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                    <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
                       Add <strong>${(minimumOrderForDelivery - total).toFixed(2)}</strong> more to qualify for delivery.
                     </span>

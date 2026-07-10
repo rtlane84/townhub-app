@@ -47,6 +47,12 @@ import {
   DASHBOARD_MOBILE_MAIN_TOP_CLASS,
   DASHBOARD_MOBILE_NAV_TOP_CLASS,
 } from "@/lib/platform-branding";
+import {
+  DASHBOARD_MAIN,
+  DASHBOARD_NAV_ACTIVE,
+  DASHBOARD_NAV_IDLE,
+  DASHBOARD_SIDEBAR,
+} from "@/lib/design-tokens";
 import { isAppointmentStorefrontMode, isOrderingStorefrontMode, resolveStorefrontMode } from "@workspace/api-zod";
 
 const NAV_ICONS = {
@@ -86,12 +92,12 @@ function BusinessNavLinks({
         const locked = item.featureKey !== null && !hasFeature(item.featureKey);
 
         const className = cn(
-          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full text-left",
-          locked && "opacity-60 cursor-not-allowed",
+          "w-full text-left",
+          locked && "cursor-not-allowed opacity-60",
           !locked && "cursor-pointer",
-          active && !locked && "bg-primary text-primary-foreground",
-          !active && !locked && "text-muted-foreground hover:bg-muted hover:text-foreground",
-          active && locked && "bg-muted text-muted-foreground",
+          active && !locked && DASHBOARD_NAV_ACTIVE,
+          !active && !locked && DASHBOARD_NAV_IDLE,
+          active && locked && "flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5 text-sm font-medium text-muted-foreground",
         );
 
         const content = (
@@ -237,12 +243,19 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
 
   return (
     <div className="flex min-h-[calc(100vh-var(--site-header-height,4rem))] print:block print:min-h-0">
-      <aside className="w-64 border-r bg-muted/10 hidden md:block shrink-0 print:hidden">
-        <div className="p-6">
-          <div className="flex items-start justify-between gap-2 mb-4">
-            <h2 className="font-serif font-bold text-lg">Business Hub</h2>
+      <aside className={cn(DASHBOARD_SIDEBAR, "print:hidden")}>
+        <div className="p-5 md:p-6">
+          <div className="mb-4 flex items-start justify-between gap-2">
+            <div>
+              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/75">
+                Dashboard
+              </p>
+              <h2 className="font-serif text-xl font-bold tracking-tight text-platform-heading">
+                Business Hub
+              </h2>
+            </div>
             {showLiveStatus ? (
-              <BusinessLiveStatusIndicator status={liveIndicatorStatus} className="shrink-0 pt-0.5" />
+              <BusinessLiveStatusIndicator status={liveIndicatorStatus} className="shrink-0 pt-1" />
             ) : null}
           </div>
           <BusinessSwitcher />
@@ -254,20 +267,20 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
 
       <div
         className={cn(
-          "md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 px-4 py-2 bg-background border-b shadow-sm print:hidden",
+          "md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 border-b border-black/[0.04] bg-card/95 px-4 py-2 shadow-[0_1px_12px_-4px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
           DASHBOARD_MOBILE_NAV_TOP_CLASS,
         )}
       >
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="min-h-10 gap-1.5 px-3 shrink-0">
+            <Button variant="outline" size="sm" className="min-h-10 shrink-0 gap-1.5 rounded-2xl px-3">
               <Menu className="h-4 w-4" />
               <span className="text-xs font-medium">Sections</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
+          <SheetContent side="left" className="w-72 border-0 bg-card p-0">
             <SheetHeader className="p-6 pb-4">
-              <SheetTitle className="font-serif text-left">Business Hub</SheetTitle>
+              <SheetTitle className="text-left font-serif text-platform-heading">Business Hub</SheetTitle>
             </SheetHeader>
             <div className="px-6 pb-4">
               <BusinessSwitcher compact onNavigate={() => setOpen(false)} />
@@ -281,13 +294,15 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
             </nav>
           </SheetContent>
         </Sheet>
-        <span className="text-sm font-semibold truncate">{business?.name ?? activeLabel}</span>
+        <span className="truncate text-sm font-semibold text-platform-heading">
+          {business?.name ?? activeLabel}
+        </span>
         {showLiveStatus ? (
           <BusinessLiveStatusIndicator status={liveIndicatorStatus} className="ml-auto shrink-0" />
         ) : null}
       </div>
 
-      <main className={cn("flex-1 p-4 md:p-10 print:p-0 overflow-x-hidden", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
+      <main className={cn(DASHBOARD_MAIN, "p-4 md:p-8 lg:p-10 print:p-0", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
         <div className="print:hidden">
           {showOrderNotificationBanner ? <NewOrderAlertBanner /> : null}
           {showAppointmentNotificationBanner ? <NewAppointmentAlertBanner /> : null}
