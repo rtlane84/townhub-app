@@ -177,7 +177,7 @@ export function NativeBottomTabBar() {
   return (
     <>
       <nav
-        className="native-bottom-tab-bar fixed inset-x-0 bottom-0 z-50 print:hidden"
+        className="native-bottom-tab-bar z-50 print:hidden"
         aria-label="Main navigation"
       >
         <div className="native-bottom-tab-bar-inner mx-auto flex max-w-md items-stretch justify-around gap-0.5 px-2 py-1.5">

@@ -87,7 +87,7 @@ export function HeroStage({
       ) : null}
 
       {hasOverlay || hasButtons ? (
-        <div className="relative z-10 flex w-full flex-col justify-end gap-4 p-6 md:p-10">
+        <div className="relative z-10 flex w-full flex-col justify-end gap-3 p-4 md:gap-4 md:p-8">
           {hasOverlay ? (
             <div
               className={cn(

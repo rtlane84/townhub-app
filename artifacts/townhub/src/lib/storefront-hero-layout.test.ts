@@ -3,12 +3,12 @@ import { describe, it } from "node:test";
 import { readFile } from "node:fs/promises";
 
 describe("storefront hero layout", () => {
-  it("uses a full-bleed mobile hero banner and keeps desktop overlap style", async () => {
+  it("uses a full-bleed mobile hero and large rounded desktop stage", async () => {
     const source = await readFile(new URL("../pages/storefront.tsx", import.meta.url), "utf8");
-    assert.match(source, /-mx-4 w-auto rounded-none/);
-    assert.match(source, /md:mx-auto md:w-\[86%\]/);
+    assert.match(source, /w-full rounded-none/);
+    assert.match(source, /md:mx-auto md:rounded-\[2rem\]/);
     assert.match(source, /md:-mt-\[7\.125rem\]/);
-    assert.match(source, /-mt-14 md:-mt-\[7\.125rem\]/);
+    assert.match(source, /-mt-16 px-5 md:-mt-\[7\.125rem\]/);
   });
 
   it("reduces mobile logo overlap while preserving desktop overlap", async () => {

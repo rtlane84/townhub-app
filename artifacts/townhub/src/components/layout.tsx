@@ -14,7 +14,7 @@ import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { usePlatformBranding } from "@/components/theme-provider";
-import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, NATIVE_MAIN_BOTTOM_PADDING_CLASS } from "@/lib/platform-branding";
+import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, NATIVE_HEADER_LOGO_MAX_PX } from "@/lib/platform-branding";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 import { isDashboardRoute } from "@/lib/native-platform";
 import { useNativeBottomTabs, useNativePlatform, useNativePullToRefresh } from "@/hooks/use-native-platform";
@@ -45,8 +45,12 @@ function PlatformLogo({ className, sizePx }: { className?: string; sizePx?: numb
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { platformName, footerTagline, logoSizePx } = usePlatformBranding();
-  const headerMinHeightPx = resolveHeaderMinHeightPx(logoSizePx);
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
+  const { isNative } = useNativePlatform();
+  const headerMinHeightPx = resolveHeaderMinHeightPx(logoSizePx, { native: isNative });
+  const nativeHeaderLogoPx = isNative
+    ? Math.min(logoSizePx, NATIVE_HEADER_LOGO_MAX_PX)
+    : logoSizePx;
   const {
     authResolved,
     isAdmin,
@@ -61,7 +65,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [, storefrontParams] = useRoute("/businesses/:slug");
   const storefrontSlug = storefrontParams?.slug;
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { isNative } = useNativePlatform();
   const showNativeTabs = useNativeBottomTabs();
   const showNativePullToRefresh = useNativePullToRefresh();
 
@@ -143,42 +146,51 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div
       className={cn(
         "min-h-[100dvh] flex flex-col bg-background print:block print:min-h-0",
-        isNative && "native-app-shell",
+        isNative && "native-app-shell h-[100dvh] max-h-[100dvh] overflow-hidden",
       )}
       style={{
         [SITE_HEADER_HEIGHT_CSS_VAR]: `${headerMinHeightPx}px`,
         [NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR]: `${NATIVE_BOTTOM_TAB_HEIGHT_PX}px`,
       } as CSSProperties}
     >
-      <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 print:hidden native-site-header">
+      <header
+        className={cn(
+          "sticky top-0 z-50 w-full border-b border-border/30 bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 print:hidden native-site-header",
+          isNative && "!sticky relative top-auto",
+        )}
+      >
         <div
-          className="container mx-auto flex items-center justify-between px-5 sm:px-6 lg:px-8"
+          className={cn(
+            "container mx-auto flex items-center justify-between px-5 sm:px-6 lg:px-8",
+            isNative && "px-4",
+          )}
           style={{ minHeight: headerMinHeightPx }}
         >
 
           {/* Left: logo + desktop nav */}
-          <div className="flex items-center gap-5 min-w-0">
+          <div className={cn("flex items-center min-w-0", isNative ? "gap-2.5" : "gap-5")}>
             {showNativeDashboardBack ? (
               <Link
                 href="/"
                 className={cn(
                   returnToMarketplaceClass(),
-                  "shrink-0 gap-1.5 px-2 py-2 -ml-1 min-h-11",
+                  "shrink-0 gap-1.5 px-1.5 py-1.5 -ml-1 min-h-10",
                 )}
                 aria-label="Back to app"
               >
-                <ArrowLeft className="h-[22px] w-[22px] shrink-0" aria-hidden />
+                <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden />
                 <span className="text-sm font-semibold text-foreground">Back</span>
               </Link>
             ) : null}
             <Link
               href="/"
-              className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
+              className="flex items-center gap-2 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
             >
-              <PlatformLogo />
+              <PlatformLogo sizePx={nativeHeaderLogoPx} />
               <span
                 className={cn(
-                  "font-serif text-lg font-semibold tracking-tight text-primary sm:text-xl",
+                  "font-serif font-semibold tracking-tight text-primary",
+                  isNative ? "text-[17px]" : "text-lg sm:text-xl",
                   showNativeDashboardBack && "hidden sm:inline",
                 )}
               >
@@ -497,30 +509,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className={cn("flex-1 flex flex-col min-h-0", showNativeTabs && NATIVE_MAIN_BOTTOM_PADDING_CLASS)}>
+      <main
+        className={cn(
+          "flex-1 flex flex-col min-h-0",
+          isNative && "native-scroll-root",
+        )}
+        data-native-scroll-root={isNative ? "true" : undefined}
+      >
         <NativePullToRefresh enabled={showNativePullToRefresh}>
           {children}
         </NativePullToRefresh>
+        {/* Web footer scrolls with content; native tabs hide it */}
+        <footer className={cn("border-t border-border/40 py-14 bg-background mt-auto print:hidden", hideFooter && "hidden")}>
+          <div className="container mx-auto px-5 sm:px-6 text-center">
+            <div className="mb-4 flex items-center justify-center gap-2.5">
+              <PlatformLogo className="h-5 w-5 text-muted-foreground" sizePx={20} />
+              <span className="font-serif text-lg font-semibold tracking-tight text-foreground/80">{platformName}</span>
+            </div>
+            <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+              {footerTagline}
+            </p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              <Link href="/help" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
+                Help Center
+              </Link>
+            </p>
+          </div>
+        </footer>
       </main>
 
       {showNativeTabs && <NativeBottomTabBar />}
-
-      <footer className={cn("border-t border-border/40 py-14 bg-card/40 mt-auto print:hidden", hideFooter && "hidden")}>
-        <div className="container mx-auto px-5 sm:px-6 text-center">
-          <div className="mb-4 flex items-center justify-center gap-2.5">
-            <PlatformLogo className="h-5 w-5 text-muted-foreground" sizePx={20} />
-            <span className="font-serif text-lg font-semibold tracking-tight text-foreground/80">{platformName}</span>
-          </div>
-          <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-            {footerTagline}
-          </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            <Link href="/help" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
-              Help Center
-            </Link>
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

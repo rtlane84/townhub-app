@@ -3,8 +3,14 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { HeroStage } from "@/components/hero-stage";
 import { usePlatformBranding } from "@/components/theme-provider";
+import { useNativePlatform } from "@/hooks/use-native-platform";
 
+/**
+ * Marketing hero for web only. Native home skips this so users land in
+ * the dashboard content immediately (Apple Weather / Maps style).
+ */
 export function HomeHeroSection() {
+  const { isNative } = useNativePlatform();
   const {
     shopCtaLabel,
     heroImageUrl,
@@ -29,10 +35,12 @@ export function HomeHeroSection() {
     setImageFailed(false);
   }, [heroImageUrl]);
 
+  if (isNative) return null;
+
   const showButtons = !themeLoading && (showShopButton || showListBusinessButton);
 
   return (
-    <section aria-label={`${platformName} homepage hero`}>
+    <section aria-label={`${platformName} homepage hero`} className="overflow-hidden">
       <HeroStage
         heroImageUrl={showHeroImage ? heroImageUrl : null}
         heroImageFit={heroImageFit}
@@ -46,6 +54,7 @@ export function HomeHeroSection() {
         overlayAlign={heroOverlayAlign}
         overlayAlt={`${platformName} hero`}
         buttonPlacement={heroButtonPlacement}
+        className="rounded-none md:rounded-none"
         buttons={
           showButtons ? (
             <>
@@ -53,7 +62,7 @@ export function HomeHeroSection() {
                 <Link href="/businesses">
                   <Button
                     size="lg"
-                    className="h-[52px] rounded-[1.25rem] border-0 bg-primary px-8 text-base font-semibold text-primary-foreground shadow-[0_4px_20px_-4px_rgba(30,58,138,0.45)] transition-transform hover:-translate-y-0.5"
+                    className="h-11 rounded-2xl border-0 bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-[0_4px_20px_-4px_rgba(30,58,138,0.45)] md:h-[52px] md:px-8 md:text-base"
                   >
                     {shopCtaLabel}
                   </Button>
@@ -64,7 +73,7 @@ export function HomeHeroSection() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="h-[52px] rounded-[1.25rem] border-0 bg-card/95 px-8 text-base font-semibold text-foreground shadow-md backdrop-blur-xl hover:bg-card"
+                    className="h-11 rounded-2xl border-0 bg-card/95 px-6 text-sm font-semibold text-foreground shadow-md backdrop-blur-xl hover:bg-card md:h-[52px] md:px-8 md:text-base"
                   >
                     List Your Business
                   </Button>

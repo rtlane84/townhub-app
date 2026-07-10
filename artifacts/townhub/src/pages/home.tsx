@@ -27,7 +27,6 @@ import { QuickTownInfoSection } from "@/components/quick-town-info-section";
 import { HomeHeroSection } from "@/components/home-hero-section";
 import { SectionHeader } from "@/components/section-header";
 import {
-  HighlightCardSkeleton,
   HomeEventsSkeleton,
   HomeFeaturedBusinessesSkeleton,
   HomeFoodTrucksSkeleton,
@@ -44,6 +43,17 @@ import {
 import { formatFoodTruckTimeWindow } from "@/lib/food-truck-utils";
 import { LISTING_CARD_CLASS, PAGE_CONTAINER, SECTION_Y } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
+
+/**
+ * Homepage IA (native-first):
+ * 1. Greeting — who/where/when
+ * 2. Today — glance cards (weather, trucks, events, marketplace)
+ * 3. Spotlight — optional admin promos/announcements (only when live)
+ * 4. Explore — category shortcuts
+ * 5. Local favorites — featured businesses
+ * 6. Food trucks — only if operating today
+ * 7. Events — one combined calendar section
+ */
 
 const CATEGORIES = [
   { name: "Food & Drink", type: BusinessType.FOOD_VENDOR, icon: Utensils, tint: "bg-amber-500/10 text-amber-700" },
@@ -106,7 +116,7 @@ export default function Home() {
     },
   );
 
-  const { data: highlights = [], isPending: highlightsPending } = useListHighlights({
+  const { data: highlights = [] } = useListHighlights({
     query: {
       queryKey: getListHighlightsQueryKey(),
       placeholderData: keepPreviousData,
@@ -130,29 +140,29 @@ export default function Home() {
   const eventsPending = featuredEventsPending || upcomingEventsPending;
   const featuredEvents = featuredEventsRaw.slice(0, 3);
   const featuredEventIds = new Set(featuredEvents.map((event) => event.id));
-  const upcomingEvents = allUpcomingEvents
+  const otherUpcoming = allUpcomingEvents
     .filter((event) => !featuredEventIds.has(event.id))
-    .slice(0, 6);
-  const featuredHighlights = highlights.slice(0, 3);
+    .slice(0, 6 - featuredEvents.length);
+  const homeEvents = [...featuredEvents, ...otherUpcoming];
+  const spotlightItems = highlights.slice(0, 3);
   const featuredBusinesses = businesses?.slice(0, 6) ?? [];
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex flex-col bg-background">
+      {/* Web-only marketing banner — skipped on native */}
       <HomeHeroSection />
 
-      {/* Personalized dashboard greeting */}
-      <section className={cn(PAGE_CONTAINER, "pt-8 pb-2 th-fade-up md:pt-10")}>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+      {/* 1. Greeting */}
+      <section className={cn(PAGE_CONTAINER, "pt-5 pb-1 th-fade-up md:pt-8")}>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
           Today in {placeLabel}
         </p>
-        <h1 className="mt-1.5 font-serif text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+        <h1 className="mt-1 font-serif text-[1.75rem] font-bold leading-tight tracking-tight text-foreground md:text-4xl">
           {isSignedIn && firstName ? `${greeting}, ${firstName}` : greeting}
         </h1>
-        <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground md:text-[15px]">
-          Your local favorites, events, and food trucks — all in one calm place.
-        </p>
       </section>
 
+      {/* 2. Today — at a glance */}
       <QuickTownInfoSection
         weatherEnabled={weatherEnabled}
         weather={weather}
@@ -166,63 +176,32 @@ export default function Home() {
         marketplaceStatsLoading={marketplaceStatsPending && !marketplaceStats}
       />
 
-      {/* Categories — horizontal on mobile, grid on desktop */}
-      <section className={cn(SECTION_Y, "th-fade-up th-fade-up-delay-1")}>
-        <div className={PAGE_CONTAINER}>
-          <SectionHeader title="Browse by category" size="sm" />
-          <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar md:grid md:grid-cols-5 md:gap-4 md:overflow-visible md:pb-0">
-            {CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <Link key={cat.type} href={`/businesses?type=${cat.type}`} className="min-w-[140px] shrink-0 md:min-w-0">
-                  <Card className={cn(LISTING_CARD_CLASS, "rounded-[1.5rem]")}>
-                    <CardContent className="flex flex-col items-center gap-3 p-5 text-center md:p-6">
-                      <div className={cn("flex h-14 w-14 items-center justify-center rounded-2xl", cat.tint)}>
-                        <Icon className="h-6 w-6" strokeWidth={1.85} />
-                      </div>
-                      <span className="text-sm font-semibold tracking-tight text-foreground">{cat.name}</span>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Seasonal highlights */}
-      {highlightsPending ? (
-        <section className="pb-4">
+      {/* 3. Spotlight — optional; only when admin has live content */}
+      {spotlightItems.length > 0 ? (
+        <section className={cn(SECTION_Y, "pt-2 th-fade-up")}>
           <div className={PAGE_CONTAINER}>
-            <SectionHeader title="Seasonal highlights" eyebrow="Community" icon={<Sparkles className="h-4 w-4" />} size="sm" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <HighlightCardSkeleton key={index} />
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : featuredHighlights.length > 0 ? (
-        <section className="pb-4 th-fade-up">
-          <div className={PAGE_CONTAINER}>
-            <SectionHeader title="Seasonal highlights" eyebrow="Community" icon={<Sparkles className="h-4 w-4" />} size="sm" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredHighlights.map((h) => (
+            <SectionHeader
+              title="Spotlight"
+              description="Promotions, announcements, and what’s important right now."
+              size="sm"
+            />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {spotlightItems.map((h) => (
                 <Card key={h.id} className="overflow-hidden rounded-[1.5rem]">
-                  <CardContent className="flex items-start gap-4 p-5">
+                  <CardContent className="flex items-start gap-3.5 p-4 md:p-5">
                     {h.imageUrl ? (
                       <img
                         src={h.imageUrl}
                         alt={h.title}
-                        width={72}
-                        height={72}
+                        width={64}
+                        height={64}
                         loading="lazy"
                         decoding="async"
-                        className="h-[72px] w-[72px] shrink-0 rounded-2xl object-cover"
+                        className="h-16 w-16 shrink-0 rounded-2xl object-cover"
                       />
                     ) : (
-                      <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <Sparkles className="h-6 w-6" />
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                        <Sparkles className="h-5 w-5" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
@@ -247,14 +226,38 @@ export default function Home() {
         </section>
       ) : null}
 
-      {/* Featured businesses */}
+      {/* 4. Explore */}
+      <section className={cn(SECTION_Y, "th-fade-up th-fade-up-delay-1")}>
+        <div className={PAGE_CONTAINER}>
+          <SectionHeader title="Explore" size="sm" />
+          <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar md:grid md:grid-cols-5 md:gap-4 md:overflow-visible md:pb-0">
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <Link key={cat.type} href={`/businesses?type=${cat.type}`} className="min-w-[120px] shrink-0 md:min-w-0">
+                  <Card className={cn(LISTING_CARD_CLASS, "rounded-[1.35rem]")}>
+                    <CardContent className="flex flex-col items-center gap-2.5 p-4 text-center md:gap-3 md:p-5">
+                      <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl md:h-14 md:w-14", cat.tint)}>
+                        <Icon className="h-5 w-5 md:h-6 md:w-6" strokeWidth={1.85} />
+                      </div>
+                      <span className="text-[13px] font-semibold tracking-tight text-foreground md:text-sm">{cat.name}</span>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Local favorites */}
       <section className={cn(SECTION_Y, "th-fade-up th-fade-up-delay-2")}>
         <div className={PAGE_CONTAINER}>
           <SectionHeader
-            title="Featured local favorites"
-            description="Hand-picked shops and makers around town."
+            title="Local favorites"
+            description="Featured shops and makers around town."
             actionHref="/businesses"
-            actionLabel="View all"
+            actionLabel="See all"
           />
 
           {businessesPending && featuredBusinesses.length === 0 ? (
@@ -271,7 +274,7 @@ export default function Home() {
               }
             />
           ) : featuredBusinesses.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
               {featuredBusinesses.map((business) => (
                 <Link key={business.id} href={`/businesses/${business.slug}`}>
                   <Card className={LISTING_CARD_CLASS} style={businessListingCardVars(business.accentColor)}>
@@ -321,47 +324,45 @@ export default function Home() {
             />
           )}
 
-          <div className="mt-6 sm:hidden">
+          <div className="mt-5 sm:hidden">
             <Link href="/businesses">
-              <Button variant="outline" className="w-full min-h-11">View all businesses</Button>
+              <Button variant="outline" className="w-full min-h-11">See all businesses</Button>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Food trucks today */}
+      {/* 6. Food trucks — only when relevant */}
       {todayTrucksPending && todayTrucks.length === 0 ? (
-        <section className="pb-10">
+        <section className={SECTION_Y}>
           <div className={PAGE_CONTAINER}>
             <SectionHeader
               title="Food trucks today"
               actionHref="/food-trucks"
-              icon={<Truck className="h-4 w-4" />}
               size="sm"
             />
             <HomeFoodTrucksSkeleton />
           </div>
         </section>
       ) : todayTrucks.length > 0 ? (
-        <section id="food-trucks-today" className="pb-10 th-fade-up">
+        <section id="food-trucks-today" className={cn(SECTION_Y, "th-fade-up")}>
           <div className={PAGE_CONTAINER}>
             <SectionHeader
               title="Food trucks today"
               actionHref="/food-trucks"
-              icon={<Truck className="h-4 w-4" />}
               size="sm"
             />
-            <div className="mb-4">
+            <div className="mb-3">
               <Badge variant="soft" className="gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
                 Live now
               </Badge>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {todayTrucks.map((truck) => (
                 <Link key={truck.id} href={`/businesses/${truck.businessSlug}`}>
                   <Card className={cn(LISTING_CARD_CLASS, "rounded-[1.5rem]")}>
-                    <CardContent className="p-5">
+                    <CardContent className="p-4 md:p-5">
                       <div className="flex items-start gap-3.5">
                         {truck.businessLogoUrl ? (
                           <BusinessLogoBadge
@@ -399,58 +400,35 @@ export default function Home() {
         </section>
       ) : null}
 
-      {/* Featured events */}
-      {(eventsPending && featuredEvents.length === 0) || featuredEvents.length > 0 ? (
-        <section className={cn(SECTION_Y, "bg-card/50")}>
-          <div className={PAGE_CONTAINER}>
-            <SectionHeader
-              title="Featured events"
-              description="Promoted highlights you won't want to miss."
-              actionHref="/events"
-              icon={<Sparkles className="h-4 w-4" />}
-            />
-            {eventsPending && featuredEvents.length === 0 ? (
-              <HomeEventsSkeleton />
-            ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {featuredEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      ) : null}
-
-      {/* Upcoming events */}
+      {/* 7. Events — single combined section */}
       <section className={SECTION_Y}>
         <div className={PAGE_CONTAINER}>
           <SectionHeader
-            title="Upcoming events"
-            description="More happening soon in the community."
+            title="Events"
+            description="What’s happening around town."
             actionHref="/events"
-            icon={<Calendar className="h-4 w-4" />}
+            actionLabel="See all"
           />
 
-          {eventsPending && upcomingEvents.length === 0 ? (
+          {eventsPending && homeEvents.length === 0 ? (
             <HomeEventsSkeleton count={6} />
-          ) : upcomingEvents.length > 0 ? (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {upcomingEvents.map((event) => (
-                <EventCard key={event.id} event={event} />
+          ) : homeEvents.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {homeEvents.map((event) => (
+                <EventCard key={event.id} event={event} showFeaturedBadge={event.featured} />
               ))}
             </div>
-          ) : featuredEvents.length === 0 ? (
+          ) : (
             <NativeEmptyState
               icon={Calendar}
-              title="No upcoming events right now"
-              description="Check back soon or browse the full events calendar."
+              title="No upcoming events"
+              description="Check back soon for community events."
             />
-          ) : null}
+          )}
 
-          <div className="mt-8 text-center sm:hidden">
+          <div className="mt-6 sm:hidden">
             <Link href="/events">
-              <Button variant="outline" className="min-h-11">View all events</Button>
+              <Button variant="outline" className="w-full min-h-11">See all events</Button>
             </Link>
           </div>
         </div>

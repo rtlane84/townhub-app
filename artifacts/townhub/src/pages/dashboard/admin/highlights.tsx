@@ -138,8 +138,10 @@ export default function AdminHighlights() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-serif text-3xl font-bold">Highlights</h1>
-            <p className="text-muted-foreground mt-1">Seasonal promotions and featured content on the homepage</p>
+            <h1 className="font-serif text-3xl font-bold">Spotlight</h1>
+            <p className="text-muted-foreground mt-1">
+              Optional homepage promos, announcements, and important community content. Only shown when live — leave empty if your town doesn&apos;t need it.
+            </p>
           </div>
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4 mr-2" /> Add Highlight
@@ -153,7 +155,7 @@ export default function AdminHighlights() {
             ) : highlights.length === 0 ? (
               <div className="p-12 text-center text-muted-foreground">
                 <Sparkles className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                <p>No highlights yet. Create one to appear on the homepage.</p>
+                <p>No spotlights yet. Create one when you have a promo or announcement to feature.</p>
               </div>
             ) : (
               <div className="divide-y">
@@ -193,12 +195,12 @@ export default function AdminHighlights() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit Highlight" : "Add Highlight"}</DialogTitle>
+            <DialogTitle>{editing ? "Edit Spotlight" : "Add Spotlight"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Title *</label>
-              <Input value={form.title} onChange={f("title")} placeholder="Spring Collection is Here!" />
+              <Input value={form.title} onChange={f("title")} placeholder="Mother’s Day preorders open" />
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Description</label>

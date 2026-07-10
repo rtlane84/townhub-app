@@ -21,8 +21,8 @@ export const LISTING_CARD_CLASS = `h-full cursor-pointer overflow-hidden rounded
 /** Page content container */
 export const PAGE_CONTAINER = "container mx-auto max-w-7xl px-5 sm:px-6";
 
-/** Section vertical rhythm */
-export const SECTION_Y = "py-10 md:py-14";
+/** Section vertical rhythm — tighter on mobile for native density */
+export const SECTION_Y = "py-7 md:py-12";
 
 /** Soft pill / chip */
 export const PILL =

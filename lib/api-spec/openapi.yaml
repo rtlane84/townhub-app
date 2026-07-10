@@ -27,7 +27,7 @@ tags:
   - name: events
     description: Community events calendar
   - name: highlights
-    description: Seasonal highlights and promotions
+    description: Spotlight content — promotions, announcements, and important community posts
   - name: subscriptions
     description: Subscription plans and billing
   - name: food-truck

@@ -269,51 +269,86 @@ html.native-app {
   --safe-area-right: env(safe-area-inset-right, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
+  height: 100%;
+  overflow: hidden;
+  background-color: hsl(var(--background));
+  overscroll-behavior: none;
 }
 
 html.native-app body {
+  height: 100%;
+  overflow: hidden;
   padding-left: var(--safe-area-left);
   padding-right: var(--safe-area-right);
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+  background-color: hsl(var(--background));
+  /* Prevent iOS rubber-band of the whole document */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+
+/* App shell: header + scrollable main + in-flow tab bar stay anchored */
+html.native-app .native-app-shell {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  background-color: hsl(var(--background));
+}
+
+html.native-app .native-scroll-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  background-color: hsl(var(--background));
 }
 
 html.native-app .native-site-header {
+  flex-shrink: 0;
   padding-top: var(--safe-area-top);
-  border-bottom-color: transparent;
-  background: hsl(var(--background) / 0.78);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 1px solid hsl(var(--border) / 0.35);
+  background: hsl(var(--background) / 0.92);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
 }
 
-@supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
   html.native-app .native-site-header {
-    background: hsl(var(--background) / 0.62);
+    background: hsl(var(--background) / 0.78);
   }
 }
 
-/* Floating pill tab bar — Apple Maps / Wallet inspired */
+/* In-flow tab bar — stays visually anchored; no document rubber-band */
 html.native-app .native-bottom-tab-bar {
-  padding-bottom: max(0.5rem, var(--safe-area-bottom));
+  position: relative;
+  inset: auto;
+  flex-shrink: 0;
+  padding-bottom: max(0.35rem, var(--safe-area-bottom));
   padding-left: max(0.75rem, var(--safe-area-left));
   padding-right: max(0.75rem, var(--safe-area-right));
+  padding-top: 0.35rem;
   border-top: none;
-  background: transparent;
+  background: hsl(var(--background));
   pointer-events: none;
+  z-index: 50;
 }
 
 html.native-app .native-bottom-tab-bar-inner {
   pointer-events: auto;
-  border-radius: 1.75rem;
-  background: hsl(var(--card) / 0.88);
-  -webkit-backdrop-filter: saturate(200%) blur(28px);
-  backdrop-filter: saturate(200%) blur(28px);
+  border-radius: 1.5rem;
+  background: hsl(var(--card) / 0.94);
+  -webkit-backdrop-filter: saturate(200%) blur(24px);
+  backdrop-filter: saturate(200%) blur(24px);
   box-shadow: var(--shadow-float);
-  border: 1px solid hsl(var(--border) / 0.5);
+  border: 1px solid hsl(var(--border) / 0.45);
 }
 
-@supports (backdrop-filter: blur(28px)) or (-webkit-backdrop-filter: blur(28px)) {
+@supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
   html.native-app .native-bottom-tab-bar-inner {
-    background: hsl(var(--card) / 0.72);
+    background: hsl(var(--card) / 0.82);
   }
 }
 
@@ -351,8 +386,8 @@ html.native-app [data-slot="sheet-content"] {
   max-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
 }
 
-html.native-app.native-ios .native-main-with-tabs {
-  scroll-padding-bottom: calc(var(--native-bottom-tab-height, 56px) + var(--safe-area-bottom));
+html.native-app.native-ios .native-scroll-root {
+  scroll-padding-bottom: 0.5rem;
 }
 
 /* Business Hub / Admin mobile “Sections” bar — must clear status bar + site header */

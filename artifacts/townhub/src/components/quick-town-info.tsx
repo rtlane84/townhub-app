@@ -3,12 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
-/** Shared grid shell for homepage town dashboard cards. */
+/** Shared grid shell for homepage “Today” glance cards — same canvas as the rest of home. */
 export function QuickTownInfo({ children }: { children: ReactNode }) {
   return (
-    <section className="py-6 th-fade-up md:py-8">
+    <section className="py-4 th-fade-up md:py-6">
       <div className={PAGE_CONTAINER}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">{children}</div>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          At a glance
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">{children}</div>
       </div>
     </section>
   );
@@ -21,19 +24,19 @@ type QuickTownInfoCardProps = {
   className?: string;
 };
 
-/** Equal-height card shell — Wallet-style dashboard tiles. */
+/** Equal-height white card on the shared background. */
 export function QuickTownInfoCard({ title, icon, children, className }: QuickTownInfoCardProps) {
   return (
     <Card
       className={cn(
-        "flex h-full flex-col overflow-hidden rounded-[1.5rem] transition-transform duration-300 hover:-translate-y-0.5",
+        "flex h-full flex-col overflow-hidden rounded-[1.35rem] transition-transform duration-300 hover:-translate-y-0.5",
         className,
       )}
     >
-      <CardContent className="flex flex-1 flex-col p-5 md:p-6">
-        <div className="mb-4 flex items-center gap-2.5">
+      <CardContent className="flex flex-1 flex-col p-4 md:p-5">
+        <div className="mb-3 flex items-center gap-2.5">
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-base leading-none"
+            className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-base leading-none"
             aria-hidden
           >
             {icon}

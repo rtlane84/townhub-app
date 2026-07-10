@@ -68,7 +68,7 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
     { href: "/dashboard/admin/orders", label: "Orders", icon: ShoppingBag },
     { href: "/dashboard/admin/users", label: "Users", icon: Users },
     { href: "/dashboard/admin/events", label: "Events", icon: Calendar },
-    { href: "/dashboard/admin/highlights", label: "Highlights", icon: Sparkles },
+    { href: "/dashboard/admin/highlights", label: "Spotlight", icon: Sparkles },
     { href: "/dashboard/admin/plans", label: "Plans", icon: Layers },
     { href: "/dashboard/admin/features", label: "Features", icon: Sparkles },
     { href: "/dashboard/admin/system-status", label: "System Status", icon: Activity },

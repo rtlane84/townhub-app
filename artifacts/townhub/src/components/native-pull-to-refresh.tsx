@@ -48,6 +48,8 @@ export function NativePullToRefresh({ enabled, children }: NativePullToRefreshPr
     if (!container) return;
 
     const getScrollTop = () => {
+      const scrollRoot = document.querySelector<HTMLElement>("[data-native-scroll-root='true']");
+      if (scrollRoot) return scrollRoot.scrollTop;
       const scrollingElement = document.scrollingElement ?? document.documentElement;
       return scrollingElement.scrollTop;
     };

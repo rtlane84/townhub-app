@@ -12,12 +12,23 @@ export const DEFAULT_LOGO_SIZE_PX = 24;
 export const LOGO_SIZE_MIN_PX = 16;
 export const LOGO_SIZE_MAX_PX = 192;
 
-/** Minimum header bar height (~64pt native nav) */
+/** Minimum header bar height (~64pt native nav) — web */
 export const HEADER_BASE_MIN_HEIGHT_PX = 64;
+/** Compact iOS navigation bar content height (excluding safe area) */
+export const NATIVE_HEADER_CONTENT_HEIGHT_PX = 44;
+/** Cap logo in the native nav so oversized brand logos don't inflate the bar */
+export const NATIVE_HEADER_LOGO_MAX_PX = 28;
 /** Vertical padding around the logo inside the header (total, both sides) */
 export const HEADER_LOGO_VERTICAL_PADDING_PX = 8;
 
-export function resolveHeaderMinHeightPx(logoSizePx: number): number {
+export function resolveHeaderMinHeightPx(
+  logoSizePx: number,
+  options?: { native?: boolean },
+): number {
+  if (options?.native) {
+    const logo = Math.min(logoSizePx, NATIVE_HEADER_LOGO_MAX_PX);
+    return Math.max(NATIVE_HEADER_CONTENT_HEIGHT_PX, logo + HEADER_LOGO_VERTICAL_PADDING_PX);
+  }
   return Math.max(HEADER_BASE_MIN_HEIGHT_PX, logoSizePx + HEADER_LOGO_VERTICAL_PADDING_PX);
 }
 
@@ -33,12 +44,15 @@ export const DASHBOARD_MOBILE_MAIN_TOP_CLASS =
   "pt-[calc(var(--site-header-height,4rem)+env(safe-area-inset-top,0px)+3rem)] md:pt-0";
 
 /** Native bottom tab bar height (excluding safe area) — floating pill + padding */
-export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 72;
+export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 64;
 export const NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR = "--native-bottom-tab-height";
 
-/** Padding for main content when native bottom tabs are visible */
+/**
+ * Legacy padding when the tab bar was `position: fixed`.
+ * With the app-shell flex layout the tab bar is in-flow, so this is unused on native.
+ */
 export const NATIVE_MAIN_BOTTOM_PADDING_CLASS =
-  "native-main-with-tabs pb-[calc(var(--native-bottom-tab-height,72px)+env(safe-area-inset-bottom,0px)+0.75rem)]";
+  "native-main-with-tabs pb-[calc(var(--native-bottom-tab-height,64px)+env(safe-area-inset-bottom,0px)+0.5rem)]";
 
 export const LOGO_SIZE_PRESETS = [
   { value: 20, label: "Small" },
@@ -113,12 +127,12 @@ export const HERO_BUTTON_PLACEMENT_OPTIONS = [
   { value: "bottom-right" as const, label: "Bottom Right" },
 ] as const;
 
-/** Matches the live homepage hero section min-height (desktop); ~15% shorter for earlier content */
-export const HERO_SECTION_MIN_HEIGHT_PX = 357;
-/** Shorter hero on mobile (~15% vs prior 257px) so Weather/Marketplace appear sooner */
-export const HERO_SECTION_MOBILE_MIN_HEIGHT_PX = 218;
+/** Compact hero — web only; native home skips the marketing banner */
+export const HERO_SECTION_MIN_HEIGHT_PX = 280;
+/** Short mobile web hero so content appears quickly */
+export const HERO_SECTION_MOBILE_MIN_HEIGHT_PX = 148;
 export const HERO_SECTION_MIN_HEIGHT_CLASS =
-  "min-h-[218px] md:min-h-[357px]";
+  "min-h-[148px] md:min-h-[280px]";
 
 export function resolvePlatformName(theme?: Pick<PlatformTheme, "platformName"> | null): string {
   const name = theme?.platformName?.trim();
