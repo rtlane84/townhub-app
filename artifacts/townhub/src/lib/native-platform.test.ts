@@ -28,13 +28,7 @@ describe("native-platform", () => {
     assert.equal(isNativeTabRoute("/businesses/acme-bakery"), false);
     assert.equal(isNativeTabRoute("/cart"), false);
     assert.equal(isNativeTabRoute("/order/abc"), false);
-  });
-
-  it("shows native tabs on business and admin dashboards", () => {
-    assert.equal(isNativeTabRoute("/dashboard/business"), true);
-    assert.equal(isNativeTabRoute("/dashboard/business/orders"), true);
-    assert.equal(isNativeTabRoute("/dashboard/admin"), true);
-    assert.equal(isNativeTabRoute("/dashboard/admin/settings"), true);
+    assert.equal(isNativeTabRoute("/dashboard/business"), false);
   });
 
   it("marks account routes", () => {

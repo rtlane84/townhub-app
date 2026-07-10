@@ -48,8 +48,8 @@ export function isDashboardRoute(location: string): boolean {
 }
 
 export function isNativeTabRoute(location: string): boolean {
+  if (isDashboardRoute(location)) return false;
   if (location.startsWith("/businesses/")) return false;
-  if (isDashboardRoute(location)) return true;
   return (
     NATIVE_TAB_ROUTES.includes(location as (typeof NATIVE_TAB_ROUTES)[number]) ||
     isAccountRoute(location)

@@ -260,7 +260,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
       >
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 shrink-0">
+            <Button variant="outline" size="sm" className="min-h-10 gap-1.5 px-3 shrink-0">
               <Menu className="h-4 w-4" />
               <span className="text-xs font-medium">Sections</span>
             </Button>

@@ -21,7 +21,7 @@ import { SignInButton, useClerk, useUser } from "@clerk/react";
 import { useUnregisterDevice } from "@workspace/api-client-react";
 import { unregisterNativePushDevice } from "@/lib/native-push";
 import { cn } from "@/lib/utils";
-import { isAccountRoute, isDashboardRoute, isNavActive } from "@/lib/native-platform";
+import { isAccountRoute, isNavActive } from "@/lib/native-platform";
 import {
   triggerAccountCloseHaptic,
   triggerAccountOpenHaptic,
@@ -104,7 +104,7 @@ export function NativeBottomTabBar() {
       href: "#account",
       label: "Account",
       icon: User,
-      isActive: (path) => isAccountRoute(path) || isDashboardRoute(path) || accountOpen,
+      isActive: (path) => isAccountRoute(path) || accountOpen,
       onPress: () => {
         setAccountOpen(true);
       },

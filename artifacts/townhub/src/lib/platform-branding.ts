@@ -24,12 +24,13 @@ export function resolveHeaderMinHeightPx(logoSizePx: number): number {
 /** Set on the site shell; dashboard mobile nav reads this for positioning below the header */
 export const SITE_HEADER_HEIGHT_CSS_VAR = "--site-header-height";
 
-/** Mobile dashboard sub-nav sits flush under the dynamic site header */
-export const DASHBOARD_MOBILE_NAV_TOP_CLASS = "top-[var(--site-header-height,4rem)]";
+/** Mobile dashboard sub-nav sits flush under the site header (includes status-bar safe area on iOS). */
+export const DASHBOARD_MOBILE_NAV_TOP_CLASS =
+  "dashboard-mobile-subnav top-[calc(var(--site-header-height,4rem)+env(safe-area-inset-top,0px))]";
 
-/** Main content offset: site header + mobile dashboard sub-nav (~3rem) */
+/** Main content offset: site header + safe area + mobile dashboard sub-nav (~3rem) */
 export const DASHBOARD_MOBILE_MAIN_TOP_CLASS =
-  "pt-[calc(var(--site-header-height,4rem)+3rem)] md:pt-0";
+  "pt-[calc(var(--site-header-height,4rem)+env(safe-area-inset-top,0px)+3rem)] md:pt-0";
 
 /** Native bottom tab bar height (excluding safe area) */
 export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 56;
