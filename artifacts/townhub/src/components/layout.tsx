@@ -134,8 +134,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const listYourBusinessActive = isNavActive("/list-your-business");
   /** Account lives in the native bottom tab sheet — hide duplicate header auth. */
   const hideHeaderAccount = isNative && showNativeTabs;
-  /** Native dashboards hide bottom tabs; show an obvious exit control. */
-  const showNativeDashboardBack = isNative && inDashboard;
 
   return (
     <div
@@ -156,30 +154,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Left: logo + desktop nav */}
           <div className="flex items-center gap-5 min-w-0">
-            {showNativeDashboardBack ? (
-              <Link
-                href="/"
-                className={cn(
-                  returnToMarketplaceClass(),
-                  "shrink-0 gap-1.5 px-2 py-2 -ml-1 min-h-11",
-                )}
-                aria-label="Back to app"
-              >
-                <ArrowLeft className="h-[22px] w-[22px] shrink-0" aria-hidden />
-                <span className="text-sm font-semibold text-foreground">Back</span>
-              </Link>
-            ) : null}
             <Link
               href="/"
               className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
             >
               <PlatformLogo />
-              <span
-                className={cn(
-                  "font-serif text-lg font-semibold tracking-tight text-primary sm:text-xl",
-                  showNativeDashboardBack && "hidden sm:inline",
-                )}
-              >
+              <span className="font-serif text-lg font-semibold tracking-tight text-primary sm:text-xl">
                 {platformName}
               </span>
             </Link>
