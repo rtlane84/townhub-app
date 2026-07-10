@@ -198,6 +198,33 @@ export default function Cart() {
 
   const { run: runCheckout, pending: isSubmitting } = useAsyncAction(performCheckout);
 
+  const deliveryFee = fulfillmentType === "DELIVERY" ? (business?.deliveryFee || 0) : 0;
+  const checkoutTotals = useMemo(() => {
+    const bx = business as unknown as {
+      taxEnabled?: boolean;
+      taxRatePercent?: number | null;
+      taxLabel?: string | null;
+    } | undefined;
+    const totals = calculateOrderTotals({
+      items: cart.items.map((item) => ({
+        lineSubtotalCents: dollarsToCents(item.unitPrice * item.quantity),
+        taxable: item.taxable !== false,
+      })),
+      taxEnabled: bx?.taxEnabled === true,
+      taxRatePercent: bx?.taxRatePercent ?? 0,
+      taxLabel: bx?.taxLabel ?? undefined,
+      deliveryFeeCents: dollarsToCents(deliveryFee),
+    });
+    return {
+      subtotal: centsToDollars(totals.subtotalCents),
+      tax: centsToDollars(totals.taxCents),
+      taxLabel: totals.taxLabel,
+      deliveryFee: deliveryFee > 0 ? deliveryFee : null,
+      total: centsToDollars(totals.totalCents),
+    };
+  }, [business, cart.items, deliveryFee]);
+  const finalTotal = checkoutTotals.total;
+
   const handleCheckout = (payAtPickup: boolean) => {
     if (!customerName.trim()) {
       toast({ title: "Missing details", description: "Please provide your name.", variant: "destructive" });
@@ -246,33 +273,6 @@ export default function Cart() {
       </div>
     );
   }
-
-  const deliveryFee = fulfillmentType === "DELIVERY" ? (business?.deliveryFee || 0) : 0;
-  const checkoutTotals = useMemo(() => {
-    const bx = business as unknown as {
-      taxEnabled?: boolean;
-      taxRatePercent?: number | null;
-      taxLabel?: string | null;
-    } | undefined;
-    const totals = calculateOrderTotals({
-      items: cart.items.map((item) => ({
-        lineSubtotalCents: dollarsToCents(item.unitPrice * item.quantity),
-        taxable: item.taxable !== false,
-      })),
-      taxEnabled: bx?.taxEnabled === true,
-      taxRatePercent: bx?.taxRatePercent ?? 0,
-      taxLabel: bx?.taxLabel ?? undefined,
-      deliveryFeeCents: dollarsToCents(deliveryFee),
-    });
-    return {
-      subtotal: centsToDollars(totals.subtotalCents),
-      tax: centsToDollars(totals.taxCents),
-      taxLabel: totals.taxLabel,
-      deliveryFee: deliveryFee > 0 ? deliveryFee : null,
-      total: centsToDollars(totals.totalCents),
-    };
-  }, [business, cart.items, deliveryFee]);
-  const finalTotal = checkoutTotals.total;
 
   const showPickup = business?.pickupEnabled !== false;
   const showDelivery = business?.deliveryEnabled === true;

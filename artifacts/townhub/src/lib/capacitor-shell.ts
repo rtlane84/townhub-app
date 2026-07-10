@@ -22,38 +22,119 @@ function isDarkThemeActive(): boolean {
   return document.documentElement.classList.contains("dark");
 }
 
+/** Resolve app canvas color for native status-bar chrome. */
+function resolveNativeCanvasHex(dark: boolean): string {
+  const bg = getComputedStyle(document.documentElement)
+    .getPropertyValue("--background")
+    .trim();
+  const probe = document.createElement("div");
+  probe.style.color = bg ? `hsl(${bg})` : "";
+  document.body.appendChild(probe);
+  const rgb = getComputedStyle(probe).color;
+  document.body.removeChild(probe);
+  const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (match) {
+    return `#${[match[1], match[2], match[3]]
+      .map((n) => Number(n).toString(16).padStart(2, "0"))
+      .join("")}`;
+  }
+  return dark ? "#1a1614" : "#F4F5F8";
+}
+
+/**
+ * Measure WebKit safe-area insets. On some Capacitor iOS builds env() is 0 even
+ * with viewport-fit=cover — fall back to a device-agnostic status-bar estimate.
+ */
+function measureCssSafeAreaInsets(): { top: number; bottom: number; left: number; right: number } {
+  const probe = document.createElement("div");
+  probe.setAttribute("data-safe-area-probe", "");
+  probe.style.cssText = [
+    "position:absolute",
+    "visibility:hidden",
+    "pointer-events:none",
+    "padding-top:env(safe-area-inset-top, 0px)",
+    "padding-right:env(safe-area-inset-right, 0px)",
+    "padding-bottom:env(safe-area-inset-bottom, 0px)",
+    "padding-left:env(safe-area-inset-left, 0px)",
+  ].join(";");
+  document.documentElement.appendChild(probe);
+  const style = getComputedStyle(probe);
+  const insets = {
+    top: parseFloat(style.paddingTop) || 0,
+    right: parseFloat(style.paddingRight) || 0,
+    bottom: parseFloat(style.paddingBottom) || 0,
+    left: parseFloat(style.paddingLeft) || 0,
+  };
+  probe.remove();
+  return insets;
+}
+
+/** Estimate status-bar inset when CSS env() reports 0 (still works across iPhone models). */
+function estimateIosStatusBarInsetPx(): number {
+  const shortSide = Math.min(window.screen.width, window.screen.height);
+  const longSide = Math.max(window.screen.width, window.screen.height);
+  // SE / older small phones
+  if (longSide <= 667) return 20;
+  // Dynamic Island class (Pro / larger logical width)
+  if (shortSide >= 390) return 59;
+  // Standard notch
+  return 47;
+}
+
+/**
+ * Publish --safe-area-* on <html>. Prefer CSS env(); if top is 0 on iOS while the
+ * status bar still overlays the webview, inject a fallback so every screen clears the clock.
+ */
+function syncNativeSafeAreaCssVars(options?: { statusBarOverlaysWebView?: boolean }): void {
+  if (!isNativeApp()) return;
+
+  const measured = measureCssSafeAreaInsets();
+  let top = measured.top;
+  let bottom = measured.bottom;
+  let left = measured.left;
+  let right = measured.right;
+
+  const overlays = options?.statusBarOverlaysWebView === true;
+  if (Capacitor.getPlatform() === "ios" && overlays && top < 1) {
+    top = estimateIosStatusBarInsetPx();
+  }
+  // When the status bar does not overlay, UIKit already offsets the webview —
+  // keep top at 0 so headers don't double-pad.
+  if (Capacitor.getPlatform() === "ios" && options?.statusBarOverlaysWebView === false) {
+    top = 0;
+  }
+
+  const root = document.documentElement;
+  root.style.setProperty("--safe-area-top", `${top}px`);
+  root.style.setProperty("--safe-area-right", `${right}px`);
+  root.style.setProperty("--safe-area-bottom", `${bottom}px`);
+  root.style.setProperty("--safe-area-left", `${left}px`);
+}
+
 async function syncNativeStatusBar(): Promise<void> {
   if (!isNativeApp()) return;
 
   try {
     const dark = isDarkThemeActive();
     const platform = Capacitor.getPlatform();
+    const canvas = resolveNativeCanvasHex(dark);
+    // Dark icons on light canvas / light icons on dark canvas
     await StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark });
-    // iOS: overlay so CSS background extends under the status bar (no color gap).
-    // Android: solid bar color matched to the live theme background.
+
     if (platform === "ios") {
-      await StatusBar.setOverlaysWebView({ overlay: true });
+      // Do not draw under the status bar — UIKit reserves the clock/battery region
+      // for every iPhone (SE, notch, Dynamic Island) without per-model CSS.
+      await StatusBar.setOverlaysWebView({ overlay: false });
+      await StatusBar.setBackgroundColor({ color: canvas });
+      syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: false });
     } else if (platform === "android") {
       await StatusBar.setOverlaysWebView({ overlay: false });
-      const bg = getComputedStyle(document.documentElement)
-        .getPropertyValue("--background")
-        .trim();
-      // --background is "H S% L%" — convert to a usable hex via a temp element when possible
-      const probe = document.createElement("div");
-      probe.style.color = bg ? `hsl(${bg})` : "";
-      document.body.appendChild(probe);
-      const rgb = getComputedStyle(probe).color;
-      document.body.removeChild(probe);
-      const match = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-      const color = match
-        ? `#${[match[1], match[2], match[3]].map((n) => Number(n).toString(16).padStart(2, "0")).join("")}`
-        : dark
-          ? "#1a1614"
-          : "#F4F5F8";
-      await StatusBar.setBackgroundColor({ color });
+      await StatusBar.setBackgroundColor({ color: canvas });
+      syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: false });
     }
   } catch {
-    // Status bar plugin unavailable.
+    // Status bar plugin unavailable — still try CSS safe areas.
+    syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: true });
   }
 }
 
@@ -129,6 +210,10 @@ export function initCapacitorShell(): void {
 
   applyNativeDocumentClass();
   void syncNativeStatusBar();
+  // Re-measure after first layout / rotation (orientation, Dynamic Island).
+  window.addEventListener("resize", () => {
+    syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: false });
+  });
   scheduleSplashHide();
 
   const themeObserver = new MutationObserver(() => {
