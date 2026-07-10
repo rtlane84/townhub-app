@@ -1,16 +1,15 @@
-# Cloudflare Pages — frontend static site
+# Cloudflare Workers (static assets) — TownHub frontend
 #
-# Dashboard (Workers & Pages → your project → Settings → Builds):
+# Dashboard (Workers & Pages → townhub → Settings → Build):
 #   Root directory:     (leave empty — repo root)
 #   Build command:      pnpm --filter @workspace/townhub run build
-#   Build output dir:   artifacts/townhub/dist/public
-#   Deploy command:     npx wrangler pages deploy
-#     (NOT `npx wrangler deploy` — that is Workers and fails in this monorepo)
+#   Deploy command:     npx wrangler deploy
+#   Build output dir:   (optional / unused — assets come from this file)
 #
-# Auth (required for deploy command):
-#   CLOUDFLARE_API_TOKEN  — Custom token with Account → Cloudflare Pages → Edit
-#                           (+ Account Settings Read, User Details Read)
-#   CLOUDFLARE_ACCOUNT_ID — optional; from dash or wrangler whoami
+# Auth: use the default Build API token (Workers Scripts Edit is enough).
+#   Do NOT set CLOUDFLARE_API_TOKEN as a Build variable — it overrides the
+#   Build → API token field and often causes auth error 10000.
+#   Remove any custom CLOUDFLARE_API_TOKEN from Build variables/secrets.
 #
 # Env (build-time):
 #   NODE_VERSION=22
@@ -20,12 +19,12 @@
 # If auto `pnpm install --frozen-lockfile` fails with LOCKFILE_CONFIG_MISMATCH:
 #   SKIP_DEPENDENCY_INSTALL=true
 #   Build command: pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build
-#
-# Manual / CI upload (optional):
-#   npx wrangler pages deploy artifacts/townhub/dist/public --project-name=townhub
 
 name = "townhub"
 compatibility_date = "2026-07-09"
 
-# Required for `wrangler pages deploy` (reads output dir + project name from here).
-pages_build_output_dir = "artifacts/townhub/dist/public"
+# Assets-only Worker (SPA). Uses `wrangler deploy`, which matches Workers Builds
+# default token permissions (Workers Scripts Edit) — unlike `wrangler pages deploy`.
+[assets]
+directory = "artifacts/townhub/dist/public"
+not_found_handling = "single-page-application"

@@ -241,51 +241,38 @@ TownHub is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`
    ```
 8. **Verify health** — `GET https://your-api-host/health` (or same-origin `/health`) returns `200` before announcing launch.
 
-### Example: Cloudflare Pages (frontend)
+### Example: Cloudflare Workers (frontend static assets)
 
-Repo root is a pnpm monorepo. Use these Pages settings:
+Repo root is a pnpm monorepo. Use **Workers Builds** (not classic Pages `wrangler pages deploy`):
 
 | Setting | Value |
 |--------|--------|
 | Root directory | *(leave empty — repo root)* |
 | Build command | `pnpm --filter @workspace/townhub run build` |
-| Build output directory | `artifacts/townhub/dist/public` |
-| Deploy command | `npx wrangler pages deploy` |
+| Deploy command | `npx wrangler deploy` |
 | Node version | `22` |
 | pnpm version | `10.11.1` (matches `packageManager` in root `package.json`) |
 
-Build-time env vars: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway API origin), optional `VITE_SENTRY_DSN`.
+Root `wrangler.toml` configures an assets-only Worker (`assets.directory` + SPA `not_found_handling`). Deploy with **`npx wrangler deploy`** — that uses **Workers Scripts Edit**, which the default Build API token already has.
 
-**Use `wrangler pages deploy`, not `wrangler deploy`.** Plain `wrangler deploy` is for Workers and fails in this monorepo with “application detection logic has been run in the root of a workspace”. Root `wrangler.toml` already sets `name` and `pages_build_output_dir`, so `npx wrangler pages deploy` is enough.
+**Do not use `npx wrangler pages deploy`.** That needs Cloudflare Pages → Edit and fails with auth `10000` on the default Workers Builds token.
 
-Explicit form (same result):
+**Auth / variables:**
 
-```bash
-npx wrangler pages deploy artifacts/townhub/dist/public --project-name=townhub
-```
-
-**If deploy fails with `Authentication error [code: 10000]`:** Wrangler is using `CLOUDFLARE_API_TOKEN` from the project env, and that token cannot deploy Pages. Fix:
-
-1. [Create an API token](https://dash.cloudflare.com/profile/api-tokens) → **Create Custom Token** with:
-   - **Account** → **Cloudflare Pages** → **Edit**
-   - **Account** → **Account Settings** → **Read**
-   - **User** → **User Details** → **Read**
-   - Under **Account Resources**, include the account that owns the `townhub` Pages project
-2. In the Pages project → **Settings** → **Variables** (or Environment variables), set:
-   - `CLOUDFLARE_API_TOKEN` = that token (secret)
-   - `CLOUDFLARE_ACCOUNT_ID` = `0cd5139efc19d97edf07b50bbd896dda` (from the build log)
-3. Redeploy
-
-Do not reuse a Workers-only or read-only token. Account membership (Super Admin) is separate from API token scopes.
+1. **Delete** any Build variable/secret named `CLOUDFLARE_API_TOKEN` (and `CF_API_TOKEN`). A custom variable overrides the Build → API token and is a common cause of `10000`.
+2. Under **Settings → Build → API token**, use Cloudflare’s **default / auto** token (or any token with **Account → Workers Scripts → Edit**). You do **not** need Pages → Edit for this setup.
+3. Keep build-time env: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway API origin), optional `VITE_SENTRY_DSN`.
 
 If install fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`:
 
 1. Confirm **Root directory is empty** (repo root). Setting it to `artifacts/townhub` breaks pnpm because `pnpm-workspace.yaml` (where `overrides` live) is no longer found.
-2. Clear the Pages **build cache** and retry.
+2. Clear the **build cache** and retry.
 3. Or set env `SKIP_DEPENDENCY_INSTALL=true` and change the build command to:
    `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build`
 
-After deploy, confirm `https://YOUR_PAGES_URL/native-sso-callback` shows “Returning to TownHub…” (not a 404), then update Clerk’s mobile SSO allowlist and Capacitor `CAPACITOR_SERVER_URL` / API `APP_BASE_URL` to the new Pages URL.
+After deploy, confirm `https://YOUR_WORKER_URL/native-sso-callback` shows “Returning to TownHub…” (not a 404), then update Clerk’s mobile SSO allowlist and Capacitor `CAPACITOR_SERVER_URL` / API `APP_BASE_URL` to the new URL.
+
+**Note:** Commit and push the updated root `wrangler.toml` before redeploying so CI picks up the assets config.
 
 ### Example: Replit deployment
 
