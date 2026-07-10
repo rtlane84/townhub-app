@@ -88,6 +88,24 @@ describe("calculateAsapPrepEstimate", () => {
     );
   });
 
+  it("uses a custom delivery buffer when provided", () => {
+    const pickup = calculateAsapPrepEstimate({
+      defaultPrepMinutes: 15,
+      fulfillmentType: "PICKUP",
+      items: [{ quantity: 1, prepTimeMinutes: 15 }],
+      orderedAt,
+    });
+    const delivery = calculateAsapPrepEstimate({
+      defaultPrepMinutes: 15,
+      deliveryBufferMinutes: 25,
+      fulfillmentType: "DELIVERY",
+      items: [{ quantity: 1, prepTimeMinutes: 15 }],
+      orderedAt,
+    });
+
+    assert.equal(delivery.centerMinutes - pickup.centerMinutes, 25);
+  });
+
   it("stores clock windows relative to order time", () => {
     const estimate = calculateAsapPrepEstimate({
       defaultPrepMinutes: 15,

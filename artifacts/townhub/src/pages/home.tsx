@@ -16,7 +16,7 @@ import {
 import { Link } from "wouter";
 import { useUser } from "@clerk/react";
 import {
-  Store, ArrowRight, Leaf, Coffee, Utensils, Calendar, Sparkles, MapPin, Clock, Truck,
+  Store, ArrowRight, Leaf, Utensils, Calendar, Sparkles, MapPin, Clock, Truck,
 } from "lucide-react";
 import { BusinessType } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -57,10 +57,10 @@ import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
   { name: "Food & Drink", type: BusinessType.FOOD_VENDOR, icon: Utensils, tint: "bg-amber-500/10 text-amber-700" },
+  { name: "Food Trucks", type: BusinessType.FOOD_TRUCK, icon: Truck, tint: "bg-orange-500/10 text-orange-700" },
   { name: "Flowers", type: BusinessType.FLORIST, icon: Leaf, tint: "bg-emerald-500/10 text-emerald-700" },
-  { name: "Plants & Market", type: BusinessType.GARDEN_MARKET, icon: Store, tint: "bg-primary/10 text-primary" },
   { name: "Salon / Beauty", type: BusinessType.SALON, icon: Sparkles, tint: "bg-pink-500/10 text-pink-600" },
-  { name: "Retail & General", type: BusinessType.RETAIL_STORE, icon: Coffee, tint: "bg-sky-500/10 text-sky-700" },
+  { name: "Retail", type: BusinessType.RETAIL_STORE, icon: Store, tint: "bg-sky-500/10 text-sky-700" },
 ];
 
 function greetingForHour(hour: number) {

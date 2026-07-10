@@ -32,6 +32,11 @@ export interface BusinessInput {
   orderCutoffTime?: string;
   /** @minimum 1 */
   defaultPrepMinutes?: number;
+  /**
+     * Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
+     * @minimum 0
+     */
+  deliveryBufferMinutes?: number;
   orderingAvailabilityMode?: OrderingAvailabilityMode;
   orderingEnabled?: boolean;
   ownerId?: string;

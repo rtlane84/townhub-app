@@ -313,7 +313,7 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
 
     // Validate that the type is a known enum value; fall back to GENERAL
     const VALID_TYPES = [
-      "FOOD_VENDOR", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE",
+      "FOOD_VENDOR", "FOOD_TRUCK", "CAFE_BAKERY", "GROCERY", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE",
       "BUILDING_SUPPLY", "SERVICE_PROVIDER", "FUNERAL_SERVICE", "GENERAL", "SALON",
     ];
     const safeType = VALID_TYPES.includes(app.type) ? app.type : "GENERAL";

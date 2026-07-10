@@ -11,6 +11,9 @@ export type BusinessType = typeof BusinessType[keyof typeof BusinessType];
 
 export const BusinessType = {
   FOOD_VENDOR: 'FOOD_VENDOR',
+  FOOD_TRUCK: 'FOOD_TRUCK',
+  CAFE_BAKERY: 'CAFE_BAKERY',
+  GROCERY: 'GROCERY',
   FLORIST: 'FLORIST',
   GARDEN_MARKET: 'GARDEN_MARKET',
   RETAIL_STORE: 'RETAIL_STORE',

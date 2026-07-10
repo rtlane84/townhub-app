@@ -16,6 +16,8 @@ export type PrepEstimateItem = {
 
 export type CalculateAsapPrepEstimateInput = {
   defaultPrepMinutes?: number | null;
+  /** Extra minutes for delivery on top of prep. Defaults to DELIVERY_PREP_BUFFER_MINUTES. */
+  deliveryBufferMinutes?: number | null;
   fulfillmentType: "PICKUP" | "DELIVERY";
   items: PrepEstimateItem[];
   orderedAt?: Date;
@@ -57,8 +59,12 @@ export function calculateAsapPrepEstimate(
   );
   const basePrep = Math.max(defaultPrep, maxItemPrep);
   const quantityBuffer = quantityBufferMinutes(input.items);
+  const configuredDeliveryBuffer =
+    input.deliveryBufferMinutes == null || input.deliveryBufferMinutes < 0
+      ? DELIVERY_PREP_BUFFER_MINUTES
+      : input.deliveryBufferMinutes;
   const deliveryBuffer =
-    input.fulfillmentType === "DELIVERY" ? DELIVERY_PREP_BUFFER_MINUTES : 0;
+    input.fulfillmentType === "DELIVERY" ? configuredDeliveryBuffer : 0;
   const rawCenter = basePrep + quantityBuffer + deliveryBuffer;
   const centerMinutes = Math.max(
     PREP_WINDOW_HALF_WIDTH_MINUTES,

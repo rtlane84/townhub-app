@@ -62,6 +62,7 @@ type FormState = {
   deliveryInstructions: string;
   orderCutoffTime: string;
   defaultPrepMinutes: string;
+  deliveryBufferMinutes: string;
   accentColor: string;
   buttonColor: string;
   bannerText: string;
@@ -94,6 +95,7 @@ const EMPTY: FormState = {
   deliveryInstructions: "",
   orderCutoffTime: "",
   defaultPrepMinutes: "15",
+  deliveryBufferMinutes: "15",
   accentColor: "",
   buttonColor: "",
   bannerText: "",
@@ -161,6 +163,8 @@ export default function BusinessSettings() {
       orderingEnabled: business.orderingEnabled !== false,
       orderCutoffTime: coerceFormTime(business.orderCutoffTime),
       defaultPrepMinutes: business.defaultPrepMinutes != null ? String(business.defaultPrepMinutes) : "15",
+      deliveryBufferMinutes:
+        business.deliveryBufferMinutes != null ? String(business.deliveryBufferMinutes) : "15",
       accentColor: String(b.accentColor ?? ""),
       buttonColor: String(b.buttonColor ?? ""),
       bannerText: String(b.bannerText ?? ""),
@@ -230,6 +234,7 @@ export default function BusinessSettings() {
               orderingEnabled: form.orderingEnabled,
               orderCutoffTime: normalizeOptionalTime(form.orderCutoffTime) || undefined,
               defaultPrepMinutes: optNum(form.defaultPrepMinutes),
+              deliveryBufferMinutes: optNum(form.deliveryBufferMinutes),
               minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
               deliveryRadiusMiles: optNum(form.deliveryRadiusMiles),
               // Collapse legacy deliveryNotes into instructions; clear the duplicate field.
@@ -573,8 +578,15 @@ export default function BusinessSettings() {
                   {textField("Default prep time (minutes)", "defaultPrepMinutes", {
                     type: "number",
                     placeholder: "15",
-                    hint: "Used for ASAP estimates when items do not set their own prep time.",
+                    hint: "Base for ASAP estimates. Uses the longer of this and each item’s prep time.",
                   })}
+                  {form.deliveryEnabled
+                    ? textField("Delivery buffer (minutes)", "deliveryBufferMinutes", {
+                        type: "number",
+                        placeholder: "15",
+                        hint: "Extra time added on top of prep for ASAP delivery estimates (drive / dispatch).",
+                      })
+                    : null}
                 </SettingsSection>
 
                 <SettingsSection

@@ -3,11 +3,14 @@ import { storefrontCopy } from "./storefront-mode";
 
 export const BUSINESS_TYPE_OPTIONS: Array<{ value: BusinessType; label: string }> = [
   { value: BusinessTypeValues.FOOD_VENDOR, label: "Restaurant / Food Service" },
+  { value: BusinessTypeValues.FOOD_TRUCK, label: "Food Truck / Mobile" },
+  { value: BusinessTypeValues.CAFE_BAKERY, label: "Cafe / Bakery" },
+  { value: BusinessTypeValues.GROCERY, label: "Grocery / Market" },
   { value: BusinessTypeValues.FLORIST, label: "Florist" },
   { value: BusinessTypeValues.GARDEN_MARKET, label: "Garden / Nursery" },
   { value: BusinessTypeValues.RETAIL_STORE, label: "Retail Shop" },
   { value: BusinessTypeValues.BUILDING_SUPPLY, label: "Building Supply" },
-  { value: BusinessTypeValues.SERVICE_PROVIDER, label: "Service Provider" },
+  { value: BusinessTypeValues.SERVICE_PROVIDER, label: "Professional Services" },
   { value: BusinessTypeValues.SALON, label: "Salon / Beauty" },
   { value: BusinessTypeValues.FUNERAL_SERVICE, label: "Funeral Service" },
   { value: BusinessTypeValues.GENERAL, label: "Other / General" },
@@ -16,11 +19,14 @@ export const BUSINESS_TYPE_OPTIONS: Array<{ value: BusinessType; label: string }
 export const PUBLIC_BUSINESS_FILTERS: Array<{ label: string; value: string }> = [
   { label: "All", value: "ALL" },
   { label: "Food & Drink", value: BusinessTypeValues.FOOD_VENDOR },
+  { label: "Food Trucks", value: BusinessTypeValues.FOOD_TRUCK },
+  { label: "Cafe / Bakery", value: BusinessTypeValues.CAFE_BAKERY },
+  { label: "Grocery", value: BusinessTypeValues.GROCERY },
   { label: "Florist", value: BusinessTypeValues.FLORIST },
-  { label: "Garden Market", value: BusinessTypeValues.GARDEN_MARKET },
+  { label: "Garden", value: BusinessTypeValues.GARDEN_MARKET },
   { label: "Retail", value: BusinessTypeValues.RETAIL_STORE },
   { label: "Salon / Beauty", value: BusinessTypeValues.SALON },
-  { label: "Service", value: BusinessTypeValues.SERVICE_PROVIDER },
+  { label: "Services", value: BusinessTypeValues.SERVICE_PROVIDER },
 ];
 
 export function formatBusinessTypeLabel(type: string): string {

@@ -22,6 +22,9 @@ import { z } from "zod/v4";
 
 export const businessTypeEnum = pgEnum("business_type", [
   "FOOD_VENDOR",
+  "FOOD_TRUCK",
+  "CAFE_BAKERY",
+  "GROCERY",
   "FLORIST",
   "GARDEN_MARKET",
   "RETAIL_STORE",
@@ -89,6 +92,8 @@ export const businessesTable = pgTable("businesses", {
   paymentMode: paymentModeEnum("payment_mode"),
   orderCutoffTime: text("order_cutoff_time"),
   defaultPrepMinutes: integer("default_prep_minutes").notNull().default(15),
+  /** Extra minutes added on top of prep for delivery ETAs (drive/dispatch buffer). */
+  deliveryBufferMinutes: integer("delivery_buffer_minutes").notNull().default(15),
 
   // Stripe Connect (per-business connected account for card payments)
   stripeConnectedAccountId: text("stripe_connected_account_id"),

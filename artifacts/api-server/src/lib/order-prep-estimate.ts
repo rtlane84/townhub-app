@@ -22,6 +22,7 @@ export function buildPrepEstimateItems(
 
 export function calculateOrderPrepEstimate(input: {
   defaultPrepMinutes?: number | null;
+  deliveryBufferMinutes?: number | null;
   fulfillmentType: "PICKUP" | "DELIVERY";
   lineItems: OrderPrepLineItem[];
   productMap: Map<number, typeof productsTable.$inferSelect>;
@@ -29,6 +30,7 @@ export function calculateOrderPrepEstimate(input: {
 }) {
   return calculateAsapPrepEstimate({
     defaultPrepMinutes: input.defaultPrepMinutes,
+    deliveryBufferMinutes: input.deliveryBufferMinutes,
     fulfillmentType: input.fulfillmentType,
     items: buildPrepEstimateItems(input.lineItems, input.productMap),
     orderedAt: input.orderedAt,

@@ -124,6 +124,7 @@ export default function Storefront() {
     .filter((l) => l.isActive && l.locationDate >= today)
     .slice(0, 5);
 
+  const specials = products.filter((p) => p.featured && p.available !== false);
   const displayedProducts = activeCategory
     ? products.filter((p) => p.categoryId === activeCategory)
     : products;
@@ -135,6 +136,7 @@ export default function Storefront() {
   const isAppointmentMode = isAppointmentStorefrontMode(b);
   const isInformationMode = isInformationStorefrontMode(b);
   const showCatalog = showsStorefrontCatalog(storefrontMode);
+  const showSpecials = showCatalog && specials.length > 0 && activeCategory === null;
   const copy = storefrontCopy(storefrontMode);
   const contactCtaLabel = informationPrimaryCtaLabel(!!b.phone?.trim());
   const websiteUrl = normalizeWebsiteUrl(bx.websiteUrl as string | undefined);
@@ -459,6 +461,70 @@ export default function Storefront() {
                 ))}
               </div>
             )}
+
+            {showSpecials ? (
+              <div className="mb-8" data-testid="section-todays-special">
+                <div className="mb-3 flex items-baseline justify-between gap-3">
+                  <h3 className="font-serif text-xl font-bold text-foreground">Today&apos;s special</h3>
+                  <span className="text-xs font-medium uppercase tracking-wide text-amber-700">
+                    Limited highlight
+                  </span>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {specials.map((product) => (
+                    <Card
+                      key={`special-${product.id}`}
+                      className="flex flex-col overflow-hidden rounded-[1.5rem] ring-1 ring-amber-500/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_-10px_rgba(15,23,42,0.14)]"
+                    >
+                      {product.imageUrl && (
+                        <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+                          />
+                        </div>
+                      )}
+                      <CardContent className="flex flex-1 flex-col p-4">
+                        <div className="mb-2 flex items-start justify-between gap-2">
+                          <h4 className="font-semibold leading-tight tracking-tight text-foreground">{product.name}</h4>
+                          {!isAppointmentMode && (
+                            <span className="shrink-0 font-semibold text-primary">${product.price.toFixed(2)}</span>
+                          )}
+                        </div>
+                        {product.description && (
+                          <p className="mb-4 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{product.description}</p>
+                        )}
+                        <div className="mt-auto flex items-center justify-between pt-4">
+                          {product.prepTimeMinutes ? (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" /> {copy.prepTimeLabel(product.prepTimeMinutes)}
+                            </span>
+                          ) : (
+                            <span />
+                          )}
+                          {!isInformationMode && (
+                            <LoadingButton
+                              size="sm"
+                              variant="default"
+                              className={cn("h-9 rounded-full", storefrontPrimaryButtonClass)}
+                              onClick={() => void handleAddToCart(product)}
+                              disabled={!product.available || !b.active || addingProductId !== null}
+                              loading={addingProductId === product.id}
+                              loadingText="Adding…"
+                            >
+                              <Plus className="mr-1 h-4 w-4" /> {copy.addButtonLabel}
+                            </LoadingButton>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             {displayedProducts.length === 0 ? (
               <div className="rounded-[1.75rem] bg-card px-6 py-16 text-center shadow-[0_2px_24px_-6px_rgba(15,23,42,0.1)]">

@@ -200,6 +200,7 @@ router.post("/orders/prep-estimate", async (req, res): Promise<void> => {
 
   const estimate = calculateOrderPrepEstimate({
     defaultPrepMinutes: business.defaultPrepMinutes,
+    deliveryBufferMinutes: business.deliveryBufferMinutes,
     fulfillmentType: d.fulfillmentType,
     lineItems: d.items.map((item) => ({
       productId: item.productId,
@@ -392,6 +393,7 @@ router.post("/orders", async (req, res): Promise<void> => {
 
   const prepEstimate = calculateOrderPrepEstimate({
     defaultPrepMinutes: business.defaultPrepMinutes,
+    deliveryBufferMinutes: business.deliveryBufferMinutes,
     fulfillmentType: d.fulfillmentType,
     lineItems: d.items.map((item) => ({
       productId: item.productId,

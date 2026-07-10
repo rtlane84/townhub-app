@@ -32,6 +32,13 @@ export interface BusinessUpdate {
   payAtPickupEnabled?: boolean;
   paymentMode?: PaymentMode;
   orderCutoffTime?: string;
+  /** @minimum 1 */
+  defaultPrepMinutes?: number;
+  /**
+     * Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
+     * @minimum 0
+     */
+  deliveryBufferMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */

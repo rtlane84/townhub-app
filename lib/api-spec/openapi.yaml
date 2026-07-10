@@ -2600,6 +2600,9 @@ components:
       type: string
       enum:
         - FOOD_VENDOR
+        - FOOD_TRUCK
+        - CAFE_BAKERY
+        - GROCERY
         - FLORIST
         - GARDEN_MARKET
         - RETAIL_STORE
@@ -2886,6 +2889,10 @@ components:
           type: integer
           minimum: 1
           description: Default prep time in minutes when items do not specify their own.
+        deliveryBufferMinutes:
+          type: integer
+          minimum: 0
+          description: Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer). Defaults to 15.
         minimumOrderForDelivery:
           type: ["number", "null"]
         deliveryRadiusMiles:
@@ -3048,6 +3055,10 @@ components:
         defaultPrepMinutes:
           type: integer
           minimum: 1
+        deliveryBufferMinutes:
+          type: integer
+          minimum: 0
+          description: Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
         orderingAvailabilityMode:
           $ref: "#/components/schemas/OrderingAvailabilityMode"
         orderingEnabled:
@@ -3100,6 +3111,13 @@ components:
           $ref: "#/components/schemas/PaymentMode"
         orderCutoffTime:
           type: string
+        defaultPrepMinutes:
+          type: integer
+          minimum: 1
+        deliveryBufferMinutes:
+          type: integer
+          minimum: 0
+          description: Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
         minimumOrderForDelivery:
           type: ["number", "null"]
         deliveryRadiusMiles:

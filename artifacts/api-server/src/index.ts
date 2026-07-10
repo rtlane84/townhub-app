@@ -3,6 +3,10 @@ import { logger } from "./lib/logger";
 import { migrateLegacyProductOptionsToModifierGroups } from "@workspace/db/migrate-legacy-product-options";
 import { ensureDefaultSubscriptionFeatures } from "./lib/business-features";
 import { ensurePlatformBrandWordColorColumns } from "./lib/ensure-platform-brand-colors";
+import {
+  ensureBusinessTypeEnumValues,
+  ensureDeliveryBufferMinutesColumn,
+} from "./lib/ensure-business-fulfillment-schema";
 
 const rawPort = process.env["PORT"];
 
@@ -28,6 +32,13 @@ app.listen(port, async (err) => {
     await ensurePlatformBrandWordColorColumns();
   } catch (bootstrapErr) {
     logger.warn({ err: bootstrapErr }, "Platform brand wordmark color columns bootstrap skipped");
+  }
+
+  try {
+    await ensureBusinessTypeEnumValues();
+    await ensureDeliveryBufferMinutesColumn();
+  } catch (bootstrapErr) {
+    logger.warn({ err: bootstrapErr }, "Business fulfillment schema bootstrap skipped");
   }
 
   try {

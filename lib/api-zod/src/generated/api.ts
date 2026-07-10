@@ -162,13 +162,15 @@ export const getMyBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
 export const getMyBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const getMyBusinessResponseDeliveryBufferMinutesMin = 0;
+
 
 
 export const GetMyBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -195,6 +197,7 @@ export const GetMyBusinessResponse = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(getMyBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -263,13 +266,15 @@ export const listBusinessesResponseStructuredHoursItemDayOfWeekMin = 0;
 export const listBusinessesResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const listBusinessesResponseDeliveryBufferMinutesMin = 0;
+
 
 
 export const ListBusinessesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -296,6 +301,7 @@ export const ListBusinessesResponseItem = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(listBusinessesResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -439,13 +445,15 @@ export const getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMin = 0;
 export const getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const getBusinessCheckoutResponseDeliveryBufferMinutesMin = 0;
+
 
 
 export const GetBusinessCheckoutResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -472,6 +480,7 @@ export const GetBusinessCheckoutResponse = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(getBusinessCheckoutResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -520,6 +529,8 @@ export const getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMin = 
 export const getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const getBusinessBySlugResponseBusinessDeliveryBufferMinutesMin = 0;
+
 
 
 export const GetBusinessBySlugResponse = zod.object({
@@ -527,7 +538,7 @@ export const GetBusinessBySlugResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -554,6 +565,7 @@ export const GetBusinessBySlugResponse = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(getBusinessBySlugResponseBusinessDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -644,7 +656,7 @@ export const registerBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
 
 export const RegisterBusinessBody = zod.object({
   "name": zod.string().min(1),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().optional(),
   "address": zod.string().optional(),
   "phone": zod.string().optional(),
@@ -667,12 +679,14 @@ export const createBusinessBodyStructuredHoursItemDayOfWeekMin = 0;
 export const createBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const createBusinessBodyDeliveryBufferMinutesMin = 0;
+
 
 
 export const CreateBusinessBody = zod.object({
   "name": zod.string().min(1),
   "slug": zod.string().min(1),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().optional(),
   "logoUrl": zod.string().optional(),
   "heroImageUrl": zod.string().optional(),
@@ -693,6 +707,7 @@ export const CreateBusinessBody = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).optional(),
   "orderCutoffTime": zod.string().optional(),
   "defaultPrepMinutes": zod.number().min(1).optional(),
+  "deliveryBufferMinutes": zod.number().min(createBusinessBodyDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer).'),
   "orderingAvailabilityMode": zod.enum(['ALWAYS', 'BUSINESS_HOURS', 'MOBILE_LOCATION_SCHEDULE', 'MANUAL']).optional().describe('ALWAYS accepts orders whenever the business is active. BUSINESS_HOURS requires structured hours to be open now. MOBILE_LOCATION_SCHEDULE requires an active food-truck location window. MANUAL uses the orderingEnabled owner toggle.\n'),
   "orderingEnabled": zod.boolean().optional(),
   "ownerId": zod.string().optional()
@@ -710,13 +725,15 @@ export const getBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
 export const getBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const getBusinessResponseDeliveryBufferMinutesMin = 0;
+
 
 
 export const GetBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -743,6 +760,7 @@ export const GetBusinessResponse = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(getBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -791,6 +809,9 @@ export const updateBusinessBodyStructuredHoursItemDayOfWeekMin = 0;
 export const updateBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const updateBusinessBodyDeliveryBufferMinutesMin = 0;
+
+
 
 export const UpdateBusinessBody = zod.object({
   "name": zod.string().optional(),
@@ -818,6 +839,8 @@ export const UpdateBusinessBody = zod.object({
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).optional(),
   "orderCutoffTime": zod.string().optional(),
+  "defaultPrepMinutes": zod.number().min(1).optional(),
+  "deliveryBufferMinutes": zod.number().min(updateBusinessBodyDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer).'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -844,12 +867,14 @@ export const UpdateBusinessBody = zod.object({
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']).optional()
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']).optional()
 })
 
 export const updateBusinessResponseStructuredHoursItemDayOfWeekMin = 0;
 export const updateBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
+
+export const updateBusinessResponseDeliveryBufferMinutesMin = 0;
 
 
 
@@ -857,7 +882,7 @@ export const UpdateBusinessResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -884,6 +909,7 @@ export const UpdateBusinessResponse = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(updateBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -2137,13 +2163,15 @@ export const assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMin = 0;
 export const assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const assignBusinessOwnerResponseDeliveryBufferMinutesMin = 0;
+
 
 
 export const AssignBusinessOwnerResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -2170,6 +2198,7 @@ export const AssignBusinessOwnerResponse = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(assignBusinessOwnerResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -2214,13 +2243,15 @@ export const listAdminBusinessesResponseStructuredHoursItemDayOfWeekMin = 0;
 export const listAdminBusinessesResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const listAdminBusinessesResponseDeliveryBufferMinutesMin = 0;
+
 
 
 export const ListAdminBusinessesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -2247,6 +2278,7 @@ export const ListAdminBusinessesResponseItem = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(listAdminBusinessesResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -3233,13 +3265,15 @@ export const regenerateBusinessNtfyTopicResponseStructuredHoursItemDayOfWeekMin 
 export const regenerateBusinessNtfyTopicResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
+export const regenerateBusinessNtfyTopicResponseDeliveryBufferMinutesMin = 0;
+
 
 
 export const RegenerateBusinessNtfyTopicResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "slug": zod.string(),
-  "type": zod.enum(['FOOD_VENDOR', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
+  "type": zod.enum(['FOOD_VENDOR', 'FOOD_TRUCK', 'CAFE_BAKERY', 'GROCERY', 'FLORIST', 'GARDEN_MARKET', 'RETAIL_STORE', 'BUILDING_SUPPLY', 'SERVICE_PROVIDER', 'FUNERAL_SERVICE', 'GENERAL', 'SALON']),
   "description": zod.string().nullish(),
   "logoUrl": zod.string().nullish(),
   "heroImageUrl": zod.string().nullish(),
@@ -3266,6 +3300,7 @@ export const RegenerateBusinessNtfyTopicResponse = zod.object({
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
   "orderCutoffTime": zod.string().nullish(),
   "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
+  "deliveryBufferMinutes": zod.number().min(regenerateBusinessNtfyTopicResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),

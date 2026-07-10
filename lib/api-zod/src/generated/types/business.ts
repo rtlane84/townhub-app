@@ -58,6 +58,11 @@ export interface Business {
      * @minimum 1
      */
   defaultPrepMinutes?: number;
+  /**
+     * Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer). Defaults to 15.
+     * @minimum 0
+     */
+  deliveryBufferMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */

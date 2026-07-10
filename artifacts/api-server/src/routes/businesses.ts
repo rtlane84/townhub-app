@@ -98,6 +98,7 @@ export function serializeBusiness(
     stripeConnectStatus: b.stripeConnectStatus,
     orderCutoffTime: b.orderCutoffTime,
     defaultPrepMinutes: b.defaultPrepMinutes,
+    deliveryBufferMinutes: b.deliveryBufferMinutes ?? 15,
     orderNotificationEmail: b.orderNotificationEmail,
     notificationEmail: b.notificationEmail ?? b.orderNotificationEmail,
     notificationPhone: b.notificationPhone,
@@ -556,6 +557,8 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.orderCutoffTime = d.orderCutoffTime;
   if ((d as Record<string, unknown>).defaultPrepMinutes !== undefined)
     updateData.defaultPrepMinutes = (d as Record<string, unknown>).defaultPrepMinutes;
+  if ((d as Record<string, unknown>).deliveryBufferMinutes !== undefined)
+    updateData.deliveryBufferMinutes = (d as Record<string, unknown>).deliveryBufferMinutes;
   if ((d as Record<string, unknown>).minimumOrderForDelivery !== undefined)
     updateData.minimumOrderForDelivery = (d as Record<string, unknown>).minimumOrderForDelivery
       ? String((d as Record<string, unknown>).minimumOrderForDelivery)

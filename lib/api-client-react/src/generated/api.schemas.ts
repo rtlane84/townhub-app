@@ -133,6 +133,9 @@ export type BusinessType = typeof BusinessType[keyof typeof BusinessType];
 
 export const BusinessType = {
   FOOD_VENDOR: 'FOOD_VENDOR',
+  FOOD_TRUCK: 'FOOD_TRUCK',
+  CAFE_BAKERY: 'CAFE_BAKERY',
+  GROCERY: 'GROCERY',
   FLORIST: 'FLORIST',
   GARDEN_MARKET: 'GARDEN_MARKET',
   RETAIL_STORE: 'RETAIL_STORE',
@@ -397,6 +400,11 @@ export interface Business {
      * @minimum 1
      */
   defaultPrepMinutes?: number;
+  /**
+     * Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer). Defaults to 15.
+     * @minimum 0
+     */
+  deliveryBufferMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */
@@ -555,6 +563,11 @@ export interface BusinessInput {
   orderCutoffTime?: string;
   /** @minimum 1 */
   defaultPrepMinutes?: number;
+  /**
+     * Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
+     * @minimum 0
+     */
+  deliveryBufferMinutes?: number;
   orderingAvailabilityMode?: OrderingAvailabilityMode;
   orderingEnabled?: boolean;
   ownerId?: string;
@@ -581,6 +594,13 @@ export interface BusinessUpdate {
   payAtPickupEnabled?: boolean;
   paymentMode?: PaymentMode;
   orderCutoffTime?: string;
+  /** @minimum 1 */
+  defaultPrepMinutes?: number;
+  /**
+     * Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
+     * @minimum 0
+     */
+  deliveryBufferMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */
