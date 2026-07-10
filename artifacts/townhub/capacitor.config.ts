@@ -72,7 +72,8 @@ const config: CapacitorConfig = {
       androidScaleType: "CENTER_CROP",
     },
     StatusBar: {
-      style: "DARK",
+      // LIGHT = dark clock/icons for light canvas (Capacitor naming).
+      style: "LIGHT",
       backgroundColor: "#F4F5F8",
       // true + contentInset:never = edge-to-edge; CSS --safe-area-top clears the clock.
       overlaysWebView: true,

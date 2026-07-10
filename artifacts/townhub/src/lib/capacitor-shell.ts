@@ -118,8 +118,9 @@ async function syncNativeStatusBar(): Promise<void> {
     const dark = isDarkThemeActive();
     const platform = Capacitor.getPlatform();
     const canvas = resolveNativeCanvasHex(dark);
-    // Dark icons on light canvas / light icons on dark canvas
-    await StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark });
+    // Capacitor naming is inverted vs iOS: Style.Light = dark icons (light bg),
+    // Style.Dark = light icons (dark bg). Wrong mapping = white clock on white header.
+    await StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light });
 
     if (platform === "ios") {
       // Edge-to-edge (matches ios.contentInset: never). Header padding uses
