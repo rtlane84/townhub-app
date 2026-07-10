@@ -67,6 +67,16 @@ export const clerkAuthAppearance = {
   },
 };
 
+/** Native: hide Clerk OAuth — use NativeGoogleSignInButton instead. */
+export const nativeClerkAuthAppearance = {
+  ...clerkAuthAppearance,
+  elements: {
+    ...clerkAuthAppearance.elements,
+    socialButtonsRoot: { display: "none" },
+    dividerRow: { display: "none" },
+  },
+};
+
 /** Profile avatar menu — high-contrast readable actions. */
 export const clerkUserButtonAppearance = {
   variables: {

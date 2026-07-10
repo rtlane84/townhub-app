@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, lazy, Suspense, type ComponentType } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth, AuthenticateWithRedirectCallback } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
-import { clerkAuthAppearance } from "@/lib/clerk-appearance";
+import { clerkAuthAppearance, nativeClerkAuthAppearance as nativeClerkAuthBase } from "@/lib/clerk-appearance";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -101,13 +101,12 @@ const clerkAppearance = {
   },
 };
 
-/** Hide Clerk's built-in Google button on native — it runs in WKWebView and gets disallowed_useragent. */
+/** Sign-in/up pages: native base + logo options (OAuth hidden via nativeClerkAuthBase). */
 const nativeClerkAuthAppearance = {
-  ...clerkAppearance,
-  elements: {
-    ...clerkAuthAppearance.elements,
-    socialButtonsRoot: { display: "none" },
-    dividerRow: { display: "none" },
+  ...nativeClerkAuthBase,
+  options: {
+    logoPlacement: "inside" as const,
+    logoLinkUrl: basePath || "/",
   },
 };
 
