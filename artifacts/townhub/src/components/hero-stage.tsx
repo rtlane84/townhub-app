@@ -63,11 +63,11 @@ export function HeroStage({
 
   return (
     <div
-      className={cn(
-        "relative flex overflow-hidden",
-        HERO_SECTION_MIN_HEIGHT_CLASS,
-        className,
-      )}
+        className={cn(
+          "relative flex overflow-hidden",
+          HERO_SECTION_MIN_HEIGHT_CLASS,
+          className,
+        )}
     >
       <div
         className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/5 to-background"

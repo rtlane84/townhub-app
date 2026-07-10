@@ -17,7 +17,7 @@ export function isWeb(): boolean {
   return Capacitor.getPlatform() === "web";
 }
 
-/** Routes where the native bottom tab bar is shown. */
+/** Primary browse routes (also used for pull-to-refresh). */
 export const NATIVE_TAB_ROUTES = [
   "/",
   "/businesses",
@@ -47,13 +47,12 @@ export function isDashboardRoute(location: string): boolean {
   );
 }
 
+/**
+ * Show the bottom tab bar on all marketplace screens, including storefront
+ * detail and cart — so navigation never “disappears.” Hide only on dashboards.
+ */
 export function isNativeTabRoute(location: string): boolean {
-  if (isDashboardRoute(location)) return false;
-  if (location.startsWith("/businesses/")) return false;
-  return (
-    NATIVE_TAB_ROUTES.includes(location as (typeof NATIVE_TAB_ROUTES)[number]) ||
-    isAccountRoute(location)
-  );
+  return !isDashboardRoute(location);
 }
 
 export function isAccountRoute(location: string): boolean {
@@ -68,6 +67,9 @@ export function shouldShowNativeBottomTabs(location: string): boolean {
 
 export function isPullToRefreshRoute(location: string): boolean {
   if (isDashboardRoute(location)) return false;
+  if (location.startsWith("/businesses/")) return false;
+  if (location === "/cart" || location.startsWith("/cart/")) return false;
+  if (location.startsWith("/order/")) return false;
   return NATIVE_PULL_TO_REFRESH_ROUTES.some(
     (route) => location === route || (route !== "/" && location.startsWith(route + "/")),
   );

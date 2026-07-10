@@ -205,7 +205,7 @@ export default function Storefront() {
   const accentHex = normalizeHex(b.accentColor) ?? mergePlatformTheme(theme).accentColor;
 
   return (
-    <BusinessThemeScope business={b} className="min-h-screen bg-background pb-24">
+    <BusinessThemeScope business={b} className="min-h-0 bg-background pb-6">
       {/* Banner text */}
       {bannerText && (
         <div className="bg-primary text-primary-foreground text-sm font-medium text-center py-2.5 px-4">

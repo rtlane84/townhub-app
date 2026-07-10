@@ -105,7 +105,7 @@ export function NativePullToRefresh({ enabled, children }: NativePullToRefreshPr
   const progress = Math.min(pullDistance / PULL_THRESHOLD_PX, 1);
 
   return (
-    <div ref={containerRef} className="relative min-h-0 flex-1 flex flex-col">
+    <div ref={containerRef} className="relative">
       <div
         aria-hidden
         className={cn(
@@ -124,7 +124,19 @@ export function NativePullToRefresh({ enabled, children }: NativePullToRefreshPr
           />
         </div>
       </div>
-      {children}
+      {/*
+        Do not use flex-1 here — inside .native-scroll-root that clips content
+        to the viewport and breaks scrolling / can hide the tab bar.
+      */}
+      <div
+        style={
+          pullDistance > 0 || refreshing
+            ? { transform: `translateY(${refreshing ? 48 : pullDistance}px)`, transition: refreshing ? "transform 150ms ease" : undefined }
+            : undefined
+        }
+      >
+        {children}
+      </div>
     </div>
   );
 }

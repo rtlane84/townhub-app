@@ -511,34 +511,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <main
         className={cn(
-          "flex-1 flex flex-col min-h-0",
+          "flex min-h-0 flex-1 flex-col",
           isNative && "native-scroll-root",
         )}
         data-native-scroll-root={isNative ? "true" : undefined}
       >
         <NativePullToRefresh enabled={showNativePullToRefresh}>
           {children}
-        </NativePullToRefresh>
-        {/* Web footer scrolls with content; native tabs hide it */}
-        <footer className={cn("border-t border-border/40 py-14 bg-background mt-auto print:hidden", hideFooter && "hidden")}>
-          <div className="container mx-auto px-5 sm:px-6 text-center">
-            <div className="mb-4 flex items-center justify-center gap-2.5">
-              <PlatformLogo className="h-5 w-5 text-muted-foreground" sizePx={20} />
-              <span className="font-serif text-lg font-semibold tracking-tight text-foreground/80">{platformName}</span>
+          {/* Web footer scrolls with content; native tabs hide it */}
+          <footer className={cn("mt-auto border-t border-border/40 bg-background py-14 print:hidden", hideFooter && "hidden")}>
+            <div className="container mx-auto px-5 text-center sm:px-6">
+              <div className="mb-4 flex items-center justify-center gap-2.5">
+                <PlatformLogo className="h-5 w-5 text-muted-foreground" sizePx={20} />
+                <span className="font-serif text-lg font-semibold tracking-tight text-foreground/80">{platformName}</span>
+              </div>
+              <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+                {footerTagline}
+              </p>
+              <p className="mt-4 text-sm text-muted-foreground">
+                <Link href="/help" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
+                  Help Center
+                </Link>
+              </p>
             </div>
-            <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-              {footerTagline}
-            </p>
-            <p className="mt-4 text-sm text-muted-foreground">
-              <Link href="/help" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
-                Help Center
-              </Link>
-            </p>
-          </div>
-        </footer>
+          </footer>
+        </NativePullToRefresh>
       </main>
 
-      {showNativeTabs && <NativeBottomTabBar />}
+      {/* Keep tabs mounted on all marketplace screens (including storefront + cart) */}
+      {showNativeTabs ? <NativeBottomTabBar /> : null}
     </div>
   );
 }

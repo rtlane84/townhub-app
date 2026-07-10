@@ -86,7 +86,7 @@ export function NativeBottomTabBar() {
       href: "/businesses",
       label: "Businesses",
       icon: Store,
-      isActive: (path) => isNavActive(path, "/businesses") && !path.startsWith("/businesses/"),
+      isActive: (path) => isNavActive(path, "/businesses"),
     },
     {
       href: "/events",

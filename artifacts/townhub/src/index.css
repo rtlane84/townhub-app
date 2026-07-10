@@ -282,20 +282,35 @@ html.native-app body {
   padding-right: var(--safe-area-right);
   overscroll-behavior: none;
   background-color: hsl(var(--background));
-  /* Prevent iOS rubber-band of the whole document */
   position: fixed;
   inset: 0;
   width: 100%;
 }
 
-/* App shell: header + scrollable main + in-flow tab bar stay anchored */
-html.native-app .native-app-shell {
+html.native-app #root {
   height: 100%;
-  max-height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background-color: hsl(var(--background));
 }
 
+/* App shell: header + scrollable main + in-flow tab bar stay anchored */
+html.native-app .native-app-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: hsl(var(--background));
+}
+
+/*
+ * Scroll ONLY this region. Children must grow with content (not flex-1),
+ * otherwise the page appears stuck and the tab bar can get clipped.
+ */
 html.native-app .native-scroll-root {
   flex: 1 1 auto;
   min-height: 0;
@@ -304,6 +319,7 @@ html.native-app .native-scroll-root {
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   background-color: hsl(var(--background));
+  touch-action: pan-y;
 }
 
 html.native-app .native-site-header {
@@ -321,7 +337,7 @@ html.native-app .native-site-header {
   }
 }
 
-/* In-flow tab bar — stays visually anchored; no document rubber-band */
+/* In-flow tab bar — always visible at the bottom of the shell */
 html.native-app .native-bottom-tab-bar {
   position: relative;
   inset: auto;

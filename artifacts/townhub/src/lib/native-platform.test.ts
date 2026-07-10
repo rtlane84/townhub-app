@@ -1,5 +1,5 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
   isDashboardRoute,
   isNativeTabRoute,
@@ -16,19 +16,21 @@ describe("native-platform", () => {
     assert.equal(isDashboardRoute("/businesses"), false);
   });
 
-  it("shows native tabs on primary browse routes", () => {
+  it("shows native tabs on browse, storefront, and cart", () => {
     assert.equal(isNativeTabRoute("/"), true);
     assert.equal(isNativeTabRoute("/businesses"), true);
+    assert.equal(isNativeTabRoute("/businesses/acme-bakery"), true);
     assert.equal(isNativeTabRoute("/events"), true);
     assert.equal(isNativeTabRoute("/food-trucks"), true);
+    assert.equal(isNativeTabRoute("/cart"), true);
     assert.equal(isNativeTabRoute("/my-orders"), true);
+    assert.equal(isNativeTabRoute("/order/abc"), true);
   });
 
-  it("hides native tabs on storefront and checkout flows", () => {
-    assert.equal(isNativeTabRoute("/businesses/acme-bakery"), false);
-    assert.equal(isNativeTabRoute("/cart"), false);
-    assert.equal(isNativeTabRoute("/order/abc"), false);
+  it("hides native tabs only on dashboards", () => {
     assert.equal(isNativeTabRoute("/dashboard/business"), false);
+    assert.equal(isNativeTabRoute("/dashboard/admin"), false);
+    assert.equal(isNativeTabRoute("/dashboard/admin/settings"), false);
   });
 
   it("marks account routes", () => {
@@ -43,12 +45,14 @@ describe("native-platform", () => {
     assert.equal(isNavActive("/businesses", "/events"), false);
     assert.equal(isNavActive("/", "/"), true);
     assert.equal(isNavActive("/businesses", "/"), false);
+    assert.equal(isNavActive("/businesses/acme", "/businesses"), true);
   });
 
   it("enables pull to refresh only on public listing routes", () => {
     assert.equal(isPullToRefreshRoute("/"), true);
     assert.equal(isPullToRefreshRoute("/events"), true);
     assert.equal(isPullToRefreshRoute("/cart"), false);
+    assert.equal(isPullToRefreshRoute("/businesses/acme"), false);
     assert.equal(isPullToRefreshRoute("/dashboard/admin"), false);
   });
 });
