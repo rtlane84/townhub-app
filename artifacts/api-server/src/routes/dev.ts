@@ -15,7 +15,9 @@ import {
 
 const router: IRouter = Router();
 
-router.use((_req, res, next) => {
+// Only gate /dev/* — a bare router.use() would 404 every later /api route in production
+// (businesses, orders, products, admin) because this router is mounted before them.
+router.use("/dev", (_req, res, next) => {
   if (!isDevClerkRelinkAllowed()) {
     res.status(404).json({ error: "Not found" });
     return;
