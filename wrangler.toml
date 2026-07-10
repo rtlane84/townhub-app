@@ -4,7 +4,13 @@
 #   Root directory:     (leave empty — repo root)
 #   Build command:      pnpm --filter @workspace/townhub run build
 #   Build output dir:   artifacts/townhub/dist/public
-#   Deploy command:     (leave EMPTY — do not use `wrangler deploy`)
+#   Deploy command:     npx wrangler pages deploy
+#     (NOT `npx wrangler deploy` — that is Workers and fails in this monorepo)
+#
+# Auth (required for deploy command):
+#   CLOUDFLARE_API_TOKEN  — Custom token with Account → Cloudflare Pages → Edit
+#                           (+ Account Settings Read, User Details Read)
+#   CLOUDFLARE_ACCOUNT_ID — optional; from dash or wrangler whoami
 #
 # Env (build-time):
 #   NODE_VERSION=22
@@ -21,5 +27,5 @@
 name = "townhub"
 compatibility_date = "2026-07-09"
 
-# Used by `wrangler pages deploy` / Pages builds — not by `wrangler deploy`.
+# Required for `wrangler pages deploy` (reads output dir + project name from here).
 pages_build_output_dir = "artifacts/townhub/dist/public"

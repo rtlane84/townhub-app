@@ -250,19 +250,33 @@ Repo root is a pnpm monorepo. Use these Pages settings:
 | Root directory | *(leave empty — repo root)* |
 | Build command | `pnpm --filter @workspace/townhub run build` |
 | Build output directory | `artifacts/townhub/dist/public` |
-| Deploy command | *(leave empty)* — do **not** set `npx wrangler deploy` |
+| Deploy command | `npx wrangler pages deploy` |
 | Node version | `22` |
 | pnpm version | `10.11.1` (matches `packageManager` in root `package.json`) |
 
 Build-time env vars: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway API origin), optional `VITE_SENTRY_DSN`.
 
-**Do not use `wrangler deploy` as the deploy command.** That is for Workers and fails in this monorepo with “application detection logic has been run in the root of a workspace”. Pages Git builds only need the build output directory; Cloudflare uploads `artifacts/townhub/dist/public` automatically.
+**Use `wrangler pages deploy`, not `wrangler deploy`.** Plain `wrangler deploy` is for Workers and fails in this monorepo with “application detection logic has been run in the root of a workspace”. Root `wrangler.toml` already sets `name` and `pages_build_output_dir`, so `npx wrangler pages deploy` is enough.
 
-If you must deploy via Wrangler (CI / direct upload):
+Explicit form (same result):
 
 ```bash
 npx wrangler pages deploy artifacts/townhub/dist/public --project-name=townhub
 ```
+
+**If deploy fails with `Authentication error [code: 10000]`:** Wrangler is using `CLOUDFLARE_API_TOKEN` from the project env, and that token cannot deploy Pages. Fix:
+
+1. [Create an API token](https://dash.cloudflare.com/profile/api-tokens) → **Create Custom Token** with:
+   - **Account** → **Cloudflare Pages** → **Edit**
+   - **Account** → **Account Settings** → **Read**
+   - **User** → **User Details** → **Read**
+   - Under **Account Resources**, include the account that owns the `townhub` Pages project
+2. In the Pages project → **Settings** → **Variables** (or Environment variables), set:
+   - `CLOUDFLARE_API_TOKEN` = that token (secret)
+   - `CLOUDFLARE_ACCOUNT_ID` = `0cd5139efc19d97edf07b50bbd896dda` (from the build log)
+3. Redeploy
+
+Do not reuse a Workers-only or read-only token. Account membership (Super Admin) is separate from API token scopes.
 
 If install fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`:
 
