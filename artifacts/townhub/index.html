@@ -25,7 +25,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
   </head>
   <body>
+    <!-- Native-only boot splash: paints before React so the Capacitor splash can hand off cleanly. -->
+    <div id="native-boot-splash" class="native-boot-splash" hidden aria-hidden="true">
+      <div class="native-boot-splash__glow" aria-hidden="true"></div>
+      <img
+        class="native-boot-splash__logo"
+        src="/splash-logo.png"
+        alt=""
+        width="512"
+        height="512"
+        decoding="async"
+      />
+    </div>
     <div id="root"></div>
+    <script>
+      (function () {
+        try {
+          var cap = window.Capacitor;
+          var isNative = !!(cap && typeof cap.isNativePlatform === "function" && cap.isNativePlatform());
+          if (!isNative) return;
+          var el = document.getElementById("native-boot-splash");
+          if (!el) return;
+          el.hidden = false;
+          el.setAttribute("aria-hidden", "false");
+          el.classList.add("is-armed");
+        } catch (_) {}
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

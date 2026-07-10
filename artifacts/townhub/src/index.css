@@ -710,3 +710,148 @@ html.native-app .native-pressable:active {
 .kitchen-display-board[data-fullscreen="true"] [data-kitchen-column-scroll] {
   max-height: calc(100vh - 6rem);
 }
+
+/* ── Native boot splash (Capacitor only) ─────────────────────────────── */
+.native-boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 42%, #ffffff 0%, #f4f5f8 52%, #e4e9f0 100%);
+  opacity: 0;
+}
+
+.native-boot-splash.is-armed {
+  opacity: 1;
+}
+
+.native-boot-splash__glow {
+  position: absolute;
+  width: min(72vw, 22rem);
+  height: min(72vw, 22rem);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(212, 168, 67, 0.28) 0%,
+    rgba(30, 58, 95, 0.1) 42%,
+    transparent 70%
+  );
+  transform: scale(0.92);
+  opacity: 0;
+  filter: blur(8px);
+}
+
+.native-boot-splash__logo {
+  position: relative;
+  width: min(58vw, 17.5rem);
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: contain;
+  /* Static frame matches native LaunchScreen for a seamless handoff */
+  transform: scale(1);
+  opacity: 1;
+  filter: drop-shadow(0 18px 40px rgba(30, 58, 95, 0.18));
+  will-change: transform, opacity;
+}
+
+.native-boot-splash.is-playing .native-boot-splash__logo {
+  animation: nbs-logo-breathe 2.4s ease-in-out infinite;
+}
+
+.native-boot-splash.is-playing .native-boot-splash__glow {
+  animation:
+    nbs-glow-in 700ms cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    nbs-glow-pulse 2.4s ease-in-out 700ms infinite;
+}
+
+.native-boot-splash.is-exiting {
+  animation: nbs-exit 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.native-boot-splash.is-exiting .native-boot-splash__logo {
+  animation: nbs-logo-exit 520ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.native-boot-splash.is-exiting .native-boot-splash__glow {
+  animation: nbs-glow-exit 480ms ease forwards;
+}
+
+@keyframes nbs-logo-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+@keyframes nbs-glow-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes nbs-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes nbs-exit {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes nbs-logo-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06) translateY(-6px);
+  }
+}
+
+@keyframes nbs-glow-exit {
+  to {
+    opacity: 0;
+    transform: scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .native-boot-splash.is-playing .native-boot-splash__logo,
+  .native-boot-splash.is-playing .native-boot-splash__glow {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .native-boot-splash.is-exiting,
+  .native-boot-splash.is-exiting .native-boot-splash__logo,
+  .native-boot-splash.is-exiting .native-boot-splash__glow {
+    animation-duration: 1ms !important;
+  }
+}
