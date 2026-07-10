@@ -133,12 +133,12 @@ export const HERO_BUTTON_PLACEMENT_OPTIONS = [
   { value: "bottom-right" as const, label: "Bottom Right" },
 ] as const;
 
-/** Compact hero — shared across desktop web, mobile web, and iOS */
-export const HERO_SECTION_MIN_HEIGHT_PX = 168;
-/** Slightly shorter on narrow viewports */
-export const HERO_SECTION_MOBILE_MIN_HEIGHT_PX = 140;
+/** Compact-but-readable hero — taller on desktop so illustrations aren’t letterboxed */
+export const HERO_SECTION_MIN_HEIGHT_PX = 340;
+/** Mobile / iOS keeps a shorter card */
+export const HERO_SECTION_MOBILE_MIN_HEIGHT_PX = 176;
 export const HERO_SECTION_MIN_HEIGHT_CLASS =
-  "min-h-[140px] md:min-h-[168px]";
+  "min-h-[176px] md:min-h-[340px]";
 
 export function resolvePlatformName(theme?: Pick<PlatformTheme, "platformName"> | null): string {
   const name = theme?.platformName?.trim();

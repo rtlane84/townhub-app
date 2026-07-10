@@ -40,7 +40,7 @@ type HeroStageProps = {
 /**
  * Shared hero composition used by both the live homepage and the admin preview,
  * so the two always match. Three stacked layers:
- *   1. Background image (crops)      2. Overlay image (never crops)     3. CTA buttons
+ *   1. Background image (crops)      2. Overlay image (centered over image)     3. CTA buttons
  */
 export function HeroStage({
   heroImageUrl,
@@ -63,11 +63,11 @@ export function HeroStage({
 
   return (
     <div
-        className={cn(
-          "relative flex overflow-hidden",
-          HERO_SECTION_MIN_HEIGHT_CLASS,
-          className,
-        )}
+      className={cn(
+        "relative overflow-hidden",
+        HERO_SECTION_MIN_HEIGHT_CLASS,
+        className,
+      )}
     >
       <div
         className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/5 to-background"
@@ -86,36 +86,34 @@ export function HeroStage({
         />
       ) : null}
 
-      {hasOverlay || hasButtons ? (
-        <div className="relative z-10 flex w-full flex-col justify-end gap-3 p-4 md:gap-4 md:p-8">
-          {hasOverlay ? (
-            <div
-              className={cn(
-                "flex flex-1 items-center",
-                heroHorizontalJustifyClass(overlayAlign),
-              )}
-            >
-              <img
-                src={overlayImageUrl ?? undefined}
-                alt={overlayAlt}
-                className={cn(
-                  "h-auto w-auto object-contain drop-shadow-xl",
-                  heroOverlaySizeClasses(overlaySize),
-                )}
-              />
-            </div>
-          ) : null}
+      {/* Overlay — full-bleed flex so it truly centers over the hero image */}
+      {hasOverlay ? (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 z-10 flex items-center px-4 py-3 md:px-8 md:py-5",
+            heroHorizontalJustifyClass(overlayAlign),
+          )}
+        >
+          <img
+            src={overlayImageUrl ?? undefined}
+            alt={overlayAlt}
+            className={cn(
+              "h-auto w-auto object-contain drop-shadow-xl",
+              heroOverlaySizeClasses(overlaySize),
+            )}
+          />
+        </div>
+      ) : null}
 
-          {hasButtons ? (
-            <div
-              className={cn(
-                "flex flex-wrap gap-3",
-                heroButtonPlacementJustifyClass(buttonPlacement),
-              )}
-            >
-              {buttons}
-            </div>
-          ) : null}
+      {/* CTAs sit on the bottom edge without pulling the overlay off-center */}
+      {hasButtons ? (
+        <div
+          className={cn(
+            "absolute inset-x-0 bottom-0 z-20 flex flex-wrap gap-2.5 p-3 md:gap-3 md:p-5",
+            heroButtonPlacementJustifyClass(buttonPlacement),
+          )}
+        >
+          {buttons}
         </div>
       ) : null}
     </div>

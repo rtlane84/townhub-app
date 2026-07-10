@@ -58,7 +58,7 @@ export function HomeHeroSection() {
         overlayAlign={heroOverlayAlign}
         overlayAlt={`${platformName} hero`}
         buttonPlacement={heroButtonPlacement}
-        className="max-h-[180px] rounded-[1.5rem] shadow-[0_8px_28px_-10px_rgba(15,23,42,0.16)] md:max-h-[200px]"
+        className="rounded-[1.5rem] shadow-[0_8px_28px_-10px_rgba(15,23,42,0.16)]"
         buttons={
           showButtons ? (
             <>
