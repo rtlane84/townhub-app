@@ -74,8 +74,8 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: "DARK",
       backgroundColor: "#F4F5F8",
-      // false = system reserves status-bar space on every iPhone (no per-model CSS).
-      overlaysWebView: false,
+      // true + contentInset:never = edge-to-edge; CSS --safe-area-top clears the clock.
+      overlaysWebView: true,
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"],

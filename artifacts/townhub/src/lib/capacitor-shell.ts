@@ -82,8 +82,9 @@ function estimateIosStatusBarInsetPx(): number {
 }
 
 /**
- * Publish --safe-area-* on <html>. Prefer CSS env(); if top is 0 on iOS while the
- * status bar still overlays the webview, inject a fallback so every screen clears the clock.
+ * Publish --safe-area-* on <html>. Prefer CSS env(); if top is 0 on iOS with an
+ * edge-to-edge webview (contentInset: never), inject a status-bar estimate so the
+ * header clears the clock on every iPhone.
  */
 function syncNativeSafeAreaCssVars(options?: { statusBarOverlaysWebView?: boolean }): void {
   if (!isNativeApp()) return;
@@ -94,14 +95,13 @@ function syncNativeSafeAreaCssVars(options?: { statusBarOverlaysWebView?: boolea
   let left = measured.left;
   let right = measured.right;
 
-  const overlays = options?.statusBarOverlaysWebView === true;
-  if (Capacitor.getPlatform() === "ios" && overlays && top < 1) {
+  const platform = Capacitor.getPlatform();
+  const overlays = options?.statusBarOverlaysWebView !== false;
+
+  // iOS uses contentInset: never — the webview always paints under the status bar.
+  // Never zero the top inset; if env() is missing, estimate so the clock stays clear.
+  if (platform === "ios" && overlays && top < 1) {
     top = estimateIosStatusBarInsetPx();
-  }
-  // When the status bar does not overlay, UIKit already offsets the webview —
-  // keep top at 0 so headers don't double-pad.
-  if (Capacitor.getPlatform() === "ios" && options?.statusBarOverlaysWebView === false) {
-    top = 0;
   }
 
   const root = document.documentElement;
@@ -122,18 +122,18 @@ async function syncNativeStatusBar(): Promise<void> {
     await StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark });
 
     if (platform === "ios") {
-      // Do not draw under the status bar — UIKit reserves the clock/battery region
-      // for every iPhone (SE, notch, Dynamic Island) without per-model CSS.
-      await StatusBar.setOverlaysWebView({ overlay: false });
+      // Edge-to-edge (matches ios.contentInset: never). Header padding uses
+      // --safe-area-top so logo/nav sit below the clock; canvas paints behind it.
+      await StatusBar.setOverlaysWebView({ overlay: true });
       await StatusBar.setBackgroundColor({ color: canvas });
-      syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: false });
+      syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: true });
     } else if (platform === "android") {
       await StatusBar.setOverlaysWebView({ overlay: false });
       await StatusBar.setBackgroundColor({ color: canvas });
       syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: false });
     }
   } catch {
-    // Status bar plugin unavailable — still try CSS safe areas.
+    // Status bar plugin unavailable — still try CSS safe areas / iOS estimate.
     syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: true });
   }
 }
@@ -209,10 +209,22 @@ export function initCapacitorShell(): void {
   }
 
   applyNativeDocumentClass();
+  // Measure before StatusBar async settles so the first paint already clears the clock.
+  syncNativeSafeAreaCssVars({
+    statusBarOverlaysWebView: Capacitor.getPlatform() === "ios",
+  });
   void syncNativeStatusBar();
   // Re-measure after first layout / rotation (orientation, Dynamic Island).
   window.addEventListener("resize", () => {
-    syncNativeSafeAreaCssVars({ statusBarOverlaysWebView: false });
+    syncNativeSafeAreaCssVars({
+      statusBarOverlaysWebView: Capacitor.getPlatform() === "ios",
+    });
+  });
+  // Second pass after layout — env() is sometimes 0 on the first tick in WKWebView.
+  window.requestAnimationFrame(() => {
+    syncNativeSafeAreaCssVars({
+      statusBarOverlaysWebView: Capacitor.getPlatform() === "ios",
+    });
   });
   scheduleSplashHide();
 
