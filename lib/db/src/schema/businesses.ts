@@ -30,6 +30,7 @@ export const businessTypeEnum = pgEnum("business_type", [
   "RETAIL_STORE",
   "BUILDING_SUPPLY",
   "SERVICE_PROVIDER",
+  "RECREATION",
   "FUNERAL_SERVICE",
   "GENERAL",
   "SALON",

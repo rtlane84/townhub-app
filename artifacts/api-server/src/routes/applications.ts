@@ -314,7 +314,7 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
     // Validate / normalize identity type (legacy FOOD_TRUCK → Restaurant + mobile)
     const VALID_TYPES = [
       "FOOD_VENDOR", "COFFEE_SHOP", "BAKERY", "GROCERY", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE",
-      "BUILDING_SUPPLY", "SERVICE_PROVIDER", "FUNERAL_SERVICE", "GENERAL", "SALON",
+      "BUILDING_SUPPLY", "SERVICE_PROVIDER", "RECREATION", "FUNERAL_SERVICE", "GENERAL", "SALON",
       // Legacy application values still accepted then normalized
       "FOOD_TRUCK", "CAFE_BAKERY",
     ];

@@ -12,6 +12,7 @@ export const BUSINESS_TYPE_OPTIONS: Array<{ value: BusinessType; label: string }
   { value: BusinessTypeValues.RETAIL_STORE, label: "Boutique" },
   { value: BusinessTypeValues.BUILDING_SUPPLY, label: "Hardware" },
   { value: BusinessTypeValues.SERVICE_PROVIDER, label: "Professional Services" },
+  { value: BusinessTypeValues.RECREATION, label: "Recreation" },
   { value: BusinessTypeValues.SALON, label: "Salon / Beauty" },
   { value: BusinessTypeValues.FUNERAL_SERVICE, label: "Funeral Service" },
   { value: BusinessTypeValues.GENERAL, label: "Other / General" },
@@ -29,6 +30,7 @@ export const PUBLIC_BUSINESS_FILTERS: Array<{ label: string; value: string }> = 
   { label: "Hardware", value: BusinessTypeValues.BUILDING_SUPPLY },
   { label: "Salon / Beauty", value: BusinessTypeValues.SALON },
   { label: "Services", value: BusinessTypeValues.SERVICE_PROVIDER },
+  { label: "Recreation", value: BusinessTypeValues.RECREATION },
 ];
 
 /** Home Explore chips — same categories as the businesses directory (excluding All). */

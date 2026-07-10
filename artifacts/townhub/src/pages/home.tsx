@@ -17,7 +17,7 @@ import { Link } from "wouter";
 import { useUser } from "@clerk/react";
 import {
   Store, ArrowRight, Leaf, Coffee, Utensils, Calendar, Sparkles, MapPin, Clock, Truck,
-  Cake, ShoppingBasket, Flower2, Wrench, Briefcase,
+  Cake, ShoppingBasket, Flower2, Wrench, Briefcase, Tent,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { PUBLIC_EXPLORE_CATEGORIES } from "@workspace/api-zod";
@@ -68,6 +68,7 @@ const EXPLORE_ICONS: Record<string, { icon: LucideIcon; tint: string }> = {
   BUILDING_SUPPLY: { icon: Wrench, tint: "bg-slate-500/10 text-slate-700" },
   SALON: { icon: Sparkles, tint: "bg-pink-500/10 text-pink-600" },
   SERVICE_PROVIDER: { icon: Briefcase, tint: "bg-indigo-500/10 text-indigo-700" },
+  RECREATION: { icon: Tent, tint: "bg-teal-500/10 text-teal-700" },
 };
 
 const EXPLORE_FALLBACK = { icon: Store, tint: "bg-primary/10 text-primary" };

@@ -25,6 +25,7 @@ export async function ensureBusinessTypeEnumValues(): Promise<void> {
     "RETAIL_STORE",
     "BUILDING_SUPPLY",
     "SERVICE_PROVIDER",
+    "RECREATION",
     "FUNERAL_SERVICE",
     "GENERAL",
     "SALON",
