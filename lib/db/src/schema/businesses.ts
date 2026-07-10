@@ -72,6 +72,8 @@ export const businessesTable = pgTable("businesses", {
   showWebsiteCard: boolean("show_website_card").notNull().default(false),
   hours: text("hours"),
   structuredHours: jsonb("structured_hours").$type<StructuredHoursJson | null>(),
+  /** When false, weekly hours are hidden on the storefront (useful for mobile schedule businesses). */
+  hoursEnabled: boolean("hours_enabled").notNull().default(true),
   active: boolean("active").notNull().default(true),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   featured: boolean("featured").notNull().default(false),

@@ -6,6 +6,7 @@ import { ensurePlatformBrandWordColorColumns } from "./lib/ensure-platform-brand
 import {
   ensureBusinessTypeEnumValues,
   ensureDeliveryBufferMinutesColumn,
+  ensureHoursEnabledColumn,
   ensureMobileBusinessSchema,
 } from "./lib/ensure-business-fulfillment-schema";
 
@@ -39,6 +40,7 @@ app.listen(port, async (err) => {
     await ensureBusinessTypeEnumValues();
     await ensureDeliveryBufferMinutesColumn();
     await ensureMobileBusinessSchema();
+    await ensureHoursEnabledColumn();
   } catch (bootstrapErr) {
     logger.warn({ err: bootstrapErr }, "Business fulfillment schema bootstrap skipped");
   }

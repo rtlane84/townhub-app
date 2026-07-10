@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, type ReactNode } from "react";
+import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useUpdateBusiness, getGetMyBusinessQueryKey, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { DashboardPageHeader } from "@/components/dashboard-page-header";
@@ -36,7 +36,8 @@ import { TimePicker, coerceFormTime } from "@/components/time-picker";
 import { ImageField } from "@/components/image-field";
 import { StorefrontUrlField } from "@/components/storefront-url-field";
 import { AddAnotherBusinessButton } from "@/components/add-another-business-link";
-import { Building2, ImageIcon, Layers, MousePointerClick, ShoppingBag, Truck } from "lucide-react";
+import { Building2, ImageIcon, Layers, MousePointerClick, ShoppingBag, Truck, CheckCircle, RotateCcw, Save, Megaphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type FormState = {
   name: string;
@@ -47,6 +48,7 @@ type FormState = {
   websiteUrl: string;
   showWebsiteCard: boolean;
   structuredHours: BusinessDayHours[];
+  hoursEnabled: boolean;
   logoUrl: string;
   heroImageUrl: string;
   pickupEnabled: boolean;
@@ -80,6 +82,7 @@ const EMPTY: FormState = {
   websiteUrl: "",
   showWebsiteCard: false,
   structuredHours: defaultWeeklyHours(),
+  hoursEnabled: true,
   logoUrl: "",
   heroImageUrl: "",
   pickupEnabled: true,
@@ -126,45 +129,53 @@ export default function BusinessSettings() {
   const { selectedBusinessId, business, ownedBusinesses, isLoading } = useSelectedBusiness();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<FormState>({ ...EMPTY });
+  const [form, setFormState] = useState<FormState>({ ...EMPTY });
+  const [isDirty, setIsDirty] = useState(false);
+  const lastSyncedId = useRef<number | null>(null);
   const stripeReturn = useMemo(() => {
     if (typeof window === "undefined") return false;
     const params = new URLSearchParams(window.location.search);
     return params.get("stripe") === "return";
   }, []);
 
-  useEffect(() => {
-    if (!business) return;
-    const b = business as unknown as Record<string, unknown>;
+  const setForm = (
+    updater: FormState | ((prev: FormState) => FormState),
+  ) => {
+    setFormState(updater);
+    setIsDirty(true);
+  };
+
+  const hydrateFromBusiness = (biz: NonNullable<typeof business>) => {
+    const b = biz as unknown as Record<string, unknown>;
     const deliveryInstructions = String(b.deliveryInstructions ?? "");
     const deliveryNotes = String(b.deliveryNotes ?? "");
-    setForm({
-      name: business.name ?? "",
-      type: business.type ?? "GENERAL",
-      description: business.description ?? "",
-      address: business.address ?? "",
-      phone: business.phone ?? "",
-      websiteUrl: business.websiteUrl ?? "",
-      showWebsiteCard: business.showWebsiteCard === true,
-      structuredHours: parseStructuredHours(business.structuredHours) ?? defaultWeeklyHours(),
-      logoUrl: business.logoUrl ?? "",
-      heroImageUrl: business.heroImageUrl ?? "",
-      pickupEnabled: business.pickupEnabled ?? true,
-      deliveryEnabled: business.deliveryEnabled ?? false,
-      deliveryFee: business.deliveryFee != null ? String(business.deliveryFee) : "",
+    setFormState({
+      name: biz.name ?? "",
+      type: biz.type ?? "GENERAL",
+      description: biz.description ?? "",
+      address: biz.address ?? "",
+      phone: biz.phone ?? "",
+      websiteUrl: biz.websiteUrl ?? "",
+      showWebsiteCard: biz.showWebsiteCard === true,
+      structuredHours: parseStructuredHours(biz.structuredHours) ?? defaultWeeklyHours(),
+      hoursEnabled: biz.hoursEnabled !== false,
+      logoUrl: biz.logoUrl ?? "",
+      heroImageUrl: biz.heroImageUrl ?? "",
+      pickupEnabled: biz.pickupEnabled ?? true,
+      deliveryEnabled: biz.deliveryEnabled ?? false,
+      deliveryFee: biz.deliveryFee != null ? String(biz.deliveryFee) : "",
       minimumOrderForDelivery: b.minimumOrderForDelivery != null ? String(b.minimumOrderForDelivery) : "",
       deliveryRadiusMiles: b.deliveryRadiusMiles != null ? String(b.deliveryRadiusMiles) : "",
       pickupInstructions: String(b.pickupInstructions ?? ""),
-      // Prefer instructions; fall back to legacy storefront-only notes so nothing is lost.
       deliveryInstructions: deliveryInstructions || deliveryNotes,
-      paymentMode: resolvePaymentMode(business),
-      storefrontMode: resolveStorefrontMode(business),
-      orderingAvailabilityMode: resolveOrderingAvailabilityMode(business),
-      orderingEnabled: business.orderingEnabled !== false,
-      orderCutoffTime: coerceFormTime(business.orderCutoffTime),
-      defaultPrepMinutes: business.defaultPrepMinutes != null ? String(business.defaultPrepMinutes) : "15",
+      paymentMode: resolvePaymentMode(biz),
+      storefrontMode: resolveStorefrontMode(biz),
+      orderingAvailabilityMode: resolveOrderingAvailabilityMode(biz),
+      orderingEnabled: biz.orderingEnabled !== false,
+      orderCutoffTime: coerceFormTime(biz.orderCutoffTime),
+      defaultPrepMinutes: biz.defaultPrepMinutes != null ? String(biz.defaultPrepMinutes) : "15",
       deliveryBufferMinutes:
-        business.deliveryBufferMinutes != null ? String(business.deliveryBufferMinutes) : "15",
+        biz.deliveryBufferMinutes != null ? String(biz.deliveryBufferMinutes) : "15",
       accentColor: String(b.accentColor ?? ""),
       buttonColor: String(b.buttonColor ?? ""),
       bannerText: String(b.bannerText ?? ""),
@@ -172,7 +183,16 @@ export default function BusinessSettings() {
       taxRatePercent: b.taxRatePercent != null ? String(b.taxRatePercent) : "",
       taxLabel: String(b.taxLabel ?? "Sales Tax"),
     });
-  }, [business]);
+    lastSyncedId.current = biz.id;
+    setIsDirty(false);
+  };
+
+  useEffect(() => {
+    if (!business) return;
+    if (isDirty && lastSyncedId.current === business.id) return;
+    hydrateFromBusiness(business);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate only when business identity/data changes while clean
+  }, [business, isDirty]);
 
   const updateBusiness = useUpdateBusiness({
     mutation: {
@@ -183,6 +203,11 @@ export default function BusinessSettings() {
         if (updated?.slug) {
           queryClient.invalidateQueries({ queryKey: getGetBusinessBySlugQueryKey(updated.slug) });
         }
+        if (updated) {
+          hydrateFromBusiness(updated as NonNullable<typeof business>);
+        } else {
+          setIsDirty(false);
+        }
         toast({ title: "Settings saved" });
       },
       onError: (err: unknown) => {
@@ -192,6 +217,11 @@ export default function BusinessSettings() {
     },
   });
 
+  function handleDiscard() {
+    if (!business) return;
+    hydrateFromBusiness(business);
+  }
+
   function handleSave() {
     if (!business) return;
     const opt = (value: string) => value.trim() || undefined;
@@ -200,6 +230,10 @@ export default function BusinessSettings() {
       if (!trimmed) return undefined;
       const n = parseFloat(trimmed);
       return Number.isNaN(n) ? undefined : n;
+    };
+    const clearable = (value: string) => {
+      const trimmed = value.trim();
+      return trimmed ? trimmed : null;
     };
 
     const orderingMode = isOrderingStorefrontMode({
@@ -220,7 +254,8 @@ export default function BusinessSettings() {
         phone: opt(form.phone),
         websiteUrl: normalizeWebsiteUrl(form.websiteUrl) ?? undefined,
         showWebsiteCard: form.showWebsiteCard,
-        structuredHours: normalizeWeeklyHours(form.structuredHours),
+        structuredHours: form.hoursEnabled ? normalizeWeeklyHours(form.structuredHours) : undefined,
+        hoursEnabled: form.hoursEnabled,
         logoUrl: form.logoUrl.trim(),
         heroImageUrl: form.heroImageUrl.trim(),
         storefrontMode: form.storefrontMode,
@@ -237,7 +272,6 @@ export default function BusinessSettings() {
               deliveryBufferMinutes: optNum(form.deliveryBufferMinutes),
               minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
               deliveryRadiusMiles: optNum(form.deliveryRadiusMiles),
-              // Collapse legacy deliveryNotes into instructions; clear the duplicate field.
               deliveryNotes: null,
               pickupInstructions: opt(form.pickupInstructions),
               deliveryInstructions: opt(form.deliveryInstructions),
@@ -246,9 +280,9 @@ export default function BusinessSettings() {
               taxLabel: form.taxLabel.trim() || "Sales Tax",
             }
           : {}),
-        accentColor: opt(form.accentColor),
-        buttonColor: opt(form.buttonColor),
-        bannerText: opt(form.bannerText),
+        accentColor: clearable(form.accentColor),
+        buttonColor: clearable(form.buttonColor),
+        bannerText: clearable(form.bannerText),
       },
     });
   }
@@ -286,20 +320,30 @@ export default function BusinessSettings() {
 
   return (
     <BusinessDashboardLayout>
-      <div className="mx-auto max-w-2xl space-y-6 pb-10">
+      <div className="mx-auto max-w-2xl space-y-6 pb-28">
         <DashboardPageHeader
           title="Settings"
           description="Profile, public page, and how customers order from your storefront."
           action={
-            <LoadingButton
-              onClick={handleSave}
-              loading={updateBusiness.isPending}
-              loadingText="Saving…"
-              className="rounded-full"
-              data-testid="button-save-settings"
-            >
-              Save
-            </LoadingButton>
+            <div className="flex items-center gap-2">
+              {!isDirty ? (
+                <span className="hidden items-center gap-1 text-sm text-muted-foreground sm:flex">
+                  <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                  Saved
+                </span>
+              ) : null}
+              <LoadingButton
+                onClick={handleSave}
+                disabled={!isDirty}
+                loading={updateBusiness.isPending}
+                loadingText="Saving…"
+                className="rounded-full"
+                data-testid="button-save-settings"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                Save
+              </LoadingButton>
+            </div>
           }
         />
 
@@ -359,11 +403,29 @@ export default function BusinessSettings() {
               })}
               {textField("Address", "address", { placeholder: "123 Main St, Anytown, MN 55101" })}
               {textField("Phone", "phone", { placeholder: "(555) 555-0100" })}
-              <Field label="Business hours" hint="Open/closed and times for each day.">
-                <WeeklyHoursPicker
-                  value={form.structuredHours}
-                  onChange={(structuredHours) => setForm((f) => ({ ...f, structuredHours }))}
+              <Field
+                label="Business hours"
+                hint="Weekly open/closed times. Turn this off if you only follow a mobile schedule."
+              >
+                <SettingsToggleRow
+                  label="Show business hours"
+                  description="When off, hours are hidden on your storefront. Mobile businesses often use Mobile Schedule instead."
+                  checked={form.hoursEnabled}
+                  onCheckedChange={(hoursEnabled) => setForm((f) => ({ ...f, hoursEnabled }))}
+                  data-testid="switch-hoursEnabled"
                 />
+                {form.hoursEnabled ? (
+                  <div className="pt-3">
+                    <WeeklyHoursPicker
+                      value={form.structuredHours}
+                      onChange={(structuredHours) => setForm((f) => ({ ...f, structuredHours }))}
+                    />
+                  </div>
+                ) : (
+                  <p className="pt-2 text-xs text-muted-foreground">
+                    Customers won&apos;t see weekly hours. Manage stops under Mobile Schedule if you travel.
+                  </p>
+                )}
               </Field>
             </SettingsSection>
 
@@ -387,10 +449,36 @@ export default function BusinessSettings() {
                 testId="business-hero"
                 businessId={business?.id}
               />
-              {textField("Storefront banner", "bannerText", {
-                placeholder: "Spring hours now in effect!",
-                hint: "Optional notice at the top of your public storefront — not the marketplace homepage.",
-              })}
+              <Field
+                label="Storefront banner"
+                hint="Optional notice across the top of your public storefront — not the marketplace homepage."
+              >
+                <div className="overflow-hidden rounded-[1.25rem] ring-1 ring-black/[0.06]">
+                  <div className="flex items-center gap-2 border-b border-border/50 bg-muted/40 px-3.5 py-2.5">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <Megaphone className="h-3.5 w-3.5" aria-hidden />
+                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">Live preview</span>
+                  </div>
+                  {form.bannerText.trim() ? (
+                    <div className="bg-gradient-to-r from-primary via-primary to-primary/90 px-4 py-3 text-center text-sm font-medium tracking-tight text-primary-foreground">
+                      {form.bannerText.trim()}
+                    </div>
+                  ) : (
+                    <div className="bg-muted/30 px-4 py-3 text-center text-sm text-muted-foreground">
+                      No banner — leave blank to hide
+                    </div>
+                  )}
+                  <div className="border-t border-border/50 bg-card p-3">
+                    <Input
+                      value={form.bannerText}
+                      onChange={(e) => setForm((f) => ({ ...f, bannerText: e.target.value }))}
+                      placeholder="Spring hours now in effect!"
+                      data-testid="input-bannerText"
+                    />
+                  </div>
+                </div>
+              </Field>
               <div className="grid gap-6 md:grid-cols-2">
                 <ColorPickerField
                   id="accentColor"
@@ -627,6 +715,34 @@ export default function BusinessSettings() {
           </>
         )}
       </div>
+
+      {isDirty ? (
+        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-[1.25rem] border-0 bg-card/95 px-4 py-3 shadow-[0_8px_40px_-12px_rgba(15,23,42,0.28)] backdrop-blur-md md:left-auto md:right-10">
+          <p className="text-sm text-muted-foreground">Unsaved changes</p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={handleDiscard}
+              disabled={updateBusiness.isPending}
+            >
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+              Discard
+            </Button>
+            <LoadingButton
+              size="sm"
+              onClick={handleSave}
+              loading={updateBusiness.isPending}
+              loadingText="Saving…"
+              className="rounded-full"
+            >
+              <Save className="mr-1.5 h-3.5 w-3.5" />
+              Save
+            </LoadingButton>
+          </div>
+        </div>
+      ) : null}
     </BusinessDashboardLayout>
   );
 }

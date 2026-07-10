@@ -82,3 +82,11 @@ export async function ensureMobileBusinessSchema(): Promise<void> {
 
   logger.info("Ensured is_mobile_business column and legacy type migration");
 }
+
+/** Ensure hours_enabled column exists (hide weekly hours on storefront when false). */
+export async function ensureHoursEnabledColumn(): Promise<void> {
+  await db.execute(
+    sql`ALTER TABLE businesses ADD COLUMN IF NOT EXISTS hours_enabled boolean NOT NULL DEFAULT true`,
+  );
+  logger.info("Ensured businesses.hours_enabled column");
+}

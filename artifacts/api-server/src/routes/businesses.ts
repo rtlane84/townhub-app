@@ -81,6 +81,7 @@ export function serializeBusiness(
     showWebsiteCard: b.showWebsiteCard,
     hours: b.hours,
     structuredHours: parseStructuredHours(b.structuredHours),
+    hoursEnabled: b.hoursEnabled !== false,
     active: b.active,
     featured: b.featured,
     pickupEnabled: b.pickupEnabled,
@@ -557,6 +558,8 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.structuredHours = resolveStructuredHoursInput(d.structuredHours);
     updateData.hours = legacyHoursFromStructured(d.structuredHours);
   }
+  if ((d as Record<string, unknown>).hoursEnabled !== undefined)
+    updateData.hoursEnabled = (d as Record<string, unknown>).hoursEnabled === true;
   if (d.active !== undefined && access.isAdmin) updateData.active = d.active;
   if (d.featured !== undefined && access.isAdmin) updateData.featured = d.featured;
   if (d.pickupEnabled !== undefined) updateData.pickupEnabled = d.pickupEnabled;
@@ -662,12 +665,18 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
   }
   if ((d as Record<string, unknown>).showWebsiteCard !== undefined)
     updateData.showWebsiteCard = (d as Record<string, unknown>).showWebsiteCard;
-  if ((d as Record<string, unknown>).accentColor !== undefined)
-    updateData.accentColor = (d as Record<string, unknown>).accentColor;
-  if ((d as Record<string, unknown>).buttonColor !== undefined)
-    updateData.buttonColor = (d as Record<string, unknown>).buttonColor;
-  if ((d as Record<string, unknown>).bannerText !== undefined)
-    updateData.bannerText = (d as Record<string, unknown>).bannerText;
+  if ((d as Record<string, unknown>).accentColor !== undefined) {
+    const raw = (d as Record<string, unknown>).accentColor;
+    updateData.accentColor = typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  }
+  if ((d as Record<string, unknown>).buttonColor !== undefined) {
+    const raw = (d as Record<string, unknown>).buttonColor;
+    updateData.buttonColor = typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  }
+  if ((d as Record<string, unknown>).bannerText !== undefined) {
+    const raw = (d as Record<string, unknown>).bannerText;
+    updateData.bannerText = typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  }
 
   try {
     const [business] = await db

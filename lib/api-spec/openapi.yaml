@@ -2865,6 +2865,11 @@ components:
           type: ["array", "null"]
           items:
             $ref: "#/components/schemas/BusinessDayHours"
+        hoursEnabled:
+          type: boolean
+          description: >
+            When false, weekly business hours are hidden on the public storefront.
+            Useful for mobile businesses that follow a location schedule instead.
         active:
           type: boolean
         featured:
@@ -3101,6 +3106,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BusinessDayHours"
+        hoursEnabled:
+          type: boolean
+          description: When false, hide weekly business hours on the public storefront.
         active:
           type: boolean
         featured:

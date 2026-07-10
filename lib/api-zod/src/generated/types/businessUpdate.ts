@@ -23,6 +23,8 @@ export interface BusinessUpdate {
   showWebsiteCard?: boolean;
   hours?: string;
   structuredHours?: BusinessDayHours[];
+  /** When false, hide weekly business hours on the public storefront. */
+  hoursEnabled?: boolean;
   active?: boolean;
   featured?: boolean;
   pickupEnabled?: boolean;

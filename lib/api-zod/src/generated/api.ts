@@ -185,6 +185,7 @@ export const GetMyBusinessResponse = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -289,6 +290,7 @@ export const ListBusinessesResponseItem = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -468,6 +470,7 @@ export const GetBusinessCheckoutResponse = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -553,6 +556,7 @@ export const GetBusinessBySlugResponse = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -748,6 +752,7 @@ export const GetBusinessResponse = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -830,6 +835,7 @@ export const UpdateBusinessBody = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).optional(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, hide weekly business hours on the public storefront.'),
   "active": zod.boolean().optional(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -897,6 +903,7 @@ export const UpdateBusinessResponse = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -2186,6 +2193,7 @@ export const AssignBusinessOwnerResponse = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -2266,6 +2274,7 @@ export const ListAdminBusinessesResponseItem = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),
@@ -3288,6 +3297,7 @@ export const RegenerateBusinessNtfyTopicResponse = zod.object({
   "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
   "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
 })).nullish(),
+  "hoursEnabled": zod.boolean().optional().describe('When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.\n'),
   "active": zod.boolean(),
   "featured": zod.boolean().optional(),
   "pickupEnabled": zod.boolean().optional(),

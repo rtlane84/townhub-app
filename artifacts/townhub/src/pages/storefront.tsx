@@ -5,7 +5,7 @@ import {
   getListFoodTruckLocationsQueryKey,
   getGetBusinessBySlugQueryKey,
 } from "@workspace/api-client-react";
-import { MapPin, Clock, Phone, Store, ShoppingBag, Plus, ArrowLeft, Info, Truck, CalendarDays } from "lucide-react";
+import { MapPin, Clock, Phone, Store, ShoppingBag, Plus, ArrowLeft, Info, Truck, CalendarDays, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/components/cart-context";
@@ -218,12 +218,25 @@ export default function Storefront() {
 
   return (
     <BusinessThemeScope business={b} className="min-h-0 bg-background pb-6">
-      {/* Banner text */}
-      {bannerText && (
-        <div className="bg-primary text-primary-foreground text-sm font-medium text-center py-2.5 px-4">
-          {bannerText}
+      {/* Storefront banner */}
+      {bannerText?.trim() ? (
+        <div className="relative overflow-hidden border-b border-primary/10 bg-gradient-to-r from-primary via-primary to-primary/90">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.12]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 12% 50%, white 0, transparent 42%), radial-gradient(circle at 88% 50%, white 0, transparent 38%)",
+            }}
+            aria-hidden
+          />
+          <div className="relative mx-auto flex max-w-[1400px] items-center justify-center gap-2.5 px-4 py-3 text-center md:px-6">
+            <Megaphone className="hidden h-4 w-4 shrink-0 text-primary-foreground/85 sm:block" aria-hidden />
+            <p className="text-sm font-medium tracking-tight text-primary-foreground md:text-[15px]">
+              {bannerText.trim()}
+            </p>
+          </div>
         </div>
-      )}
+      ) : null}
 
       <div className="container mx-auto max-w-[1400px] px-0 md:px-6 md:pt-6">
         {/* Hero — full-bleed on mobile; large rounded stage on desktop */}

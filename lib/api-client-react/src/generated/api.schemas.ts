@@ -385,6 +385,9 @@ export interface Business {
   hours?: string | null;
   /** @nullable */
   structuredHours?: BusinessDayHours[] | null;
+  /** When false, weekly business hours are hidden on the public storefront. Useful for mobile businesses that follow a location schedule instead.
+   */
+  hoursEnabled?: boolean;
   active: boolean;
   featured?: boolean;
   pickupEnabled?: boolean;
@@ -592,6 +595,8 @@ export interface BusinessUpdate {
   showWebsiteCard?: boolean;
   hours?: string;
   structuredHours?: BusinessDayHours[];
+  /** When false, hide weekly business hours on the public storefront. */
+  hoursEnabled?: boolean;
   active?: boolean;
   featured?: boolean;
   pickupEnabled?: boolean;
