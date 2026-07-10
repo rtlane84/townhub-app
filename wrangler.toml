@@ -1,17 +1,25 @@
 # Cloudflare Pages — frontend static site
-# Dashboard settings (recommended):
-#   Root directory: (repo root — leave empty)
-#   Build command:  pnpm --filter @workspace/townhub run build
-#   Build output:   artifacts/townhub/dist/public
-#   Environment:    NODE_VERSION=22
-#                   VITE_CLERK_PUBLISHABLE_KEY=...
-#                   VITE_API_BASE_URL=https://your-api.example.com
 #
-# If Cloudflare's auto `pnpm install --frozen-lockfile` fails with
-# ERR_PNPM_LOCKFILE_CONFIG_MISMATCH, set SKIP_DEPENDENCY_INSTALL=true and use:
+# Dashboard (Workers & Pages → your project → Settings → Builds):
+#   Root directory:     (leave empty — repo root)
+#   Build command:      pnpm --filter @workspace/townhub run build
+#   Build output dir:   artifacts/townhub/dist/public
+#   Deploy command:     (leave EMPTY — do not use `wrangler deploy`)
+#
+# Env (build-time):
+#   NODE_VERSION=22
+#   VITE_CLERK_PUBLISHABLE_KEY=...
+#   VITE_API_BASE_URL=https://your-api.example.com
+#
+# If auto `pnpm install --frozen-lockfile` fails with LOCKFILE_CONFIG_MISMATCH:
+#   SKIP_DEPENDENCY_INSTALL=true
 #   Build command: pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build
+#
+# Manual / CI upload (optional):
+#   npx wrangler pages deploy artifacts/townhub/dist/public --project-name=townhub
 
 name = "townhub"
 compatibility_date = "2026-07-09"
 
+# Used by `wrangler pages deploy` / Pages builds — not by `wrangler deploy`.
 pages_build_output_dir = "artifacts/townhub/dist/public"

@@ -234,6 +234,12 @@ TownHub is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`
 3. **Set production environment variables** in the host secret manager (see §2). Include `DATABASE_URL`, Clerk, `SESSION_SECRET`, `APP_BASE_URL`, Stripe, media, and monitoring keys.
 4. **Set build-time frontend variables** (`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` when frontend and API hosts differ, `VITE_SENTRY_DSN`, etc.) **before** running the frontend build.
 5. **Attach production or custom domain** — point DNS to your host; set `APP_BASE_URL` to the public HTTPS URL. For Netlify/Cloudflare Pages + Railway: set the frontend host’s `VITE_API_BASE_URL` to the Railway API origin, and set Railway `APP_BASE_URL` to the frontend URL so CORS allows the browser.
+6. **Restart or redeploy the application** after any environment variable change (runtime secrets need a restart; `VITE_*` changes need a rebuild).
+7. **Apply database schema** if this release includes schema changes:
+   ```bash
+   DATABASE_URL=<production_url> pnpm --filter @workspace/db run push
+   ```
+8. **Verify health** — `GET https://your-api-host/health` (or same-origin `/health`) returns `200` before announcing launch.
 
 ### Example: Cloudflare Pages (frontend)
 
@@ -244,10 +250,19 @@ Repo root is a pnpm monorepo. Use these Pages settings:
 | Root directory | *(leave empty — repo root)* |
 | Build command | `pnpm --filter @workspace/townhub run build` |
 | Build output directory | `artifacts/townhub/dist/public` |
+| Deploy command | *(leave empty)* — do **not** set `npx wrangler deploy` |
 | Node version | `22` |
 | pnpm version | `10.11.1` (matches `packageManager` in root `package.json`) |
 
 Build-time env vars: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway API origin), optional `VITE_SENTRY_DSN`.
+
+**Do not use `wrangler deploy` as the deploy command.** That is for Workers and fails in this monorepo with “application detection logic has been run in the root of a workspace”. Pages Git builds only need the build output directory; Cloudflare uploads `artifacts/townhub/dist/public` automatically.
+
+If you must deploy via Wrangler (CI / direct upload):
+
+```bash
+npx wrangler pages deploy artifacts/townhub/dist/public --project-name=townhub
+```
 
 If install fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`:
 
@@ -257,12 +272,6 @@ If install fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`:
    `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build`
 
 After deploy, confirm `https://YOUR_PAGES_URL/native-sso-callback` shows “Returning to TownHub…” (not a 404), then update Clerk’s mobile SSO allowlist and Capacitor `CAPACITOR_SERVER_URL` / API `APP_BASE_URL` to the new Pages URL.
-6. **Restart or redeploy the application** after any environment variable change (runtime secrets need a restart; `VITE_*` changes need a rebuild).
-7. **Apply database schema** if this release includes schema changes:
-   ```bash
-   DATABASE_URL=<production_url> pnpm --filter @workspace/db run push
-   ```
-8. **Verify health** — `GET https://your-api-host/health` (or same-origin `/health`) returns `200` before announcing launch.
 
 ### Example: Replit deployment
 
