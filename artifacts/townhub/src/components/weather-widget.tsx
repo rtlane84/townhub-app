@@ -48,26 +48,26 @@ export function WeatherCardContent({
   daily: Array<{ date: string; highF: number; lowF: number; weatherCode: number }>;
 }) {
   return (
-    <div className="flex flex-1 flex-col gap-3">
-      <div className="flex min-w-0 items-start gap-2">
-        <WeatherIcon code={current.weatherCode} className="mt-0.5 h-6 w-6 text-primary" />
+    <div className="flex flex-1 flex-col gap-4">
+      <div className="flex min-w-0 items-start gap-3">
+        <WeatherIcon code={current.weatherCode} className="mt-0.5 h-8 w-8 text-primary" />
         <div className="min-w-0">
           <p className="truncate text-xs text-muted-foreground">{locationLabel}</p>
-          <p className="text-xl font-semibold text-foreground">
-            {current.temperatureF}°{" "}
-            <span className="text-sm font-normal text-muted-foreground">{current.summary}</span>
+          <p className="mt-0.5 text-2xl font-semibold tracking-tight text-foreground">
+            {current.temperatureF}°
           </p>
+          <p className="text-sm text-muted-foreground">{current.summary}</p>
         </div>
       </div>
       {daily.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+        <div className="flex gap-2.5 overflow-x-auto hide-scrollbar pt-1">
           {daily.map((day) => (
-            <div key={day.date} className="min-w-[2.75rem] shrink-0 text-center">
+            <div key={day.date} className="min-w-[2.85rem] shrink-0 text-center">
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 {formatDayLabel(day.date)}
               </p>
-              <WeatherIcon code={day.weatherCode} className="mx-auto my-0.5 h-3.5 w-3.5 text-muted-foreground" />
-              <p className="text-xs font-medium text-foreground">{day.highF}°</p>
+              <WeatherIcon code={day.weatherCode} className="mx-auto my-1 h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-semibold text-foreground">{day.highF}°</p>
             </div>
           ))}
         </div>

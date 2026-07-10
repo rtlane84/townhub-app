@@ -94,7 +94,7 @@ describe("hero composition parity between live homepage and admin preview", () =
 
   it("shares the same min-height on live hero and admin preview", async () => {
     const branding = await readFile(new URL("./platform-branding.ts", import.meta.url), "utf8");
-    assert.match(branding, /min-h-\[257px\] md:min-h-\[420px\]/);
+    assert.match(branding, /min-h-\[218px\] md:min-h-\[357px\]/);
   });
 
   it("never crops the overlay image (object-contain) and scales it responsively", async () => {
@@ -140,7 +140,8 @@ describe("hero composition parity between live homepage and admin preview", () =
     );
     const layout = await readFile(new URL("../components/layout.tsx", import.meta.url), "utf8");
     assert.match(adminSettings, /width: branding\.logoSizePx, height: branding\.logoSizePx/);
-    assert.match(layout, /width: logoSizePx, height: logoSizePx/);
+    assert.match(layout, /width: displaySize, height: displaySize/);
+    assert.match(layout, /resolveHeaderLogoDisplaySizePx/);
     assert.match(layout, /resolveHeaderMinHeightPx/);
     assert.match(layout, /SITE_HEADER_HEIGHT_CSS_VAR/);
     assert.match(layout, /minHeight: headerMinHeightPx/);

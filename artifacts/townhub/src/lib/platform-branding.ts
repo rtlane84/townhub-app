@@ -12,13 +12,26 @@ export const DEFAULT_LOGO_SIZE_PX = 24;
 export const LOGO_SIZE_MIN_PX = 16;
 export const LOGO_SIZE_MAX_PX = 192;
 
-/** Minimum header bar height (matches legacy h-16) */
+/** Minimum header bar height (~64–72pt native nav) */
 export const HEADER_BASE_MIN_HEIGHT_PX = 64;
+export const HEADER_MAX_MIN_HEIGHT_PX = 72;
 /** Vertical padding around the logo inside the header (total, both sides) */
-export const HEADER_LOGO_VERTICAL_PADDING_PX = 4;
+export const HEADER_LOGO_VERTICAL_PADDING_PX = 8;
+/** Display scale so branding stays prominent without crowding the bar */
+export const HEADER_LOGO_DISPLAY_SCALE = 0.8;
+
+export function resolveHeaderLogoDisplaySizePx(logoSizePx: number): number {
+  const scaled = Math.round(logoSizePx * HEADER_LOGO_DISPLAY_SCALE);
+  const maxFit = HEADER_MAX_MIN_HEIGHT_PX - HEADER_LOGO_VERTICAL_PADDING_PX;
+  return Math.max(LOGO_SIZE_MIN_PX, Math.min(scaled, maxFit));
+}
 
 export function resolveHeaderMinHeightPx(logoSizePx: number): number {
-  return Math.max(HEADER_BASE_MIN_HEIGHT_PX, logoSizePx + HEADER_LOGO_VERTICAL_PADDING_PX);
+  const displaySize = resolveHeaderLogoDisplaySizePx(logoSizePx);
+  return Math.max(
+    HEADER_BASE_MIN_HEIGHT_PX,
+    Math.min(HEADER_MAX_MIN_HEIGHT_PX, displaySize + HEADER_LOGO_VERTICAL_PADDING_PX),
+  );
 }
 
 /** Set on the site shell; dashboard mobile nav reads this for positioning below the header */
@@ -32,12 +45,12 @@ export const DASHBOARD_MOBILE_MAIN_TOP_CLASS =
   "pt-[calc(var(--site-header-height,4rem)+3rem)] md:pt-0";
 
 /** Native bottom tab bar height (excluding safe area) */
-export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 52;
+export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 56;
 export const NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR = "--native-bottom-tab-height";
 
 /** Padding for main content when native bottom tabs are visible */
 export const NATIVE_MAIN_BOTTOM_PADDING_CLASS =
-  "native-main-with-tabs pb-[calc(var(--native-bottom-tab-height,52px)+env(safe-area-inset-bottom,0px))]";
+  "native-main-with-tabs pb-[calc(var(--native-bottom-tab-height,56px)+env(safe-area-inset-bottom,0px))]";
 
 export const LOGO_SIZE_PRESETS = [
   { value: 20, label: "Small" },
@@ -112,12 +125,12 @@ export const HERO_BUTTON_PLACEMENT_OPTIONS = [
   { value: "bottom-right" as const, label: "Bottom Right" },
 ] as const;
 
-/** Matches the live homepage hero section min-height (desktop) */
-export const HERO_SECTION_MIN_HEIGHT_PX = 420;
-/** Shorter hero on mobile (~28% then −10% then −15% vs 420px desktop) */
-export const HERO_SECTION_MOBILE_MIN_HEIGHT_PX = 257;
+/** Matches the live homepage hero section min-height (desktop); ~15% shorter for earlier content */
+export const HERO_SECTION_MIN_HEIGHT_PX = 357;
+/** Shorter hero on mobile (~15% vs prior 257px) so Weather/Marketplace appear sooner */
+export const HERO_SECTION_MOBILE_MIN_HEIGHT_PX = 218;
 export const HERO_SECTION_MIN_HEIGHT_CLASS =
-  "min-h-[257px] md:min-h-[420px]";
+  "min-h-[218px] md:min-h-[357px]";
 
 export function resolvePlatformName(theme?: Pick<PlatformTheme, "platformName"> | null): string {
   const name = theme?.platformName?.trim();

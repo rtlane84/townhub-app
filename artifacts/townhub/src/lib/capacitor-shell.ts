@@ -27,13 +27,18 @@ async function syncNativeStatusBar(): Promise<void> {
 
   try {
     const dark = isDarkThemeActive();
+    const platform = Capacitor.getPlatform();
     await StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark });
-    if (Capacitor.getPlatform() === "android") {
+    // iOS: overlay so the nav material extends under the status bar (no white gap).
+    // Android: keep a solid bar color for contrast with system UI.
+    if (platform === "ios") {
+      await StatusBar.setOverlaysWebView({ overlay: true });
+    } else if (platform === "android") {
+      await StatusBar.setOverlaysWebView({ overlay: false });
       await StatusBar.setBackgroundColor({
         color: dark ? "#1a1614" : "#faf8f5",
       });
     }
-    await StatusBar.setOverlaysWebView({ overlay: false });
   } catch {
     // Status bar plugin unavailable.
   }

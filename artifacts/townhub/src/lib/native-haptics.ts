@@ -47,6 +47,22 @@ export function triggerTabChangeHaptic(): void {
   triggerNativeHaptic("selection");
 }
 
+export function triggerAccountOpenHaptic(): void {
+  triggerNativeHaptic("light");
+}
+
+export function triggerAccountCloseHaptic(): void {
+  triggerNativeHaptic("selection");
+}
+
+export function triggerAddToCartHaptic(): void {
+  triggerNativeHaptic("medium");
+}
+
+export function triggerCheckoutHaptic(): void {
+  triggerNativeHaptic("medium");
+}
+
 export function triggerOrderPlacedHaptic(): void {
   triggerNativeHaptic("success");
 }
@@ -61,4 +77,8 @@ export function triggerSaveSuccessHaptic(): void {
 
 export function triggerPullToRefreshHaptic(): void {
   triggerNativeHaptic("medium");
+}
+
+export function triggerNotificationHaptic(): void {
+  triggerNativeHaptic("warning");
 }

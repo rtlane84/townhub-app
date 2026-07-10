@@ -30,6 +30,7 @@ import {
   HomeFeaturedBusinessesSkeleton,
   HomeFoodTrucksSkeleton,
 } from "@/components/home-section-skeletons";
+import { NativeEmptyState } from "@/components/native-empty-state";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { BusinessListingCardMedia, BusinessLogoBadge } from "@/components/business-logo-badge";
 import { BusinessTags } from "@/components/business-tags";
@@ -41,14 +42,14 @@ import {
 import { formatFoodTruckTimeWindow } from "@/lib/food-truck-utils";
 
 const LISTING_CARD_CLASS =
-  "h-full hover-elevate cursor-pointer border-border/50 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
+  "h-full hover-elevate cursor-pointer border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] group transition-all duration-200 native-pressable";
 
 const CATEGORIES = [
-  { name: "Food & Drink", type: BusinessType.FOOD_VENDOR, icon: <Utensils className="h-5 w-5" /> },
-  { name: "Flowers", type: BusinessType.FLORIST, icon: <Leaf className="h-5 w-5 text-green-500" /> },
-  { name: "Plants & Market", type: BusinessType.GARDEN_MARKET, icon: <Store className="h-5 w-5 text-primary" /> },
-  { name: "Salon / Beauty", type: BusinessType.SALON, icon: <Sparkles className="h-5 w-5 text-pink-500" /> },
-  { name: "Retail & General", type: BusinessType.RETAIL_STORE, icon: <Coffee className="h-5 w-5 text-blue-500" /> },
+  { name: "Food & Drink", type: BusinessType.FOOD_VENDOR, icon: <Utensils className="h-7 w-7" />, tint: "from-amber-500/15 to-orange-500/5" },
+  { name: "Flowers", type: BusinessType.FLORIST, icon: <Leaf className="h-7 w-7 text-green-600" />, tint: "from-emerald-500/15 to-green-500/5" },
+  { name: "Plants & Market", type: BusinessType.GARDEN_MARKET, icon: <Store className="h-7 w-7 text-primary" />, tint: "from-primary/15 to-primary/5" },
+  { name: "Salon / Beauty", type: BusinessType.SALON, icon: <Sparkles className="h-7 w-7 text-pink-500" />, tint: "from-pink-500/15 to-rose-500/5" },
+  { name: "Retail & General", type: BusinessType.RETAIL_STORE, icon: <Coffee className="h-7 w-7 text-sky-600" />, tint: "from-sky-500/15 to-blue-500/5" },
 ];
 
 export default function Home() {
@@ -164,7 +165,7 @@ export default function Home() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {featuredHighlights.map((h) => (
-                <div key={h.id} className="flex items-start gap-3 rounded-xl border border-border/50 bg-white p-4 shadow-sm">
+                <div key={h.id} className="flex items-start gap-3 rounded-[1.25rem] border-0 bg-card/90 p-5 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)]">
                   {h.imageUrl && (
                     <img
                       src={h.imageUrl}
@@ -196,18 +197,18 @@ export default function Home() {
         </section>
       ) : null}
 
-      <section className="bg-white py-16">
+      <section className="bg-background py-16 native-animate-in native-animate-in-delay-1">
         <div className="container mx-auto px-4">
-          <h2 className="mb-8 text-center font-serif text-3xl font-bold">Browse by Category</h2>
-          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 md:grid-cols-4">
+          <h2 className="mb-8 text-center font-serif text-3xl font-bold tracking-tight">Browse by Category</h2>
+          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
             {CATEGORIES.map((cat) => (
               <Link key={cat.type} href={`/businesses?type=${cat.type}`}>
-                <Card className="group cursor-pointer border-border/50 transition-all hover-elevate">
-                  <CardContent className="flex flex-col items-center gap-3 p-6 text-center">
-                    <div className="rounded-full bg-primary/10 p-3 transition-transform group-hover:scale-110">
+                <Card className="group cursor-pointer overflow-hidden border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] transition-all duration-200 hover-elevate native-pressable">
+                  <CardContent className={`flex flex-col items-center gap-4 bg-gradient-to-br ${cat.tint} p-7 text-center`}>
+                    <div className="rounded-2xl bg-background/80 p-3.5 shadow-sm transition-transform duration-200 group-hover:scale-105">
                       {cat.icon}
                     </div>
-                    <span className="font-medium text-foreground">{cat.name}</span>
+                    <span className="text-sm font-semibold tracking-tight text-foreground">{cat.name}</span>
                   </CardContent>
                 </Card>
               </Link>
@@ -216,10 +217,10 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-muted/20 py-20">
+      <section className="bg-muted/15 py-16 native-animate-in native-animate-in-delay-2">
         <div className="container mx-auto px-4">
           <div className="mb-10 flex items-center justify-between">
-            <h2 className="font-serif text-3xl font-bold text-foreground">Featured Local Favorites</h2>
+            <h2 className="font-serif text-3xl font-bold tracking-tight text-foreground">Featured Local Favorites</h2>
             <Link href="/businesses" className="hidden items-center font-medium text-primary hover:underline sm:flex">
               View all <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
@@ -228,16 +229,18 @@ export default function Home() {
           {businessesPending && featuredBusinesses.length === 0 ? (
             <HomeFeaturedBusinessesSkeleton />
           ) : businessesError ? (
-            <div className="rounded-2xl border border-dashed border-border bg-background/60 py-12 text-center">
-              <Store className="mx-auto mb-3 h-10 w-10 text-muted-foreground opacity-50" />
-              <p className="font-medium text-foreground">Couldn&apos;t load featured businesses</p>
-              <p className="mt-1 text-sm text-muted-foreground">Please refresh or browse all businesses.</p>
-              <Link href="/businesses">
-                <Button variant="outline" className="mt-4">Browse Businesses</Button>
-              </Link>
-            </div>
+            <NativeEmptyState
+              icon={Store}
+              title="Couldn't load featured businesses"
+              description="Please refresh or browse all businesses."
+              action={
+                <Link href="/businesses">
+                  <Button variant="outline" className="w-full min-h-11">Browse Businesses</Button>
+                </Link>
+              }
+            />
           ) : featuredBusinesses.length > 0 ? (
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
               {featuredBusinesses.map((business) => (
                 <Link key={business.id} href={`/businesses/${business.slug}`}>
                   <Card className={LISTING_CARD_CLASS} style={businessListingCardVars(business.accentColor)}>
@@ -275,19 +278,21 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-background/60 py-12 text-center">
-              <Store className="mx-auto mb-3 h-10 w-10 text-muted-foreground opacity-50" />
-              <p className="font-medium text-foreground">No featured businesses yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">Browse the directory to discover local shops.</p>
-              <Link href="/businesses">
-                <Button variant="outline" className="mt-4">Browse Businesses</Button>
-              </Link>
-            </div>
+            <NativeEmptyState
+              icon={Store}
+              title="No featured businesses yet"
+              description="Browse the directory to discover local shops."
+              action={
+                <Link href="/businesses">
+                  <Button variant="outline" className="w-full min-h-11">Browse Businesses</Button>
+                </Link>
+              }
+            />
           )}
 
           <div className="mt-8 text-center sm:hidden">
             <Link href="/businesses">
-              <Button variant="outline" className="w-full">View all businesses</Button>
+              <Button variant="outline" className="w-full min-h-11">View all businesses</Button>
             </Link>
           </div>
         </div>
@@ -314,9 +319,9 @@ export default function Home() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {todayTrucks.map((truck) => (
                 <Link key={truck.id} href={`/businesses/${truck.businessSlug}`}>
-                  <Card className="group cursor-pointer border-primary/20 hover-elevate">
-                    <CardContent className="p-5">
-                      <div className="flex items-start gap-3">
+                  <Card className="group cursor-pointer border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] hover-elevate native-pressable">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-3.5">
                         {truck.businessLogoUrl ? (
                           <BusinessLogoBadge
                             src={truck.businessLogoUrl}
@@ -324,7 +329,7 @@ export default function Home() {
                             size="sm"
                           />
                         ) : (
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
                             <Truck className="h-5 w-5 text-primary" />
                           </div>
                         )}
@@ -332,13 +337,13 @@ export default function Home() {
                           <p className="font-semibold text-foreground transition-colors group-hover:text-primary">
                             {truck.businessName}
                           </p>
-                          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
+                          <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3.5 w-3.5" />
                             <span className="truncate">{truck.locationName}</span>
                           </div>
                           {formatFoodTruckTimeWindow(truck.startTime, truck.endTime) && (
-                            <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
+                            <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5" />
                               <span>{formatFoodTruckTimeWindow(truck.startTime, truck.endTime)}</span>
                             </div>
                           )}
@@ -410,18 +415,16 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-muted/30 py-12 text-center">
-              <Calendar className="mx-auto mb-3 h-10 w-10 text-muted-foreground opacity-50" />
-              <p className="font-medium text-foreground">No other upcoming events right now</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Check back soon or browse the full events calendar.
-              </p>
-            </div>
+            <NativeEmptyState
+              icon={Calendar}
+              title="No other upcoming events right now"
+              description="Check back soon or browse the full events calendar."
+            />
           )}
 
           <div className="mt-8 text-center">
             <Link href="/events">
-              <Button variant="outline">View All Events</Button>
+              <Button variant="outline" className="min-h-11">View All Events</Button>
             </Link>
           </div>
         </div>

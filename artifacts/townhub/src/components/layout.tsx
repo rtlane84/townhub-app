@@ -14,35 +14,38 @@ import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { usePlatformBranding } from "@/components/theme-provider";
-import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, NATIVE_MAIN_BOTTOM_PADDING_CLASS } from "@/lib/platform-branding";
+import { resolveHeaderMinHeightPx, resolveHeaderLogoDisplaySizePx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, NATIVE_MAIN_BOTTOM_PADDING_CLASS } from "@/lib/platform-branding";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 import { isDashboardRoute } from "@/lib/native-platform";
 import { useNativeBottomTabs, useNativePlatform, useNativePullToRefresh } from "@/hooks/use-native-platform";
 import { NativeBottomTabBar } from "@/components/native-bottom-tab-bar";
 import { NativePullToRefresh } from "@/components/native-pull-to-refresh";
+import { triggerTabChangeHaptic } from "@/lib/native-haptics";
 
-function PlatformLogo({ className }: { className?: string }) {
+function PlatformLogo({ className, sizePx }: { className?: string; sizePx?: number }) {
   const { logoUrl, platformName, logoSizePx } = usePlatformBranding();
+  const displaySize = sizePx ?? logoSizePx;
   if (logoUrl) {
     return (
       <img
         src={logoUrl}
         alt={platformName}
         className={cn("object-contain shrink-0", className)}
-        style={{ width: logoSizePx, height: logoSizePx }}
+        style={{ width: displaySize, height: displaySize }}
       />
     );
   }
   return (
     <Store
       className={cn("text-primary shrink-0", className)}
-      style={{ width: logoSizePx, height: logoSizePx }}
+      style={{ width: displaySize, height: displaySize }}
     />
   );
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { platformName, footerTagline, logoSizePx } = usePlatformBranding();
+  const headerLogoSizePx = resolveHeaderLogoDisplaySizePx(logoSizePx);
   const headerMinHeightPx = resolveHeaderMinHeightPx(logoSizePx);
   const { isSignedIn, isLoaded: clerkLoaded } = useUser();
   const {
@@ -146,14 +149,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         [NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR]: `${NATIVE_BOTTOM_TAB_HEIGHT_PX}px`,
       } as CSSProperties}
     >
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 print:hidden native-site-header">
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/55 print:hidden native-site-header">
         <div
-          className="container mx-auto px-4 flex items-center justify-between py-0.5"
+          className="container mx-auto flex items-center justify-between px-5 sm:px-6"
           style={{ minHeight: headerMinHeightPx }}
         >
 
           {/* Left: logo + desktop nav */}
-          <div className="flex items-center gap-6 min-w-0">
+          <div className="flex items-center gap-5 min-w-0">
             {showNativeDashboardBack ? (
               <Link
                 href="/"
@@ -163,18 +166,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 )}
                 aria-label="Back to app"
               >
-                <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden />
+                <ArrowLeft className="h-[22px] w-[22px] shrink-0" aria-hidden />
                 <span className="text-sm font-semibold text-foreground">Back</span>
               </Link>
             ) : null}
             <Link
               href="/"
-              className="flex items-center gap-2 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
+              className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
             >
-              <PlatformLogo />
+              <PlatformLogo sizePx={headerLogoSizePx} />
               <span
                 className={cn(
-                  "font-serif text-xl font-semibold tracking-tight text-primary",
+                  "font-serif text-lg font-semibold tracking-tight text-primary sm:text-xl",
                   showNativeDashboardBack && "hidden sm:inline",
                 )}
               >
@@ -264,7 +267,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Right: action CTAs + cart + auth + mobile menu */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {showListYourBusinessAction && (
               <Button
                 asChild
@@ -300,11 +303,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {!hideCart && (
-              <Link href="/cart">
-                <Button variant="ghost" size="icon" className="relative text-foreground">
-                  <ShoppingBag className="h-5 w-5" />
+              <Link
+                href="/cart"
+                onClick={() => {
+                  if (isNative) triggerTabChangeHaptic();
+                }}
+              >
+                <Button variant="ghost" size="icon" className="relative text-foreground h-11 w-11">
+                  <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.9} />
                   {itemCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full">
+                    <Badge className="absolute -top-0.5 -right-0.5 h-5 min-w-5 flex items-center justify-center px-1 text-[10px] rounded-full">
                       {itemCount}
                     </Badge>
                   )}
@@ -335,7 +343,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <SheetContent side="left" className="w-72 p-0 flex flex-col">
                 <SheetHeader className="p-6 pb-4 border-b">
                   <SheetTitle className="font-serif text-left flex items-center gap-2">
-                    <PlatformLogo className="h-5 w-5" />
+                    <PlatformLogo className="h-5 w-5" sizePx={20} />
                     {platformName}
                   </SheetTitle>
                 </SheetHeader>
@@ -499,7 +507,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <footer className={cn("border-t py-12 bg-muted/30 mt-auto print:hidden", hideFooter && "hidden")}>
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <PlatformLogo className="h-5 w-5 text-muted-foreground" />
+            <PlatformLogo className="h-5 w-5 text-muted-foreground" sizePx={20} />
             <span className="font-serif text-lg font-medium text-muted-foreground">{platformName}</span>
           </div>
           <p className="text-muted-foreground text-sm">

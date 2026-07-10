@@ -219,25 +219,55 @@ html.native-app {
 html.native-app body {
   padding-left: var(--safe-area-left);
   padding-right: var(--safe-area-right);
+  overscroll-behavior-y: none;
 }
 
 html.native-app .native-site-header {
   padding-top: var(--safe-area-top);
+  border-bottom-color: hsl(var(--border) / 0.35);
+  background: hsl(var(--background) / 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+  html.native-app .native-site-header {
+    background: hsl(var(--background) / 0.55);
+  }
 }
 
 html.native-app .native-bottom-tab-bar {
   padding-bottom: var(--safe-area-bottom);
   padding-left: max(0px, var(--safe-area-left));
   padding-right: max(0px, var(--safe-area-right));
+  border-top-color: hsl(var(--border) / 0.35);
+  background: hsl(var(--background) / 0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+@supports (backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px)) {
+  html.native-app .native-bottom-tab-bar {
+    background: hsl(var(--background) / 0.55);
+  }
 }
 
 html.native-app .native-account-sheet {
-  padding-bottom: calc(1rem + var(--safe-area-bottom));
+  padding-bottom: calc(1.25rem + var(--safe-area-bottom));
 }
 
 html.native-app .native-tab-item {
-  min-width: 44px;
+  min-width: 48px;
   -webkit-tap-highlight-color: transparent;
+  transition: color 180ms ease, transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.native-app .native-tab-item[aria-current="page"] {
+  color: hsl(var(--primary));
+}
+
+html.native-app .native-tab-item[aria-current="page"] .native-tab-icon {
+  transform: scale(1.06);
 }
 
 html.native-app input,
@@ -252,7 +282,39 @@ html.native-app [data-slot="sheet-content"] {
 }
 
 html.native-app.native-ios .native-main-with-tabs {
-  scroll-padding-bottom: calc(var(--native-bottom-tab-height, 52px) + var(--safe-area-bottom));
+  scroll-padding-bottom: calc(var(--native-bottom-tab-height, 56px) + var(--safe-area-bottom));
+}
+
+@keyframes native-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html.native-app .native-animate-in {
+  animation: native-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.native-app .native-animate-in-delay-1 {
+  animation-delay: 60ms;
+}
+
+html.native-app .native-animate-in-delay-2 {
+  animation-delay: 120ms;
+}
+
+html.native-app .native-pressable {
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease;
+}
+
+html.native-app .native-pressable:active {
+  transform: scale(0.98);
+  opacity: 0.92;
 }
 
 @layer clerk {

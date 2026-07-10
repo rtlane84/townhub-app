@@ -15,12 +15,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BusinessListingCardMedia } from "@/components/business-logo-badge";
 import { BusinessTags } from "@/components/business-tags";
+import { NativeEmptyState } from "@/components/native-empty-state";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 const LISTING_CARD_CLASS =
-  "h-full hover-elevate cursor-pointer border-border/60 group transition-all duration-200 hover:border-[var(--biz-accent-border,hsl(var(--border)))]";
+  "h-full hover-elevate cursor-pointer border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] group transition-all duration-200 native-pressable";
 
 export default function Businesses() {
   const [searchInput, setSearchInput] = useState("");
@@ -78,18 +79,23 @@ export default function Businesses() {
           ))}
         </div>
       ) : businesses?.length === 0 ? (
-        <div className="text-center py-20 bg-muted/30 rounded-2xl border border-border border-dashed">
-          <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium text-foreground">No businesses found</h3>
-          <p className="text-muted-foreground">Try adjusting your filters or search term.</p>
-          <Button 
-            variant="link" 
-            onClick={() => { setSearchInput(""); setSelectedType("ALL"); }}
-            className="mt-2"
-          >
-            Clear all filters
-          </Button>
-        </div>
+        <NativeEmptyState
+          icon={Store}
+          title="No businesses found"
+          description="Try adjusting your filters or search term."
+          action={
+            <Button
+              variant="outline"
+              className="w-full min-h-11"
+              onClick={() => {
+                setSearchInput("");
+                setSelectedType("ALL");
+              }}
+            >
+              Clear all filters
+            </Button>
+          }
+        />
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {businesses?.map((business) => (

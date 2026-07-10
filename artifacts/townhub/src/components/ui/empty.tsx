@@ -7,7 +7,7 @@ function Empty({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="empty"
       className={cn(
-        "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 text-balance rounded-lg border-dashed p-6 text-center md:p-12",
+        "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 text-balance rounded-[1.25rem] border-0 bg-card/80 p-8 text-center shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)] md:p-12",
         className
       )}
       {...props}
@@ -34,7 +34,7 @@ const emptyMediaVariants = cva(
     variants: {
       variant: {
         default: "bg-transparent",
-        icon: "bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-6",
+        icon: "bg-primary/10 text-primary flex size-16 shrink-0 items-center justify-center rounded-2xl [&_svg:not([class*='size-'])]:size-8",
       },
     },
     defaultVariants: {

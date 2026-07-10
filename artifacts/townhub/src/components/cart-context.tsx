@@ -6,6 +6,7 @@ import {
   mergeCartAdd,
   needsClearCartConfirmation,
 } from "@/lib/cart-business";
+import { triggerAddToCartHaptic } from "@/lib/native-haptics";
 
 export interface CartItem extends Product {
   quantity: number;
@@ -98,6 +99,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const next = mergeCartAdd(prev, businessId, line, { clearOtherBusinessConfirmed });
       return next ?? prev;
     });
+    triggerAddToCartHaptic();
     return true;
   };
 

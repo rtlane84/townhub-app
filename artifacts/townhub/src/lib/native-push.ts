@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
+import { triggerNotificationHaptic } from "@/lib/native-haptics";
 import { App } from "@capacitor/app";
 import { isNativeApp } from "@/lib/native-platform";
 import { resolveNativeDeepLinkToAppUrl } from "@/lib/native-oauth";
@@ -99,7 +100,7 @@ export async function initNativePushNotifications(options: {
     });
 
     await PushNotifications.addListener("pushNotificationReceived", () => {
-      // Foreground delivery — in-app toasts already cover Business Hub.
+      triggerNotificationHaptic();
     });
 
     await PushNotifications.addListener(

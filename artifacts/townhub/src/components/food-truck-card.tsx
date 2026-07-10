@@ -17,7 +17,7 @@ export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusi
   const businessName = truck.businessName ?? "Food truck";
 
   return (
-    <Card className="group flex h-full flex-col overflow-hidden border-border/50 shadow-sm">
+    <Card className="group flex h-full flex-col overflow-hidden border-0 shadow-[0_2px_16px_-4px_rgba(15,23,42,0.08)]">
       <BusinessListingCardMedia
         heroImageUrl={truck.businessHeroImageUrl}
         heroAlt={businessName}
@@ -30,7 +30,7 @@ export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusi
         }
       />
       <CardContent className="flex flex-1 flex-col px-6 pb-6 pt-10">
-        <h3 className="mb-2 font-serif text-xl font-bold text-foreground">{businessName}</h3>
+        <h3 className="mb-2 font-serif text-xl font-bold tracking-tight text-foreground">{businessName}</h3>
         <div className="mb-3 flex items-start gap-1.5 text-sm text-muted-foreground">
           <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div className="min-w-0">
@@ -52,13 +52,13 @@ export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusi
         <div className="mt-auto flex flex-wrap gap-2">
           {foodTruckOrderingEnabled(truck) && (
             <Link href={`/businesses/${slug}`}>
-              <Button size="sm" className="rounded-full">
+              <Button size="sm" className="min-h-10 rounded-full px-5">
                 Order
               </Button>
             </Link>
           )}
           <a href={foodTruckDirectionsUrl(truck)} target="_blank" rel="noopener noreferrer">
-            <Button size="sm" variant="outline" className="rounded-full">
+            <Button size="sm" variant="outline" className="min-h-10 rounded-full px-5">
               <Navigation className="mr-1.5 h-3.5 w-3.5" />
               Directions
             </Button>

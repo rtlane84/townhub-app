@@ -78,7 +78,7 @@ export default function FoodTruckMapCanvas({ trucks }: { trucks: FoodTruckMapPoi
   const initialZoom = trucks.length === 1 ? 14 : DEFAULT_ZOOM;
 
   return (
-    <div className="food-truck-map h-[min(420px,60vh)] w-full overflow-hidden rounded-xl border border-border/50">
+    <div className="food-truck-map h-[min(420px,60vh)] w-full overflow-hidden rounded-[1.25rem] border-0">
       <MapContainer
         center={initialCenter}
         zoom={initialZoom}

@@ -5,6 +5,7 @@ import type {
   MarketplaceStats,
   WeatherForecast,
 } from "@workspace/api-client-react";
+import { ArrowRight, CalendarDays, CloudSun, Store, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WeatherCardContent, WeatherUnavailableContent } from "@/components/weather-widget";
 import { QuickTownInfo, QuickTownInfoCard } from "@/components/quick-town-info";
@@ -35,7 +36,7 @@ function WeatherDashboardCard({
   }
 
   return (
-    <QuickTownInfoCard title="Weather" icon="☀️">
+    <QuickTownInfoCard title="Weather" icon={<CloudSun className="h-4 w-4 text-primary" />}>
       {!weatherEnabled ? (
         <p className="text-sm text-muted-foreground">Weather is not enabled for this marketplace.</p>
       ) : weather?.enabled && weather.current && weather.locationLabel ? (
@@ -66,29 +67,31 @@ function FoodTrucksDashboardCard({
   const count = todayTrucks.length;
 
   return (
-    <QuickTownInfoCard title="Food Trucks Today" icon="🚚">
+    <QuickTownInfoCard title="Food Trucks Today" icon={<Truck className="h-4 w-4 text-primary" />}>
       <div className="flex flex-1 flex-col">
         {count > 0 ? (
           <>
-            <p className="text-2xl font-serif font-bold text-foreground">{count}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-3xl font-serif font-bold tracking-tight text-foreground">{count}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {count === 1 ? "truck operating today" : "trucks operating today"}
             </p>
-            <div className="mt-auto pt-4">
+            <div className="mt-auto pt-5">
               <Link href="/food-trucks">
-                <Button variant="outline" size="sm" className="rounded-full">
+                <Button variant="outline" size="sm" className="min-h-10 rounded-full px-4">
                   View Today&apos;s Trucks
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </div>
           </>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground">No food trucks today.</p>
-            <div className="mt-auto pt-4">
+            <p className="text-sm leading-relaxed text-muted-foreground">No food trucks today.</p>
+            <div className="mt-auto pt-5">
               <Link href="/food-trucks">
-                <Button variant="outline" size="sm" className="rounded-full">
+                <Button variant="outline" size="sm" className="min-h-10 rounded-full px-4">
                   View Food Trucks
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </div>
@@ -111,26 +114,27 @@ function LocalMarketplaceDashboardCard({
   const items = marketplaceStats?.uniqueItemsCount ?? 0;
 
   return (
-    <QuickTownInfoCard title="Local Marketplace" icon="🏪">
+    <QuickTownInfoCard title="Local Marketplace" icon={<Store className="h-4 w-4 text-primary" />}>
       <div className="flex flex-1 flex-col">
-        <div className="flex gap-6">
+        <div className="flex gap-8">
           <div>
-            <p className="text-2xl font-serif font-bold text-foreground">{shops}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-3xl font-serif font-bold tracking-tight text-foreground">{shops}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {shops === 1 ? "local shop" : "local shops"}
             </p>
           </div>
           <div>
-            <p className="text-2xl font-serif font-bold text-foreground">{items}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-3xl font-serif font-bold tracking-tight text-foreground">{items}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {items === 1 ? "unique item" : "unique items"}
             </p>
           </div>
         </div>
-        <div className="mt-auto pt-4">
+        <div className="mt-auto pt-5">
           <Link href="/businesses">
-            <Button variant="outline" size="sm" className="rounded-full">
+            <Button variant="outline" size="sm" className="min-h-10 rounded-full px-4">
               Browse Businesses
+              <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
         </div>
@@ -152,32 +156,33 @@ function EventsDashboardCard({
   const count = sorted.length;
 
   return (
-    <QuickTownInfoCard title="Upcoming Events" icon="📅">
+    <QuickTownInfoCard title="Upcoming Events" icon={<CalendarDays className="h-4 w-4 text-primary" />}>
       <div className="flex flex-1 flex-col">
         {count > 0 ? (
           <>
-            <p className="text-2xl font-serif font-bold text-foreground">{count}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="text-3xl font-serif font-bold tracking-tight text-foreground">{count}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               {count === 1 ? "upcoming event" : "upcoming events"}
             </p>
             {nextEvent && (
-              <div className="mt-3 min-w-0">
+              <div className="mt-4 min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">{nextEvent.title}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatEventSchedule(nextEvent)}
                 </p>
               </div>
             )}
-            <div className="mt-auto pt-4">
+            <div className="mt-auto pt-5">
               <Link href="/events">
-                <Button variant="outline" size="sm" className="rounded-full">
+                <Button variant="outline" size="sm" className="min-h-10 rounded-full px-4">
                   View Events
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </div>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">No upcoming events.</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">No upcoming events.</p>
         )}
       </div>
     </QuickTownInfoCard>

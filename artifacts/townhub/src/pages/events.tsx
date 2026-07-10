@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useListEvents } from "@workspace/api-client-react";
 import { Calendar, Loader2 } from "lucide-react";
 import { EventCard } from "@/components/event-card";
+import { NativeEmptyState } from "@/components/native-empty-state";
 
 export default function Events() {
   const { data: events = [], isLoading } = useListEvents({ upcoming: true });
@@ -12,13 +13,15 @@ export default function Events() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="container mx-auto max-w-7xl px-4 py-8 native-animate-in">
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Calendar className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-serif font-bold text-foreground">Community Events</h1>
+        <div className="mb-2 flex items-center gap-2.5">
+          <Calendar className="h-6 w-6 text-primary" strokeWidth={1.9} />
+          <h1 className="text-3xl font-serif font-bold tracking-tight text-foreground">
+            Community Events
+          </h1>
         </div>
-        <p className="text-muted-foreground max-w-2xl">
+        <p className="max-w-2xl text-muted-foreground leading-relaxed">
           Upcoming local events around town — including promoted highlights and regular community
           happenings.
         </p>
@@ -29,13 +32,14 @@ export default function Events() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : sortedEvents.length === 0 ? (
-        <div className="text-center py-20 bg-muted/30 rounded-2xl border border-border border-dashed">
-          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h2 className="text-lg font-medium text-foreground">No upcoming events</h2>
-          <p className="text-muted-foreground mt-1">Check back soon for new community events.</p>
-        </div>
+        <NativeEmptyState
+          icon={Calendar}
+          title="No upcoming events"
+          description="Check back soon for new community events."
+          centered
+        />
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {sortedEvents.map((event) => (
             <EventCard key={event.id} event={event} showFeaturedBadge />
           ))}

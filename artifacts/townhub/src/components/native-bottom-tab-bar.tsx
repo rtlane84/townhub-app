@@ -15,19 +15,30 @@ import {
   Wrench,
   ExternalLink,
   LogOut,
+  ChevronRight,
 } from "lucide-react";
 import { SignInButton, useClerk, useUser } from "@clerk/react";
 import { useUnregisterDevice } from "@workspace/api-client-react";
 import { unregisterNativePushDevice } from "@/lib/native-push";
 import { cn } from "@/lib/utils";
 import { isAccountRoute, isNavActive } from "@/lib/native-platform";
-import { triggerTabChangeHaptic } from "@/lib/native-haptics";
+import {
+  triggerAccountCloseHaptic,
+  triggerAccountOpenHaptic,
+  triggerTabChangeHaptic,
+} from "@/lib/native-haptics";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 import { useGetAdminBootstrapStatus, getGetAdminBootstrapStatusQueryKey } from "@workspace/api-client-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
+import { nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
 
 type TabItem = {
   href: string;
@@ -95,21 +106,28 @@ export function NativeBottomTabBar() {
       icon: User,
       isActive: (path) => isAccountRoute(path) || accountOpen,
       onPress: () => {
-        triggerTabChangeHaptic();
         setAccountOpen(true);
       },
     },
   ];
 
   function handleTabPress(tab: TabItem) {
-    triggerTabChangeHaptic();
-    if (tab.onPress) {
-      tab.onPress();
+    if (tab.href === "#account") {
+      triggerAccountOpenHaptic();
+      tab.onPress?.();
       return;
     }
+    triggerTabChangeHaptic();
     if (location !== tab.href) {
       setLocation(tab.href);
     }
+  }
+
+  function handleAccountOpenChange(open: boolean) {
+    if (!open && accountOpen) {
+      triggerAccountCloseHaptic();
+    }
+    setAccountOpen(open);
   }
 
   function closeAccount() {
@@ -135,70 +153,55 @@ export function NativeBottomTabBar() {
     }
   }
 
-  function accountLinkClass(href: string) {
+  function accountRowClass(href: string) {
     const active = isNavActive(location, href);
     return cn(
-      "flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors w-full",
-      active ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted",
+      "flex min-h-12 items-center gap-3 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors w-full native-pressable",
+      active ? "bg-primary/10 text-primary" : "text-foreground active:bg-muted/80",
     );
   }
 
-  const signedInLabel =
+  const displayName =
     user?.fullName?.trim() ||
     user?.primaryEmailAddress?.emailAddress ||
     "Signed in";
+  const email = user?.primaryEmailAddress?.emailAddress;
+  const avatarUrl = user?.imageUrl;
+  const initials = (user?.fullName || email || "U")
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <>
       <nav
-        className="native-bottom-tab-bar fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 print:hidden"
+        className="native-bottom-tab-bar fixed inset-x-0 bottom-0 z-50 border-t border-border/40 print:hidden"
         aria-label="Main navigation"
       >
-        <div className="mx-auto flex max-w-lg items-stretch justify-around px-1">
+        <div className="mx-auto flex max-w-lg items-stretch justify-around gap-0.5 px-2">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = tab.isActive(location);
-            const isAccountTab = tab.href === "#account";
-
-            if (isAccountTab) {
-              return (
-                <button
-                  key={tab.label}
-                  type="button"
-                  onClick={() => handleTabPress(tab)}
-                  className={cn(
-                    "native-tab-item flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
-                    active ? "text-primary" : "text-muted-foreground",
-                  )}
-                  aria-current={active ? "page" : undefined}
-                  aria-label={tab.label}
-                >
-                  <Icon className={cn("h-5 w-5", active && "scale-105")} strokeWidth={active ? 2.5 : 2} />
-                  <span className={cn("text-[10px] font-medium leading-none", active && "font-semibold")}>
-                    {tab.label}
-                  </span>
-                </button>
-              );
-            }
 
             return (
               <button
-                key={tab.href}
+                key={tab.label}
                 type="button"
-                onClick={() => {
-                  handleTabPress(tab);
-                  if (location !== tab.href) {
-                    setLocation(tab.href);
-                  }
-                }}
+                onClick={() => handleTabPress(tab)}
                 className={cn(
-                  "native-tab-item flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
+                  "native-tab-item flex min-h-[56px] flex-1 flex-col items-center justify-center gap-1 px-1.5 py-1.5",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
                 aria-current={active ? "page" : undefined}
+                aria-label={tab.label}
               >
-                <Icon className={cn("h-5 w-5", active && "scale-105")} strokeWidth={active ? 2.5 : 2} />
-                <span className={cn("text-[10px] font-medium leading-none", active && "font-semibold")}>
+                <Icon
+                  className={cn("native-tab-icon h-6 w-6 transition-transform duration-200", active && "scale-105")}
+                  strokeWidth={active ? 2.4 : 1.9}
+                />
+                <span className={cn("text-[10px] font-medium leading-none tracking-wide", active && "font-semibold")}>
                   {tab.label}
                 </span>
               </button>
@@ -207,66 +210,99 @@ export function NativeBottomTabBar() {
         </div>
       </nav>
 
-      <Sheet open={accountOpen} onOpenChange={setAccountOpen}>
-        <SheetContent
-          side="bottom"
-          className="native-account-sheet rounded-t-2xl px-0 pb-0"
-        >
-          <SheetHeader className="px-6 pb-2 text-left">
-            <SheetTitle className="font-serif">Account</SheetTitle>
-          </SheetHeader>
+      <Drawer open={accountOpen} onOpenChange={handleAccountOpenChange} shouldScaleBackground>
+        <DrawerContent className="native-account-sheet px-0 pb-0">
+          <DrawerHeader className="sr-only">
+            <DrawerTitle>Account</DrawerTitle>
+          </DrawerHeader>
 
-          <nav className="space-y-1 px-4 pb-4" aria-label="Account navigation">
+          <div className="px-5 pb-2 pt-1">
+            {clerkLoaded && isSignedIn ? (
+              <div className="flex items-center gap-4 rounded-2xl bg-muted/40 px-4 py-4">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-background shadow-sm"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/15 text-base font-semibold text-primary ring-2 ring-background">
+                    {initials}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-lg font-semibold tracking-tight text-foreground">{displayName}</p>
+                  {email && displayName !== email ? (
+                    <p className="mt-0.5 truncate text-sm text-muted-foreground">{email}</p>
+                  ) : null}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-muted/40 px-4 py-5">
+                <p className="text-lg font-semibold tracking-tight text-foreground">Account</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Sign in to track orders and manage your business.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <nav className="mt-2 space-y-0.5 px-3" aria-label="Account navigation">
             {showMyOrdersNav && (
               <Link href="/my-orders" onClick={closeAccount}>
-                <span className={accountLinkClass("/my-orders")}>
-                  <Package className="h-4 w-4" />
-                  My Orders
+                <span className={accountRowClass("/my-orders")}>
+                  <Package className="h-5 w-5 shrink-0 opacity-80" />
+                  <span className="flex-1 text-left">My Orders</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
                 </span>
               </Link>
             )}
 
             {showBusinessHubNav && (
               <Link href={dashboardHref} onClick={closeAccount}>
-                <span className={accountLinkClass(dashboardHref)}>
-                  <DashboardIcon className="h-4 w-4" />
-                  {dashboardLabel}
+                <span className={accountRowClass(dashboardHref)}>
+                  <DashboardIcon className="h-5 w-5 shrink-0 opacity-80" />
+                  <span className="flex-1 text-left">{dashboardLabel}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
                 </span>
               </Link>
             )}
 
             {showListYourBusinessNav && (
               <Link href="/list-your-business" onClick={closeAccount}>
-                <span className={accountLinkClass("/list-your-business")}>
-                  <PlusCircle className="h-4 w-4" />
-                  List Your Business
+                <span className={accountRowClass("/list-your-business")}>
+                  <PlusCircle className="h-5 w-5 shrink-0 opacity-80" />
+                  <span className="flex-1 text-left">List Your Business</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
                 </span>
               </Link>
             )}
 
             <Link href="/help" onClick={closeAccount}>
-              <span className={accountLinkClass("/help")}>
-                <HelpCircle className="h-4 w-4" />
-                Help
+              <span className={accountRowClass("/help")}>
+                <HelpCircle className="h-5 w-5 shrink-0 opacity-80" />
+                <span className="flex-1 text-left">Help</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
               </span>
             </Link>
 
             {setupAvailable && (isLoggedOut || isCustomer) && (
               <Link href="/setup" onClick={closeAccount}>
-                <span className={accountLinkClass("/setup")}>
-                  <Wrench className="h-4 w-4" />
-                  Admin Setup
+                <span className={accountRowClass("/setup")}>
+                  <Wrench className="h-5 w-5 shrink-0 opacity-80" />
+                  <span className="flex-1 text-left">Admin Setup</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
                 </span>
               </Link>
             )}
           </nav>
 
-          <div className="border-t px-4 py-4 space-y-3">
+          <div className="mt-3 border-t border-border/40 px-4 py-4 space-y-3">
             {clerkLoaded && !isSignedIn && (
               <div className="space-y-3">
                 <NativeGoogleSignInButton />
-                <SignInButton mode="modal">
-                  <Button className="w-full min-h-11" onClick={closeAccount}>
+                <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
+                  <Button className="w-full min-h-[50px]" onClick={closeAccount}>
                     Sign In with email
                   </Button>
                 </SignInButton>
@@ -274,36 +310,26 @@ export function NativeBottomTabBar() {
             )}
 
             {clerkLoaded && isSignedIn && (
-              <div className="space-y-3">
-                <div className="px-1">
-                  <p className="text-sm font-medium text-foreground truncate">{signedInLabel}</p>
-                  {user?.fullName && user?.primaryEmailAddress?.emailAddress ? (
-                    <p className="text-xs text-muted-foreground truncate">
-                      {user.primaryEmailAddress.emailAddress}
-                    </p>
-                  ) : null}
-                </div>
-                <LoadingButton
-                  type="button"
-                  variant="outline"
-                  className="w-full min-h-11 justify-center gap-2"
-                  loading={signingOut}
-                  onClick={() => void handleSignOut()}
-                >
-                  <LogOut className="h-4 w-4" aria-hidden />
-                  Sign Out
-                </LoadingButton>
-              </div>
+              <LoadingButton
+                type="button"
+                variant="ghost"
+                className="w-full min-h-12 justify-center gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                loading={signingOut}
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut className="h-4 w-4" aria-hidden />
+                Sign Out
+              </LoadingButton>
             )}
 
             {setupAvailable && (isLoggedOut || isCustomer) && (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
                 <p className="text-xs font-semibold text-primary">First time here?</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Sign in, then visit Admin Setup to claim platform admin access.
                 </p>
                 <Link href="/setup" onClick={closeAccount}>
-                  <Button size="sm" className="mt-3 w-full">
+                  <Button size="sm" className="mt-3 w-full min-h-11">
                     <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
                     Go to Admin Setup
                   </Button>
@@ -311,8 +337,8 @@ export function NativeBottomTabBar() {
               </div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }
