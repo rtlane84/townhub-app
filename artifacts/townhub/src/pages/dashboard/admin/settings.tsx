@@ -162,11 +162,16 @@ export default function AdminSettings() {
       buttonColor: theme.buttonColor || COLOR_DEFAULTS.buttonColor,
       headingColor: theme.headingColor || "",
     });
-    setBrandWordColors({
-      brandPrefixColor: theme.brandPrefixColor || "",
-      brandTownColor: theme.brandTownColor || "",
-      brandHubColor: theme.brandHubColor || "",
-    });
+    // Only overwrite wordmark colors when the API actually returns those fields.
+    // Older servers omit them (undefined) — keep local values instead of wiping to "".
+    setBrandWordColors((prev) => ({
+      brandPrefixColor:
+        theme.brandPrefixColor !== undefined ? theme.brandPrefixColor || "" : prev.brandPrefixColor,
+      brandTownColor:
+        theme.brandTownColor !== undefined ? theme.brandTownColor || "" : prev.brandTownColor,
+      brandHubColor:
+        theme.brandHubColor !== undefined ? theme.brandHubColor || "" : prev.brandHubColor,
+    }));
     setBranding(themeToBrandingFields(theme));
     setWeatherSettings({
       weatherEnabled: theme.weatherEnabled ?? false,
@@ -197,6 +202,11 @@ export default function AdminSettings() {
   };
 
   const handleSave = async () => {
+    const nextBrandWordColors = {
+      brandPrefixColor: brandWordColors.brandPrefixColor.trim(),
+      brandTownColor: brandWordColors.brandTownColor.trim(),
+      brandHubColor: brandWordColors.brandHubColor.trim(),
+    };
     try {
       const updated = await updateTheme.mutateAsync({
         data: {
@@ -204,18 +214,30 @@ export default function AdminSettings() {
           accentColor: colors.accentColor || undefined,
           backgroundColor: colors.backgroundColor || undefined,
           buttonColor: colors.buttonColor || undefined,
-          headingColor: colors.headingColor || undefined,
-          brandPrefixColor: brandWordColors.brandPrefixColor.trim(),
-          brandTownColor: brandWordColors.brandTownColor.trim(),
-          brandHubColor: brandWordColors.brandHubColor.trim(),
+          headingColor: colors.headingColor.trim(),
+          brandPrefixColor: nextBrandWordColors.brandPrefixColor,
+          brandTownColor: nextBrandWordColors.brandTownColor,
+          brandHubColor: nextBrandWordColors.brandHubColor,
           ...buildBrandingPayload(branding),
           weatherEnabled: weatherSettings.weatherEnabled,
           weatherLocation: weatherSettings.weatherLocation.trim(),
         },
       });
-      queryClient.setQueryData(getGetPlatformThemeQueryKey(), updated);
-      await queryClient.invalidateQueries({ queryKey: getGetPlatformThemeQueryKey() });
-      await queryClient.invalidateQueries({ queryKey: getGetWeatherQueryKey() });
+      // Prefer server values; if an older API omits wordmark colors, keep what we saved.
+      const savedBrandWordColors = {
+        brandPrefixColor: updated.brandPrefixColor ?? nextBrandWordColors.brandPrefixColor,
+        brandTownColor: updated.brandTownColor ?? nextBrandWordColors.brandTownColor,
+        brandHubColor: updated.brandHubColor ?? nextBrandWordColors.brandHubColor,
+      };
+      const droppedWordmarkColors =
+        (nextBrandWordColors.brandPrefixColor && !updated.brandPrefixColor) ||
+        (nextBrandWordColors.brandTownColor && !updated.brandTownColor) ||
+        (nextBrandWordColors.brandHubColor && !updated.brandHubColor);
+
+      queryClient.setQueryData(getGetPlatformThemeQueryKey(), {
+        ...updated,
+        ...savedBrandWordColors,
+      });
       lastSyncAt.current = updated.updatedAt ?? null;
       setColors({
         primaryColor: updated.primaryColor || COLOR_DEFAULTS.primaryColor,
@@ -225,9 +247,9 @@ export default function AdminSettings() {
         headingColor: updated.headingColor || "",
       });
       setBrandWordColors({
-        brandPrefixColor: updated.brandPrefixColor || "",
-        brandTownColor: updated.brandTownColor || "",
-        brandHubColor: updated.brandHubColor || "",
+        brandPrefixColor: savedBrandWordColors.brandPrefixColor || "",
+        brandTownColor: savedBrandWordColors.brandTownColor || "",
+        brandHubColor: savedBrandWordColors.brandHubColor || "",
       });
       setBranding(themeToBrandingFields(updated));
       setWeatherSettings({
@@ -235,9 +257,22 @@ export default function AdminSettings() {
         weatherLocation: updated.weatherLocation?.trim() || "",
       });
       setIsDirty(false);
-      toast({ title: "Settings saved", description: "Platform appearance updated across web and iOS." });
-    } catch {
-      toast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
+      await queryClient.invalidateQueries({ queryKey: getGetPlatformThemeQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: getGetWeatherQueryKey() });
+
+      if (droppedWordmarkColors) {
+        toast({
+          title: "Settings saved",
+          description:
+            "Wordmark colors may not have persisted. Restart the API server so the database columns can be created, then save again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Settings saved", description: "Platform appearance updated across web and iOS." });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to save settings.";
+      toast({ title: "Error", description: message, variant: "destructive" });
     }
   };
 

@@ -19,15 +19,18 @@ export function ColorPickerField({
   onChange,
   placeholder = "#000000",
 }: Props) {
-  const swatchColor = normalizeHex(value) ?? "transparent";
-  const pickerValue = normalizeHex(value) ?? "#ffffff";
+  const normalized = normalizeHex(value);
+  const swatchColor = normalized ?? "transparent";
+  // Native <input type="color"> requires a valid #rrggbb value. Keep it as a
+  // write-only control when empty so we don't pretend the value is #ffffff.
+  const pickerValue = normalized ?? "#000000";
 
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <div className="flex items-center gap-3">
         <div
-          className="w-10 h-10 rounded-lg border border-border shadow-sm shrink-0"
+          className="h-10 w-10 shrink-0 rounded-lg border border-border shadow-sm"
           style={{ backgroundColor: swatchColor }}
           aria-hidden
         />
@@ -37,8 +40,9 @@ export function ColorPickerField({
             type="color"
             value={pickerValue}
             onChange={(e) => onChange(e.target.value)}
-            className="h-10 p-1 cursor-pointer"
+            className="h-10 cursor-pointer p-1"
             data-testid={`color-picker-${id}`}
+            aria-label={`${label} color picker`}
           />
         </div>
         <Input
@@ -49,9 +53,10 @@ export function ColorPickerField({
           className="w-28 font-mono text-sm"
           maxLength={7}
           data-testid={`color-input-${id}`}
+          aria-label={`${label} hex value`}
         />
       </div>
-      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
     </div>
   );
 }
@@ -66,12 +71,12 @@ export function ColorPreviewSwatches({
 
   return (
     <div>
-      <p className="text-sm font-medium mb-3">Preview</p>
-      <div className="flex gap-3 flex-wrap">
+      <p className="mb-3 text-sm font-medium">Preview</p>
+      <div className="flex flex-wrap gap-3">
         {visible.map(({ key, label, value }) => (
           <div key={key} className="text-center">
             <div
-              className="w-12 h-12 rounded-xl border border-border shadow-sm mb-1"
+              className="mb-1 h-12 w-12 rounded-xl border border-border shadow-sm"
               style={{ backgroundColor: normalizeHex(value) ?? undefined }}
             />
             <p className="text-xs text-muted-foreground">{label}</p>

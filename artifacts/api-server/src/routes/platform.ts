@@ -75,10 +75,10 @@ function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelec
     accentColor: row.accentColor,
     backgroundColor: row.backgroundColor,
     buttonColor: row.buttonColor,
-    headingColor: row.headingColor,
-    brandPrefixColor: row.brandPrefixColor,
-    brandTownColor: row.brandTownColor,
-    brandHubColor: row.brandHubColor,
+    headingColor: row.headingColor ?? null,
+    brandPrefixColor: row.brandPrefixColor ?? null,
+    brandTownColor: row.brandTownColor ?? null,
+    brandHubColor: row.brandHubColor ?? null,
     platformName: row.platformName,
     townName: row.townName,
     tagline: row.tagline,
@@ -220,6 +220,15 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     logger.info({ updates: Object.keys(updates) }, "Platform settings updated");
     res.json(serializePlatformSettings(updated));
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (/brand_prefix_color|brand_town_color|brand_hub_color|column .* does not exist/i.test(message)) {
+      req.log?.error({ err }, "Platform settings update failed — missing brand color columns");
+      res.status(500).json({
+        error:
+          "Database is missing brand wordmark color columns. Restart the API server (auto-migrates) or run: pnpm --filter @workspace/db run push",
+      });
+      return;
+    }
     req.log?.error({ err }, "Failed to update platform settings");
     res.status(500).json({ error: "Failed to update platform settings" });
   }
