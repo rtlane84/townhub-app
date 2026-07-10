@@ -8,7 +8,7 @@ TownHub uses [Playwright](https://playwright.dev/) for end-to-end smoke and regr
 
 ```bash
 pnpm --filter @workspace/api-server run dev      # http://localhost:8080
-pnpm --filter @workspace/local-order-hub run dev # http://localhost:23032
+pnpm --filter @workspace/townhub run dev # http://localhost:23032
 ```
 
 1. **Ensure database and env are ready** — see [SETUP.md](./SETUP.md). At minimum you need `DATABASE_URL`, Clerk keys, and `SESSION_SECRET`.
@@ -222,7 +222,7 @@ Example job steps:
 - run: pnpm install
 - run: pnpm --filter @workspace/db run push
 - run: pnpm --filter @workspace/api-server run dev &
-- run: pnpm --filter @workspace/local-order-hub run dev &
+- run: pnpm --filter @workspace/townhub run dev &
 - run: pnpm run test:e2e
   env:
     CI: true

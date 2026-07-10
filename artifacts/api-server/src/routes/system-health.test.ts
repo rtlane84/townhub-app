@@ -9,11 +9,11 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 describe("admin system status UI", () => {
   it("renders operations center sections on system status page", () => {
     const systemStatus = readFileSync(
-      join(root, "artifacts/local-order-hub/src/pages/dashboard/admin/system-status.tsx"),
+      join(root, "artifacts/townhub/src/pages/dashboard/admin/system-status.tsx"),
       "utf8",
     );
     const settings = readFileSync(
-      join(root, "artifacts/local-order-hub/src/pages/dashboard/admin/settings.tsx"),
+      join(root, "artifacts/townhub/src/pages/dashboard/admin/settings.tsx"),
       "utf8",
     );
 

@@ -43,7 +43,7 @@ pnpm install
 cp .env.example .env    # fill in values — see docs/SETUP.md
 pnpm --filter @workspace/db run push
 pnpm --filter @workspace/api-server run dev    # API on :8080
-pnpm --filter @workspace/local-order-hub run dev   # frontend on :23032
+pnpm --filter @workspace/townhub run dev   # frontend on :23032
 ```
 
 All environment variables live in a **single root `.env`** file. The API loads it via `--env-file=../../.env`; Vite reads `VITE_*` vars from the same file during dev.
@@ -98,7 +98,7 @@ Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 cha
 ```
 artifacts/
   api-server/       Express API
-  local-order-hub/  React frontend
+  townhub/  React frontend
 lib/
   api-spec/         OpenAPI contract (source of truth)
   api-client-react/ Generated TanStack Query hooks

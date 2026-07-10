@@ -9,7 +9,7 @@ Create **two** Sentry projects (or one project with separate DSNs if you prefer)
 | Surface | SDK | Env variable |
 |---------|-----|--------------|
 | API (`artifacts/api-server`) | `@sentry/node` | `SENTRY_DSN` |
-| Frontend (`artifacts/local-order-hub`) | `@sentry/react` | `VITE_SENTRY_DSN` |
+| Frontend (`artifacts/townhub`) | `@sentry/react` | `VITE_SENTRY_DSN` |
 
 Copy each DSN from **Sentry → Project Settings → Client Keys (DSN)**.
 
@@ -62,7 +62,7 @@ VITE_GIT_COMMIT_SHA=abc1234
 Start the frontend:
 
 ```bash
-pnpm --filter @workspace/local-order-hub run dev
+pnpm --filter @workspace/townhub run dev
 ```
 
 Test in development only:
@@ -108,7 +108,7 @@ Initialization: `artifacts/api-server/src/instrument.ts`, loaded with `node --im
 - Unhandled browser errors and unhandled promise rejections
 - Safe context: Clerk user id, current route, selected business id (from dashboard localStorage)
 
-Initialization: `artifacts/local-order-hub/src/lib/sentry.ts`, imported first from `main.tsx`.
+Initialization: `artifacts/townhub/src/lib/sentry.ts`, imported first from `main.tsx`.
 
 ---
 

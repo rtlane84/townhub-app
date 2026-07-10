@@ -260,7 +260,7 @@ importers:
         specifier: 'catalog:'
         version: 4.21.0
 
-  artifacts/local-order-hub:
+  artifacts/townhub:
     dependencies:
       '@capacitor/app':
         specifier: ^7.0.1

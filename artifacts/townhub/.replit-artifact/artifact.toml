@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "LocalOrderHub"
+version = "1.0.0"
+id = "artifacts/townhub"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23032
+
+[services.development]
+run = "pnpm --filter @workspace/townhub run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/townhub", "run", "build" ]
+publicDir = "artifacts/townhub/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23032"
+BASE_PATH = "/"

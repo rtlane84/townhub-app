@@ -108,7 +108,7 @@ Use **two terminals**:
 pnpm --filter @workspace/api-server run dev
 
 # Terminal 2 — Frontend (port 23032)
-pnpm --filter @workspace/local-order-hub run dev
+pnpm --filter @workspace/townhub run dev
 ```
 
 | URL | Purpose |
@@ -124,7 +124,7 @@ The Vite dev server proxies `/api` and `/health` to port 8080.
 ```bash
 pnpm run typecheck                              # Full monorepo typecheck
 pnpm --filter @workspace/api-server run test    # API unit tests
-pnpm --filter @workspace/local-order-hub run test   # Frontend unit tests
+pnpm --filter @workspace/townhub run test   # Frontend unit tests
 pnpm --filter @workspace/api-spec run codegen   # Regenerate API hooks + Zod schemas
 ```
 
@@ -230,7 +230,7 @@ Splits admin and business-owner test accounts. See [DEV_CLERK_RELINK.md](DEV_CLE
 | Media upload 403 | Business owners must pass `?businessId=` they own |
 | Email not sending | Both `RESEND_API_KEY` and `RESEND_FROM` required; check Admin → System Status |
 | `pnpm run build` fails on mockup-sandbox | Set `PORT` env var or build individual packages |
-| Port 23032 in use | Change `PORT` in `local-order-hub/package.json` scripts and update `APP_BASE_URL` |
+| Port 23032 in use | Change `PORT` in `townhub/package.json` scripts and update `APP_BASE_URL` |
 
 ---
 

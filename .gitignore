@@ -59,8 +59,8 @@ uploads/
 /playwright/.cache/
 
 # Capacitor iOS (keep ios/ project; ignore generated build artifacts)
-artifacts/local-order-hub/ios/App/Pods/
-artifacts/local-order-hub/ios/App/build/
-artifacts/local-order-hub/ios/App/DerivedData/
-artifacts/local-order-hub/ios/App/App/public/
+artifacts/townhub/ios/App/Pods/
+artifacts/townhub/ios/App/build/
+artifacts/townhub/ios/App/DerivedData/
+artifacts/townhub/ios/App/App/public/
 **/xcuserdata/

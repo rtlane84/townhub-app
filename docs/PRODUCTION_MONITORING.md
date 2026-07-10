@@ -112,5 +112,5 @@ Health endpoints and Admin System Status are designed to report **configuration 
 
 - Vite dev server proxies `/health` and `/api` to the API server (port 8080)
 - Run API: `pnpm --filter @workspace/api-server run dev`
-- Run frontend: `pnpm --filter @workspace/local-order-hub run dev`
+- Run frontend: `pnpm --filter @workspace/townhub run dev`
 - Admin System Status requires a user with `ADMIN` role

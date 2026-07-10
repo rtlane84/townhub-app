@@ -20,7 +20,7 @@ const response = await fetch(input, { credentials: "include", ...init, method, h
 ```
 (Helps for cookie auth when the browser allows it; harmless otherwise.)
 
-**2. `artifacts/local-order-hub/src/App.tsx`** — Mount `ClerkApiTokenBridge` inside `<QueryClientProvider>`:
+**2. `artifacts/townhub/src/App.tsx`** — Mount `ClerkApiTokenBridge` inside `<QueryClientProvider>`:
 ```tsx
 import { useAuth } from "@clerk/react";
 import { setAuthTokenGetter } from "@workspace/api-client-react";

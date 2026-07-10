@@ -9,7 +9,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 describe("storefront URL owner UX", () => {
   it("explains stable URLs on the apply flow", () => {
     const applyPage = readFileSync(
-      join(root, "artifacts/local-order-hub/src/pages/list-your-business.tsx"),
+      join(root, "artifacts/townhub/src/pages/list-your-business.tsx"),
       "utf8",
     );
     assert.match(applyPage, /Storefront URL/);
@@ -23,11 +23,11 @@ describe("storefront URL owner UX", () => {
 
   it("shows a copyable storefront URL in business settings", () => {
     const settings = readFileSync(
-      join(root, "artifacts/local-order-hub/src/pages/dashboard/business/settings.tsx"),
+      join(root, "artifacts/townhub/src/pages/dashboard/business/settings.tsx"),
       "utf8",
     );
     const field = readFileSync(
-      join(root, "artifacts/local-order-hub/src/components/storefront-url-field.tsx"),
+      join(root, "artifacts/townhub/src/components/storefront-url-field.tsx"),
       "utf8",
     );
     assert.match(settings, /StorefrontUrlField/);

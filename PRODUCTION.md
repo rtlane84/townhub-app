@@ -191,7 +191,7 @@ Complete this checklist **before** deploying to production. If any required item
 
 - [ ] `pnpm run typecheck` passes
 - [ ] `pnpm --filter @workspace/api-server run test` passes
-- [ ] `pnpm --filter @workspace/local-order-hub run test` passes
+- [ ] `pnpm --filter @workspace/townhub run test` passes
 - [ ] `pnpm run test:e2e` passes (Playwright smoke/regression — see [docs/PLAYWRIGHT_E2E.md](docs/PLAYWRIGHT_E2E.md))
 
 ### Production readiness
@@ -225,12 +225,12 @@ Set optional env vars `APP_VERSION` and `GIT_COMMIT_SHA` to match the tag/commit
 
 ## 7. Deploy
 
-TownHub is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`artifacts/local-order-hub`). Your host may run both in one service or split them — follow your provider's model.
+TownHub is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`artifacts/townhub`). Your host may run both in one service or split them — follow your provider's model.
 
 ### Generic deployment steps
 
 1. **Deploy the backend/API** — Node process serving Express on `PORT` (default `8080`). Ensure `NODE_ENV=production`.
-2. **Deploy the frontend** — build `artifacts/local-order-hub` and serve static assets, or use your host's combined build pipeline.
+2. **Deploy the frontend** — build `artifacts/townhub` and serve static assets, or use your host's combined build pipeline.
 3. **Set production environment variables** in the host secret manager (see §2). Include `DATABASE_URL`, Clerk, `SESSION_SECRET`, `APP_BASE_URL`, Stripe, media, and monitoring keys.
 4. **Set build-time frontend variables** (`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` when frontend and API hosts differ, `VITE_SENTRY_DSN`, etc.) **before** running the frontend build.
 5. **Attach production or custom domain** — point DNS to your host; set `APP_BASE_URL` to the public HTTPS URL. For Netlify/Cloudflare Pages + Railway: set the frontend host’s `VITE_API_BASE_URL` to the Railway API origin, and set Railway `APP_BASE_URL` to the frontend URL so CORS allows the browser.
@@ -242,8 +242,8 @@ Repo root is a pnpm monorepo. Use these Pages settings:
 | Setting | Value |
 |--------|--------|
 | Root directory | *(leave empty — repo root)* |
-| Build command | `pnpm --filter @workspace/local-order-hub run build` |
-| Build output directory | `artifacts/local-order-hub/dist/public` |
+| Build command | `pnpm --filter @workspace/townhub run build` |
+| Build output directory | `artifacts/townhub/dist/public` |
 | Node version | `22` |
 | pnpm version | `10.11.1` (matches `packageManager` in root `package.json`) |
 
@@ -251,10 +251,10 @@ Build-time env vars: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway 
 
 If install fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`:
 
-1. Confirm **Root directory is empty** (repo root). Setting it to `artifacts/local-order-hub` breaks pnpm because `pnpm-workspace.yaml` (where `overrides` live) is no longer found.
+1. Confirm **Root directory is empty** (repo root). Setting it to `artifacts/townhub` breaks pnpm because `pnpm-workspace.yaml` (where `overrides` live) is no longer found.
 2. Clear the Pages **build cache** and retry.
 3. Or set env `SKIP_DEPENDENCY_INSTALL=true` and change the build command to:
-   `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/local-order-hub run build`
+   `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build`
 
 After deploy, confirm `https://YOUR_PAGES_URL/native-sso-callback` shows “Returning to TownHub…” (not a 404), then update Clerk’s mobile SSO allowlist and Capacitor `CAPACITOR_SERVER_URL` / API `APP_BASE_URL` to the new Pages URL.
 6. **Restart or redeploy the application** after any environment variable change (runtime secrets need a restart; `VITE_*` changes need a rebuild).

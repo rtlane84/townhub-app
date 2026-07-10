@@ -33,7 +33,7 @@ Replace the placeholder with your real Netlify (or other) frontend URL. This mus
 3. Re-sync after changing the URL:
 
 ```bash
-pnpm --filter @workspace/local-order-hub run ios:sync
+pnpm --filter @workspace/townhub run ios:sync
 ```
 
 ## Install dependencies
@@ -49,7 +49,7 @@ pnpm install
 Capacitor still needs a local `webDir` bundle for sync, even when `server.url` points at production:
 
 ```bash
-pnpm --filter @workspace/local-order-hub run ios:sync
+pnpm --filter @workspace/townhub run ios:sync
 ```
 
 This runs `vite build` and `cap sync ios`.
@@ -57,10 +57,10 @@ This runs `vite build` and `cap sync ios`.
 ## Open in Xcode
 
 ```bash
-pnpm --filter @workspace/local-order-hub run ios:open
+pnpm --filter @workspace/townhub run ios:open
 ```
 
-Or manually open `artifacts/local-order-hub/ios/App/App.xcworkspace`.
+Or manually open `artifacts/townhub/ios/App/App.xcworkspace`.
 
 ## Run on the iOS Simulator
 
@@ -71,7 +71,7 @@ Or manually open `artifacts/local-order-hub/ios/App/App.xcworkspace`.
 CLI alternative:
 
 ```bash
-pnpm --filter @workspace/local-order-hub exec cap run ios
+pnpm --filter @workspace/townhub exec cap run ios
 ```
 
 ## Run on a physical device
@@ -101,7 +101,7 @@ Quick checklist:
 1. Enable **Push Notifications** on the App ID and in Xcode Signing & Capabilities.
 2. Create an APNs Auth Key (`.p8`) and set `APNS_*` on the API.
 3. Ensure `Info.plist` includes `UIBackgroundModes` → `remote-notification` (already in the Capacitor template).
-4. `pnpm --filter @workspace/local-order-hub run ios:sync` after installing `@capacitor/push-notifications`.
+4. `pnpm --filter @workspace/townhub run ios:sync` after installing `@capacitor/push-notifications`.
 5. Sign in on a physical device, accept permission, confirm `device_tokens`, then send a test from `POST /api/me/notifications/test-push`.
 
 ## Useful scripts
@@ -110,10 +110,10 @@ All commands run from the repo root:
 
 | Script | Description |
 |--------|-------------|
-| `pnpm --filter @workspace/local-order-hub run cap:sync:ios` | Sync Capacitor plugins and config to iOS |
-| `pnpm --filter @workspace/local-order-hub run ios:sync` | Build frontend + sync iOS |
-| `pnpm --filter @workspace/local-order-hub run ios:open` | Open Xcode workspace |
-| `pnpm --filter @workspace/local-order-hub run ios:run` | Build, sync, and launch on simulator/device |
+| `pnpm --filter @workspace/townhub run cap:sync:ios` | Sync Capacitor plugins and config to iOS |
+| `pnpm --filter @workspace/townhub run ios:sync` | Build frontend + sync iOS |
+| `pnpm --filter @workspace/townhub run ios:open` | Open Xcode workspace |
+| `pnpm --filter @workspace/townhub run ios:run` | Build, sync, and launch on simulator/device |
 
 ## TestFlight / App Store (later)
 
@@ -129,7 +129,7 @@ All commands run from the repo root:
 | Blank WebView | Confirm `CAPACITOR_SERVER_URL` is reachable in Safari on the same device/simulator. Re-run `ios:sync`. |
 | Clerk auth errors | Add your deployed frontend URL to Clerk allowed origins / redirect URLs. |
 | Stripe redirect fails | Ensure API `APP_BASE_URL` matches `CAPACITOR_SERVER_URL`. |
-| Pod install errors | `cd artifacts/local-order-hub/ios/App && pod install --repo-update` |
+| Pod install errors | `cd artifacts/townhub/ios/App && pod install --repo-update` |
 | CORS errors | Should not occur — the WebView origin is your deployed HTTPS URL. If testing a staging URL, add it to API `CORS_ALLOWED_ORIGINS`. |
 
 ## Native mobile experience (Capacitor only)
@@ -151,7 +151,7 @@ Helpers live in `src/lib/native-platform.ts`, `src/hooks/use-native-platform.ts`
 ## Project layout
 
 ```
-artifacts/local-order-hub/
+artifacts/townhub/
 ├── capacitor.config.ts    # App id, name, remote server URL
 ├── ios/                   # Native Xcode project (generated)
 ├── src/lib/capacitor-shell.ts       # Splash, status bar, deep links, external URLs

@@ -257,7 +257,7 @@ Customer PUSH requires a signed-in `customerUserId` on the order. Guests still r
 1. Apple Developer: App ID with **Push Notifications**; create an APNs Auth Key (`.p8`).
 2. Xcode: enable **Push Notifications** capability (and Background Modes → Remote notifications — `UIBackgroundModes` includes `remote-notification` in `Info.plist`).
 3. Set API env vars (below), then `pnpm --filter @workspace/db run push`.
-4. `pnpm --filter @workspace/local-order-hub run ios:sync` so `@capacitor/push-notifications` is linked.
+4. `pnpm --filter @workspace/townhub run ios:sync` so `@capacitor/push-notifications` is linked.
 5. Sign in on a **physical device** (simulator APNs is limited), accept permission, confirm a row in `device_tokens`.
 6. Place a test order / use `POST /api/me/notifications/test-push`.
 
@@ -307,7 +307,7 @@ Owners can still use [ntfy](https://ntfy.sh) for free phone alerts without App S
 
 ```bash
 pnpm --filter @workspace/api-server run test
-pnpm --filter @workspace/local-order-hub run test
+pnpm --filter @workspace/townhub run test
 ```
 
 Checklist:

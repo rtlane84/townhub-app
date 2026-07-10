@@ -103,5 +103,5 @@ When starting a task, check Linear for assignment and acceptance criteria. Do no
 Monorepo at `local-shop-hub` (pnpm workspaces). Main packages:
 
 - `artifacts/api-server` — Express API
-- `artifacts/local-order-hub` — React frontend
+- `artifacts/townhub` — React frontend
 - `lib/api-spec`, `lib/api-client-react`, `lib/api-zod`, `lib/db` — shared libraries

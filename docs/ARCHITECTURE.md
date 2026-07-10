@@ -10,7 +10,7 @@ TownHub is a contract-first monorepo:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│  React frontend (local-order-hub)  :23032                   │
+│  React frontend (townhub)  :23032                   │
 │  wouter routing · TanStack Query · Clerk · cart (localStorage)│
 └──────────────────────────┬──────────────────────────────────┘
                            │ /api (Bearer JWT + guest tokens)
@@ -29,7 +29,7 @@ Guest order `?token=` is documented in the OpenAPI operation description (not as
 
 ---
 
-## Frontend (`artifacts/local-order-hub`)
+## Frontend (`artifacts/townhub`)
 
 | Concern | Implementation |
 |---------|----------------|

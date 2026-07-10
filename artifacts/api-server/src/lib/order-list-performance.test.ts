@@ -33,7 +33,7 @@ describe("order list performance wiring", () => {
 describe("kitchen polling deduplication wiring", () => {
   it("kitchen page reads the live-order scoped cache without its own refetch interval", async () => {
     const kitchen = await readFile(
-      new URL("../../../local-order-hub/src/pages/dashboard/business/kitchen.tsx", import.meta.url),
+      new URL("../../../townhub/src/pages/dashboard/business/kitchen.tsx", import.meta.url),
       "utf8",
     );
     assert.match(kitchen, /getKitchenBusinessOrdersQueryKey/);
@@ -44,7 +44,7 @@ describe("kitchen polling deduplication wiring", () => {
 
   it("live order alerts poll the same scoped kitchen query key when SSE fallback is active", async () => {
     const alerts = await readFile(
-      new URL("../../../local-order-hub/src/hooks/use-live-order-alerts.tsx", import.meta.url),
+      new URL("../../../townhub/src/hooks/use-live-order-alerts.tsx", import.meta.url),
       "utf8",
     );
     assert.match(alerts, /getKitchenBusinessOrdersQueryKey/);
