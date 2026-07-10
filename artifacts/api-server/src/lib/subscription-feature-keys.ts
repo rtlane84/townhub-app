@@ -5,7 +5,9 @@
 export const SUBSCRIPTION_FEATURE_KEYS = {
   ONLINE_ORDERING: "online_ordering",
   APPOINTMENT_REQUESTS: "appointment_requests",
-  FOOD_TRUCK_TRACKING: "food_truck_tracking",
+  MOBILE_BUSINESS: "mobile_business",
+  /** @deprecated Use MOBILE_BUSINESS */
+  FOOD_TRUCK_TRACKING: "mobile_business",
   SMS_NOTIFICATIONS: "sms_notifications",
   EMAIL_NOTIFICATIONS: "email_notifications",
   BUSINESS_WEBSITE: "business_website",
@@ -38,9 +40,9 @@ export const DEFAULT_SUBSCRIPTION_FEATURES: Array<{
     sortOrder: 20,
   },
   {
-    key: SUBSCRIPTION_FEATURE_KEYS.FOOD_TRUCK_TRACKING,
-    name: "Food Truck Tracking",
-    description: "Publish daily and upcoming food truck locations.",
+    key: SUBSCRIPTION_FEATURE_KEYS.MOBILE_BUSINESS,
+    name: "Mobile Business",
+    description: "Publish a daily and upcoming location schedule for traveling or pop-up businesses.",
     category: "Commerce",
     sortOrder: 30,
   },

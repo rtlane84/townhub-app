@@ -5,12 +5,14 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessType } from './businessType';
 
 export interface FoodTruckLocationWithBusiness {
   id: number;
   businessId: number;
   businessName?: string;
   businessSlug?: string;
+  businessType?: BusinessType;
   /** @nullable */
   businessLogoUrl?: string | null;
   /** @nullable */

@@ -138,8 +138,8 @@ export default function BusinessLocations() {
     <BusinessDashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Food Truck Locations</h1>
-          <p className="text-muted-foreground mt-1">Manage your mobile location schedule</p>
+          <h1 className="font-serif text-3xl font-bold">Mobile Schedule</h1>
+          <p className="text-muted-foreground mt-1">Manage where you&apos;ll be and when</p>
         </div>
 
         {bizLoading ? (
@@ -148,7 +148,7 @@ export default function BusinessLocations() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Truck className="h-4 w-4" /> Food Truck Mode
+                <Truck className="h-4 w-4" /> Mobile Business
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -156,13 +156,13 @@ export default function BusinessLocations() {
                 <div>
                   <p className="text-sm font-medium">Show location schedule on your storefront</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Customers will see your upcoming locations on your page and the homepage
+                    Customers will see your upcoming stops on your page and the homepage
                   </p>
                 </div>
                 <Switch
-                  checked={!!business.eventLocationEnabled}
+                  checked={!!business.isMobileBusiness}
                   onCheckedChange={(v) =>
-                    updateBusiness.mutate({ id: business.id, data: { eventLocationEnabled: v } as never })
+                    updateBusiness.mutate({ id: business.id, data: { isMobileBusiness: v } })
                   }
                 />
               </div>
@@ -173,7 +173,7 @@ export default function BusinessLocations() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Location Schedule</CardTitle>
+              <CardTitle className="text-base">Schedule</CardTitle>
               <Button size="sm" onClick={openCreate}>
                 <Plus className="h-4 w-4 mr-2" /> Add Location
               </Button>

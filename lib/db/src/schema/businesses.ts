@@ -22,8 +22,8 @@ import { z } from "zod/v4";
 
 export const businessTypeEnum = pgEnum("business_type", [
   "FOOD_VENDOR",
-  "FOOD_TRUCK",
-  "CAFE_BAKERY",
+  "COFFEE_SHOP",
+  "BAKERY",
   "GROCERY",
   "FLORIST",
   "GARDEN_MARKET",
@@ -33,6 +33,9 @@ export const businessTypeEnum = pgEnum("business_type", [
   "FUNERAL_SERVICE",
   "GENERAL",
   "SALON",
+  // Legacy values retained so existing Postgres enums remain readable during migration.
+  "FOOD_TRUCK",
+  "CAFE_BAKERY",
 ]);
 
 export const paymentModeEnum = pgEnum("payment_mode", [
@@ -117,7 +120,12 @@ export const businessesTable = pgTable("businesses", {
   ntfyConnectedAt: timestamp("ntfy_connected_at", { withTimezone: true }),
   ntfyLastTestAt: timestamp("ntfy_last_test_at", { withTimezone: true }),
 
-  // Food truck mode
+  /** Mobile / traveling business — publishes a location schedule. */
+  isMobileBusiness: boolean("is_mobile_business").notNull().default(false),
+  /**
+   * Legacy column kept in sync with isMobileBusiness for older readers.
+   * Prefer isMobileBusiness in application code.
+   */
   eventLocationEnabled: boolean("event_location_enabled").notNull().default(false),
 
   // Storefront experience: online ordering vs appointment requests

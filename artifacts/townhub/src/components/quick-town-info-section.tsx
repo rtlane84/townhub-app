@@ -67,18 +67,18 @@ function FoodTrucksDashboardCard({
   const count = todayTrucks.length;
 
   return (
-    <QuickTownInfoCard title="Food Trucks Today" icon={<Truck className="h-4 w-4 text-primary" />}>
+    <QuickTownInfoCard title="On the Move Today" icon={<Truck className="h-4 w-4 text-primary" />}>
       <div className="flex flex-1 flex-col">
         {count > 0 ? (
           <>
             <p className="text-3xl font-serif font-bold tracking-tight text-foreground">{count}</p>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              {count === 1 ? "truck operating today" : "trucks operating today"}
+              {count === 1 ? "stop scheduled today" : "stops scheduled today"}
             </p>
             <div className="mt-auto pt-5">
               <Link href="/food-trucks">
                 <Button variant="outline" size="sm" className="min-h-10 rounded-full px-4">
-                  View Today&apos;s Trucks
+                  View schedule
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
@@ -86,11 +86,11 @@ function FoodTrucksDashboardCard({
           </>
         ) : (
           <>
-            <p className="text-sm leading-relaxed text-muted-foreground">No food trucks today.</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">No mobile stops today.</p>
             <div className="mt-auto pt-5">
               <Link href="/food-trucks">
                 <Button variant="outline" size="sm" className="min-h-10 rounded-full px-4">
-                  View Food Trucks
+                  View schedule
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>

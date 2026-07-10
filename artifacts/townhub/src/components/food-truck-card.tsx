@@ -1,6 +1,8 @@
 import { Link } from "wouter";
-import { Clock, MapPin, Navigation, Store } from "lucide-react";
+import { Clock, MapPin, Navigation, Store, Truck } from "lucide-react";
 import type { FoodTruckLocationWithBusiness } from "@workspace/api-client-react";
+import { mobileBusinessPublicLabel } from "@workspace/api-zod";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BusinessListingCardMedia } from "@/components/business-logo-badge";
@@ -16,7 +18,8 @@ export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusi
   const timeWindow = formatFoodTruckTimeWindow(truck.startTime, truck.endTime);
   const description = truck.locationNotes?.trim() || truck.businessDescription?.trim();
   const slug = truck.businessSlug ?? String(truck.businessId);
-  const businessName = truck.businessName ?? "Food truck";
+  const businessName = truck.businessName ?? "Mobile business";
+  const mobileLabel = mobileBusinessPublicLabel(truck.businessType);
 
   return (
     <Card className={cn("group flex h-full flex-col overflow-hidden rounded-[1.75rem]", CARD_INTERACTIVE)}>
@@ -32,7 +35,13 @@ export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusi
         }
       />
       <CardContent className="flex flex-1 flex-col px-5 pb-5 pt-9">
-        <h3 className="mb-2 font-serif text-xl font-bold tracking-tight text-foreground">{businessName}</h3>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <h3 className="font-serif text-xl font-bold tracking-tight text-foreground">{businessName}</h3>
+          <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
+            <Truck className="mr-1 h-3 w-3" />
+            {mobileLabel}
+          </Badge>
+        </div>
         <div className="mb-3 flex items-start gap-1.5 text-sm text-muted-foreground">
           <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <div className="min-w-0">

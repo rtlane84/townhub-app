@@ -241,7 +241,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     className={navLinkClass("/food-trucks")}
                     aria-current={isNavActive("/food-trucks") ? "page" : undefined}
                   >
-                    Food Trucks
+                    On the Move
                   </Link>
 
                   <Link
@@ -404,7 +404,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                           className={navLinkClass("/food-trucks")}
                           aria-current={isNavActive("/food-trucks") ? "page" : undefined}
                         >
-                          <Truck className="h-4 w-4" aria-hidden /> Food Trucks
+                          <Truck className="h-4 w-4" aria-hidden /> On the Move
                         </span>
                       </Link>
 

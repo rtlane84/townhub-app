@@ -128,13 +128,17 @@ export interface SystemHealthReport {
   recentActivity: PlatformActivityEntry[];
 }
 
+/**
+ * What the business is (identity/category). How it operates (ordering, appointments, mobile schedule, etc.) is modeled separately via storefrontMode, fulfillment flags, and isMobileBusiness.
+
+ */
 export type BusinessType = typeof BusinessType[keyof typeof BusinessType];
 
 
 export const BusinessType = {
   FOOD_VENDOR: 'FOOD_VENDOR',
-  FOOD_TRUCK: 'FOOD_TRUCK',
-  CAFE_BAKERY: 'CAFE_BAKERY',
+  COFFEE_SHOP: 'COFFEE_SHOP',
+  BAKERY: 'BAKERY',
   GROCERY: 'GROCERY',
   FLORIST: 'FLORIST',
   GARDEN_MARKET: 'GARDEN_MARKET',
@@ -159,7 +163,7 @@ export const StorefrontMode = {
 } as const;
 
 /**
- * ALWAYS accepts orders whenever the business is active. BUSINESS_HOURS requires structured hours to be open now. MOBILE_LOCATION_SCHEDULE requires an active food-truck location window. MANUAL uses the orderingEnabled owner toggle.
+ * ALWAYS accepts orders whenever the business is active. BUSINESS_HOURS requires structured hours to be open now. MOBILE_LOCATION_SCHEDULE requires an active mobile-business location window. MANUAL uses the orderingEnabled owner toggle.
 
  */
 export type OrderingAvailabilityMode = typeof OrderingAvailabilityMode[keyof typeof OrderingAvailabilityMode];
@@ -447,7 +451,9 @@ export interface Business {
   ntfyLastTestAt?: string | null;
   /** @nullable */
   ntfySubscriptionUrl?: string | null;
-  eventLocationEnabled?: boolean;
+  /** When true, the business publishes a mobile location schedule (traveling / pop-up / food truck style operation). Independent of BusinessType.
+   */
+  isMobileBusiness?: boolean;
   storefrontMode?: StorefrontMode | null;
   orderingAvailabilityMode?: OrderingAvailabilityMode;
   /** MANUAL mode toggle — when false, checkout is blocked. */
@@ -629,7 +635,8 @@ export interface BusinessUpdate {
   notifyNewOrdersByDiscord?: boolean;
   notifyAppointmentRequestsByDiscord?: boolean;
   ntfyEnabled?: boolean;
-  eventLocationEnabled?: boolean;
+  /** Enable mobile location schedule publishing for this business. */
+  isMobileBusiness?: boolean;
   storefrontMode?: StorefrontMode | null;
   orderingAvailabilityMode?: OrderingAvailabilityMode;
   orderingEnabled?: boolean;
@@ -1448,6 +1455,7 @@ export interface FoodTruckLocationWithBusiness {
   businessId: number;
   businessName?: string;
   businessSlug?: string;
+  businessType?: BusinessType;
   /** @nullable */
   businessLogoUrl?: string | null;
   /** @nullable */

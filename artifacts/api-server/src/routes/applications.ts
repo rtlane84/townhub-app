@@ -15,7 +15,7 @@ import { notifyBusinessApplicationApproved, notifyBusinessApplicationRejected, n
 import { resolveApprovalBillingInterval } from "../lib/business-lifecycle-core";
 import { resolveOwnerDeliverableEmail } from "../lib/owner-email";
 import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
-import { parseStructuredHours } from "@workspace/api-zod";
+import { parseStructuredHours, normalizeLegacyBusinessType, defaultStorefrontModeForBusinessType } from "@workspace/api-zod";
 import {
   checkBusinessSlugAvailability,
   isPostgresUniqueViolation,
@@ -311,12 +311,15 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
       return;
     }
 
-    // Validate that the type is a known enum value; fall back to GENERAL
+    // Validate / normalize identity type (legacy FOOD_TRUCK → Restaurant + mobile)
     const VALID_TYPES = [
-      "FOOD_VENDOR", "FOOD_TRUCK", "CAFE_BAKERY", "GROCERY", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE",
+      "FOOD_VENDOR", "COFFEE_SHOP", "BAKERY", "GROCERY", "FLORIST", "GARDEN_MARKET", "RETAIL_STORE",
       "BUILDING_SUPPLY", "SERVICE_PROVIDER", "FUNERAL_SERVICE", "GENERAL", "SALON",
+      // Legacy application values still accepted then normalized
+      "FOOD_TRUCK", "CAFE_BAKERY",
     ];
-    const safeType = VALID_TYPES.includes(app.type) ? app.type : "GENERAL";
+    const rawType = VALID_TYPES.includes(app.type) ? app.type : "GENERAL";
+    const normalized = normalizeLegacyBusinessType(rawType);
 
     const slug = await resolveUniqueBusinessSlug(slugifyFromBusinessName(app.name));
 
@@ -328,7 +331,7 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
         .values({
           name: app.name,
           slug,
-          type: safeType as never,
+          type: normalized.type as never,
           description: app.description,
           address: app.address,
           phone: app.phone,
@@ -339,6 +342,9 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
           payAtPickupEnabled: true,
           paymentMode: "BOTH",
           active: true,
+          isMobileBusiness: normalized.isMobileBusiness,
+          eventLocationEnabled: normalized.isMobileBusiness,
+          storefrontMode: defaultStorefrontModeForBusinessType(normalized.type),
         })
         .returning();
     } catch (err) {

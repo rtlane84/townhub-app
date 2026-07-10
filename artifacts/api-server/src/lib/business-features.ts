@@ -5,7 +5,7 @@ import {
   businessSubscriptionsTable,
   subscriptionPlansTable,
 } from "@workspace/db";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import {
   DEFAULT_SUBSCRIPTION_FEATURES,
   subscriptionGrantsFeaturesForPlan,
@@ -27,13 +27,36 @@ export type SerializedSubscriptionFeature = {
 
 /** Idempotently ensure the default feature catalog exists. */
 export async function ensureDefaultSubscriptionFeatures(): Promise<void> {
+  // Rename legacy food_truck_tracking → mobile_business (same row / plan links)
+  await db.execute(
+    sql`
+      UPDATE subscription_features
+      SET
+        key = 'mobile_business',
+        name = 'Mobile Business',
+        description = 'Publish a daily and upcoming location schedule for traveling or pop-up businesses.'
+      WHERE key = 'food_truck_tracking'
+    `,
+  ).catch(() => undefined);
+
   for (const feature of DEFAULT_SUBSCRIPTION_FEATURES) {
     const [existing] = await db
       .select({ id: subscriptionFeaturesTable.id })
       .from(subscriptionFeaturesTable)
       .where(eq(subscriptionFeaturesTable.key, feature.key));
 
-    if (existing) continue;
+    if (existing) {
+      await db
+        .update(subscriptionFeaturesTable)
+        .set({
+          name: feature.name,
+          description: feature.description,
+          category: feature.category,
+          sortOrder: feature.sortOrder,
+        })
+        .where(eq(subscriptionFeaturesTable.id, existing.id));
+      continue;
+    }
 
     await db.insert(subscriptionFeaturesTable).values({
       key: feature.key,

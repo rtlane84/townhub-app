@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Truck, CalendarDays, ShoppingBag, Info } from "lucide-react";
 import {
   formatBusinessTypeLabel,
+  mobileBusinessPublicLabel,
   resolveStorefrontMode,
   storefrontModePublicBadge,
   type StorefrontMode,
@@ -16,6 +17,8 @@ export type BusinessTagsSource = {
   active?: boolean;
   pickupEnabled?: boolean;
   deliveryEnabled?: boolean;
+  isMobileBusiness?: boolean;
+  /** @deprecated Prefer isMobileBusiness */
   eventLocationEnabled?: boolean;
 };
 
@@ -83,6 +86,10 @@ function StorefrontModeBadge({
   );
 }
 
+function isMobileEnabled(business: BusinessTagsSource): boolean {
+  return business.isMobileBusiness === true || business.eventLocationEnabled === true;
+}
+
 function BusinessServiceTags({
   business,
   accentColor,
@@ -106,10 +113,10 @@ function BusinessServiceTags({
       {storefrontMode === "ORDERING" && business.deliveryEnabled && (
         <ServiceTag accentColor={accentColor}>Delivery</ServiceTag>
       )}
-      {business.eventLocationEnabled && (
+      {isMobileEnabled(business) && (
         <ServiceTag accentColor={accentColor}>
           <Truck className="mr-1 h-3 w-3" />
-          Food Truck
+          {mobileBusinessPublicLabel(business.type)}
         </ServiceTag>
       )}
     </>

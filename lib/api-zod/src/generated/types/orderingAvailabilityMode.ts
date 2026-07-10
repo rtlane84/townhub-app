@@ -7,7 +7,7 @@
  */
 
 /**
- * ALWAYS accepts orders whenever the business is active. BUSINESS_HOURS requires structured hours to be open now. MOBILE_LOCATION_SCHEDULE requires an active food-truck location window. MANUAL uses the orderingEnabled owner toggle.
+ * ALWAYS accepts orders whenever the business is active. BUSINESS_HOURS requires structured hours to be open now. MOBILE_LOCATION_SCHEDULE requires an active mobile-business location window. MANUAL uses the orderingEnabled owner toggle.
 
  */
 export type OrderingAvailabilityMode = typeof OrderingAvailabilityMode[keyof typeof OrderingAvailabilityMode];

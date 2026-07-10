@@ -28,6 +28,9 @@ import {
   allowsOnlinePayment,
   resolvePaymentMode,
   resolveOrderingAvailabilityMode,
+  defaultStorefrontModeForBusinessType,
+  normalizeWebsiteUrl,
+  normalizeLegacyBusinessType,
 } from "@workspace/api-zod";
 import {
   loadOptionGroupsByProductIds,
@@ -39,7 +42,6 @@ import {
 } from "../lib/product-options";
 import { businessHasOnlinePaymentsReady } from "../lib/stripe-connect";
 import { applyPaymentModeToUpdate, paymentModeForInsert } from "../lib/payment-mode";
-import { defaultStorefrontModeForBusinessType, normalizeWebsiteUrl } from "@workspace/api-zod";
 import { archiveBusiness } from "../lib/business-lifecycle";
 import { buildNtfySubscriptionUrl } from "../lib/ntfy-config";
 import { ntfySettingsForEnable } from "../lib/ntfy-business-settings";
@@ -63,12 +65,13 @@ export function serializeBusiness(
   const availability = evaluateBusinessOrderingAvailability(b, {
     mobileLocations: options?.mobileLocations,
   });
+  const normalizedType = normalizeLegacyBusinessType(b.type);
 
   return {
     id: b.id,
     name: b.name,
     slug: b.slug,
-    type: b.type,
+    type: normalizedType.type,
     description: b.description,
     logoUrl: b.logoUrl,
     heroImageUrl: b.heroImageUrl,
@@ -114,7 +117,7 @@ export function serializeBusiness(
     ntfyConnectedAt: b.ntfyConnectedAt,
     ntfyLastTestAt: b.ntfyLastTestAt,
     ntfySubscriptionUrl: b.ntfyTopic ? buildNtfySubscriptionUrl(b.ntfyTopic) : null,
-    eventLocationEnabled: b.eventLocationEnabled,
+    isMobileBusiness: b.isMobileBusiness || normalizedType.isMobileBusiness,
     storefrontMode: b.storefrontMode,
     orderingAvailabilityMode: resolveOrderingAvailabilityMode(b),
     orderingEnabled: b.orderingEnabled ?? true,
@@ -240,6 +243,7 @@ router.post("/businesses/register", requireAdmin, async (req, res): Promise<void
     paymentMode: parsed.data.paymentMode,
     payAtPickupEnabled: parsed.data.payAtPickupEnabled ?? true,
   });
+  const normalizedType = normalizeLegacyBusinessType(parsed.data.type);
 
   // Create the business
   let business;
@@ -249,7 +253,7 @@ router.post("/businesses/register", requireAdmin, async (req, res): Promise<void
       .values({
         name: parsed.data.name,
         slug,
-        type: parsed.data.type as never,
+        type: normalizedType.type as never,
         description: parsed.data.description ?? null,
         logoUrl: parsed.data.logoUrl ?? null,
         heroImageUrl: parsed.data.heroImageUrl ?? null,
@@ -271,7 +275,9 @@ router.post("/businesses/register", requireAdmin, async (req, res): Promise<void
         ...(parsed.data.defaultPrepMinutes != null
           ? { defaultPrepMinutes: parsed.data.defaultPrepMinutes }
           : {}),
-        storefrontMode: defaultStorefrontModeForBusinessType(parsed.data.type),
+        isMobileBusiness: normalizedType.isMobileBusiness,
+        eventLocationEnabled: normalizedType.isMobileBusiness,
+        storefrontMode: defaultStorefrontModeForBusinessType(normalizedType.type),
       })
       .returning();
   } catch (err) {
@@ -442,6 +448,7 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
     paymentMode: parsed.data.paymentMode,
     payAtPickupEnabled: parsed.data.payAtPickupEnabled,
   });
+  const normalizedType = normalizeLegacyBusinessType(parsed.data.type);
 
   let business;
   try {
@@ -450,7 +457,7 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
       .values({
         name: parsed.data.name,
         slug: parsed.data.slug,
-        type: parsed.data.type as never,
+        type: normalizedType.type as never,
         description: parsed.data.description,
         logoUrl: parsed.data.logoUrl,
         heroImageUrl: parsed.data.heroImageUrl,
@@ -469,6 +476,9 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
         payAtPickupEnabled: paymentFields.payAtPickupEnabled,
         paymentMode: paymentFields.paymentMode,
         orderCutoffTime: parsed.data.orderCutoffTime,
+        isMobileBusiness: normalizedType.isMobileBusiness,
+        eventLocationEnabled: normalizedType.isMobileBusiness,
+        storefrontMode: defaultStorefrontModeForBusinessType(normalizedType.type),
         ownerId: parsed.data.ownerId,
       })
       .returning();
@@ -529,7 +539,14 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
   const d = parsed.data;
   if (d.name !== undefined) updateData.name = d.name;
   if (d.slug !== undefined) updateData.slug = d.slug;
-  if (d.type !== undefined) updateData.type = d.type;
+  if (d.type !== undefined) {
+    const normalized = normalizeLegacyBusinessType(String(d.type));
+    updateData.type = normalized.type;
+    if (normalized.isMobileBusiness) {
+      updateData.isMobileBusiness = true;
+      updateData.eventLocationEnabled = true;
+    }
+  }
   if (d.description !== undefined) updateData.description = d.description;
   if (d.logoUrl !== undefined) updateData.logoUrl = d.logoUrl || null;
   if (d.heroImageUrl !== undefined) updateData.heroImageUrl = d.heroImageUrl || null;
@@ -621,8 +638,17 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
       updateData.ntfyEnabled = false;
     }
   }
-  if ((d as Record<string, unknown>).eventLocationEnabled !== undefined)
-    updateData.eventLocationEnabled = (d as Record<string, unknown>).eventLocationEnabled;
+  if ((d as Record<string, unknown>).isMobileBusiness !== undefined) {
+    const enabled = (d as Record<string, unknown>).isMobileBusiness === true;
+    updateData.isMobileBusiness = enabled;
+    updateData.eventLocationEnabled = enabled;
+  }
+  // Legacy client field — map to isMobileBusiness
+  if ((d as Record<string, unknown>).eventLocationEnabled !== undefined) {
+    const enabled = (d as Record<string, unknown>).eventLocationEnabled === true;
+    updateData.isMobileBusiness = enabled;
+    updateData.eventLocationEnabled = enabled;
+  }
   if ((d as Record<string, unknown>).storefrontMode !== undefined)
     updateData.storefrontMode = (d as Record<string, unknown>).storefrontMode;
   if ((d as Record<string, unknown>).orderingAvailabilityMode !== undefined)

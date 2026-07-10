@@ -529,7 +529,7 @@ export default function BusinessSettings() {
                   ) : null}
                   {form.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE" ? (
                     <p className="text-xs text-muted-foreground">
-                      Manage today&apos;s location under Locations. Checkout is blocked when no schedule window is active.
+                      Manage today&apos;s location under Mobile Schedule. Checkout is blocked when no schedule window is active.
                     </p>
                   ) : null}
 

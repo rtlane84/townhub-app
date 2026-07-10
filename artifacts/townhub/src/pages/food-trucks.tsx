@@ -36,8 +36,8 @@ export default function FoodTrucks() {
     <div className={cn(PAGE_CONTAINER, "py-8 md:py-10 native-animate-in")}>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <SectionHeader
-          title="Food Trucks"
-          description="Mobile food vendors around town — trucks, trailers, pop-ups, and more."
+          title="On the move"
+          description="Food trucks, mobile markets, and other traveling businesses around town."
           size="lg"
           className="mb-0"
           icon={<Truck className="h-4 w-4" />}
@@ -72,8 +72,8 @@ export default function FoodTrucks() {
             ) : (
               <NativeEmptyState
                 icon={Truck}
-                title="No food trucks today"
-                description="No food trucks are operating today. Check the upcoming schedule below."
+                title="Nobody on the schedule today"
+                description="No mobile businesses are operating today. Check the upcoming schedule below."
               />
             )}
           </section>
@@ -105,7 +105,7 @@ export default function FoodTrucks() {
               <NativeEmptyState
                 icon={CalendarClock}
                 title="No upcoming locations"
-                description="No upcoming food truck locations are scheduled yet."
+                description="No upcoming mobile locations are scheduled yet."
               />
             )}
           </section>

@@ -6,13 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * What the business is (identity/category). How it operates (ordering, appointments, mobile schedule, etc.) is modeled separately via storefrontMode, fulfillment flags, and isMobileBusiness.
+
+ */
 export type BusinessType = typeof BusinessType[keyof typeof BusinessType];
 
 
 export const BusinessType = {
   FOOD_VENDOR: 'FOOD_VENDOR',
-  FOOD_TRUCK: 'FOOD_TRUCK',
-  CAFE_BAKERY: 'CAFE_BAKERY',
+  COFFEE_SHOP: 'COFFEE_SHOP',
+  BAKERY: 'BAKERY',
   GROCERY: 'GROCERY',
   FLORIST: 'FLORIST',
   GARDEN_MARKET: 'GARDEN_MARKET',

@@ -50,7 +50,7 @@ export const BUSINESS_HUB_NAV_ITEMS: BusinessHubNavItem[] = [
   { href: "/dashboard/business/products", label: "Items", featureKey: "business_website" },
   { href: "/dashboard/business/product-options", label: "Item Options", featureKey: "business_website" },
   { href: "/dashboard/business/categories", label: "Categories", featureKey: "business_website" },
-  { href: "/dashboard/business/locations", label: "Locations", featureKey: "food_truck_tracking" },
+  { href: "/dashboard/business/locations", label: "Mobile Schedule", featureKey: "mobile_business" },
   { href: "/dashboard/business/subscription", label: "Subscription", featureKey: null },
   { href: "/dashboard/business/notifications", label: "Notifications", featureKey: null },
   { href: "/dashboard/business/settings", label: "Settings", featureKey: null },

@@ -2600,8 +2600,8 @@ components:
       type: string
       enum:
         - FOOD_VENDOR
-        - FOOD_TRUCK
-        - CAFE_BAKERY
+        - COFFEE_SHOP
+        - BAKERY
         - GROCERY
         - FLORIST
         - GARDEN_MARKET
@@ -2611,6 +2611,10 @@ components:
         - FUNERAL_SERVICE
         - GENERAL
         - SALON
+      description: >
+        What the business is (identity/category). How it operates (ordering, appointments,
+        mobile schedule, etc.) is modeled separately via storefrontMode, fulfillment flags,
+        and isMobileBusiness.
 
     StorefrontMode:
       type: string
@@ -2630,7 +2634,7 @@ components:
       description: >
         ALWAYS accepts orders whenever the business is active.
         BUSINESS_HOURS requires structured hours to be open now.
-        MOBILE_LOCATION_SCHEDULE requires an active food-truck location window.
+        MOBILE_LOCATION_SCHEDULE requires an active mobile-business location window.
         MANUAL uses the orderingEnabled owner toggle.
 
     OrderStatus:
@@ -2944,8 +2948,11 @@ components:
           format: date-time
         ntfySubscriptionUrl:
           type: ["string", "null"]
-        eventLocationEnabled:
+        isMobileBusiness:
           type: boolean
+          description: >
+            When true, the business publishes a mobile location schedule (traveling / pop-up /
+            food truck style operation). Independent of BusinessType.
         storefrontMode:
           allOf:
             - $ref: "#/components/schemas/StorefrontMode"
@@ -3156,8 +3163,9 @@ components:
           type: boolean
         ntfyEnabled:
           type: boolean
-        eventLocationEnabled:
+        isMobileBusiness:
           type: boolean
+          description: Enable mobile location schedule publishing for this business.
         storefrontMode:
           allOf:
             - $ref: "#/components/schemas/StorefrontMode"
@@ -4480,6 +4488,8 @@ components:
           type: string
         businessSlug:
           type: string
+        businessType:
+          $ref: "#/components/schemas/BusinessType"
         businessLogoUrl:
           type: ["string", "null"]
         businessHeroImageUrl:

@@ -103,7 +103,7 @@ export default function BusinessProducts() {
         invalidate();
         if (vars.data.featured !== undefined && Object.keys(vars.data).length === 1) {
           toast({
-            title: vars.data.featured ? "Added to today’s special" : "Removed from today’s special",
+            title: vars.data.featured ? "Added as special of the day" : "Removed from special of the day",
           });
           return;
         }
@@ -265,7 +265,7 @@ export default function BusinessProducts() {
                     </Select>
                   </div>
                 ) : products?.length ? (
-                  <p className="text-xs text-muted-foreground">All items are already marked as specials.</p>
+                  <p className="text-xs text-muted-foreground">All items are already marked as the special.</p>
                 ) : null}
               </>
             )}
@@ -273,6 +273,10 @@ export default function BusinessProducts() {
         </Card>
 
         <Card className="overflow-hidden">
+          <CardHeader className="border-b border-border/60 pb-4">
+            <CardTitle className="font-serif text-xl text-platform-heading">All items</CardTitle>
+            <CardDescription>Your full catalog — edit availability, pricing, and details here.</CardDescription>
+          </CardHeader>
           <CardContent className="overflow-hidden p-0">
             {isLoading ? (
               <div className="space-y-3 p-6">
@@ -305,7 +309,7 @@ export default function BusinessProducts() {
                         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                           {product.featured && (
                             <Badge className="shrink-0 bg-amber-500/15 text-xs text-amber-800 hover:bg-amber-500/15">
-                              Today&apos;s special
+                              Special of the day
                             </Badge>
                           )}
                           {!product.available && (

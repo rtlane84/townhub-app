@@ -180,6 +180,7 @@ function serializePublicLocation(row: {
   isActive: boolean;
   businessName: string;
   businessSlug: string;
+  businessType: string;
   businessLogoUrl: string | null;
   businessHeroImageUrl: string | null;
   businessDescription: string | null;
@@ -199,6 +200,7 @@ function serializePublicLocation(row: {
     isActive: row.isActive,
     businessName: row.businessName,
     businessSlug: row.businessSlug,
+    businessType: row.businessType,
     businessLogoUrl: row.businessLogoUrl,
     businessHeroImageUrl: row.businessHeroImageUrl,
     businessDescription: row.businessDescription,
@@ -220,6 +222,7 @@ const publicLocationSelect = {
   isActive: foodTruckLocationsTable.isActive,
   businessName: businessesTable.name,
   businessSlug: businessesTable.slug,
+  businessType: businessesTable.type,
   businessLogoUrl: businessesTable.logoUrl,
   businessHeroImageUrl: businessesTable.heroImageUrl,
   businessDescription: businessesTable.description,
@@ -239,6 +242,7 @@ router.get("/food-truck-locations/today", async (req, res): Promise<void> => {
         eq(foodTruckLocationsTable.locationDate, today),
         eq(foodTruckLocationsTable.isActive, true),
         eq(businessesTable.active, true),
+        eq(businessesTable.isMobileBusiness, true),
       ),
     )
     .orderBy(foodTruckLocationsTable.startTime);
@@ -269,6 +273,7 @@ router.get("/food-truck-locations/upcoming", async (req, res): Promise<void> => 
         lte(foodTruckLocationsTable.locationDate, horizonDate),
         eq(foodTruckLocationsTable.isActive, true),
         eq(businessesTable.active, true),
+        eq(businessesTable.isMobileBusiness, true),
       ),
     )
     .orderBy(foodTruckLocationsTable.locationDate, foodTruckLocationsTable.startTime);

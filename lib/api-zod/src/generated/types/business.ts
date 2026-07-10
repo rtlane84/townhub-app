@@ -105,7 +105,9 @@ export interface Business {
   ntfyLastTestAt?: Date | null;
   /** @nullable */
   ntfySubscriptionUrl?: string | null;
-  eventLocationEnabled?: boolean;
+  /** When true, the business publishes a mobile location schedule (traveling / pop-up / food truck style operation). Independent of BusinessType.
+   */
+  isMobileBusiness?: boolean;
   storefrontMode?: StorefrontMode | null;
   orderingAvailabilityMode?: OrderingAvailabilityMode;
   /** MANUAL mode toggle — when false, checkout is blocked. */

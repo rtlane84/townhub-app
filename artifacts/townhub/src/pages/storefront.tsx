@@ -45,13 +45,16 @@ export default function Storefront() {
   });
 
   const business = storefront?.business;
-  const eventLocationEnabled = (business as Record<string, unknown> | undefined)?.eventLocationEnabled as boolean | undefined;
+  const isMobileBusiness = Boolean(
+    (business as Record<string, unknown> | undefined)?.isMobileBusiness ??
+      (business as Record<string, unknown> | undefined)?.eventLocationEnabled,
+  );
 
   const { data: foodTruckLocations = [] } = useListFoodTruckLocations(
     business?.id ?? 0,
     {
       query: {
-        enabled: !!business?.id && !!eventLocationEnabled,
+        enabled: !!business?.id && isMobileBusiness,
         queryKey: getListFoodTruckLocationsQueryKey(business?.id ?? 0),
       },
     },
@@ -392,7 +395,7 @@ export default function Storefront() {
                   )}
 
                   {/* Food truck upcoming locations */}
-                  {eventLocationEnabled && upcomingLocations.length > 0 && (
+                  {isMobileBusiness && upcomingLocations.length > 0 && (
                     <div className="p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <Truck className="h-4 w-4 text-primary" />
@@ -464,11 +467,8 @@ export default function Storefront() {
 
             {showSpecials ? (
               <div className="mb-8" data-testid="section-todays-special">
-                <div className="mb-3 flex items-baseline justify-between gap-3">
-                  <h3 className="font-serif text-xl font-bold text-foreground">Today&apos;s special</h3>
-                  <span className="text-xs font-medium uppercase tracking-wide text-amber-700">
-                    Limited highlight
-                  </span>
+                <div className="mb-3">
+                  <h3 className="font-serif text-xl font-bold text-foreground">Special of the day</h3>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {specials.map((product) => (
