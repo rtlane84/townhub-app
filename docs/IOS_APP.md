@@ -86,11 +86,23 @@ pnpm --filter @workspace/local-order-hub exec cap run ios
 
 | Flow | Behavior |
 |------|----------|
-| Clerk login | Email/password can use the in-app Clerk UI. **Google OAuth must use Safari** (Google blocks WKWebView — `disallowed_useragent`). Native Google uses HTTPS `https://your-app/native-sso-callback` (Clerk rejects custom schemes), then bounces to `townhub://sso-callback` so the WebView finishes on `/sso-callback`. Allowlist that HTTPS URL under **Native applications → Allowlist for mobile SSO redirect** (not Paths). Deploy the frontend before testing — otherwise Safari shows the app 404 page. |
+| Clerk login | Email/password can use the in-app Clerk UI. **Google OAuth must use Safari** (Google blocks WKWebView — `disallowed_useragent`). Native Google uses HTTPS `https://your-app/native-sso-callback` (static HTML bounce → `townhub://sso-callback` → WebView `/sso-callback`). Allowlist that HTTPS URL under **Native applications → Allowlist for mobile SSO redirect**. **Redeploy Netlify from this branch** — `ios:sync` alone does not update the remote WebView. |
 | In-app navigation | Same routes as the web app (`/`, `/dashboard/business`, `/sign-in`, etc.). On native dashboards, a **Back** control returns to Home. |
 | Stripe Checkout / Connect | Opens in the system browser via `@capacitor/browser` on native. Success/cancel URLs must use the same host as `CAPACITOR_SERVER_URL` / `APP_BASE_URL`. |
 | External links | `mailto:`, `tel:`, Stripe, Google Maps, Facebook, privacy/terms pages open in Safari. Google OAuth also opens in Safari (required by Google). |
-| Deep links | Custom scheme `townhub://` opens the app (`townhub://sso-callback` → `/sso-callback`). Clerk’s OAuth `redirect_url` must stay HTTPS (`/native-sso-callback`). |
+| Deep links | Custom scheme `townhub://` opens the app (`townhub://sso-callback` → `/sso-callback`). Clerk’s OAuth `redirect_url` must stay HTTPS (`/native-sso-callback`). Push taps use `deepLink` payload paths (see [NOTIFICATIONS.md](./NOTIFICATIONS.md)). |
+
+## Push notifications (APNs)
+
+TownHub uses Capacitor Push Notifications + the shared backend notification pipeline (not an iOS-only stack). Full architecture, env vars, and testing: [NOTIFICATIONS.md](./NOTIFICATIONS.md).
+
+Quick checklist:
+
+1. Enable **Push Notifications** on the App ID and in Xcode Signing & Capabilities.
+2. Create an APNs Auth Key (`.p8`) and set `APNS_*` on the API.
+3. Ensure `Info.plist` includes `UIBackgroundModes` → `remote-notification` (already in the Capacitor template).
+4. `pnpm --filter @workspace/local-order-hub run ios:sync` after installing `@capacitor/push-notifications`.
+5. Sign in on a physical device, accept permission, confirm `device_tokens`, then send a test from `POST /api/me/notifications/test-push`.
 
 ## Useful scripts
 

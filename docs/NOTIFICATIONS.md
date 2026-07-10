@@ -1,431 +1,347 @@
-# Order Notifications
+# TownHub Notifications
 
-TownHub sends email and SMS notifications when meaningful **business events** happen during the order lifecycle — not when raw database status labels change internally.
+Canonical reference for TownHub’s cross-platform notification system.
 
-Each notification answers:
-
-- **What happened?**
-- **What should the customer do** (if anything)?
-- **What happens next?**
-
-Notifications are fire-and-forget: they never block API responses. Delivery attempts are logged to `notification_logs` (viewable in **Admin → System Status**).
+TownHub sends notifications when meaningful **business events** happen — not when raw database status labels change internally. Delivery is fire-and-forget: notifications never block API responses. Attempts are logged to `notification_logs` (viewable in **Admin → System Status**).
 
 ---
 
-## Overview
+## Architecture overview
+
+One backend pipeline decides **who**, **what**, and **which channels**. Platform-specific providers (APNs, FCM, Web Push, email, SMS, ntfy, Discord) are adapters behind that pipeline.
+
+```text
+Domain event (order status, appointment, application, …)
+        │
+        ▼
+Orchestrators (notification-service / notifications / application-notifications / …)
+        │  resolve recipients + category + content
+        ▼
+Channel adapters
+        ├── EMAIL   → Resend / SMTP
+        ├── SMS     → Twilio
+        ├── DISCORD → owner webhook
+        ├── NTFY    → ntfy server
+        └── PUSH    → push provider registry
+                ├── IOS     → APNs
+                ├── ANDROID → FCM (stub; ready to implement)
+                └── WEB     → Web Push (stub; ready to implement)
+        │
+        ▼
+notification_logs (+ automatic invalid device-token cleanup for PUSH)
+```
+
+**Do not** duplicate notification business logic per platform. Add new event types in orchestrators; add new delivery tech as a push/provider adapter.
+
+Related docs (narrower topics):
+
+- [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](./BUSINESS_HUB_LIVE_NOTIFICATIONS.md) — in-browser SSE/toasts while Business Hub is open
+- [SUBSCRIPTION_NOTIFICATIONS.md](./SUBSCRIPTION_NOTIFICATIONS.md) — subscription lifecycle email details
+- [RESEND_SETUP.md](./RESEND_SETUP.md) / [TWILIO_SETUP.md](./TWILIO_SETUP.md)
+
+---
+
+## Notification pipeline
+
+1. **Event occurs** in a route, webhook, or job (e.g. order `CONFIRMED`, new application).
+2. **Orchestrator** loads context (order, business, recipients) and builds channel-specific copy.
+3. **Category** is derived via `categoryForEventType()` (`notification-categories.ts`).
+4. **Preferences** gate authenticated PUSH delivery (`user_notification_preferences`). Business channel toggles (email/SMS/Discord/ntfy) still live on `businesses`.
+5. **Adapters** send in parallel; failures are logged, not thrown to the API client.
+6. **Deep link** (path or HTTPS URL) is included so taps open the right screen.
+
+| Layer | Location |
+| ----- | -------- |
+| Categories + event map | `artifacts/api-server/src/lib/notification-categories.ts` |
+| Deep links | `notification-deep-links.ts`, `notification-urls.ts` |
+| Push copy | `notification-push-copy.ts` |
+| Push delivery | `push-delivery.ts` + `lib/push/*` |
+| Email/SMS/Discord/ntfy | `notification-delivery.ts` |
+| Order orchestration | `notification-service.ts` |
+| Appointments | `notifications.ts` |
+| Applications / admin | `application-notifications.ts` |
+| Subscriptions | `subscription-notifications.ts` |
+
+---
+
+## Delivery providers
+
+| Channel | Provider | Status |
+| ------- | -------- | ------ |
+| EMAIL | Resend (preferred) or SMTP | Production |
+| SMS | Twilio | Production |
+| DISCORD | Per-business webhook | Production |
+| NTFY | Public/self-hosted ntfy (owner topic) | Production |
+| PUSH / iOS | APNs (token auth, `.p8`) | Production-ready when env set |
+| PUSH / Android | FCM | Adapter stub — env reserved |
+| PUSH / Web | Web Push (VAPID) | Adapter stub — env reserved |
+
+When a provider is not configured, delivery is logged with status `LOGGED` so copy and routing can be verified without sending.
+
+Logged `channel` values: `EMAIL` | `SMS` | `DISCORD` | `NTFY` | `PUSH`.
+
+---
+
+## Device registration flow
+
+1. User signs in on the Capacitor iOS (or future Android) app.
+2. `NativePushRegistration` requests notification permission via `@capacitor/push-notifications`.
+3. On APNs/FCM registration success, the client `POST`s to `/api/devices` with `{ token, platform, appVersion }`.
+4. Backend upserts `device_tokens` for that authenticated user (token unique globally; reassign if the device moves accounts).
+5. `lastSeenAt` is refreshed on re-registration.
+6. On logout, the client `DELETE`s `/api/devices` with the current token (best-effort) before Clerk `signOut`.
+7. Invalid/expired tokens returned by APNs (`410`, `BadDeviceToken`, `Unregistered`, …) are deleted automatically.
+
+### Device API
+
+| Method | Path | Purpose |
+| ------ | ---- | ------- |
+| `POST` | `/api/devices` | Register / refresh token |
+| `GET` | `/api/devices` | List devices (tokens redacted) |
+| `DELETE` | `/api/devices` | Unregister `{ token }` or `{ all: true }` |
+
+Platform enum: `IOS` | `ANDROID` | `WEB`.
+
+---
+
+## Database / schema changes
+
+### `device_tokens`
+
+| Column | Notes |
+| ------ | ----- |
+| `user_id` | Clerk user id (FK → `users`) |
+| `token` | Unique APNs/FCM/Web Push token |
+| `platform` | `IOS` \| `ANDROID` \| `WEB` |
+| `app_version` | Optional client version |
+| `device_label` | Optional label |
+| `last_seen_at` | Updated on register |
+
+### `user_notification_preferences`
+
+| Column | Notes |
+| ------ | ----- |
+| `user_id` + `category` | Unique; absence = category default (`enabled`) |
+| `enabled` | Per-category opt-out/in |
+
+### `notification_logs`
+
+- `channel` may be `PUSH`
+- `recipient_user_id` set for push deliveries
+
+Schema is Drizzle push-based:
+
+```bash
+pnpm --filter @workspace/db run push
+```
+
+---
+
+## Notification categories
+
+Categories are the unit of **user preference** and push routing. Audience: Platform Admin, Business Owner, Customer.
+
+### Platform admin
+
+| Key | Implemented | Trigger examples |
+| --- | ----------- | ---------------- |
+| `ADMIN_NEW_APPLICATION` | Yes | New business application |
+| `ADMIN_CRITICAL_ALERT` | Yes | Trial/paid admin subscription notices |
+| `ADMIN_PAYMENT_FAILURE` | Yes | Admin payment failed / canceled / expired |
+| `ADMIN_JOB_FAILURE` | No (reserved) | Background job failures |
+
+### Business owners
+
+| Key | Implemented | Trigger examples |
+| --- | ----------- | ---------------- |
+| `OWNER_NEW_ORDER` | Yes | New order |
+| `OWNER_ORDER_CANCELED` | No | Order canceled |
+| `OWNER_APPOINTMENT_REQUEST` | Yes | Appointment request |
+| `OWNER_CUSTOMER_MESSAGE` | No | Customer message |
+| `OWNER_STRIPE_ISSUE` | Yes | Refund failed / Stripe issues |
+| `OWNER_LOW_INVENTORY` | No | Low inventory |
+| `OWNER_SUBSCRIPTION` | Yes | Owner subscription / application outcome emails |
+
+### Customers
+
+| Key | Implemented | Trigger examples |
+| --- | ----------- | ---------------- |
+| `CUSTOMER_ORDER_ACCEPTED` | Yes | Status → `CONFIRMED` |
+| `CUSTOMER_ORDER_READY` | Yes | Ready / out for delivery |
+| `CUSTOMER_ORDER_COMPLETED` | Yes | Completed |
+| `CUSTOMER_ORDER_UPDATES` | Yes | Received, preparing, cancelled, refund |
+| `CUSTOMER_APPOINTMENT_DECISION` | Yes | Appointment confirmed / declined |
+| `CUSTOMER_APPOINTMENT_REMINDER` | No | Appointment reminders |
+| `CUSTOMER_EVENT_REMINDER` | No | Event reminders |
+
+Business **channel** settings (email address, SMS toggles, Discord webhook, ntfy topic) remain on the business record and are independent of category preferences. Category preferences primarily gate **PUSH** (and future authenticated channels) for signed-in users.
+
+---
+
+## User notification preferences
+
+- API: `GET` / `PUT` `/api/me/notification-preferences`
+- UI: Business Hub → **Notifications** → “Push & in-app categories”
+- Defaults: all implemented categories **enabled** until the user opts out
+
+Test push (signed-in): `POST /api/me/notifications/test-push`
+
+---
+
+## Deep-link behavior
+
+Push payloads include string data:
+
+| Field | Example |
+| ----- | ------- |
+| `deepLink` | `/dashboard/business/orders/42` |
+| `category` | `OWNER_NEW_ORDER` |
+| `eventType` | `NEW_ORDER` |
+| `orderId` / `appointmentRequestId` / `businessId` | numeric strings |
+
+Native tap handling (`native-push.ts`) navigates the WebView to the deep link path (or resolves `townhub://…` / absolute HTTPS into the app origin).
+
+HTTPS links in email / SMS / ntfy continue to use `APP_BASE_URL` helpers in `notification-urls.ts`.
+
+| Target | Path |
+| ------ | ---- |
+| Customer order | `/order/{id}` |
+| Owner order | `/dashboard/business/orders/{id}` |
+| Appointments | `/dashboard/business/appointments` |
+| Business hub | `/dashboard/business` |
+| Subscription | `/dashboard/business/subscription` |
+| Admin applications | `/dashboard/admin/applications` |
+| Event | `/events/{id}` |
+
+---
+
+## Order notification flow (email / SMS + push)
 
 ```text
 Customer checkout
        │
-       ├─ Pay at pickup ──► ORDER_RECEIVED (email + SMS)
+       ├─ Pay at pickup ──► ORDER_RECEIVED (email + SMS + customer push)
        │
-       └─ Card (Stripe) ──► payment webhook marks PAID ──► ORDER_RECEIVED (email + SMS)
+       └─ Card (Stripe) ──► payment webhook marks PAID ──► ORDER_RECEIVED
 
-Business owner ──► NEW_ORDER (email + SMS, per business settings)
+Business owner ──► NEW_ORDER (email/SMS/Discord/ntfy per business + owner push)
 
-Business updates status ──► lifecycle email + SMS for that event
-       CONFIRMED → ORDER_ACCEPTED
-       PREPARING → ORDER_PREPARING
-       READY_FOR_PICKUP → ORDER_READY_FOR_PICKUP
-       OUT_FOR_DELIVERY → ORDER_OUT_FOR_DELIVERY
-       COMPLETED → ORDER_COMPLETED
-       CANCELED → ORDER_CANCELLED
+Business updates status ──► lifecycle email + SMS + customer push
 ```
 
----
+| Order status | Customer event |
+| ------------ | -------------- |
+| *(checkout / webhook)* | `ORDER_RECEIVED` |
+| `CONFIRMED` | `ORDER_ACCEPTED` |
+| `PREPARING` | `ORDER_PREPARING` |
+| `READY_FOR_PICKUP` | `ORDER_READY_FOR_PICKUP` |
+| `OUT_FOR_DELIVERY` | `ORDER_OUT_FOR_DELIVERY` |
+| `COMPLETED` | `ORDER_COMPLETED` |
+| `CANCELED` | `ORDER_CANCELLED` |
 
-## Customer notification flow
-
-### 1. Order received (first message)
-
-**When it sends**
-
-
-| Payment method              | Trigger                                     |
-| --------------------------- | ------------------------------------------- |
-| Pay at pickup (`IN_PERSON`) | Immediately after `POST /api/orders`        |
-| Card (`STRIPE`)             | After Stripe webhook marks the order `PAID` |
-
-
-Card orders do **not** send this email on order create — only after payment is confirmed by the webhook. That avoids telling customers their order was received before they finish paying.
-
-**Email**
-
-- **Subject:** `We received your order`
-- **Tone:** Thank you; the business has received the order and is reviewing it; another update will come when they accept it.
-- **Includes:** Business name, order number, date/time, fulfillment method, items, total, **View Order** button.
-- **Never uses** the word “confirmed” in this first message.
-
-**SMS example**
-
-```text
-Clay Diner received your order #TH-20260629-ABC12. We'll notify you when it's accepted. https://yourdomain.com/order/42?token=<accessToken>
-```
+Customer PUSH requires a signed-in `customerUserId` on the order. Guests still receive email/SMS when contact info is present.
 
 ---
 
-### 2. Business accepts the order
+## Platform support
 
-**Trigger:** Business sets status to `CONFIRMED`
+| Platform | Delivery | Client |
+| -------- | -------- | ------ |
+| **iOS** | APNs via Capacitor Push Notifications | Implemented |
+| **Android** | FCM adapter stub | Same `/api/devices` + registry; wire FCM sender when ready |
+| **Web** | Web Push stub | Same preferences + future service worker |
+| **Email / SMS / ntfy / Discord** | Existing adapters | Unchanged |
 
+### iOS (Capacitor + APNs)
 
-| Channel       | Content                                                  |
-| ------------- | -------------------------------------------------------- |
-| Email subject | `{Business Name} accepted your order`                    |
-| Email body    | Business accepted the order; preparation will begin soon |
-| SMS           | `{Business} accepted your order #{number}.` + order link |
+1. Apple Developer: App ID with **Push Notifications**; create an APNs Auth Key (`.p8`).
+2. Xcode: enable **Push Notifications** capability (and Background Modes → Remote notifications — `UIBackgroundModes` includes `remote-notification` in `Info.plist`).
+3. Set API env vars (below), then `pnpm --filter @workspace/db run push`.
+4. `pnpm --filter @workspace/local-order-hub run ios:sync` so `@capacitor/push-notifications` is linked.
+5. Sign in on a **physical device** (simulator APNs is limited), accept permission, confirm a row in `device_tokens`.
+6. Place a test order / use `POST /api/me/notifications/test-push`.
 
+See also [IOS_APP.md](./IOS_APP.md).
 
----
+### Android (future — FCM)
 
-### 3. Order is being prepared
+1. Create a Firebase project; download `google-services.json`.
+2. Implement HTTP v1 send in `lib/push/fcm-provider.ts` (adapter already selected for `ANDROID`).
+3. Set `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`.
+4. Capacitor Android app registers with the same `POST /api/devices` (`platform: "ANDROID"`).
 
-**Trigger:** Status → `PREPARING`
+### Web Push (future)
 
-
-| Channel       | Content                                                          |
-| ------------- | ---------------------------------------------------------------- |
-| Email subject | `Your order is being prepared`                                   |
-| Email body    | Kitchen/shop is actively preparing the order                     |
-| SMS           | `Your order #{number} from {Business} is being prepared.` + link |
-
-
----
-
-### 4. Ready for pickup
-
-**Trigger:** Status → `READY_FOR_PICKUP`
-
-
-| Channel       | Content                                                                                  |
-| ------------- | ---------------------------------------------------------------------------------------- |
-| Email subject | `Your order is ready for pickup`                                                         |
-| Email body    | Excited tone; includes pickup location (business address + pickup instructions when set) |
-| SMS           | `Your order #{number} is ready for pickup at {Business}.` + link                         |
-
+1. Generate VAPID keys; set `WEB_PUSH_VAPID_*` env.
+2. Implement sender in `lib/push/web-push-provider.ts`.
+3. Add service worker subscription → `POST /api/devices` (`platform: "WEB"`).
 
 ---
 
-### 5. Out for delivery
+## Free phone notifications (ntfy)
 
-**Trigger:** Status → `OUT_FOR_DELIVERY`
-
-
-| Channel       | Content                                                                 |
-| ------------- | ----------------------------------------------------------------------- |
-| Email subject | `Your order is on the way`                                              |
-| Email body    | Order has left for delivery; **Track Order** button links to order page |
-| SMS           | `Your order #{number} from {Business} is on the way.` + link            |
-
+Owners can still use [ntfy](https://ntfy.sh) for free phone alerts without App Store push. Configure in Business Hub → Notifications. Server: `NTFY_SERVER_URL` (default `https://ntfy.sh`). Topics are per-business and independent of `device_tokens`.
 
 ---
 
-### 6. Completed (optional thank-you)
+## Required environment variables
 
-**Trigger:** Status → `COMPLETED`
-
-Short thank-you email encouraging the customer to order again. SMS sends a brief thanks with order link.
-
----
-
-### 7. Cancelled
-
-**Trigger:** Status → `CANCELED`
-
-
-| Channel       | Content                                                                                                                      |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Email subject | `Your order was cancelled`                                                                                                   |
-| Email body    | Business cancelled the order                                                                                                 |
-| Refund note   | If payment method was `STRIPE` and `paymentStatus` is `PAID`, email explains a refund will be processed (5–10 business days) |
-| SMS           | `Unfortunately your order #{number} from {Business} was cancelled.` + link                                                   |
-
+| Variable | Purpose |
+| -------- | ------- |
+| `APP_BASE_URL` | HTTPS links in email/SMS/ntfy |
+| `RESEND_API_KEY` / `RESEND_FROM` or `SMTP_*` | Email |
+| `TWILIO_*` | SMS |
+| `NTFY_SERVER_URL` | ntfy base URL |
+| `PLATFORM_ADMIN_EMAIL` | Optional admin inbox override |
+| `APNS_KEY_ID` | APNs key id |
+| `APNS_TEAM_ID` | Apple Developer Team ID |
+| `APNS_BUNDLE_ID` | Default `com.lanetech.townhub` |
+| `APNS_PRIVATE_KEY` or `APNS_PRIVATE_KEY_PATH` | `.p8` PEM (`\n` escaped if inline) |
+| `APNS_PRODUCTION` | `true` for production APNs; otherwise sandbox |
+| `FCM_PROJECT_ID` / `FCM_CLIENT_EMAIL` / `FCM_PRIVATE_KEY` | Future Android |
+| `WEB_PUSH_VAPID_PUBLIC_KEY` / `WEB_PUSH_VAPID_PRIVATE_KEY` / `WEB_PUSH_VAPID_SUBJECT` | Future Web Push |
 
 ---
 
-### Statuses that do **not** notify customers
-
-
-| Status                    | Why                                                           |
-| ------------------------- | ------------------------------------------------------------- |
-| `NEW`                     | Internal queue state; customer already got **Order received** |
-| Unchanged status on PATCH | No duplicate notifications                                    |
-
-
----
-
-## Business (owner) notifications
-
-### In-browser live alerts (Business Hub open)
-
-While **Business Hub** is open in a browser tab, owners also get **live list updates**, **toasts**, and (on non-queue pages) **persistent banners** for new orders and appointment requests. That flow is separate from email/SMS and only runs when the dashboard is loaded.
-
-See **[BUSINESS_HUB_LIVE_NOTIFICATIONS.md](./BUSINESS_HUB_LIVE_NOTIFICATIONS.md)** for:
-
-- Which pages use SSE vs polling  
-- Toast vs banner rules by screen  
-- Tab/window/background behavior  
-- What requires the dashboard to be open vs what works when it is closed  
-
-Server-delivered owner alerts below (email, SMS, ntfy, Discord) are unchanged and do not require an open dashboard tab.
-
-### New order
-
-**Trigger:** Immediately after `POST /api/orders` (all payment methods)
-
-**Email:** Branded HTML layout with:
-
-- Heading: **New Order Received**
-- Business logo (when configured)
-- Order number, customer name, phone, email
-- Payment method and payment status
-- Fulfillment type, items, total
-- **Open Order** button → business dashboard order detail
-
-**SMS example**
-
-```text
-Clay Diner: New order #TH-20260629-ABC12
-Alex · $24.50 · Paid
-https://yourdomain.com/dashboard/business/orders/42
-```
-
-**Owner delivery settings** (Business Dashboard → Settings → Owner Notifications):
-
-
-| Setting                  | Default | Effect                   |
-| ------------------------ | ------- | ------------------------ |
-| `notificationEmail`      | —       | Primary owner email      |
-| `notificationPhone`      | —       | Owner SMS number (E.164) |
-| `notifyNewOrdersByEmail` | `true`  | Email on new order       |
-| `notifyNewOrdersBySms`   | `false` | SMS on new order         |
-
-
-Email sends when the toggle is not `false` and an email is set. SMS sends only when the toggle is `true` and a phone is set.
-
-### Appointment requests
-
-Separate plain-text owner alerts for new appointment requests. See [RESEND_SETUP.md](./RESEND_SETUP.md) and [TWILIO_SETUP.md](./TWILIO_SETUP.md).
-
----
-
-## Payment vs. notification timing
-
-Payment status and notification content are intentionally separate:
-
-
-| Concern                                    | Controlled by                                                                                                           |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `paymentStatus = PAID`                     | Stripe webhook only (`checkout.session.completed`)                                                                      |
-| “Order received” customer email/SMS (card) | Same webhook, after `PAID`                                                                                              |
-| Success page copy                          | Frontend — “Payment received. Waiting for restaurant acceptance.” while `PENDING`; no false “paid” claim before webhook |
-
-
-Pay-at-pickup orders skip Stripe entirely; customer notifications start on order create.
-
----
-
-## Links and environments
-
-All notification URLs are built from `APP_BASE_URL` — never hardcoded in templates.
-
-
-| Audience                        | URL pattern                                          |
-| ------------------------------- | ---------------------------------------------------- |
-| Customer order page (signed-in) | `{APP_BASE_URL}/order/{orderId}`                     |
-| Customer order page (guest)     | `{APP_BASE_URL}/order/{orderId}?token={accessToken}` |
-| Business order detail           | `{APP_BASE_URL}/dashboard/business/orders/{orderId}` |
-
-
-Set `APP_BASE_URL` per environment:
-
-```bash
-# Local
-APP_BASE_URL=http://localhost:23032
-
-# Staging
-APP_BASE_URL=https://staging.yourtown.com
-
-# Production
-APP_BASE_URL=https://yourtown.com
-```
-
-If unset, the API falls back to `REPLIT_DOMAINS` or `http://localhost:5173` (code default). **Set `APP_BASE_URL=http://localhost:23032` for local dev** so emails, SMS, and Stripe redirects use the correct host.
-
-### Guest access tokens in notification links
-
-Guest orders require a signed HMAC access token to view order details (see [SECURITY.md](../SECURITY.md)). The checkout confirmation page, Stripe success URL, and **customer order email/SMS links** include `?token=…` via `customerOrderUrlForNotification()`.
-
-Signed-in customers who placed the order receive links **without** a token because `/order/{id}` matches their `customerUserId` when logged in. They can also use `/my-orders`.
-
----
-
-## Email design
-
-Customer and business order emails use shared HTML components:
-
-
-| Component          | Purpose                               |
-| ------------------ | ------------------------------------- |
-| TownHub header bar | Platform branding                     |
-| Business logo      | Shown when `business.logoUrl` is set  |
-| Status badge       | Visual lifecycle state                |
-| Detail table       | Order metadata rows                   |
-| Order items block  | Line items + total                    |
-| Action button      | View Order / Open Order / Track Order |
-| Footer             | “Powered by TownHub”                  |
-
-
-Plain-text fallbacks are included for every HTML email. Resend receives both `text` and `html` bodies.
-
----
-
-## SMS design principles
-
-- **Short** — not a copy of the email
-- **One idea per message** — what happened + link
-- **Order link on every customer SMS** when phone is provided at checkout
-- **Dashboard link on every business SMS** when owner SMS is enabled
-
-Customer SMS requires `customerPhone` on the order. There is no separate customer SMS opt-in toggle today; if a phone number is collected at checkout, lifecycle SMS is sent alongside email.
-
----
-
-## Architecture (code)
-
-```text
-routes/orders.ts, stripe-webhook.ts
-       │
-       ▼
-notification-service.ts     ← orchestration (load order, pick event, send)
-       │
-       ├── email-templates/   ← HTML + subject + text builders
-       ├── notification-sms.ts
-       ├── notification-delivery.ts  ← Resend / Twilio + DB logging
-       └── notification-urls.ts      ← APP_BASE_URL link helpers
-```
-
-
-| File                                 | Role                                                                                               |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `notification-service.ts`            | `notifyCustomerOrderReceived`, `notifyCustomerOrderStatusChange`, `notifyOwnerNewOrderFromOrderId` |
-| `email-templates/customer-emails.ts` | Customer lifecycle email content                                                                   |
-| `email-templates/business-emails.ts` | Owner new-order HTML email                                                                         |
-| `email-templates/layout.ts`          | Shared HTML shell, spacing, footer                                                                 |
-| `email-templates/components.ts`      | Buttons, badges, item tables, labels                                                               |
-| `notification-sms.ts`                | SMS copy for all lifecycle events                                                                  |
-| `notification-delivery.ts`           | Send + write `notification_logs`                                                                   |
-| `notifications.ts`                   | Public exports + appointment owner alerts                                                          |
-
-
-### Lifecycle event mapping
-
-
-| Order status           | Customer event           | Logged `eventType`       |
-| ---------------------- | ------------------------ | ------------------------ |
-| *(checkout / webhook)* | `ORDER_RECEIVED`         | `ORDER_RECEIVED`         |
-| `CONFIRMED`            | `ORDER_ACCEPTED`         | `ORDER_ACCEPTED`         |
-| `PREPARING`            | `ORDER_PREPARING`        | `ORDER_PREPARING`        |
-| `READY_FOR_PICKUP`     | `ORDER_READY_FOR_PICKUP` | `ORDER_READY_FOR_PICKUP` |
-| `OUT_FOR_DELIVERY`     | `ORDER_OUT_FOR_DELIVERY` | `ORDER_OUT_FOR_DELIVERY` |
-| `COMPLETED`            | `ORDER_COMPLETED`        | `ORDER_COMPLETED`        |
-| `CANCELED`             | `ORDER_CANCELLED`        | `ORDER_CANCELLED`        |
-
-
----
-
-## Provider setup
-
-
-| Channel | Provider                   | Setup doc                            |
-| ------- | -------------------------- | ------------------------------------ |
-| Email   | Resend (preferred) or SMTP | [RESEND_SETUP.md](./RESEND_SETUP.md) |
-| SMS     | Twilio                     | [TWILIO_SETUP.md](./TWILIO_SETUP.md) |
-| Phone push (free) | ntfy (public `ntfy.sh` by default) | See [Free phone notifications](#free-phone-notifications) below |
-| Discord | Webhook URL (owner-configured) | Business Hub → Notifications |
-
-
-When providers are not configured, notifications are still logged with status `LOGGED` so you can verify copy in **Admin → System Status** without sending real messages.
-
----
-
-## Free phone notifications
-
-Business owners can receive **free instant phone alerts** via [ntfy](https://ntfy.sh) — no SMS charges from TownHub.
-
-### Requirements
-
-- The free **ntfy** mobile app (iOS or Android) on the owner’s phone
-- Phone notifications enabled in **Business Hub → Notifications**
-
-### Setup (owner)
-
-1. Enable **Free phone notifications** in TownHub (generates a private topic).
-2. Install the ntfy app from [ntfy.sh/app](https://ntfy.sh/app).
-3. In ntfy, tap **Subscribe to topic**, paste your topic (use **Copy topic** in TownHub), and keep the server as **ntfy.sh**.
-4. Tap **Send test notification** in TownHub to confirm delivery.
-
-### What gets sent
-
-| Event | Push title |
-| ----- | ---------- |
-| New order | 🍔 New Order |
-| New appointment request | 📅 New Appointment Request |
-
-Messages include business name, key order/appointment details, and a link to the Business Hub dashboard.
-
-### Server configuration
-
-| Variable | Default | Purpose |
-| -------- | ------- | ------- |
-| `NTFY_SERVER_URL` | `https://ntfy.sh` | Base URL for publishing and subscription links |
-
-TownHub stores only the **topic** per business (never the full server URL in the database). Subscription URLs are built at runtime from `NTFY_SERVER_URL` + topic.
-
-**Future:** To use a self-hosted ntfy server, set `NTFY_SERVER_URL` to your instance (for example `https://ntfy.yourdomain.com`). No application code changes are required.
-
-### Security
-
-- Topics are cryptographically random (minimum 32 URL-safe characters).
-- Regenerating a topic immediately invalidates the old subscription.
-- Topics are omitted from public storefront API responses.
-- Do not share your topic — anyone subscribed to it receives your alerts.
-
----
-
-## Testing checklist
-
-Verify each scenario in test mode with `APP_BASE_URL` set to your local or staging URL:
-
-- [ ] Pay at pickup — customer gets **We received your order** immediately
-- [ ] Stripe card — customer gets **We received your order** only after webhook marks `PAID`
-- [ ] Guest checkout — confirmation page loads with `?token=` from order response
-- [ ] Guest notification links — email/SMS include `?token=` for guest orders
-- [ ] Signed-in customer — `/order/{id}` and `/my-orders` work without token
-- [ ] Signed-in customer — same order link; **My Orders** available separately
-- [ ] Pickup — ready-for-pickup email includes address/instructions
-- [ ] Delivery — out-for-delivery email sends
-- [ ] Cancelled card order that was paid — refund note appears
-- [ ] Business new-order email — HTML layout, **Open Order** uses dashboard URL
-- [ ] Business SMS — includes dashboard link
-- [ ] ntfy — enable phone notifications, paste topic in ntfy app, test push succeeds
-- [ ] ntfy — new order sends push when enabled; disabled sends nothing
-- [ ] Status `CONFIRMED` — says “accepted”, not “confirmed” in the first email (first email already sent earlier)
-- [ ] No duplicate messages when status PATCH sends the same value
-
-Run notification unit tests:
+## Testing procedures
 
 ```bash
 pnpm --filter @workspace/api-server run test
+pnpm --filter @workspace/local-order-hub run test
 ```
+
+Checklist:
+
+- [ ] Schema pushed (`device_tokens`, `user_notification_preferences`, `recipient_user_id`)
+- [ ] Pay at pickup — customer email/SMS (+ push if signed in)
+- [ ] Stripe card — `ORDER_RECEIVED` only after webhook `PAID`
+- [ ] Owner new order — existing channels + push to `business.ownerId` devices
+- [ ] Status changes map to the correct customer events / categories
+- [ ] Preference disable — category does not send PUSH for that user
+- [ ] Device register after login; unregister on logout
+- [ ] Invalid APNs tokens removed from `device_tokens`
+- [ ] Notification tap opens the correct deep link
+- [ ] ntfy / Discord / email / SMS still work when APNs unset
+- [ ] Admin application submitted emails + admin push
 
 ---
 
-## Related docs
+## Deployment steps
 
-- [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](./BUSINESS_HUB_LIVE_NOTIFICATIONS.md) — in-browser toasts, banners, and SSE while Business Hub is open
-- [RESEND_SETUP.md](./RESEND_SETUP.md) — email provider configuration
-- [TWILIO_SETUP.md](./TWILIO_SETUP.md) — SMS provider configuration
-- [STRIPE_SETUP.md](./STRIPE_SETUP.md) — payment webhook (triggers card **Order received** notification)
-- [PRODUCTION_MONITORING.md](./PRODUCTION_MONITORING.md) — health checks and notification logs
+1. Set notification-related env on the API host (including APNs for iOS push).
+2. `pnpm --filter @workspace/db run push` against production DB.
+3. Deploy API + frontend.
+4. Rebuild/sync iOS (`ios:sync`), enable Push capability, ship TestFlight/App Store build.
+5. Verify with a signed-in device: register → test push → real order event.
+6. Monitor **Admin → System Status** notification logs (`PUSH` channel).
 
+---
+
+## Future expansion points
+
+- Implement FCM send body in `fcm-provider.ts` without changing orchestrators.
+- Implement Web Push in `web-push-provider.ts`.
+- Wire reserved categories (`OWNER_LOW_INVENTORY`, appointment/event reminders, job failures).
+- Multi-staff recipients beyond `business.ownerId`.
+- Richer customer appointment deep links when a dedicated screen exists.
+- Optional admin UI filters for `PUSH` in the notification log panel.

@@ -71,6 +71,137 @@ paths:
         "401":
           description: Unauthorized
 
+  /devices:
+    post:
+      operationId: registerDevice
+      tags: [auth]
+      summary: Register or refresh a push notification device token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterDeviceInput"
+      responses:
+        "201":
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceRegistration"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+    get:
+      operationId: listDevices
+      tags: [auth]
+      summary: List registered devices for the current user
+      responses:
+        "200":
+          description: Device list (tokens redacted)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceRegistration"
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: unregisterDevice
+      tags: [auth]
+      summary: Unregister a device token (logout) or all devices
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnregisterDeviceInput"
+      responses:
+        "200":
+          description: Unregister result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, removed]
+                properties:
+                  ok:
+                    type: boolean
+                  removed:
+                    type: integer
+        "401":
+          description: Unauthorized
+
+  /me/notification-preferences:
+    get:
+      operationId: getMyNotificationPreferences
+      tags: [auth]
+      summary: Get per-category notification preferences for the current user
+      parameters:
+        - in: query
+          name: audience
+          schema:
+            type: string
+            enum: [PLATFORM_ADMIN, BUSINESS_OWNER, CUSTOMER]
+        - in: query
+          name: implementedOnly
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Preference list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferencesResponse"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateMyNotificationPreferences
+      tags: [auth]
+      summary: Update per-category notification preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNotificationPreferencesInput"
+      responses:
+        "200":
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferencesResponse"
+        "400":
+          description: Invalid categories
+        "401":
+          description: Unauthorized
+
+  /me/notifications/test-push:
+    post:
+      operationId: testMyPushNotification
+      tags: [auth]
+      summary: Send a test push to the current user's registered devices
+      responses:
+        "200":
+          description: Test queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                  message:
+                    type: string
+        "401":
+          description: Unauthorized
+
   /auth/me/businesses:
     get:
       operationId: listMyBusinesses
@@ -2140,7 +2271,7 @@ paths:
           name: channel
           schema:
             type: string
-            enum: [EMAIL, SMS, DISCORD, NTFY]
+            enum: [EMAIL, SMS, DISCORD, NTFY, PUSH]
         - in: query
           name: eventType
           schema:
@@ -4158,11 +4289,102 @@ components:
           type: boolean
         channel:
           type: string
-          enum: [EMAIL, SMS, DISCORD, NTFY]
+          enum: [EMAIL, SMS, DISCORD, NTFY, PUSH]
         recipient:
           type: string
         message:
           type: string
+
+    RegisterDeviceInput:
+      type: object
+      required: [token, platform]
+      properties:
+        token:
+          type: string
+          minLength: 8
+          maxLength: 4096
+        platform:
+          type: string
+          enum: [IOS, ANDROID, WEB]
+        appVersion:
+          type: ["string", "null"]
+        deviceLabel:
+          type: ["string", "null"]
+
+    UnregisterDeviceInput:
+      type: object
+      properties:
+        token:
+          type: string
+        all:
+          type: boolean
+          description: When true, removes all devices for the current user
+
+    DeviceRegistration:
+      type: object
+      required: [id, platform, lastSeenAt, createdAt]
+      properties:
+        id:
+          type: integer
+        platform:
+          type: string
+          enum: [IOS, ANDROID, WEB]
+        appVersion:
+          type: ["string", "null"]
+        deviceLabel:
+          type: ["string", "null"]
+        lastSeenAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationPreferenceItem:
+      type: object
+      required: [category, enabled, label, description, audience, implemented, explicit]
+      properties:
+        category:
+          type: string
+        enabled:
+          type: boolean
+        label:
+          type: string
+        description:
+          type: string
+        audience:
+          type: string
+          enum: [PLATFORM_ADMIN, BUSINESS_OWNER, CUSTOMER]
+        implemented:
+          type: boolean
+        explicit:
+          type: boolean
+
+    NotificationPreferencesResponse:
+      type: object
+      required: [preferences]
+      properties:
+        preferences:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationPreferenceItem"
+
+    UpdateNotificationPreferencesInput:
+      type: object
+      required: [preferences]
+      properties:
+        preferences:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required: [category, enabled]
+            properties:
+              category:
+                type: string
+              enabled:
+                type: boolean
 
     BusinessFeatureAccess:
       type: object
@@ -4480,7 +4702,7 @@ components:
           type: ["integer", "null"]
         channel:
           type: string
-          enum: [EMAIL, SMS, DISCORD, NTFY]
+          enum: [EMAIL, SMS, DISCORD, NTFY, PUSH]
         eventType:
           type: ["string", "null"]
         type:
@@ -4488,6 +4710,8 @@ components:
         recipientEmail:
           type: ["string", "null"]
         recipientPhone:
+          type: ["string", "null"]
+        recipientUserId:
           type: ["string", "null"]
         subject:
           type: ["string", "null"]

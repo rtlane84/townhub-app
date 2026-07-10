@@ -14,4 +14,5 @@ export const NotificationTestResultChannel = {
   SMS: 'SMS',
   DISCORD: 'DISCORD',
   NTFY: 'NTFY',
+  PUSH: 'PUSH',
 } as const;

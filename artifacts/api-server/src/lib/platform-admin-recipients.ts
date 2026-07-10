@@ -19,3 +19,12 @@ export async function resolvePlatformAdminEmails(): Promise<string[]> {
     .map((row) => row.email?.trim())
     .filter((email): email is string => !!email && !email.endsWith("@user.local"));
 }
+
+/** Active ADMIN user ids for push delivery. */
+export async function resolvePlatformAdminUserIds(): Promise<string[]> {
+  const admins = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.role, "ADMIN"));
+  return admins.map((row) => row.id).filter(Boolean);
+}

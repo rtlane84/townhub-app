@@ -9,6 +9,8 @@ export * from "./events";
 export * from "./highlights";
 export * from "./subscriptions";
 export * from "./notifications";
+export * from "./device-tokens";
+export * from "./user-notification-preferences";
 export * from "./platform";
 export * from "./applications";
 export * from "./appointment-requests";

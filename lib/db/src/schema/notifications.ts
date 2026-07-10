@@ -5,12 +5,15 @@ export const notificationLogsTable = pgTable("notification_logs", {
   businessId: integer("business_id").notNull(),
   orderId: integer("order_id"),
   appointmentRequestId: integer("appointment_request_id"),
+  /** EMAIL | SMS | DISCORD | NTFY | PUSH */
   channel: text("channel").notNull().default("EMAIL"),
   eventType: text("event_type"),
   /** @deprecated Legacy alias — use eventType */
   type: text("type"),
   recipientEmail: text("recipient_email"),
   recipientPhone: text("recipient_phone"),
+  /** Authenticated user id when delivery targets a user (e.g. PUSH). */
+  recipientUserId: text("recipient_user_id"),
   subject: text("subject"),
   body: text("body").notNull(),
   status: text("status").notNull().default("LOGGED"),

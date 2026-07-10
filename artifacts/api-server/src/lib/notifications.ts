@@ -1,4 +1,5 @@
-import { notificationLogsTable } from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
+import { db, notificationLogsTable, usersTable } from "@workspace/db";
 import {
   resolveOwnerNotificationEmail,
   resolveOwnerNotificationPhone,
@@ -22,6 +23,11 @@ import {
 import { isValidNtfyTopic } from "./ntfy-topic";
 import { logOperationalFailure } from "./operational-log";
 import { logger } from "./logger";
+import { deliverPushToUsers } from "./push-delivery";
+import {
+  buildOwnerNewAppointmentPush,
+  buildCustomerAppointmentPush,
+} from "./notification-push-copy";
 
 export type { NotificationStatus, NotificationChannel, NotificationEventType } from "./notification-delivery";
 export { resolveNotificationStatus } from "./notification-delivery";
@@ -39,11 +45,23 @@ export { buildOwnerNewOrderEmail } from "./email-templates/business-emails";
 export { buildOwnerNewOrderSms, buildCustomerLifecycleSms } from "./notification-sms";
 export { buildCustomerLifecycleEmail } from "./email-templates/customer-emails";
 
+async function resolveUserIdByEmail(email: string | null | undefined): Promise<string | null> {
+  const trimmed = email?.trim();
+  if (!trimmed) return null;
+  const [user] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(sql`lower(${usersTable.email}) = ${trimmed.toLowerCase()}`)
+    .limit(1);
+  return user?.id ?? null;
+}
+
 export async function notifyOwnerNewAppointmentRequest(input: {
   business: {
     id: number;
     name: string;
     logoUrl?: string | null;
+    ownerId?: string | null;
     notificationEmail?: string | null;
     orderNotificationEmail?: string | null;
     notificationPhone?: string | null;
@@ -163,6 +181,27 @@ export async function notifyOwnerNewAppointmentRequest(input: {
       );
     }
 
+    if (input.business.ownerId) {
+      const push = buildOwnerNewAppointmentPush({
+        businessName: input.business.name,
+        customerName: input.customerName,
+        serviceName: input.serviceName,
+        requestedDate: input.requestedDate,
+        requestedTime: input.requestedTime,
+      });
+      tasks.push(
+        deliverPushToUsers({
+          userIds: [input.business.ownerId],
+          businessId: input.business.id,
+          eventType: "NEW_APPOINTMENT_REQUEST",
+          title: push.title,
+          body: push.body,
+          deepLink: push.deepLink,
+          appointmentRequestId: input.appointmentRequestId,
+        }),
+      );
+    }
+
     await Promise.all(tasks);
   } catch (err) {
     logOperationalFailure("order_notification_failed", {
@@ -183,6 +222,7 @@ export async function notifyCustomerAppointmentStatusUpdate(input: {
   customerName: string;
   customerEmail?: string | null;
   customerPhone?: string | null;
+  customerUserId?: string | null;
   serviceName?: string | null;
   requestedDate: string;
   requestedTime: string;
@@ -237,6 +277,29 @@ export async function notifyCustomerAppointmentStatusUpdate(input: {
     );
   }
 
+  const customerUserId =
+    input.customerUserId ?? (await resolveUserIdByEmail(input.customerEmail));
+  if (customerUserId) {
+    const push = buildCustomerAppointmentPush({
+      businessName: input.business.name,
+      status: input.status,
+      serviceName: input.serviceName,
+      requestedDate: input.requestedDate,
+      requestedTime: input.requestedTime,
+    });
+    tasks.push(
+      deliverPushToUsers({
+        userIds: [customerUserId],
+        businessId: input.business.id,
+        eventType,
+        title: push.title,
+        body: push.body,
+        deepLink: push.deepLink,
+        appointmentRequestId: input.appointmentRequestId,
+      }),
+    );
+  }
+
   if (!tasks.length) return;
 
   try {
@@ -260,6 +323,7 @@ export function serializeNotificationLog(row: typeof notificationLogsTable.$infe
     type: row.eventType ?? row.type ?? null,
     recipientEmail: row.recipientEmail,
     recipientPhone: row.recipientPhone,
+    recipientUserId: row.recipientUserId ?? null,
     subject: row.subject,
     body: row.body,
     status: row.status,

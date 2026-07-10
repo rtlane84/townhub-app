@@ -14,4 +14,5 @@ export const ListNotificationLogsChannel = {
   SMS: 'SMS',
   DISCORD: 'DISCORD',
   NTFY: 'NTFY',
+  PUSH: 'PUSH',
 } as const;

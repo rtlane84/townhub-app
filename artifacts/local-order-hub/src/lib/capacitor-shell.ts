@@ -10,7 +10,11 @@ import {
   isStripeCheckoutUrl,
   shouldOpenLinkExternally,
 } from "@/lib/native-external-links";
-import { resolveNativeDeepLinkToAppUrl } from "@/lib/native-oauth";
+import { resolveNativeDeepLinkToAppUrl, isNativeSsoCallbackUrl } from "@/lib/native-oauth";
+import {
+  clearNativeOAuthPending,
+  installNativeOAuthResumeHandlers,
+} from "@/lib/native-oauth-resume";
 
 const SPLASH_MIN_VISIBLE_MS = 900;
 
@@ -120,6 +124,9 @@ export function initCapacitorShell(): void {
   void App.addListener("appUrlOpen", ({ url }) => {
     void closeExternalBrowser();
     if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
+      if (isNativeSsoCallbackUrl(url)) {
+        clearNativeOAuthPending();
+      }
       const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
       // Full navigation so Clerk reloads with OAuth query params and finishes the session.
       window.location.assign(next);
@@ -131,12 +138,17 @@ export function initCapacitorShell(): void {
     const url = result?.url;
     if (!url) return;
     if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
+      if (isNativeSsoCallbackUrl(url)) {
+        clearNativeOAuthPending();
+      }
       const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
       if (next !== window.location.href) {
         window.location.assign(next);
       }
     }
   });
+
+  installNativeOAuthResumeHandlers();
 
   document.addEventListener(
     "click",

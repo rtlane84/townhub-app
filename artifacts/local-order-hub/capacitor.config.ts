@@ -74,6 +74,9 @@ const config: CapacitorConfig = {
       backgroundColor: "#faf8f5",
       overlaysWebView: false,
     },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"],
+    },
   },
 };
 

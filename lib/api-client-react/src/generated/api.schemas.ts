@@ -1284,6 +1284,7 @@ export const NotificationTestResultChannel = {
   SMS: 'SMS',
   DISCORD: 'DISCORD',
   NTFY: 'NTFY',
+  PUSH: 'PUSH',
 } as const;
 
 export interface NotificationTestResult {
@@ -1291,6 +1292,90 @@ export interface NotificationTestResult {
   channel: NotificationTestResultChannel;
   recipient?: string;
   message?: string;
+}
+
+export type RegisterDeviceInputPlatform = typeof RegisterDeviceInputPlatform[keyof typeof RegisterDeviceInputPlatform];
+
+
+export const RegisterDeviceInputPlatform = {
+  IOS: 'IOS',
+  ANDROID: 'ANDROID',
+  WEB: 'WEB',
+} as const;
+
+export interface RegisterDeviceInput {
+  /**
+     * @minLength 8
+     * @maxLength 4096
+     */
+  token: string;
+  platform: RegisterDeviceInputPlatform;
+  /** @nullable */
+  appVersion?: string | null;
+  /** @nullable */
+  deviceLabel?: string | null;
+}
+
+export interface UnregisterDeviceInput {
+  token?: string;
+  /** When true, removes all devices for the current user */
+  all?: boolean;
+}
+
+export type DeviceRegistrationPlatform = typeof DeviceRegistrationPlatform[keyof typeof DeviceRegistrationPlatform];
+
+
+export const DeviceRegistrationPlatform = {
+  IOS: 'IOS',
+  ANDROID: 'ANDROID',
+  WEB: 'WEB',
+} as const;
+
+export interface DeviceRegistration {
+  id: number;
+  platform: DeviceRegistrationPlatform;
+  /** @nullable */
+  appVersion?: string | null;
+  /** @nullable */
+  deviceLabel?: string | null;
+  lastSeenAt: string;
+  createdAt: string;
+}
+
+export type NotificationPreferenceItemAudience = typeof NotificationPreferenceItemAudience[keyof typeof NotificationPreferenceItemAudience];
+
+
+export const NotificationPreferenceItemAudience = {
+  PLATFORM_ADMIN: 'PLATFORM_ADMIN',
+  BUSINESS_OWNER: 'BUSINESS_OWNER',
+  CUSTOMER: 'CUSTOMER',
+} as const;
+
+export interface NotificationPreferenceItem {
+  category: string;
+  enabled: boolean;
+  label: string;
+  description: string;
+  audience: NotificationPreferenceItemAudience;
+  implemented: boolean;
+  explicit: boolean;
+}
+
+export interface NotificationPreferencesResponse {
+  preferences: NotificationPreferenceItem[];
+}
+
+export type UpdateNotificationPreferencesInputPreferencesItem = {
+  category: string;
+  enabled: boolean;
+};
+
+export interface UpdateNotificationPreferencesInput {
+  /**
+     * @minItems 1
+     * @maxItems 50
+     */
+  preferences: UpdateNotificationPreferencesInputPreferencesItem[];
 }
 
 export interface BusinessFeatureAccess {
@@ -1582,6 +1667,7 @@ export const NotificationLogChannel = {
   SMS: 'SMS',
   DISCORD: 'DISCORD',
   NTFY: 'NTFY',
+  PUSH: 'PUSH',
 } as const;
 
 export interface NotificationLog {
@@ -1599,6 +1685,8 @@ export interface NotificationLog {
   recipientEmail?: string | null;
   /** @nullable */
   recipientPhone?: string | null;
+  /** @nullable */
+  recipientUserId?: string | null;
   /** @nullable */
   subject?: string | null;
   body: string;
@@ -1700,6 +1788,30 @@ export type GetMeParams = {
 businessId?: number;
 };
 
+export type UnregisterDevice200 = {
+  ok: boolean;
+  removed: number;
+};
+
+export type GetMyNotificationPreferencesParams = {
+audience?: GetMyNotificationPreferencesAudience;
+implementedOnly?: boolean;
+};
+
+export type GetMyNotificationPreferencesAudience = typeof GetMyNotificationPreferencesAudience[keyof typeof GetMyNotificationPreferencesAudience];
+
+
+export const GetMyNotificationPreferencesAudience = {
+  PLATFORM_ADMIN: 'PLATFORM_ADMIN',
+  BUSINESS_OWNER: 'BUSINESS_OWNER',
+  CUSTOMER: 'CUSTOMER',
+} as const;
+
+export type TestMyPushNotification200 = {
+  ok: boolean;
+  message?: string;
+};
+
 export type GetMyBusinessParams = {
 /**
  * Owned business id (defaults to primary owned business)
@@ -1774,6 +1886,7 @@ export const ListNotificationLogsChannel = {
   SMS: 'SMS',
   DISCORD: 'DISCORD',
   NTFY: 'NTFY',
+  PUSH: 'PUSH',
 } as const;
 
 export type ListMediaAssetsParams = {

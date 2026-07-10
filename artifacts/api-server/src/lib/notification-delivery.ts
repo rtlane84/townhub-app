@@ -11,7 +11,7 @@ import type {
   PlatformAdminEvent,
 } from "./email-templates/types";
 
-export type NotificationChannel = "EMAIL" | "SMS" | "DISCORD" | "NTFY";
+export type NotificationChannel = "EMAIL" | "SMS" | "DISCORD" | "NTFY" | "PUSH";
 
 export type DeliveryOutcome = {
   status: NotificationStatus;
@@ -56,6 +56,7 @@ interface LogNotificationInput {
   appointmentRequestId?: number;
   recipientEmail?: string;
   recipientPhone?: string;
+  recipientUserId?: string;
   subject?: string;
   errorMessage?: string;
 }
@@ -71,6 +72,7 @@ async function logNotification(input: LogNotificationInput): Promise<void> {
       type: input.eventType,
       recipientEmail: input.recipientEmail ?? null,
       recipientPhone: input.recipientPhone ?? null,
+      recipientUserId: input.recipientUserId ?? null,
       subject: input.subject ?? null,
       body: input.body,
       status: input.status,

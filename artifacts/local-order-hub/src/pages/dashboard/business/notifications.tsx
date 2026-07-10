@@ -37,6 +37,7 @@ import {
   ProviderEnableRow,
   ProviderSetupInstructions,
 } from "@/components/notifications/notification-provider-ui";
+import { UserNotificationPreferencesPanel } from "@/components/notifications/user-notification-preferences-panel";
 import {
   getNotificationPreferences,
   setNotificationPreferences,
@@ -813,6 +814,10 @@ export default function BusinessNotifications() {
             testTestId="test-notification-sound"
           />
         </NotificationProviderCard>
+
+        <Separator />
+
+        <UserNotificationPreferencesPanel audience="BUSINESS_OWNER" />
       </div>
     </BusinessDashboardLayout>
   );

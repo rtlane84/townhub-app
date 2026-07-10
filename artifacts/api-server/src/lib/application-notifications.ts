@@ -15,9 +15,11 @@ import {
   deliverPlatformAdminSubscriptionEmail,
 } from "./notification-delivery";
 import { dashboardAdminApplicationsUrl } from "./notification-urls";
-import { resolvePlatformAdminEmails } from "./platform-admin-recipients";
+import { resolvePlatformAdminEmails, resolvePlatformAdminUserIds } from "./platform-admin-recipients";
 import { resolveOwnerDeliverableEmail } from "./owner-email";
 import { logger } from "./logger";
+import { deliverPushToUsers } from "./push-delivery";
+import { buildAdminApplicationPush } from "./notification-push-copy";
 import {
   formatSubscriptionPriceLabel,
   subscriptionStatusLabel,
@@ -72,10 +74,12 @@ export async function notifyBusinessApplicationSubmitted(input: {
   phone: string | null;
 }): Promise<void> {
   const adminRecipients = await resolvePlatformAdminEmails();
-  if (adminRecipients.length === 0) {
+  const adminUserIds = await resolvePlatformAdminUserIds();
+
+  if (adminRecipients.length === 0 && adminUserIds.length === 0) {
     logger.warn(
       { applicationId: input.applicationId },
-      "Skipping application submitted admin email — no admin recipients",
+      "Skipping application submitted admin notification — no admin recipients",
     );
     return;
   }
@@ -113,9 +117,28 @@ export async function notifyBusinessApplicationSubmitted(input: {
     });
   }
 
+  if (adminUserIds.length > 0) {
+    const push = buildAdminApplicationPush({
+      businessName: input.businessName,
+      applicationId: input.applicationId,
+    });
+    await deliverPushToUsers({
+      userIds: adminUserIds,
+      businessId: 0,
+      eventType: "ADMIN_APPLICATION_SUBMITTED",
+      title: push.title,
+      body: push.body,
+      deepLink: push.deepLink,
+    });
+  }
+
   logger.info(
-    { applicationId: input.applicationId, recipientCount: adminRecipients.length },
-    "Application submitted admin email queued",
+    {
+      applicationId: input.applicationId,
+      recipientCount: adminRecipients.length,
+      pushRecipientCount: adminUserIds.length,
+    },
+    "Application submitted admin notification queued",
   );
 }
 

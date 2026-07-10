@@ -17,6 +17,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { SignInButton, useClerk, useUser } from "@clerk/react";
+import { useUnregisterDevice } from "@workspace/api-client-react";
+import { unregisterNativePushDevice } from "@/lib/native-push";
 import { cn } from "@/lib/utils";
 import { isAccountRoute, isNavActive } from "@/lib/native-platform";
 import { triggerTabChangeHaptic } from "@/lib/native-haptics";
@@ -42,6 +44,7 @@ export function NativeBottomTabBar() {
   const { isSignedIn, isLoaded: clerkLoaded, user } = useUser();
   const { signOut } = useClerk();
   const queryClient = useQueryClient();
+  const unregisterDevice = useUnregisterDevice();
   const {
     authResolved,
     isAdmin,
@@ -118,6 +121,9 @@ export function NativeBottomTabBar() {
     setSigningOut(true);
     triggerTabChangeHaptic();
     try {
+      await unregisterNativePushDevice(async (input) => {
+        await unregisterDevice.mutateAsync({ data: input });
+      });
       await signOut();
       queryClient.clear();
       closeAccount();

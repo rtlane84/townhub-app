@@ -23,6 +23,8 @@ export interface NotificationLog {
   /** @nullable */
   recipientPhone?: string | null;
   /** @nullable */
+  recipientUserId?: string | null;
+  /** @nullable */
   subject?: string | null;
   body: string;
   status: string;

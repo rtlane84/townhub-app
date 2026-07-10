@@ -21,6 +21,7 @@ import {
   buildNativeSsoDeepLinkFromLocation,
   NATIVE_SSO_HTTPS_BOUNCE_PATH,
 } from "@/lib/native-oauth";
+import { clearNativeOAuthPending } from "@/lib/native-oauth-resume";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -68,6 +69,7 @@ import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
 import { BusinessFeatureAccessProvider } from "@/hooks/business-feature-access";
 import { BusinessHubGate } from "@/components/business-hub-gate";
 import { AccountDisabledGate } from "@/components/account-disabled-gate";
+import { NativePushRegistration } from "@/components/native-push-registration";
 import { SentryErrorBoundary } from "@/components/sentry-error-boundary";
 import { SentryContextBridge } from "@/components/sentry-context-bridge";
 
@@ -207,6 +209,10 @@ function NativeSsoBouncePage() {
 
 /** WebView / web: finish Clerk OAuth session, then go home. */
 function SsoCallbackPage() {
+  useEffect(() => {
+    clearNativeOAuthPending();
+  }, []);
+
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <AuthenticateWithRedirectCallback
@@ -410,6 +416,7 @@ function ClerkProviderWithRoutes() {
         <SentryContextBridge />
         <ClerkQueryClientCacheInvalidator />
         <ClerkApiTokenBridge />
+        <NativePushRegistration />
         <PostSignInRedirector />
         <PlatformThemeProvider>
         <CartProvider>

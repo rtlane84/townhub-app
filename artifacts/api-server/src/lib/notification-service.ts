@@ -20,6 +20,11 @@ import {
   deliverOwnerNtfy,
   type CustomerLifecycleEventType,
 } from "./notification-delivery";
+import { deliverPushToUsers } from "./push-delivery";
+import {
+  buildCustomerOrderPush,
+  buildOwnerNewOrderPush,
+} from "./notification-push-copy";
 import {
   buildOwnerNewOrderDiscordPayload,
   sendOwnerDiscordWebhook,
@@ -144,6 +149,21 @@ export async function notifyCustomerLifecycleEvent(
     );
   }
 
+  if (order.customerUserId) {
+    const push = buildCustomerOrderPush(event, order);
+    tasks.push(
+      deliverPushToUsers({
+        userIds: [order.customerUserId],
+        businessId: order.businessId,
+        eventType: lifecycleEventType(event),
+        title: push.title,
+        body: push.body,
+        deepLink: push.deepLink,
+        orderId: order.orderId,
+      }),
+    );
+  }
+
   await Promise.all(tasks);
 }
 
@@ -242,6 +262,21 @@ export async function notifyOwnerNewOrderFromOrderId(orderId: number): Promise<v
             click: ntfy.click,
             tags: ntfy.tags,
           }),
+      }),
+    );
+  }
+
+  if (business.ownerId) {
+    const push = buildOwnerNewOrderPush(order);
+    tasks.push(
+      deliverPushToUsers({
+        userIds: [business.ownerId],
+        businessId: business.id,
+        eventType: "NEW_ORDER",
+        title: push.title,
+        body: push.body,
+        deepLink: push.deepLink,
+        orderId,
       }),
     );
   }

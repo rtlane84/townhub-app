@@ -36,6 +36,109 @@ export const GetMeResponse = zod.object({
 
 
 /**
+ * @summary Register or refresh a push notification device token
+ */
+export const registerDeviceBodyTokenMin = 8;
+export const registerDeviceBodyTokenMax = 4096;
+
+
+
+export const RegisterDeviceBody = zod.object({
+  "token": zod.string().min(registerDeviceBodyTokenMin).max(registerDeviceBodyTokenMax),
+  "platform": zod.enum(['IOS', 'ANDROID', 'WEB']),
+  "appVersion": zod.string().nullish(),
+  "deviceLabel": zod.string().nullish()
+})
+
+
+/**
+ * @summary List registered devices for the current user
+ */
+export const ListDevicesResponseItem = zod.object({
+  "id": zod.number(),
+  "platform": zod.enum(['IOS', 'ANDROID', 'WEB']),
+  "appVersion": zod.string().nullish(),
+  "deviceLabel": zod.string().nullish(),
+  "lastSeenAt": zod.coerce.date(),
+  "createdAt": zod.coerce.date()
+})
+export const ListDevicesResponse = zod.array(ListDevicesResponseItem)
+
+
+/**
+ * @summary Unregister a device token (logout) or all devices
+ */
+export const UnregisterDeviceBody = zod.object({
+  "token": zod.string().optional(),
+  "all": zod.boolean().optional().describe('When true, removes all devices for the current user')
+})
+
+export const UnregisterDeviceResponse = zod.object({
+  "ok": zod.boolean(),
+  "removed": zod.number()
+})
+
+
+/**
+ * @summary Get per-category notification preferences for the current user
+ */
+export const getMyNotificationPreferencesQueryImplementedOnlyDefault = true;
+
+export const GetMyNotificationPreferencesQueryParams = zod.object({
+  "audience": zod.enum(['PLATFORM_ADMIN', 'BUSINESS_OWNER', 'CUSTOMER']).optional(),
+  "implementedOnly": zod.coerce.boolean().default(getMyNotificationPreferencesQueryImplementedOnlyDefault)
+})
+
+export const GetMyNotificationPreferencesResponse = zod.object({
+  "preferences": zod.array(zod.object({
+  "category": zod.string(),
+  "enabled": zod.boolean(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "audience": zod.enum(['PLATFORM_ADMIN', 'BUSINESS_OWNER', 'CUSTOMER']),
+  "implemented": zod.boolean(),
+  "explicit": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Update per-category notification preferences
+ */
+export const updateMyNotificationPreferencesBodyPreferencesMax = 50;
+
+
+
+export const UpdateMyNotificationPreferencesBody = zod.object({
+  "preferences": zod.array(zod.object({
+  "category": zod.string(),
+  "enabled": zod.boolean()
+})).min(1).max(updateMyNotificationPreferencesBodyPreferencesMax)
+})
+
+export const UpdateMyNotificationPreferencesResponse = zod.object({
+  "preferences": zod.array(zod.object({
+  "category": zod.string(),
+  "enabled": zod.boolean(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "audience": zod.enum(['PLATFORM_ADMIN', 'BUSINESS_OWNER', 'CUSTOMER']),
+  "implemented": zod.boolean(),
+  "explicit": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Send a test push to the current user's registered devices
+ */
+export const TestMyPushNotificationResponse = zod.object({
+  "ok": zod.boolean(),
+  "message": zod.string().optional()
+})
+
+
+/**
  * @summary List businesses owned by the current user
  */
 export const ListMyBusinessesResponseItem = zod.object({
@@ -3068,7 +3171,7 @@ export const TestBusinessNotificationEmailParams = zod.object({
 
 export const TestBusinessNotificationEmailResponse = zod.object({
   "ok": zod.boolean(),
-  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY', 'PUSH']),
   "recipient": zod.string().optional(),
   "message": zod.string().optional()
 })
@@ -3083,7 +3186,7 @@ export const TestBusinessNotificationSmsParams = zod.object({
 
 export const TestBusinessNotificationSmsResponse = zod.object({
   "ok": zod.boolean(),
-  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY', 'PUSH']),
   "recipient": zod.string().optional(),
   "message": zod.string().optional()
 })
@@ -3098,7 +3201,7 @@ export const TestBusinessNotificationDiscordParams = zod.object({
 
 export const TestBusinessNotificationDiscordResponse = zod.object({
   "ok": zod.boolean(),
-  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY', 'PUSH']),
   "recipient": zod.string().optional(),
   "message": zod.string().optional()
 })
@@ -3113,7 +3216,7 @@ export const TestBusinessNotificationNtfyParams = zod.object({
 
 export const TestBusinessNotificationNtfyResponse = zod.object({
   "ok": zod.boolean(),
-  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY', 'PUSH']),
   "recipient": zod.string().optional(),
   "message": zod.string().optional()
 })
@@ -3469,7 +3572,7 @@ export const ListNotificationLogsQueryParams = zod.object({
   "orderId": zod.coerce.number().optional(),
   "limit": zod.coerce.number().optional(),
   "status": zod.enum(['SENT', 'LOGGED', 'FAILED']).optional(),
-  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']).optional(),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY', 'PUSH']).optional(),
   "eventType": zod.coerce.string().optional()
 })
 
@@ -3478,11 +3581,12 @@ export const ListNotificationLogsResponseItem = zod.object({
   "businessId": zod.number(),
   "orderId": zod.number().nullish(),
   "appointmentRequestId": zod.number().nullish(),
-  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY']),
+  "channel": zod.enum(['EMAIL', 'SMS', 'DISCORD', 'NTFY', 'PUSH']),
   "eventType": zod.string().nullish(),
   "type": zod.string().optional(),
   "recipientEmail": zod.string().nullish(),
   "recipientPhone": zod.string().nullish(),
+  "recipientUserId": zod.string().nullish(),
   "subject": zod.string().nullish(),
   "body": zod.string(),
   "status": zod.string(),

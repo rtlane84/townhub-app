@@ -44,6 +44,7 @@ import type {
   CheckBusinessSlugAvailabilityParams,
   CheckoutSessionInput,
   CheckoutSessionResult,
+  DeviceRegistration,
   Event,
   EventInput,
   FoodTruckLocation,
@@ -51,6 +52,7 @@ import type {
   FoodTruckLocationWithBusiness,
   GetMeParams,
   GetMyBusinessParams,
+  GetMyNotificationPreferencesParams,
   HealthStatus,
   Highlight,
   HighlightInput,
@@ -67,6 +69,7 @@ import type {
   ModifierGroupInput,
   ModifierGroupUpdate,
   NotificationLog,
+  NotificationPreferencesResponse,
   NotificationTestResult,
   Order,
   OrderInput,
@@ -85,6 +88,7 @@ import type {
   ProductInput,
   ProductUpdate,
   PublicPricingPlan,
+  RegisterDeviceInput,
   StripeConnectStartInput,
   StripeConnectStartResult,
   StripeConnectStatus,
@@ -95,6 +99,10 @@ import type {
   SubscriptionPlan,
   SubscriptionPlanInput,
   SystemHealthReport,
+  TestMyPushNotification200,
+  UnregisterDevice200,
+  UnregisterDeviceInput,
+  UpdateNotificationPreferencesInput,
   UploadMediaAssetParams,
   UserProfile,
   UserRoleUpdate,
@@ -274,6 +282,450 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
 
 
 
+
+export const getRegisterDeviceUrl = () => {
+
+
+
+
+  return `/api/devices`
+}
+
+/**
+ * @summary Register or refresh a push notification device token
+ */
+export const registerDevice = async (registerDeviceInput: RegisterDeviceInput, options?: RequestInit): Promise<DeviceRegistration> => {
+
+  return customFetch<DeviceRegistration>(getRegisterDeviceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      registerDeviceInput,)
+  }
+);}
+
+
+
+
+export const getRegisterDeviceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,{data: BodyType<RegisterDeviceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,{data: BodyType<RegisterDeviceInput>}, TContext> => {
+
+const mutationKey = ['registerDevice'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerDevice>>, {data: BodyType<RegisterDeviceInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerDevice(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof registerDevice>>>
+    export type RegisterDeviceMutationBody = BodyType<RegisterDeviceInput>
+    export type RegisterDeviceMutationError = ErrorType<void>
+
+    /**
+ * @summary Register or refresh a push notification device token
+ */
+export const useRegisterDevice = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,{data: BodyType<RegisterDeviceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerDevice>>,
+        TError,
+        {data: BodyType<RegisterDeviceInput>},
+        TContext
+      > => {
+      return useMutation(getRegisterDeviceMutationOptions(options));
+    }
+
+export const getListDevicesUrl = () => {
+
+
+
+
+  return `/api/devices`
+}
+
+/**
+ * @summary List registered devices for the current user
+ */
+export const listDevices = async ( options?: RequestInit): Promise<DeviceRegistration[]> => {
+
+  return customFetch<DeviceRegistration[]>(getListDevicesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDevicesQueryKey = () => {
+    return [
+    `/api/devices`
+    ] as const;
+    }
+
+
+export const getListDevicesQueryOptions = <TData = Awaited<ReturnType<typeof listDevices>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDevicesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDevices>>> = ({ signal }) => listDevices({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDevices>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListDevicesQueryResult = NonNullable<Awaited<ReturnType<typeof listDevices>>>
+export type ListDevicesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List registered devices for the current user
+ */
+
+export function useListDevices<TData = Awaited<ReturnType<typeof listDevices>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListDevicesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUnregisterDeviceUrl = () => {
+
+
+
+
+  return `/api/devices`
+}
+
+/**
+ * @summary Unregister a device token (logout) or all devices
+ */
+export const unregisterDevice = async (unregisterDeviceInput?: UnregisterDeviceInput, options?: RequestInit): Promise<UnregisterDevice200> => {
+
+  return customFetch<UnregisterDevice200>(getUnregisterDeviceUrl(),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      unregisterDeviceInput,)
+  }
+);}
+
+
+
+
+export const getUnregisterDeviceMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unregisterDevice>>, TError,{data?: BodyType<UnregisterDeviceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unregisterDevice>>, TError,{data?: BodyType<UnregisterDeviceInput>}, TContext> => {
+
+const mutationKey = ['unregisterDevice'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unregisterDevice>>, {data?: BodyType<UnregisterDeviceInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  unregisterDevice(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnregisterDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof unregisterDevice>>>
+    export type UnregisterDeviceMutationBody = BodyType<UnregisterDeviceInput> | undefined
+    export type UnregisterDeviceMutationError = ErrorType<void>
+
+    /**
+ * @summary Unregister a device token (logout) or all devices
+ */
+export const useUnregisterDevice = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unregisterDevice>>, TError,{data?: BodyType<UnregisterDeviceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unregisterDevice>>,
+        TError,
+        {data?: BodyType<UnregisterDeviceInput>},
+        TContext
+      > => {
+      return useMutation(getUnregisterDeviceMutationOptions(options));
+    }
+
+export const getGetMyNotificationPreferencesUrl = (params?: GetMyNotificationPreferencesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/me/notification-preferences?${stringifiedParams}` : `/api/me/notification-preferences`
+}
+
+/**
+ * @summary Get per-category notification preferences for the current user
+ */
+export const getMyNotificationPreferences = async (params?: GetMyNotificationPreferencesParams, options?: RequestInit): Promise<NotificationPreferencesResponse> => {
+
+  return customFetch<NotificationPreferencesResponse>(getGetMyNotificationPreferencesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyNotificationPreferencesQueryKey = (params?: GetMyNotificationPreferencesParams,) => {
+    return [
+    `/api/me/notification-preferences`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetMyNotificationPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getMyNotificationPreferences>>, TError = ErrorType<void>>(params?: GetMyNotificationPreferencesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyNotificationPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyNotificationPreferencesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyNotificationPreferences>>> = ({ signal }) => getMyNotificationPreferences(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyNotificationPreferences>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyNotificationPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getMyNotificationPreferences>>>
+export type GetMyNotificationPreferencesQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get per-category notification preferences for the current user
+ */
+
+export function useGetMyNotificationPreferences<TData = Awaited<ReturnType<typeof getMyNotificationPreferences>>, TError = ErrorType<void>>(
+ params?: GetMyNotificationPreferencesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyNotificationPreferences>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyNotificationPreferencesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateMyNotificationPreferencesUrl = () => {
+
+
+
+
+  return `/api/me/notification-preferences`
+}
+
+/**
+ * @summary Update per-category notification preferences
+ */
+export const updateMyNotificationPreferences = async (updateNotificationPreferencesInput: UpdateNotificationPreferencesInput, options?: RequestInit): Promise<NotificationPreferencesResponse> => {
+
+  return customFetch<NotificationPreferencesResponse>(getUpdateMyNotificationPreferencesUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateNotificationPreferencesInput,)
+  }
+);}
+
+
+
+
+export const getUpdateMyNotificationPreferencesMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyNotificationPreferences>>, TError,{data: BodyType<UpdateNotificationPreferencesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMyNotificationPreferences>>, TError,{data: BodyType<UpdateNotificationPreferencesInput>}, TContext> => {
+
+const mutationKey = ['updateMyNotificationPreferences'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMyNotificationPreferences>>, {data: BodyType<UpdateNotificationPreferencesInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  updateMyNotificationPreferences(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMyNotificationPreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyNotificationPreferences>>>
+    export type UpdateMyNotificationPreferencesMutationBody = BodyType<UpdateNotificationPreferencesInput>
+    export type UpdateMyNotificationPreferencesMutationError = ErrorType<void>
+
+    /**
+ * @summary Update per-category notification preferences
+ */
+export const useUpdateMyNotificationPreferences = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMyNotificationPreferences>>, TError,{data: BodyType<UpdateNotificationPreferencesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMyNotificationPreferences>>,
+        TError,
+        {data: BodyType<UpdateNotificationPreferencesInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateMyNotificationPreferencesMutationOptions(options));
+    }
+
+export const getTestMyPushNotificationUrl = () => {
+
+
+
+
+  return `/api/me/notifications/test-push`
+}
+
+/**
+ * @summary Send a test push to the current user's registered devices
+ */
+export const testMyPushNotification = async ( options?: RequestInit): Promise<TestMyPushNotification200> => {
+
+  return customFetch<TestMyPushNotification200>(getTestMyPushNotificationUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getTestMyPushNotificationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testMyPushNotification>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof testMyPushNotification>>, TError,void, TContext> => {
+
+const mutationKey = ['testMyPushNotification'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof testMyPushNotification>>, void> = () => {
+
+
+          return  testMyPushNotification(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TestMyPushNotificationMutationResult = NonNullable<Awaited<ReturnType<typeof testMyPushNotification>>>
+
+    export type TestMyPushNotificationMutationError = ErrorType<void>
+
+    /**
+ * @summary Send a test push to the current user's registered devices
+ */
+export const useTestMyPushNotification = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof testMyPushNotification>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof testMyPushNotification>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getTestMyPushNotificationMutationOptions(options));
+    }
 
 export const getListMyBusinessesUrl = () => {
 

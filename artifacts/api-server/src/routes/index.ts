@@ -16,6 +16,7 @@ import platformRouter from "./platform";
 import weatherRouter from "./weather";
 import appointmentRequestsRouter from "./appointment-requests";
 import notificationTestsRouter from "./notification-tests";
+import devicesRouter from "./devices";
 import mediaRouter from "./media";
 import devRouter from "./dev";
 import debugRouter from "./debug";
@@ -51,6 +52,7 @@ router.use(applicationsRouter);
 router.use(foodTruckRouter);
 router.use(appointmentRequestsRouter);
 router.use(notificationTestsRouter);
+router.use(devicesRouter);
 router.use(mediaRouter);
 router.use(devRouter);
 if (process.env.NODE_ENV !== "production") {
