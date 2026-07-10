@@ -17,8 +17,10 @@ import { Link } from "wouter";
 import { useUser } from "@clerk/react";
 import {
   Store, ArrowRight, Leaf, Coffee, Utensils, Calendar, Sparkles, MapPin, Clock, Truck,
+  Cake, ShoppingBasket, Flower2, Wrench, Briefcase,
 } from "lucide-react";
-import { BusinessType } from "@workspace/api-client-react";
+import type { LucideIcon } from "lucide-react";
+import { PUBLIC_EXPLORE_CATEGORIES } from "@workspace/api-zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -55,13 +57,20 @@ import { cn } from "@/lib/utils";
  * 7. Events — one combined calendar section
  */
 
-const CATEGORIES = [
-  { name: "Restaurants", type: BusinessType.FOOD_VENDOR, icon: Utensils, tint: "bg-amber-500/10 text-amber-700" },
-  { name: "Coffee", type: BusinessType.COFFEE_SHOP, icon: Coffee, tint: "bg-orange-500/10 text-orange-700" },
-  { name: "Flowers", type: BusinessType.FLORIST, icon: Leaf, tint: "bg-emerald-500/10 text-emerald-700" },
-  { name: "Salon / Beauty", type: BusinessType.SALON, icon: Sparkles, tint: "bg-pink-500/10 text-pink-600" },
-  { name: "Boutique", type: BusinessType.RETAIL_STORE, icon: Store, tint: "bg-sky-500/10 text-sky-700" },
-];
+const EXPLORE_ICONS: Record<string, { icon: LucideIcon; tint: string }> = {
+  FOOD_VENDOR: { icon: Utensils, tint: "bg-amber-500/10 text-amber-700" },
+  COFFEE_SHOP: { icon: Coffee, tint: "bg-orange-500/10 text-orange-700" },
+  BAKERY: { icon: Cake, tint: "bg-rose-500/10 text-rose-700" },
+  GROCERY: { icon: ShoppingBasket, tint: "bg-lime-500/10 text-lime-700" },
+  FLORIST: { icon: Flower2, tint: "bg-emerald-500/10 text-emerald-700" },
+  GARDEN_MARKET: { icon: Leaf, tint: "bg-green-500/10 text-green-700" },
+  RETAIL_STORE: { icon: Store, tint: "bg-sky-500/10 text-sky-700" },
+  BUILDING_SUPPLY: { icon: Wrench, tint: "bg-slate-500/10 text-slate-700" },
+  SALON: { icon: Sparkles, tint: "bg-pink-500/10 text-pink-600" },
+  SERVICE_PROVIDER: { icon: Briefcase, tint: "bg-indigo-500/10 text-indigo-700" },
+};
+
+const EXPLORE_FALLBACK = { icon: Store, tint: "bg-primary/10 text-primary" };
 
 function greetingForHour(hour: number) {
   if (hour < 12) return "Good morning";
@@ -230,17 +239,18 @@ export default function Home() {
       <section className={cn(SECTION_Y, "th-fade-up th-fade-up-delay-1")}>
         <div className={PAGE_CONTAINER}>
           <SectionHeader title="Explore" size="sm" />
-          <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar md:grid md:grid-cols-5 md:gap-4 md:overflow-visible md:pb-0">
-            {CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
+          <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar sm:grid sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 sm:gap-4 sm:overflow-visible sm:pb-0">
+            {PUBLIC_EXPLORE_CATEGORIES.map((cat) => {
+              const visual = EXPLORE_ICONS[cat.value] ?? EXPLORE_FALLBACK;
+              const Icon = visual.icon;
               return (
-                <Link key={cat.type} href={`/businesses?type=${cat.type}`} className="min-w-[120px] shrink-0 md:min-w-0">
+                <Link key={cat.value} href={`/businesses?type=${cat.value}`} className="min-w-[120px] shrink-0 sm:min-w-0">
                   <Card className={cn(LISTING_CARD_CLASS, "rounded-[1.35rem]")}>
                     <CardContent className="flex flex-col items-center gap-2.5 p-4 text-center md:gap-3 md:p-5">
-                      <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl md:h-14 md:w-14", cat.tint)}>
+                      <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl md:h-14 md:w-14", visual.tint)}>
                         <Icon className="h-5 w-5 md:h-6 md:w-6" strokeWidth={1.85} />
                       </div>
-                      <span className="text-[13px] font-semibold tracking-tight text-foreground md:text-sm">{cat.name}</span>
+                      <span className="text-[13px] font-semibold tracking-tight text-foreground md:text-sm">{cat.label}</span>
                     </CardContent>
                   </Card>
                 </Link>

@@ -128,19 +128,26 @@ export default function Storefront() {
     .slice(0, 5);
 
   const specials = products.filter((p) => p.featured && p.available !== false);
-  const displayedProducts = activeCategory
-    ? products.filter((p) => p.categoryId === activeCategory)
-    : products;
-  const catalogFullyEmpty = products.length === 0;
-  const categoryFilterEmpty = !catalogFullyEmpty && displayedProducts.length === 0;
-
   const paymentNote = paymentModeStorefrontNote(resolvePaymentMode(b));
   const storefrontMode = resolveStorefrontMode(b);
   const isAppointmentMode = isAppointmentStorefrontMode(b);
   const isInformationMode = isInformationStorefrontMode(b);
   const showCatalog = showsStorefrontCatalog(storefrontMode);
-  const showSpecials = showCatalog && specials.length > 0 && activeCategory === null;
   const copy = storefrontCopy(storefrontMode);
+  const displayedProducts = (
+    activeCategory
+      ? products.filter((p) => p.categoryId === activeCategory)
+      : products
+  ).filter((p) => {
+    // When the specials section is visible, keep those items out of the main grid
+    // so the catalog doesn't look like a continuation of Special of the day.
+    if (activeCategory === null && p.featured) return false;
+    return true;
+  });
+  const catalogFullyEmpty = products.length === 0;
+  const showSpecialsSection = showCatalog && specials.length > 0 && activeCategory === null;
+  const categoryFilterEmpty =
+    !catalogFullyEmpty && displayedProducts.length === 0 && !(showSpecialsSection && specials.length > 0);
   const contactCtaLabel = informationPrimaryCtaLabel(!!b.phone?.trim());
   const websiteUrl = normalizeWebsiteUrl(bx.websiteUrl as string | undefined);
   const showWebsiteCard = bx.showWebsiteCard === true && !!websiteUrl;
@@ -465,8 +472,8 @@ export default function Storefront() {
               </div>
             )}
 
-            {showSpecials ? (
-              <div className="mb-8" data-testid="section-todays-special">
+            {showSpecialsSection ? (
+              <div className="mb-10" data-testid="section-todays-special">
                 <div className="mb-3">
                   <h3 className="font-serif text-xl font-bold text-foreground">Special of the day</h3>
                 </div>
@@ -526,7 +533,14 @@ export default function Storefront() {
               </div>
             ) : null}
 
+            {showSpecialsSection && displayedProducts.length > 0 ? (
+              <div className="mb-4 border-t border-border/50 pt-8">
+                <h3 className="font-serif text-xl font-bold text-foreground">{copy.allItemsLabel}</h3>
+              </div>
+            ) : null}
+
             {displayedProducts.length === 0 ? (
+              showSpecialsSection ? null : (
               <div className="rounded-[1.75rem] bg-card px-6 py-16 text-center shadow-[0_2px_24px_-6px_rgba(15,23,42,0.1)]">
                 <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-muted-foreground opacity-30" />
                 <h3 className="font-serif text-lg font-bold text-foreground">
@@ -544,6 +558,7 @@ export default function Storefront() {
                   </Button>
                 ) : null}
               </div>
+              )
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {displayedProducts.map((product) => (

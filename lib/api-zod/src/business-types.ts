@@ -31,6 +31,11 @@ export const PUBLIC_BUSINESS_FILTERS: Array<{ label: string; value: string }> = 
   { label: "Services", value: BusinessTypeValues.SERVICE_PROVIDER },
 ];
 
+/** Home Explore chips — same categories as the businesses directory (excluding All). */
+export const PUBLIC_EXPLORE_CATEGORIES = PUBLIC_BUSINESS_FILTERS.filter(
+  (filter) => filter.value !== "ALL",
+);
+
 /** Food-oriented categories — mobile mode surfaces as "Food Truck" publicly. */
 const FOOD_CATEGORY_TYPES = new Set<string>([
   BusinessTypeValues.FOOD_VENDOR,

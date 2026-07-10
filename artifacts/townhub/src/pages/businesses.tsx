@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearch } from "wouter";
 import { Search, MapPin, Store } from "lucide-react";
 import { useListBusinesses } from "@workspace/api-client-react";
 import { PUBLIC_BUSINESS_FILTERS } from "@workspace/api-zod";
@@ -24,9 +24,21 @@ import { cn } from "@/lib/utils";
 const SEARCH_DEBOUNCE_MS = 300;
 
 export default function Businesses() {
+  const searchString = useSearch();
+  const typeFromUrl = useMemo(() => {
+    const params = new URLSearchParams(searchString.startsWith("?") ? searchString.slice(1) : searchString);
+    const type = params.get("type");
+    if (!type) return "ALL";
+    return PUBLIC_BUSINESS_FILTERS.some((filter) => filter.value === type) ? type : "ALL";
+  }, [searchString]);
+
   const [searchInput, setSearchInput] = useState("");
-  const [selectedType, setSelectedType] = useState<string>("ALL");
+  const [selectedType, setSelectedType] = useState<string>(typeFromUrl);
   const search = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
+
+  useEffect(() => {
+    setSelectedType(typeFromUrl);
+  }, [typeFromUrl]);
 
   const { data: businesses, isLoading } = useListBusinesses({
     search: search || undefined,
