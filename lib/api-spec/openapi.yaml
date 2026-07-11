@@ -1,0 +1,4876 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: LocalOrderHub - Multi-tenant local marketplace API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: businesses
+    description: Business directory operations
+  - name: products
+    description: Product catalog operations
+  - name: categories
+    description: Category management
+  - name: orders
+    description: Order management
+  - name: cart
+    description: Cart operations
+  - name: auth
+    description: Authentication / user profile
+  - name: admin
+    description: Platform admin operations
+  - name: events
+    description: Community events calendar
+  - name: highlights
+    description: Spotlight content — promotions, announcements, and important community posts
+  - name: subscriptions
+    description: Subscription plans and billing
+  - name: food-truck
+    description: Food truck location management
+  - name: media
+    description: Media library and image uploads
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Auth / User ───────────────────────────────────────────────
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user profile
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+          description: Selected owned business id (must belong to the current user)
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+
+  /devices:
+    post:
+      operationId: registerDevice
+      tags: [auth]
+      summary: Register or refresh a push notification device token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterDeviceInput"
+      responses:
+        "201":
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceRegistration"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+    get:
+      operationId: listDevices
+      tags: [auth]
+      summary: List registered devices for the current user
+      responses:
+        "200":
+          description: Device list (tokens redacted)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceRegistration"
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: unregisterDevice
+      tags: [auth]
+      summary: Unregister a device token (logout) or all devices
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnregisterDeviceInput"
+      responses:
+        "200":
+          description: Unregister result
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, removed]
+                properties:
+                  ok:
+                    type: boolean
+                  removed:
+                    type: integer
+        "401":
+          description: Unauthorized
+
+  /me/notification-preferences:
+    get:
+      operationId: getMyNotificationPreferences
+      tags: [auth]
+      summary: Get per-category notification preferences for the current user
+      parameters:
+        - in: query
+          name: audience
+          schema:
+            type: string
+            enum: [PLATFORM_ADMIN, BUSINESS_OWNER, CUSTOMER]
+        - in: query
+          name: implementedOnly
+          schema:
+            type: boolean
+            default: true
+      responses:
+        "200":
+          description: Preference list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferencesResponse"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateMyNotificationPreferences
+      tags: [auth]
+      summary: Update per-category notification preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNotificationPreferencesInput"
+      responses:
+        "200":
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPreferencesResponse"
+        "400":
+          description: Invalid categories
+        "401":
+          description: Unauthorized
+
+  /me/notifications/test-push:
+    post:
+      operationId: testMyPushNotification
+      tags: [auth]
+      summary: Send a test push to the current user's registered devices
+      responses:
+        "200":
+          description: Test queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+                  message:
+                    type: string
+        "401":
+          description: Unauthorized
+
+  /auth/me/businesses:
+    get:
+      operationId: listMyBusinesses
+      tags: [auth]
+      summary: List businesses owned by the current user
+      responses:
+        "200":
+          description: Owned businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OwnedBusinessSummary"
+        "401":
+          description: Unauthorized
+
+  /auth/me/business:
+    get:
+      operationId: getMyBusiness
+      tags: [auth]
+      summary: Get an owned business for the current user
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+          description: Owned business id (defaults to primary owned business)
+      responses:
+        "200":
+          description: My business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "403":
+          description: Forbidden
+        "404":
+          description: No business found
+
+  /admin/bootstrap-status:
+    get:
+      operationId: getAdminBootstrapStatus
+      tags: [admin]
+      summary: Check whether initial admin bootstrap is complete
+      description: Public endpoint used by the frontend to hide the first-run setup flow after an admin exists.
+      responses:
+        "200":
+          description: Bootstrap status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBootstrapStatus"
+
+  /admin/bootstrap:
+    post:
+      operationId: bootstrapAdmin
+      tags: [admin]
+      summary: Promote the signed-in user to platform admin (first deploy only)
+      responses:
+        "200":
+          description: Admin access granted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBootstrapResult"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Setup is locked — an admin already exists
+
+  # ─── Businesses (public) ────────────────────────────────────────
+  /businesses:
+    get:
+      operationId: listBusinesses
+      tags: [businesses]
+      summary: List all active businesses
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Filter by business type
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search by business name
+        - in: query
+          name: featured
+          schema:
+            type: boolean
+          description: Filter featured businesses only
+      responses:
+        "200":
+          description: List of businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+
+  /businesses/stats:
+    get:
+      operationId: getPlatformStats
+      tags: [businesses]
+      summary: Platform-level stats (admin)
+      responses:
+        "200":
+          description: Platform stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
+  /marketplace/stats:
+    get:
+      operationId: getMarketplaceStats
+      tags: [businesses]
+      summary: Public marketplace stats for homepage
+      responses:
+        "200":
+          description: Marketplace stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceStats"
+
+  /businesses/slug-availability:
+    get:
+      operationId: checkBusinessSlugAvailability
+      tags: [businesses]
+      summary: Check whether a storefront URL is available (public)
+      parameters:
+        - in: query
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Storefront URL availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSlugAvailability"
+        "400":
+          description: Invalid slug
+
+  /businesses/checkout/{businessId}:
+    get:
+      operationId: getBusinessCheckout
+      tags: [businesses]
+      summary: Public business checkout context (no auth)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Business checkout details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "404":
+          description: Not found
+
+  /businesses/{slug}:
+    get:
+      operationId: getBusinessBySlug
+      tags: [businesses]
+      summary: Get a single business storefront by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Business storefront
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessStorefront"
+        "404":
+          description: Not found
+
+  # ─── Self-service business registration ────────────────────────
+  /businesses/register:
+    post:
+      operationId: registerBusiness
+      tags: [businesses]
+      summary: Direct business registration (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessRegistrationInput"
+      responses:
+        "201":
+          description: Business created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
+
+  # ─── Business Admin (owner/admin) ──────────────────────────────
+  /businesses/manage:
+    post:
+      operationId: createBusiness
+      tags: [businesses]
+      summary: Create a new business (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+  /businesses/manage/{id}:
+    get:
+      operationId: getBusiness
+      tags: [businesses]
+      summary: Get a business by id (owner or admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+    patch:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update business settings
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessUpdate"
+      responses:
+        "200":
+          description: Updated business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+    delete:
+      operationId: deleteBusiness
+      tags: [businesses]
+      summary: Archive/remove a business (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Business archived
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveBusinessResponse"
+        "404":
+          description: Business not found
+        "502":
+          description: Stripe subscription cancellation failed
+
+  # ─── Categories ─────────────────────────────────────────────────
+  /businesses/{businessId}/categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List categories for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+      operationId: createCategory
+      tags: [categories]
+      summary: Create a category (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+
+  /businesses/{businessId}/categories/{id}:
+    patch:
+      operationId: updateCategory
+      tags: [categories]
+      summary: Update a category (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+    delete:
+      operationId: deleteCategory
+      tags: [categories]
+      summary: Delete a category (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+
+  # ─── Modifier Groups ─────────────────────────────────────────────
+  /businesses/{businessId}/modifier-groups:
+    get:
+      operationId: listModifierGroups
+      tags: [modifier-groups]
+      summary: List modifier groups for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Modifier groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ModifierGroup"
+    post:
+      operationId: createModifierGroup
+      tags: [modifier-groups]
+      summary: Create a modifier group (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModifierGroupInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModifierGroup"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+
+  /businesses/{businessId}/modifier-groups/{id}:
+    patch:
+      operationId: updateModifierGroup
+      tags: [modifier-groups]
+      summary: Update a modifier group (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ModifierGroupUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModifierGroup"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+    delete:
+      operationId: deleteModifierGroup
+      tags: [modifier-groups]
+      summary: Delete a modifier group (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+
+  # ─── Products ───────────────────────────────────────────────────
+  /businesses/{businessId}/products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Create a product (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+
+  /businesses/{businessId}/products/{id}:
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update a product (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Delete a product (business owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — caller must own the business or be admin
+
+  # ─── Orders ─────────────────────────────────────────────────────
+  /orders/prep-estimate:
+    post:
+      operationId: estimateOrderPrep
+      tags: [orders]
+      summary: Preview ASAP prep time estimate for a cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PrepEstimateInput"
+      responses:
+        "200":
+          description: Prep time estimate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrepEstimate"
+        "400":
+          description: Invalid request
+
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Place a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /me/orders:
+    get:
+      operationId: listMyOrders
+      tags: [orders]
+      summary: List orders for the signed-in customer
+      responses:
+        "200":
+          description: Customer order history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "401":
+          description: Unauthorized
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get order by id (guest token, owner, admin, or linked customer)
+      description: |
+        Guest orders require a signed access token via `?token=` query parameter or
+        `X-Order-Access-Token` header. Signed-in customers, business owners, and
+        admins may access without a token when authorized.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "403":
+          description: Forbidden — valid access token, ownership, or admin required
+        "404":
+          description: Not found
+
+  /orders/{id}/status:
+    patch:
+      operationId: updateOrderStatus
+      tags: [orders]
+      summary: Update order status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}/refund:
+    post:
+      operationId: refundOrder
+      tags: [orders]
+      summary: Issue a full or partial refund for a paid online order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderRefundInput"
+      responses:
+        "200":
+          description: Refund processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderRefundResult"
+        "400":
+          description: Invalid refund request
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Order not found
+        "409":
+          description: Refund already in progress
+        "502":
+          description: Stripe refund failed
+
+  /businesses/{businessId}/orders:
+    get:
+      operationId: listBusinessOrders
+      tags: [orders]
+      summary: List orders for a specific business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: activeOnly
+          schema:
+            type: boolean
+          description: When true, returns only active kitchen/live queue statuses within a recent lookback window.
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+          description: Optional lower bound for order createdAt. Defaults to 30 days ago when activeOnly is true.
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /businesses/{businessId}/orders/summary:
+    get:
+      operationId: getBusinessOrderSummary
+      tags: [orders]
+      summary: Get today's order summary/stats for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessOrderSummary"
+
+  /admin/orders:
+    get:
+      operationId: listAllOrders
+      tags: [admin]
+      summary: List all orders (admin)
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: All orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  # ─── Checkout / Stripe ──────────────────────────────────────────
+  /checkout/session:
+    post:
+      operationId: createCheckoutSession
+      tags: [orders]
+      summary: Create a Stripe checkout session (requires order access)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutSessionInput"
+      responses:
+        "200":
+          description: Checkout session URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutSessionResult"
+        "403":
+          description: Forbidden — valid access token, ownership, or admin required
+
+  /checkout/webhook:
+    post:
+      operationId: stripeWebhook
+      tags: [orders]
+      summary: Stripe webhook handler
+      responses:
+        "200":
+          description: Received
+
+  /businesses/{businessId}/stripe/status:
+    get:
+      operationId: getBusinessStripeStatus
+      tags: [businesses]
+      summary: Stripe Connect status for a business (owner or admin)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stripe Connect status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeConnectStatus"
+
+  /businesses/{businessId}/stripe/connect/start:
+    post:
+      operationId: startBusinessStripeConnect
+      tags: [businesses]
+      summary: Start or resume Stripe Connect onboarding for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeConnectStartInput"
+      responses:
+        "200":
+          description: Stripe onboarding or dashboard redirect URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeConnectStartResult"
+
+  # ─── Appointment Requests (Salon) ───────────────────────────────
+  /appointment-requests:
+    post:
+      operationId: createAppointmentRequest
+      tags: [appointments]
+      summary: Submit a salon appointment request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentRequestInput"
+      responses:
+        "201":
+          description: Appointment request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentRequest"
+
+  /businesses/{businessId}/appointment-requests:
+    get:
+      operationId: listBusinessAppointmentRequests
+      tags: [appointments]
+      summary: List appointment requests for a business (owner)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Appointment requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppointmentRequest"
+        "403":
+          description: Forbidden
+    post:
+      operationId: createBusinessAppointmentRequest
+      tags: [appointments]
+      summary: Manually add an appointment (owner — phone or walk-in)
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerAppointmentRequestInput"
+      responses:
+        "201":
+          description: Appointment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentRequest"
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/appointment-requests/{id}:
+    patch:
+      operationId: updateBusinessAppointmentRequestStatus
+      tags: [appointments]
+      summary: Confirm, decline, cancel, or complete an appointment request
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentRequestStatusUpdate"
+      responses:
+        "200":
+          description: Updated appointment request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentRequest"
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+        "409":
+          description: Invalid status transition
+
+  # ─── Admin: System Health ───────────────────────────────────────
+  /admin/system/health:
+    get:
+      operationId: getAdminSystemHealth
+      tags: [admin]
+      summary: Detailed system health (admin only)
+      responses:
+        "200":
+          description: System health report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemHealthReport"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "503":
+          description: Deprecated — health reports are returned with HTTP 200 even when degraded
+
+  # ─── Admin: Users ───────────────────────────────────────────────
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      summary: List all users (admin)
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserProfile"
+
+  /admin/users/{id}/role:
+    patch:
+      operationId: updateUserRole
+      tags: [admin]
+      summary: Update a user role (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRoleUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /admin/users/{id}/status:
+    patch:
+      operationId: updateUserStatus
+      tags: [admin]
+      summary: Disable or re-enable a user (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserStatusUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /admin/businesses/{id}/assign-owner:
+    patch:
+      operationId: assignBusinessOwner
+      tags: [admin]
+      summary: Assign a business owner (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessOwnerAssignment"
+      responses:
+        "200":
+          description: Updated business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+
+  /admin/businesses:
+    get:
+      operationId: listAdminBusinesses
+      tags: [admin]
+      summary: List all businesses including owner assignment (admin)
+      responses:
+        "200":
+          description: All businesses with ownerId
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  # ─── Events ────────────────────────────────────────────────────
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List active events
+      parameters:
+        - in: query
+          name: featured
+          schema:
+            type: boolean
+        - in: query
+          name: upcoming
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create an event (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
+
+  /events/{id}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get a single event
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+    put:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update an event (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete an event (admin only)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden — admin access required
+
+  # ─── Highlights ────────────────────────────────────────────────
+  /highlights:
+    get:
+      operationId: listHighlights
+      tags: [highlights]
+      summary: List active highlights
+      responses:
+        "200":
+          description: List of highlights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Highlight"
+    post:
+      operationId: createHighlight
+      tags: [highlights]
+      summary: Create a highlight (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HighlightInput"
+      responses:
+        "201":
+          description: Created highlight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Highlight"
+
+  /highlights/{id}:
+    get:
+      operationId: getHighlight
+      tags: [highlights]
+      summary: Get a single highlight
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Highlight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Highlight"
+    put:
+      operationId: updateHighlight
+      tags: [highlights]
+      summary: Update a highlight (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HighlightInput"
+      responses:
+        "200":
+          description: Updated highlight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Highlight"
+    delete:
+      operationId: deleteHighlight
+      tags: [highlights]
+      summary: Delete a highlight (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Subscription Plans ─────────────────────────────────────────
+  /admin/subscription-plans:
+    get:
+      operationId: listSubscriptionPlans
+      tags: [subscriptions]
+      summary: List all subscription plans (admin)
+      responses:
+        "200":
+          description: List of plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionPlan"
+    post:
+      operationId: createSubscriptionPlan
+      tags: [subscriptions]
+      summary: Create a subscription plan (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionPlanInput"
+      responses:
+        "201":
+          description: Created plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionPlan"
+
+  /admin/subscription-plans/{id}:
+    put:
+      operationId: updateSubscriptionPlan
+      tags: [subscriptions]
+      summary: Update a subscription plan (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionPlanInput"
+      responses:
+        "200":
+          description: Updated plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionPlan"
+    delete:
+      operationId: deleteSubscriptionPlan
+      tags: [subscriptions]
+      summary: Delete a subscription plan (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/subscription-plans/{id}/features:
+    get:
+      operationId: getSubscriptionPlanFeatures
+      tags: [subscriptions]
+      summary: List features enabled for a plan (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Plan features
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionFeature"
+    put:
+      operationId: setSubscriptionPlanFeatures
+      tags: [subscriptions]
+      summary: Assign features to a plan (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanFeaturesInput"
+      responses:
+        "200":
+          description: Updated plan features
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionFeature"
+
+  /admin/subscription-features:
+    get:
+      operationId: listSubscriptionFeatures
+      tags: [subscriptions]
+      summary: List subscription features (admin)
+      responses:
+        "200":
+          description: Feature catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionFeature"
+    post:
+      operationId: createSubscriptionFeature
+      tags: [subscriptions]
+      summary: Create a subscription feature (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionFeatureInput"
+      responses:
+        "201":
+          description: Created feature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionFeature"
+
+  /admin/subscription-features/{id}:
+    put:
+      operationId: updateSubscriptionFeature
+      tags: [subscriptions]
+      summary: Update a subscription feature (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionFeatureInput"
+      responses:
+        "200":
+          description: Updated feature
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionFeature"
+    delete:
+      operationId: deleteSubscriptionFeature
+      tags: [subscriptions]
+      summary: Delete a subscription feature (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /pricing/plans:
+    get:
+      operationId: listPublicPricingPlans
+      tags: [subscriptions]
+      summary: List public pricing plans for the marketing page
+      responses:
+        "200":
+          description: Public pricing plans with enabled features
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicPricingPlan"
+
+  /admin/businesses/{id}/subscription:
+    get:
+      operationId: getBusinessSubscription
+      tags: [subscriptions]
+      summary: Get subscription for a business (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Business subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSubscription"
+    put:
+      operationId: upsertBusinessSubscription
+      tags: [subscriptions]
+      summary: Set or update a business subscription (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessSubscriptionInput"
+      responses:
+        "200":
+          description: Updated subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSubscription"
+
+  /businesses/{id}/subscription:
+    get:
+      operationId: getMySubscription
+      tags: [subscriptions]
+      summary: Get my business subscription (business owner)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSubscription"
+        "404":
+          description: No subscription
+
+  /businesses/{id}/subscription/checkout:
+    post:
+      operationId: createBusinessSubscriptionCheckout
+      tags: [subscriptions]
+      summary: Start Stripe subscription checkout for a business (owner or admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionCheckoutInput"
+      responses:
+        "200":
+          description: Stripe Checkout redirect URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeRedirectResponse"
+        "400":
+          description: Invalid plan or billing configuration
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{id}/subscription/portal:
+    post:
+      operationId: createBusinessSubscriptionPortal
+      tags: [subscriptions]
+      summary: Open Stripe Customer Portal for a business (owner or admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stripe Customer Portal redirect URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeRedirectResponse"
+        "400":
+          description: No Stripe customer on file
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{id}/subscription/sync:
+    post:
+      operationId: syncBusinessSubscriptionFromStripe
+      tags: [subscriptions]
+      summary: Pull latest subscription state from Stripe (owner or admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated subscription after Stripe sync
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessSubscription"
+        "400":
+          description: No Stripe subscription to sync
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: No subscription
+        "503":
+          description: Stripe is not configured
+
+  /businesses/{id}/subscription/change-plan:
+    post:
+      operationId: changeBusinessSubscriptionPlan
+      tags: [subscriptions]
+      summary: Change subscription plan or billing interval (owner or admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionCheckoutInput"
+      responses:
+        "200":
+          description: Plan updated or checkout redirect required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeSubscriptionPlanResponse"
+        "400":
+          description: Invalid plan or billing configuration
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{id}/feature-access:
+    get:
+      operationId: getBusinessFeatureAccess
+      tags: [subscriptions]
+      summary: Get subscription feature access for a business (owner UI)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feature access report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessFeatureAccess"
+
+  /businesses/{businessId}/notifications/test/email:
+    post:
+      operationId: testBusinessNotificationEmail
+      tags: [notifications]
+      summary: Send a test notification email to the business owner
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test email sent or logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: Missing notification email
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/notifications/test/sms:
+    post:
+      operationId: testBusinessNotificationSms
+      tags: [notifications]
+      summary: Send a test notification SMS to the business owner
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test SMS sent or logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: Missing notification phone
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/notifications/test/discord:
+    post:
+      operationId: testBusinessNotificationDiscord
+      tags: [notifications]
+      summary: Send a test notification to the business Discord webhook
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test Discord message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: Missing or invalid Discord webhook URL
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/notifications/test/ntfy:
+    post:
+      operationId: testBusinessNotificationNtfy
+      tags: [notifications]
+      summary: Send a test ntfy push notification to the business topic
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Test ntfy notification sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTestResult"
+        "400":
+          description: ntfy not enabled or topic missing
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /businesses/{businessId}/notifications/ntfy/regenerate-topic:
+    post:
+      operationId: regenerateBusinessNtfyTopic
+      tags: [notifications]
+      summary: Regenerate the ntfy subscription topic for a business
+      parameters:
+        - in: path
+          name: businessId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated business with new topic
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Business not found
+
+  # ─── Food Truck Locations ───────────────────────────────────────
+  /businesses/{id}/food-truck-locations:
+    get:
+      operationId: listFoodTruckLocations
+      tags: [food-truck]
+      summary: List food truck location schedule for a business
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodTruckLocation"
+    post:
+      operationId: createFoodTruckLocation
+      tags: [food-truck]
+      summary: Add a food truck location entry (business owner)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodTruckLocationInput"
+      responses:
+        "201":
+          description: Created location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodTruckLocation"
+
+  /businesses/{id}/food-truck-locations/{locationId}:
+    put:
+      operationId: updateFoodTruckLocation
+      tags: [food-truck]
+      summary: Update a food truck location (business owner)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: locationId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FoodTruckLocationInput"
+      responses:
+        "200":
+          description: Updated location
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodTruckLocation"
+    delete:
+      operationId: deleteFoodTruckLocation
+      tags: [food-truck]
+      summary: Delete a food truck location (business owner)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: locationId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Public food truck schedule ─────────────────────────────────
+  /food-truck-locations/today:
+    get:
+      operationId: listTodayFoodTrucks
+      tags: [food-truck]
+      summary: List today's active food truck locations (public)
+      responses:
+        "200":
+          description: Today's food truck locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodTruckLocationWithBusiness"
+
+  /food-truck-locations/upcoming:
+    get:
+      operationId: listUpcomingFoodTrucks
+      tags: [food-truck]
+      summary: List upcoming food truck locations for the next 30 days (public)
+      responses:
+        "200":
+          description: Upcoming food truck locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodTruckLocationWithBusiness"
+
+  # ─── Platform Theme Settings ──────────────────────────────────────
+  /admin/settings/theme:
+    get:
+      operationId: getPlatformTheme
+      tags: [admin]
+      summary: Get platform-wide theme settings (public read)
+      responses:
+        "200":
+          description: Platform theme settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformTheme"
+    put:
+      operationId: updatePlatformTheme
+      tags: [admin]
+      summary: Update platform-wide theme settings (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlatformThemeInput"
+      responses:
+        "200":
+          description: Updated theme
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformTheme"
+
+  # ─── Weather ──────────────────────────────────────────────────────
+  /weather:
+    get:
+      operationId: getWeather
+      tags: [platform]
+      summary: Get homepage weather forecast (when enabled by admin)
+      responses:
+        "200":
+          description: Weather forecast or disabled state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeatherForecast"
+
+  # ─── Notification Logs ────────────────────────────────────────────
+  /admin/notification-logs:
+    get:
+      operationId: listNotificationLogs
+      tags: [admin]
+      summary: List notification logs for dev inspection (admin only)
+      parameters:
+        - in: query
+          name: orderId
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [SENT, LOGGED, FAILED]
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum: [EMAIL, SMS, DISCORD, NTFY, PUSH]
+        - in: query
+          name: eventType
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notification log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationLog"
+
+  # ─── Media Library ────────────────────────────────────────────────
+  /media:
+    get:
+      operationId: listMediaAssets
+      tags: [media]
+      summary: List uploaded media for the current user scope
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+          description: Business to scope media to (required for business owners)
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        "200":
+          description: Media assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaAsset"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /media/upload:
+    post:
+      operationId: uploadMediaAsset
+      tags: [media]
+      summary: Upload an image to the media library
+      parameters:
+        - in: query
+          name: businessId
+          schema:
+            type: integer
+          description: Business to attach the upload to (required for business owners)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/MediaUploadForm"
+      responses:
+        "201":
+          description: Uploaded media asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaAsset"
+        "400":
+          description: Invalid upload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "413":
+          description: File too large
+
+  /media/{id}:
+    delete:
+      operationId: deleteMediaAsset
+      tags: [media]
+      summary: Delete a media asset from the library
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk session JWT passed as Authorization Bearer token
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    ServiceHealthStatus:
+      type: string
+      enum: [healthy, warning, unavailable, not_configured]
+
+    SystemHealthStatus:
+      type: string
+      enum: [healthy, warning, error]
+
+    ServiceHealth:
+      type: object
+      required: [name, status, message]
+      properties:
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/ServiceHealthStatus"
+        message:
+          type: string
+        responseTimeMs:
+          type: number
+        metadata:
+          type: object
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+
+    ApplicationHealth:
+      type: object
+      required: [name, environment, environmentLabel, apiVersion, uptimeSeconds, timestamp, startTime, appBaseUrlConfigured]
+      properties:
+        name:
+          type: string
+        environment:
+          type: string
+        environmentLabel:
+          type: string
+        version:
+          type: string
+        apiVersion:
+          type: string
+        buildDate:
+          type: string
+        commitSha:
+          type: string
+        appBaseUrlConfigured:
+          type: boolean
+        uptimeSeconds:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+        startTime:
+          type: string
+          format: date-time
+
+    ApiErrorLogEntry:
+      type: object
+      required: [id, timestamp, endpoint, httpStatus, summary]
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        endpoint:
+          type: string
+        httpStatus:
+          type: integer
+        summary:
+          type: string
+        exceptionMessage:
+          type: string
+        requestId:
+          type: string
+        userId:
+          type: string
+        userLabel:
+          type: string
+        businessId:
+          type: integer
+        businessName:
+          type: string
+        stackTrace:
+          type: string
+
+    PlatformActivityEntry:
+      type: object
+      required: [id, type, title, timestamp]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        actorLabel:
+          type: string
+        businessId:
+          type: integer
+        businessName:
+          type: string
+
+    PlatformMetrics:
+      type: object
+      required:
+        - activeBusinesses
+        - pendingApplications
+        - activeSubscriptions
+        - trialSubscriptions
+        - pastDueSubscriptions
+        - ordersToday
+        - ordersThisMonth
+        - emailsSentToday
+        - failedEmailsToday
+        - smsSentToday
+        - failedSmsToday
+      properties:
+        activeBusinesses:
+          type: integer
+        pendingApplications:
+          type: integer
+        activeSubscriptions:
+          type: integer
+        trialSubscriptions:
+          type: integer
+        pastDueSubscriptions:
+          type: integer
+        ordersToday:
+          type: integer
+        ordersThisMonth:
+          type: integer
+        emailsSentToday:
+          type: integer
+        failedEmailsToday:
+          type: integer
+        smsSentToday:
+          type: integer
+        failedSmsToday:
+          type: integer
+        revenueToday:
+          type: ["number", "null"]
+        revenueThisMonth:
+          type: ["number", "null"]
+
+    PlatformHealthSummary:
+      type: object
+      required:
+        - overallStatus
+        - apiErrorsLast24h
+      properties:
+        overallStatus:
+          $ref: "#/components/schemas/SystemHealthStatus"
+        activeBusinesses:
+          type: ["integer", "null"]
+        pendingApplications:
+          type: ["integer", "null"]
+        activeSubscriptions:
+          type: ["integer", "null"]
+        trialSubscriptions:
+          type: ["integer", "null"]
+        pastDueSubscriptions:
+          type: ["integer", "null"]
+        ordersToday:
+          type: ["integer", "null"]
+        emailsSentToday:
+          type: ["integer", "null"]
+        failedEmailsToday:
+          type: ["integer", "null"]
+        apiErrorsLast24h:
+          type: integer
+
+    SystemHealthReport:
+      type: object
+      required: [status, timestamp, application, summary, services, apiErrors, recentActivity]
+      properties:
+        status:
+          $ref: "#/components/schemas/SystemHealthStatus"
+        timestamp:
+          type: string
+          format: date-time
+        application:
+          $ref: "#/components/schemas/ApplicationHealth"
+        summary:
+          $ref: "#/components/schemas/PlatformHealthSummary"
+        metrics:
+          oneOf:
+            - $ref: "#/components/schemas/PlatformMetrics"
+            - type: "null"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceHealth"
+        apiErrors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ApiErrorLogEntry"
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlatformActivityEntry"
+
+    # ─── Enums (as strings, validated on server) ────────────────
+    BusinessType:
+      type: string
+      enum:
+        - FOOD_VENDOR
+        - COFFEE_SHOP
+        - BAKERY
+        - GROCERY
+        - FLORIST
+        - GARDEN_MARKET
+        - RETAIL_STORE
+        - BUILDING_SUPPLY
+        - SERVICE_PROVIDER
+        - RECREATION
+        - FUNERAL_SERVICE
+        - GENERAL
+        - SALON
+      description: >
+        What the business is (identity/category). How it operates (ordering, appointments,
+        mobile schedule, etc.) is modeled separately via storefrontMode, fulfillment flags,
+        and isMobileBusiness.
+
+    StorefrontMode:
+      type: string
+      enum:
+        - ORDERING
+        - APPOINTMENT
+        - INFORMATION
+      description: ORDERING shows cart/checkout; APPOINTMENT prioritizes booking requests; INFORMATION shows menu/products without online ordering.
+
+    OrderingAvailabilityMode:
+      type: string
+      enum:
+        - ALWAYS
+        - BUSINESS_HOURS
+        - MOBILE_LOCATION_SCHEDULE
+        - MANUAL
+      description: >
+        ALWAYS accepts orders whenever the business is active.
+        BUSINESS_HOURS requires structured hours to be open now.
+        MOBILE_LOCATION_SCHEDULE requires an active mobile-business location window.
+        MANUAL uses the orderingEnabled owner toggle.
+
+    OrderStatus:
+      type: string
+      enum:
+        - NEW
+        - CONFIRMED
+        - PREPARING
+        - READY_FOR_PICKUP
+        - OUT_FOR_DELIVERY
+        - COMPLETED
+        - CANCELED
+
+    FulfillmentType:
+      type: string
+      enum:
+        - PICKUP
+        - DELIVERY
+
+    UserRole:
+      type: string
+      enum:
+        - CUSTOMER
+        - BUSINESS_OWNER
+        - ADMIN
+
+    UserStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - DISABLED
+
+    PaymentMode:
+      type: string
+      enum:
+        - ONLINE_ONLY
+        - PAY_AT_PICKUP_ONLY
+        - BOTH
+
+    StripeConnectPaymentStatus:
+      type: string
+      enum:
+        - not_connected
+        - pending
+        - connected
+        - restricted
+
+    StripeConnectStatus:
+      type: object
+      required:
+        - paymentStatus
+        - chargesEnabled
+        - payoutsEnabled
+        - detailsSubmitted
+        - requirementsCurrentlyDueCount
+        - mode
+        - onlinePaymentsAvailable
+      properties:
+        paymentStatus:
+          $ref: "#/components/schemas/StripeConnectPaymentStatus"
+        connectedAccountId:
+          type: ["string", "null"]
+          description: Masked connected account identifier when present.
+        connectedAccountLabel:
+          type: ["string", "null"]
+          description: Masked connected account identifier for display.
+        chargesEnabled:
+          type: boolean
+        payoutsEnabled:
+          type: boolean
+        detailsSubmitted:
+          type: boolean
+        requirementsCurrentlyDueCount:
+          type: integer
+        mode:
+          type: string
+          enum: [mock, test, live, unknown]
+        onlinePaymentsAvailable:
+          type: boolean
+
+    StripeConnectStartInput:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [onboarding, dashboard]
+          description: Use dashboard to open the Stripe Express dashboard when connected.
+
+    StripeConnectStartResult:
+      type: object
+      required: [url, action]
+      properties:
+        url:
+          type: string
+        action:
+          type: string
+          enum: [onboarding, dashboard]
+
+    # ─── Core Entities ───────────────────────────────────────────
+    AdminBootstrapStatus:
+      type: object
+      required: [setupComplete]
+      properties:
+        setupComplete:
+          type: boolean
+          description: True when at least one platform admin exists.
+
+    AdminBootstrapResult:
+      type: object
+      required: [message, role]
+      properties:
+        message:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+
+    UserProfile:
+      type: object
+      required: [id, email, role, status]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        role:
+          $ref: "#/components/schemas/UserRole"
+        status:
+          $ref: "#/components/schemas/UserStatus"
+        businessId:
+          type: ["integer", "null"]
+          description: Selected owned business id for dashboard context
+        businessIds:
+          type: array
+          items:
+            type: integer
+          description: All business ids owned by this user
+        createdAt:
+          type: string
+          format: date-time
+
+    UserStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/UserStatus"
+
+    OwnedBusinessSummary:
+      type: object
+      required: [id, name, slug, type, active]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        type:
+          type: string
+        active:
+          type: boolean
+
+    BusinessDayHours:
+      type: object
+      required: [dayOfWeek, isClosed]
+      properties:
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: "0=Sunday through 6=Saturday"
+        isClosed:
+          type: boolean
+        openTime:
+          type: ["string", "null"]
+          description: "24-hour time HH:mm"
+        closeTime:
+          type: ["string", "null"]
+          description: "24-hour time HH:mm"
+
+    ArchiveBusinessResponse:
+      type: object
+      required: [archived, subscriptionCanceled, hadActiveSubscription, alreadyArchived]
+      properties:
+        archived:
+          type: boolean
+        subscriptionCanceled:
+          type: boolean
+        hadActiveSubscription:
+          type: boolean
+        alreadyArchived:
+          type: boolean
+
+    Business:
+      type: object
+      required: [id, name, slug, type, active]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        type:
+          $ref: "#/components/schemas/BusinessType"
+        description:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        heroImageUrl:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        websiteUrl:
+          type: ["string", "null"]
+          description: External website URL shown when the website card is enabled.
+        showWebsiteCard:
+          type: boolean
+          description: When true and websiteUrl is set, show a website card on the public storefront.
+        hours:
+          type: ["string", "null"]
+        structuredHours:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
+        hoursEnabled:
+          type: boolean
+          description: >
+            When false, weekly business hours are hidden on the public storefront.
+            Useful for mobile businesses that follow a location schedule instead.
+        active:
+          type: boolean
+        featured:
+          type: boolean
+        pickupEnabled:
+          type: boolean
+        deliveryEnabled:
+          type: boolean
+        deliveryFee:
+          type: ["number", "null"]
+        minimumOrder:
+          type: ["number", "null"]
+        payAtPickupEnabled:
+          type: boolean
+        paymentMode:
+          allOf:
+            - $ref: "#/components/schemas/PaymentMode"
+          nullable: true
+        onlinePaymentsAvailable:
+          type: boolean
+          description: True when payment mode allows online card checkout and Stripe Connect is ready.
+        stripeConnectStatus:
+          $ref: "#/components/schemas/StripeConnectPaymentStatus"
+        orderCutoffTime:
+          type: ["string", "null"]
+        defaultPrepMinutes:
+          type: integer
+          minimum: 1
+          description: Default prep time in minutes when items do not specify their own.
+        deliveryBufferMinutes:
+          type: integer
+          minimum: 0
+          description: Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer). Defaults to 15.
+        minimumOrderForDelivery:
+          type: ["number", "null"]
+        deliveryRadiusMiles:
+          type: ["number", "null"]
+        deliveryNotes:
+          type: ["string", "null"]
+        pickupInstructions:
+          type: ["string", "null"]
+        deliveryInstructions:
+          type: ["string", "null"]
+        taxEnabled:
+          type: boolean
+          description: When true, apply the configured sales tax rate to taxable items at checkout.
+        taxRatePercent:
+          type: ["number", "null"]
+          description: Sales tax rate as a percentage (e.g. 6.00 for 6%).
+        taxLabel:
+          type: string
+          description: Label shown on receipts and checkout (default "Sales Tax").
+        orderNotificationEmail:
+          type: ["string", "null"]
+        notificationEmail:
+          type: ["string", "null"]
+        notificationPhone:
+          type: ["string", "null"]
+        notifyNewOrdersByEmail:
+          type: boolean
+        notifyNewOrdersBySms:
+          type: boolean
+        notifyAppointmentRequestsByEmail:
+          type: boolean
+        notifyAppointmentRequestsBySms:
+          type: boolean
+        discordWebhookUrl:
+          type: ["string", "null"]
+        notifyNewOrdersByDiscord:
+          type: boolean
+        notifyAppointmentRequestsByDiscord:
+          type: boolean
+        ntfyEnabled:
+          type: boolean
+        ntfyTopic:
+          type: ["string", "null"]
+        ntfyConnectedAt:
+          type: ["string", "null"]
+          format: date-time
+        ntfyLastTestAt:
+          type: ["string", "null"]
+          format: date-time
+        ntfySubscriptionUrl:
+          type: ["string", "null"]
+        isMobileBusiness:
+          type: boolean
+          description: >
+            When true, the business publishes a mobile location schedule (traveling / pop-up /
+            food truck style operation). Independent of BusinessType.
+        storefrontMode:
+          allOf:
+            - $ref: "#/components/schemas/StorefrontMode"
+          nullable: true
+        orderingAvailabilityMode:
+          $ref: "#/components/schemas/OrderingAvailabilityMode"
+        orderingEnabled:
+          type: boolean
+          description: MANUAL mode toggle — when false, checkout is blocked.
+        orderingAvailable:
+          type: boolean
+          description: Server-evaluated whether the business is accepting orders right now.
+        orderingUnavailableReason:
+          type: ["string", "null"]
+          description: Human-readable reason when orderingAvailable is false.
+        accentColor:
+          type: ["string", "null"]
+        buttonColor:
+          type: ["string", "null"]
+        bannerText:
+          type: ["string", "null"]
+        ownerId:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    BusinessStorefront:
+      type: object
+      required: [business, categories, products]
+      properties:
+        business:
+          $ref: "#/components/schemas/Business"
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+
+    BusinessRegistrationInput:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/BusinessType"
+        description:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        hours:
+          type: string
+        structuredHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
+
+    BusinessInput:
+      type: object
+      required: [name, slug, type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        slug:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/BusinessType"
+        description:
+          type: string
+        logoUrl:
+          type: string
+        heroImageUrl:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        hours:
+          type: string
+        structuredHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
+        pickupEnabled:
+          type: boolean
+        deliveryEnabled:
+          type: boolean
+        deliveryFee:
+          type: number
+        minimumOrder:
+          type: number
+        payAtPickupEnabled:
+          type: boolean
+        paymentMode:
+          $ref: "#/components/schemas/PaymentMode"
+        orderCutoffTime:
+          type: string
+        defaultPrepMinutes:
+          type: integer
+          minimum: 1
+        deliveryBufferMinutes:
+          type: integer
+          minimum: 0
+          description: Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
+        orderingAvailabilityMode:
+          $ref: "#/components/schemas/OrderingAvailabilityMode"
+        orderingEnabled:
+          type: boolean
+        ownerId:
+          type: string
+
+    BusinessUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        logoUrl:
+          type: string
+        heroImageUrl:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        websiteUrl:
+          type: string
+        showWebsiteCard:
+          type: boolean
+        hours:
+          type: string
+        structuredHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
+        hoursEnabled:
+          type: boolean
+          description: When false, hide weekly business hours on the public storefront.
+        active:
+          type: boolean
+        featured:
+          type: boolean
+        pickupEnabled:
+          type: boolean
+        deliveryEnabled:
+          type: boolean
+        deliveryFee:
+          type: number
+        minimumOrder:
+          type: number
+        payAtPickupEnabled:
+          type: boolean
+        paymentMode:
+          $ref: "#/components/schemas/PaymentMode"
+        orderCutoffTime:
+          type: string
+        defaultPrepMinutes:
+          type: integer
+          minimum: 1
+        deliveryBufferMinutes:
+          type: integer
+          minimum: 0
+          description: Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
+        minimumOrderForDelivery:
+          type: ["number", "null"]
+        deliveryRadiusMiles:
+          type: ["number", "null"]
+        deliveryNotes:
+          type: ["string", "null"]
+        pickupInstructions:
+          type: ["string", "null"]
+        deliveryInstructions:
+          type: ["string", "null"]
+        taxEnabled:
+          type: boolean
+        taxRatePercent:
+          type: number
+        taxLabel:
+          type: string
+        orderNotificationEmail:
+          type: ["string", "null"]
+        notificationEmail:
+          type: ["string", "null"]
+        notificationPhone:
+          type: ["string", "null"]
+        notifyNewOrdersByEmail:
+          type: boolean
+        notifyNewOrdersBySms:
+          type: boolean
+        notifyAppointmentRequestsByEmail:
+          type: boolean
+        notifyAppointmentRequestsBySms:
+          type: boolean
+        discordWebhookUrl:
+          type: ["string", "null"]
+        notifyNewOrdersByDiscord:
+          type: boolean
+        notifyAppointmentRequestsByDiscord:
+          type: boolean
+        ntfyEnabled:
+          type: boolean
+        isMobileBusiness:
+          type: boolean
+          description: Enable mobile location schedule publishing for this business.
+        storefrontMode:
+          allOf:
+            - $ref: "#/components/schemas/StorefrontMode"
+          nullable: true
+        orderingAvailabilityMode:
+          $ref: "#/components/schemas/OrderingAvailabilityMode"
+        orderingEnabled:
+          type: boolean
+        accentColor:
+          type: ["string", "null"]
+        buttonColor:
+          type: ["string", "null"]
+        bannerText:
+          type: ["string", "null"]
+        type:
+          $ref: "#/components/schemas/BusinessType"
+
+    Category:
+      type: object
+      required: [id, businessId, name]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        name:
+          type: string
+        sortOrder:
+          type: integer
+
+    CategoryInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        sortOrder:
+          type: integer
+
+    CategoryUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        sortOrder:
+          type: integer
+
+    Product:
+      type: object
+      required: [id, businessId, name, price, available]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        categoryId:
+          type: ["integer", "null"]
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: number
+        imageUrl:
+          type: ["string", "null"]
+        available:
+          type: boolean
+        featured:
+          type: boolean
+        prepTimeMinutes:
+          type: ["integer", "null"]
+        taxable:
+          type: boolean
+          description: When true, this item is included in the taxable subtotal.
+        optionGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOptionGroup"
+        assignedModifierGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssignedModifierGroup"
+        modifierGroupIds:
+          type: array
+          items:
+            type: integer
+
+    AssignedModifierGroup:
+      type: object
+      required: [id, name, active, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ModifierSelectionType:
+      type: string
+      enum: [SINGLE, MULTIPLE]
+
+    ModifierChoice:
+      type: object
+      required: [id, name, priceAdjustment, active, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        priceAdjustment:
+          type: number
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ModifierGroup:
+      type: object
+      required: [id, businessId, name, selectionType, required, active, sortOrder, choices]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        selectionType:
+          $ref: "#/components/schemas/ModifierSelectionType"
+        required:
+          type: boolean
+        maxSelections:
+          type: ["integer", "null"]
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModifierChoice"
+
+    ModifierChoiceInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        priceAdjustment:
+          type: number
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ModifierGroupInput:
+      type: object
+      required: [name, choices]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        selectionType:
+          $ref: "#/components/schemas/ModifierSelectionType"
+        required:
+          type: boolean
+        maxSelections:
+          type: integer
+          minimum: 1
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModifierChoiceInput"
+
+    ModifierGroupUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        selectionType:
+          $ref: "#/components/schemas/ModifierSelectionType"
+        required:
+          type: boolean
+        maxSelections:
+          type: integer
+          minimum: 1
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        choices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ModifierChoiceInput"
+
+    ProductOption:
+      type: object
+      required: [id, name, priceAdjustment, available, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        priceAdjustment:
+          type: number
+        available:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ProductOptionGroup:
+      type: object
+      required: [id, name, required, minSelections, maxSelections, sortOrder, options]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        required:
+          type: boolean
+        minSelections:
+          type: integer
+        maxSelections:
+          type: integer
+        sortOrder:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOption"
+
+    ProductOptionInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        priceAdjustment:
+          type: number
+        available:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ProductOptionGroupInput:
+      type: object
+      required: [name, options]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        required:
+          type: boolean
+        minSelections:
+          type: integer
+          minimum: 0
+        maxSelections:
+          type: integer
+          minimum: 1
+        sortOrder:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductOptionInput"
+
+    ProductInput:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        price:
+          type: number
+        categoryId:
+          type: integer
+        imageUrl:
+          type: string
+        available:
+          type: boolean
+        featured:
+          type: boolean
+        prepTimeMinutes:
+          type: integer
+        taxable:
+          type: boolean
+        modifierGroupIds:
+          type: array
+          items:
+            type: integer
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        categoryId:
+          type: integer
+        imageUrl:
+          type: string
+        available:
+          type: boolean
+        featured:
+          type: boolean
+        prepTimeMinutes:
+          type: integer
+        taxable:
+          type: boolean
+        modifierGroupIds:
+          type: array
+          items:
+            type: integer
+
+    OrderItemOption:
+      type: object
+      required: [groupName, optionName, priceAdjustment]
+      properties:
+        id:
+          type: integer
+        optionId:
+          type: ["integer", "null"]
+        groupName:
+          type: string
+        optionName:
+          type: string
+        priceAdjustment:
+          type: number
+
+    OrderItem:
+      type: object
+      required: [productId, productName, quantity, unitPrice, subtotal]
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        subtotal:
+          type: number
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItemOption"
+
+    Order:
+      type: object
+      required: [id, businessId, businessName, status, fulfillmentType, customerName, customerEmail, total]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        businessName:
+          type: string
+        orderNumber:
+          type: string
+          description: Global unique reference (TH-YYYYMMDD-XXXXX).
+        businessOrderNumber:
+          type: ["integer", "null"]
+          description: Per-business sequential customer-facing order number (e.g. 101, 102).
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        fulfillmentType:
+          $ref: "#/components/schemas/FulfillmentType"
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: ["string", "null"]
+        customerUserId:
+          type: ["string", "null"]
+          description: Clerk user id when the customer was signed in at checkout; null for guest orders.
+        deliveryAddress:
+          type: ["string", "null"]
+        pickupTime:
+          type: ["string", "null"]
+        estimatedWindowStart:
+          type: ["string", "null"]
+          format: date-time
+          description: Start of the server-calculated ASAP ready window.
+        estimatedWindowEnd:
+          type: ["string", "null"]
+          format: date-time
+          description: End of the server-calculated ASAP ready window.
+        notes:
+          type: ["string", "null"]
+        specialFields:
+          type: ["string", "null"]
+          description: JSON blob for business-type-specific fields
+        subtotal:
+          type: number
+          description: Item subtotal in dollars (excludes tax and delivery).
+        tax:
+          type: number
+          description: Sales tax amount in dollars.
+        taxRatePercent:
+          type: ["number", "null"]
+          description: Tax rate applied at order time, if any.
+        taxLabel:
+          type: ["string", "null"]
+          description: Tax line label shown at checkout (e.g. Sales Tax).
+        total:
+          type: number
+        deliveryFee:
+          type: ["number", "null"]
+        paymentStatus:
+          type: string
+        paymentMethod:
+          type: string
+        stripeSessionId:
+          type: ["string", "null"]
+        refundStatus:
+          $ref: "#/components/schemas/RefundStatus"
+        refundedAmount:
+          type: number
+          description: Total amount refunded in dollars
+        refundableAmount:
+          type: number
+          description: Remaining refundable amount in dollars (owner/admin views)
+        lastRefundedAt:
+          type: ["string", "null"]
+          format: date-time
+        refunds:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderRefundRecord"
+          description: Refund history with details (owner/admin only)
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        createdAt:
+          type: string
+          format: date-time
+        accessToken:
+          type: string
+          description: Signed guest access token; included only when an order is first created
+
+    RefundStatus:
+      type: string
+      enum: [NONE, PARTIAL, FULL, FAILED]
+
+    OrderRefundRecordStatus:
+      type: string
+      enum: [PENDING, SUCCEEDED, FAILED, CANCELED]
+
+    OrderRefundRecord:
+      type: object
+      required: [id, amountCents, status, createdByUserId, createdAt]
+      properties:
+        id:
+          type: integer
+        amountCents:
+          type: integer
+        reason:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/OrderRefundRecordStatus"
+        stripeRefundId:
+          type: ["string", "null"]
+        createdByUserId:
+          type: string
+        createdByName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    OrderRefundInput:
+      type: object
+      required: [amountCents, reason]
+      properties:
+        amountCents:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          minLength: 1
+
+    OrderRefundResult:
+      type: object
+      required: [order, refund]
+      properties:
+        order:
+          $ref: "#/components/schemas/Order"
+        refund:
+          $ref: "#/components/schemas/OrderRefundRecord"
+
+    OrderInput:
+      type: object
+      required: [businessId, fulfillmentType, customerName, customerEmail, customerPhone, items]
+      properties:
+        businessId:
+          type: integer
+        fulfillmentType:
+          $ref: "#/components/schemas/FulfillmentType"
+        customerName:
+          type: string
+          minLength: 1
+        customerEmail:
+          type: string
+          format: email
+          minLength: 1
+        customerPhone:
+          type: string
+          minLength: 7
+        deliveryAddress:
+          type: string
+        pickupTime:
+          type: string
+        notes:
+          type: string
+        specialFields:
+          type: string
+          description: JSON blob for business-type-specific fields
+        paymentMethod:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItemInput"
+
+    OrderItemInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+        selectedOptionIds:
+          type: array
+          items:
+            type: integer
+
+    PrepEstimateInput:
+      type: object
+      required: [businessId, fulfillmentType, items]
+      properties:
+        businessId:
+          type: integer
+        fulfillmentType:
+          $ref: "#/components/schemas/FulfillmentType"
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderItemInput"
+
+    PrepEstimate:
+      type: object
+      required:
+        [centerMinutes, minMinutes, maxMinutes, estimatedWindowStart, estimatedWindowEnd]
+      properties:
+        centerMinutes:
+          type: integer
+        minMinutes:
+          type: integer
+        maxMinutes:
+          type: integer
+        estimatedWindowStart:
+          type: string
+          format: date-time
+        estimatedWindowEnd:
+          type: string
+          format: date-time
+
+    OrderStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+
+    CheckoutSessionInput:
+      type: object
+      required: [orderId]
+      properties:
+        orderId:
+          type: integer
+        accessToken:
+          type: string
+          description: Signed guest order access token (required for guest checkout when not authenticated)
+
+    CheckoutSessionResult:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: ["string", "null"]
+        sessionId:
+          type: ["string", "null"]
+        mockMode:
+          type: boolean
+
+    BusinessOrderSummary:
+      type: object
+      required: [todayCount, pendingCount, todayRevenue, recentOrders]
+      properties:
+        todayCount:
+          type: integer
+        pendingCount:
+          type: integer
+        todayRevenue:
+          type: number
+        upcomingCount:
+          type: integer
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+
+    BusinessSlugAvailability:
+      type: object
+      required: [slug, available]
+      properties:
+        slug:
+          type: string
+          description: Normalized storefront URL segment that was checked
+        available:
+          type: boolean
+        suggestedSlug:
+          type: string
+          description: Next available storefront URL when unavailable
+
+    MarketplaceStats:
+      type: object
+      required: [localShopsCount, uniqueItemsCount]
+      properties:
+        localShopsCount:
+          type: integer
+          description: Number of active local businesses
+        uniqueItemsCount:
+          type: integer
+          description: Number of available products across active businesses
+
+    PlatformStats:
+      type: object
+      required: [totalBusinesses, activeBusinesses, totalOrders, totalRevenue]
+      properties:
+        totalBusinesses:
+          type: integer
+        activeBusinesses:
+          type: integer
+        totalOrders:
+          type: integer
+        totalRevenue:
+          type: number
+        recentOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+
+    UserRoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          $ref: "#/components/schemas/UserRole"
+
+    BusinessOwnerAssignment:
+      type: object
+      required: [ownerId]
+      properties:
+        ownerId:
+          type: string
+
+    # ─── Events ───────────────────────────────────────────────────
+    EventType:
+      type: string
+      enum:
+        - COMMUNITY
+        - FOOD_TRUCK
+        - SEASONAL
+        - SALE
+        - HOLIDAY
+        - MARKET
+        - OTHER
+
+    Event:
+      type: object
+      required: [id, title, date, eventType, featured, active]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        date:
+          type: string
+        endDate:
+          type: ["string", "null"]
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        relatedBusinessId:
+          type: ["integer", "null"]
+        eventType:
+          $ref: "#/components/schemas/EventType"
+        featured:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    EventInput:
+      type: object
+      required: [title, date, eventType]
+      properties:
+        title:
+          type: string
+        date:
+          type: string
+        endDate:
+          type: ["string", "null"]
+        startTime:
+          type: string
+        endTime:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        relatedBusinessId:
+          type: integer
+        eventType:
+          $ref: "#/components/schemas/EventType"
+        featured:
+          type: boolean
+        active:
+          type: boolean
+
+    # ─── Highlights ───────────────────────────────────────────────
+    Highlight:
+      type: object
+      required: [id, title, startDate, endDate, active, sortOrder]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        relatedBusinessId:
+          type: ["integer", "null"]
+        buttonText:
+          type: ["string", "null"]
+        buttonUrl:
+          type: ["string", "null"]
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    HighlightInput:
+      type: object
+      required: [title, startDate, endDate]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        relatedBusinessId:
+          type: integer
+        buttonText:
+          type: string
+        buttonUrl:
+          type: string
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    # ─── Subscriptions ────────────────────────────────────────────
+    SubscriptionFeature:
+      type: object
+      required: [id, key, name, sortOrder, isActive]
+      properties:
+        id:
+          type: integer
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+
+    SubscriptionFeatureInput:
+      type: object
+      required: [key, name]
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+
+    PlanFeaturesInput:
+      type: object
+      required: [featureIds]
+      properties:
+        featureIds:
+          type: array
+          items:
+            type: integer
+
+    PublicPricingFeature:
+      type: object
+      required: [key, name]
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+
+    SubscriptionPlan:
+      type: object
+      required: [id, name, monthlyPrice, trialDays, isActive, isDefault, isPublic, isRecommended, isBeta, sortOrder]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        monthlyPrice:
+          type: number
+        yearlyPrice:
+          type: ["number", "null"]
+        setupFee:
+          type: ["number", "null"]
+        transactionFeePercent:
+          type: ["number", "null"]
+        trialDays:
+          type: integer
+        isActive:
+          type: boolean
+        isDefault:
+          type: boolean
+        isPublic:
+          type: boolean
+        isRecommended:
+          type: boolean
+        isBeta:
+          type: boolean
+        sortOrder:
+          type: integer
+        stripeProductId:
+          type: ["string", "null"]
+        stripeMonthlyPriceId:
+          type: ["string", "null"]
+        stripeYearlyPriceId:
+          type: ["string", "null"]
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriptionFeature"
+        createdAt:
+          type: string
+          format: date-time
+
+    SubscriptionPlanInput:
+      type: object
+      required: [name, monthlyPrice]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        monthlyPrice:
+          type: number
+        yearlyPrice:
+          type: number
+        setupFee:
+          type: number
+        transactionFeePercent:
+          type: number
+        trialDays:
+          type: integer
+        isActive:
+          type: boolean
+        isDefault:
+          type: boolean
+        isPublic:
+          type: boolean
+        isRecommended:
+          type: boolean
+        isBeta:
+          type: boolean
+        sortOrder:
+          type: integer
+        stripeProductId:
+          type: string
+        stripeMonthlyPriceId:
+          type: string
+        stripeYearlyPriceId:
+          type: string
+
+    SubscriptionCheckoutInput:
+      type: object
+      required: [planId]
+      properties:
+        planId:
+          type: integer
+        interval:
+          type: string
+          enum: [monthly, yearly]
+          default: monthly
+
+    StripeRedirectResponse:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+        mockMode:
+          type: boolean
+
+    ChangeSubscriptionPlanResponse:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: [checkout, updated]
+        url:
+          type: string
+        mockMode:
+          type: boolean
+        subscription:
+          $ref: "#/components/schemas/BusinessSubscription"
+
+    PublicPricingPlan:
+      type: object
+      required: [id, name, monthlyPrice, trialDays, isActive, isDefault, isPublic, isRecommended, isBeta, sortOrder, features]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        monthlyPrice:
+          type: number
+        yearlyPrice:
+          type: ["number", "null"]
+        setupFee:
+          type: ["number", "null"]
+        transactionFeePercent:
+          type: ["number", "null"]
+        trialDays:
+          type: integer
+        isActive:
+          type: boolean
+        isDefault:
+          type: boolean
+        isPublic:
+          type: boolean
+        isRecommended:
+          type: boolean
+        isBeta:
+          type: boolean
+        sortOrder:
+          type: integer
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicPricingFeature"
+        createdAt:
+          type: string
+          format: date-time
+
+    BusinessSubscriptionStatus:
+      type: string
+      enum:
+        - BETA
+        - TRIAL
+        - ACTIVE
+        - PAST_DUE
+        - CANCELED
+        - SUSPENDED
+        - INCOMPLETE
+
+    SubscriptionBillingInterval:
+      type: string
+      enum: [monthly, yearly]
+
+    BusinessSubscription:
+      type: object
+      required: [id, businessId, planId, status]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        planId:
+          type: integer
+        status:
+          $ref: "#/components/schemas/BusinessSubscriptionStatus"
+        startedAt:
+          type: ["string", "null"]
+          format: date-time
+        renewalAt:
+          type: ["string", "null"]
+          format: date-time
+        trialEndsAt:
+          type: ["string", "null"]
+          format: date-time
+        currentPeriodStart:
+          type: ["string", "null"]
+          format: date-time
+        currentPeriodEnd:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: ["string", "null"]
+        stripeSubscriptionId:
+          type: ["string", "null"]
+        stripeCustomerId:
+          type: ["string", "null"]
+        stripePriceId:
+          type: ["string", "null"]
+        billingInterval:
+          oneOf:
+            - $ref: "#/components/schemas/SubscriptionBillingInterval"
+            - type: "null"
+        cancelAtPeriodEnd:
+          type: boolean
+        plan:
+          $ref: "#/components/schemas/SubscriptionPlan"
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriptionFeature"
+        createdAt:
+          type: string
+          format: date-time
+
+    BusinessSubscriptionInput:
+      type: object
+      required: [planId, status]
+      properties:
+        planId:
+          type: integer
+        status:
+          $ref: "#/components/schemas/BusinessSubscriptionStatus"
+        trialEndsAt:
+          type: string
+          format: date-time
+        renewalAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        billingInterval:
+          $ref: "#/components/schemas/SubscriptionBillingInterval"
+
+    BusinessFeatureAccessEntry:
+      type: object
+      required: [key, name, enabled]
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        enabled:
+          type: boolean
+
+    NotificationTestResult:
+      type: object
+      required: [ok, channel]
+      properties:
+        ok:
+          type: boolean
+        channel:
+          type: string
+          enum: [EMAIL, SMS, DISCORD, NTFY, PUSH]
+        recipient:
+          type: string
+        message:
+          type: string
+
+    RegisterDeviceInput:
+      type: object
+      required: [token, platform]
+      properties:
+        token:
+          type: string
+          minLength: 8
+          maxLength: 4096
+        platform:
+          type: string
+          enum: [IOS, ANDROID, WEB]
+        appVersion:
+          type: ["string", "null"]
+        deviceLabel:
+          type: ["string", "null"]
+
+    UnregisterDeviceInput:
+      type: object
+      properties:
+        token:
+          type: string
+        all:
+          type: boolean
+          description: When true, removes all devices for the current user
+
+    DeviceRegistration:
+      type: object
+      required: [id, platform, lastSeenAt, createdAt]
+      properties:
+        id:
+          type: integer
+        platform:
+          type: string
+          enum: [IOS, ANDROID, WEB]
+        appVersion:
+          type: ["string", "null"]
+        deviceLabel:
+          type: ["string", "null"]
+        lastSeenAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationPreferenceItem:
+      type: object
+      required: [category, enabled, label, description, audience, implemented, explicit]
+      properties:
+        category:
+          type: string
+        enabled:
+          type: boolean
+        label:
+          type: string
+        description:
+          type: string
+        audience:
+          type: string
+          enum: [PLATFORM_ADMIN, BUSINESS_OWNER, CUSTOMER]
+        implemented:
+          type: boolean
+        explicit:
+          type: boolean
+
+    NotificationPreferencesResponse:
+      type: object
+      required: [preferences]
+      properties:
+        preferences:
+          type: array
+          items:
+            $ref: "#/components/schemas/NotificationPreferenceItem"
+
+    UpdateNotificationPreferencesInput:
+      type: object
+      required: [preferences]
+      properties:
+        preferences:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required: [category, enabled]
+            properties:
+              category:
+                type: string
+              enabled:
+                type: boolean
+
+    BusinessFeatureAccess:
+      type: object
+      required: [bypassRestrictions, planName, features]
+      properties:
+        bypassRestrictions:
+          type: boolean
+        planName:
+          type: ["string", "null"]
+        features:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessFeatureAccessEntry"
+
+    # ─── Food Truck Locations ─────────────────────────────────────
+    FoodTruckLocation:
+      type: object
+      required: [id, businessId, locationName, locationDate, isActive]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        locationName:
+          type: string
+        address:
+          type: ["string", "null"]
+        latitude:
+          type: ["string", "null"]
+        longitude:
+          type: ["string", "null"]
+        locationDate:
+          type: string
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        locationNotes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+
+    FoodTruckLocationInput:
+      type: object
+      required: [locationName, locationDate]
+      properties:
+        locationName:
+          type: string
+        address:
+          type: ["string", "null"]
+        latitude:
+          type: ["string", "null"]
+        longitude:
+          type: ["string", "null"]
+        locationDate:
+          type: string
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        locationNotes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+
+    FoodTruckLocationWithBusiness:
+      type: object
+      required: [id, businessId, locationName, locationDate, isActive]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        businessName:
+          type: string
+        businessSlug:
+          type: string
+        businessType:
+          $ref: "#/components/schemas/BusinessType"
+        businessLogoUrl:
+          type: ["string", "null"]
+        businessHeroImageUrl:
+          type: ["string", "null"]
+        businessDescription:
+          type: ["string", "null"]
+        pickupEnabled:
+          type: boolean
+        latitude:
+          type: ["string", "null"]
+        longitude:
+          type: ["string", "null"]
+        locationName:
+          type: string
+        address:
+          type: ["string", "null"]
+        locationDate:
+          type: string
+        startTime:
+          type: ["string", "null"]
+        endTime:
+          type: ["string", "null"]
+        locationNotes:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+
+    # ─── Platform Theme ────────────────────────────────────────────
+    PlatformTheme:
+      type: object
+      required: [id, primaryColor, accentColor, backgroundColor, buttonColor]
+      properties:
+        id:
+          type: integer
+        primaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        buttonColor:
+          type: string
+        headingColor:
+          type: ["string", "null"]
+        brandPrefixColor:
+          type: ["string", "null"]
+          description: Color for the town prefix in the wordmark (e.g. Clay)
+        brandTownColor:
+          type: ["string", "null"]
+          description: Color for the Town segment in the wordmark
+        brandHubColor:
+          type: ["string", "null"]
+          description: Color for the Hub segment in the wordmark
+        platformName:
+          type: ["string", "null"]
+        townName:
+          type: ["string", "null"]
+        tagline:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        heroImageUrl:
+          type: ["string", "null"]
+        heroOverlayImageUrl:
+          type: ["string", "null"]
+        heroImageFit:
+          type: string
+          enum: [cover, contain]
+        heroImagePosition:
+          type: string
+          enum: [center, top, bottom]
+        heroOverlaySize:
+          type: string
+          enum: [small, medium, large]
+        heroOverlayAlign:
+          type: string
+          enum: [left, center, right]
+        showShopButton:
+          type: boolean
+        showListBusinessButton:
+          type: boolean
+        heroButtonPlacement:
+          type: string
+          enum: [bottom-left, bottom-center, bottom-right]
+        logoSizePx:
+          type: integer
+          minimum: 16
+          maximum: 192
+        weatherEnabled:
+          type: boolean
+        weatherLocation:
+          type: ["string", "null"]
+        updatedAt:
+          type: string
+          format: date-time
+
+    PlatformThemeInput:
+      type: object
+      properties:
+        primaryColor:
+          type: string
+        accentColor:
+          type: string
+        backgroundColor:
+          type: string
+        buttonColor:
+          type: string
+        headingColor:
+          type: string
+        brandPrefixColor:
+          type: string
+          description: Color for the town prefix in the wordmark (e.g. Clay)
+        brandTownColor:
+          type: string
+          description: Color for the Town segment in the wordmark
+        brandHubColor:
+          type: string
+          description: Color for the Hub segment in the wordmark
+        platformName:
+          type: string
+        townName:
+          type: string
+        tagline:
+          type: string
+        logoUrl:
+          type: string
+        heroImageUrl:
+          type: string
+        heroOverlayImageUrl:
+          type: string
+        heroImageFit:
+          type: string
+          enum: [cover, contain]
+        heroImagePosition:
+          type: string
+          enum: [center, top, bottom]
+        heroOverlaySize:
+          type: string
+          enum: [small, medium, large]
+        heroOverlayAlign:
+          type: string
+          enum: [left, center, right]
+        showShopButton:
+          type: boolean
+        showListBusinessButton:
+          type: boolean
+        heroButtonPlacement:
+          type: string
+          enum: [bottom-left, bottom-center, bottom-right]
+        logoSizePx:
+          type: integer
+          minimum: 16
+          maximum: 192
+        weatherEnabled:
+          type: boolean
+        weatherLocation:
+          type: string
+
+    WeatherCurrent:
+      type: object
+      required: [temperatureF, weatherCode, summary]
+      properties:
+        temperatureF:
+          type: number
+        weatherCode:
+          type: integer
+        summary:
+          type: string
+
+    WeatherDaily:
+      type: object
+      required: [date, highF, lowF, weatherCode, summary]
+      properties:
+        date:
+          type: string
+          format: date
+        highF:
+          type: number
+        lowF:
+          type: number
+        weatherCode:
+          type: integer
+        summary:
+          type: string
+
+    WeatherForecast:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+        unavailable:
+          type: boolean
+        reason:
+          type: string
+          enum: [missing_location, geocoding_failed, forecast_failed, malformed_response]
+        message:
+          type: string
+        locationQuery:
+          type: string
+        demo:
+          type: boolean
+        locationLabel:
+          type: string
+        current:
+          $ref: "#/components/schemas/WeatherCurrent"
+        daily:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeatherDaily"
+
+    # ─── Media Library ─────────────────────────────────────────────
+    MediaAsset:
+      type: object
+      required: [id, uploadedByUserId, originalFilename, mimeType, byteSize, url, createdAt]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: ["integer", "null"]
+        uploadedByUserId:
+          type: string
+        originalFilename:
+          type: string
+        mimeType:
+          type: string
+        byteSize:
+          type: integer
+        url:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    MediaUploadForm:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Image file (JPEG, PNG, WebP, or GIF; max 5 MB)
+
+    # ─── Notification Log ──────────────────────────────────────────
+    NotificationLog:
+      type: object
+      required: [id, businessId, channel, body, status, createdAt]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        orderId:
+          type: ["integer", "null"]
+        appointmentRequestId:
+          type: ["integer", "null"]
+        channel:
+          type: string
+          enum: [EMAIL, SMS, DISCORD, NTFY, PUSH]
+        eventType:
+          type: ["string", "null"]
+        type:
+          type: string
+        recipientEmail:
+          type: ["string", "null"]
+        recipientPhone:
+          type: ["string", "null"]
+        recipientUserId:
+          type: ["string", "null"]
+        subject:
+          type: ["string", "null"]
+        body:
+          type: string
+        status:
+          type: string
+        errorMessage:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    AppointmentRequest:
+      type: object
+      required: [id, businessId, customerName, requestedDate, requestedTime, status, source, createdAt]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        customerName:
+          type: string
+        customerEmail:
+          type: ["string", "null"]
+        customerPhone:
+          type: ["string", "null"]
+        serviceName:
+          type: ["string", "null"]
+        productId:
+          type: ["integer", "null"]
+        requestedDate:
+          type: string
+        requestedTime:
+          type: string
+        notes:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [NEW, CONFIRMED, DECLINED, CANCELLED, COMPLETED]
+        source:
+          type: string
+          enum: [CUSTOMER, MANUAL]
+        statusNote:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    OwnerAppointmentRequestInput:
+      type: object
+      required: [customerName, requestedDate, requestedTime]
+      properties:
+        customerName:
+          type: string
+          minLength: 1
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        serviceName:
+          type: string
+        productId:
+          type: integer
+        requestedDate:
+          type: string
+        requestedTime:
+          type: string
+          minLength: 1
+        notes:
+          type: string
+
+    AppointmentRequestStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [CONFIRMED, DECLINED, CANCELLED, COMPLETED]
+        statusNote:
+          type: string
+          description: Optional note to the customer (especially when declining)
+
+    AppointmentRequestInput:
+      type: object
+      required: [businessId, customerName, requestedDate, requestedTime]
+      properties:
+        businessId:
+          type: integer
+        customerName:
+          type: string
+          minLength: 1
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        serviceName:
+          type: string
+        productId:
+          type: integer
+        requestedDate:
+          type: string
+        requestedTime:
+          type: string
+          minLength: 1
+        notes:
+          type: string

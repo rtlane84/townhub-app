@@ -1,0 +1,172 @@
+type HubStorefrontMode = "ORDERING" | "APPOINTMENT" | "INFORMATION";
+
+export type BusinessHubNavItem = {
+  href: string;
+  label: string;
+  featureKey: string | null;
+};
+
+export type BusinessHubNavSection = {
+  label: string;
+  hrefs: string[];
+};
+
+/** Sidebar groupings — order within each section matches BUSINESS_HUB_NAV_ITEMS. */
+export const BUSINESS_HUB_NAV_SECTIONS: BusinessHubNavSection[] = [
+  {
+    label: "Business",
+    hrefs: [
+      "/dashboard/business",
+      "/dashboard/business/orders",
+      "/dashboard/business/kitchen",
+      "/dashboard/business/appointments",
+    ],
+  },
+  {
+    label: "Catalog",
+    hrefs: [
+      "/dashboard/business/products",
+      "/dashboard/business/categories",
+      "/dashboard/business/product-options",
+    ],
+  },
+  {
+    label: "Configuration",
+    hrefs: [
+      "/dashboard/business/locations",
+      "/dashboard/business/notifications",
+      "/dashboard/business/settings",
+      "/dashboard/business/subscription",
+    ],
+  },
+];
+
+/** Feature-gated Business Hub nav sections (null featureKey = always available). */
+export const BUSINESS_HUB_NAV_ITEMS: BusinessHubNavItem[] = [
+  { href: "/dashboard/business", label: "Overview", featureKey: null },
+  { href: "/dashboard/business/orders", label: "Orders", featureKey: "online_ordering" },
+  { href: "/dashboard/business/kitchen", label: "Kitchen", featureKey: "online_ordering" },
+  { href: "/dashboard/business/appointments", label: "Appointments", featureKey: "appointment_requests" },
+  { href: "/dashboard/business/products", label: "Items", featureKey: "business_website" },
+  { href: "/dashboard/business/product-options", label: "Item Options", featureKey: "business_website" },
+  { href: "/dashboard/business/categories", label: "Categories", featureKey: "business_website" },
+  { href: "/dashboard/business/locations", label: "Mobile Schedule", featureKey: "mobile_business" },
+  { href: "/dashboard/business/subscription", label: "Subscription", featureKey: null },
+  { href: "/dashboard/business/notifications", label: "Notifications", featureKey: null },
+  { href: "/dashboard/business/settings", label: "Settings", featureKey: null },
+];
+
+const ORDERING_BUSINESS_HUB_PATHS = new Set([
+  "/dashboard/business/orders",
+  "/dashboard/business/kitchen",
+]);
+
+const APPOINTMENT_BUSINESS_HUB_PATHS = new Set([
+  "/dashboard/business/appointments",
+]);
+
+/** Routes that subscribe to Business Hub SSE live events. */
+const BUSINESS_HUB_LIVE_EVENTS_PATHS = new Set([
+  "/dashboard/business",
+  "/dashboard/business/orders",
+  "/dashboard/business/kitchen",
+  "/dashboard/business/appointments",
+]);
+
+const BUSINESS_HUB_ORDER_LIVE_PATHS = new Set([
+  "/dashboard/business",
+  "/dashboard/business/orders",
+  "/dashboard/business/kitchen",
+]);
+
+const BUSINESS_HUB_APPOINTMENT_LIVE_PATHS = new Set([
+  "/dashboard/business/appointments",
+]);
+
+function normalizeBusinessHubPath(pathname: string): string {
+  return pathname.split("?")[0] ?? pathname;
+}
+
+function matchesBusinessHubPath(pathname: string, bases: Set<string>): boolean {
+  const normalized = normalizeBusinessHubPath(pathname);
+  if (bases.has(normalized)) return true;
+  for (const base of bases) {
+    if (base !== "/dashboard/business" && normalized.startsWith(`${base}/`)) {
+      return true;
+    }
+  }
+  return normalized === "/dashboard/business" && bases.has("/dashboard/business");
+}
+
+export function isBusinessHubOrderLivePage(pathname: string): boolean {
+  return matchesBusinessHubPath(pathname, BUSINESS_HUB_ORDER_LIVE_PATHS);
+}
+
+export function isBusinessHubAppointmentLivePage(pathname: string): boolean {
+  return matchesBusinessHubPath(pathname, BUSINESS_HUB_APPOINTMENT_LIVE_PATHS);
+}
+
+export function isBusinessHubLiveEventsRoute(pathname: string): boolean {
+  return matchesBusinessHubPath(pathname, BUSINESS_HUB_LIVE_EVENTS_PATHS);
+}
+
+export function isBusinessHubNavVisibleForStorefrontMode(
+  href: string,
+  storefrontMode: HubStorefrontMode,
+): boolean {
+  if (ORDERING_BUSINESS_HUB_PATHS.has(href)) return storefrontMode === "ORDERING";
+  if (APPOINTMENT_BUSINESS_HUB_PATHS.has(href)) return storefrontMode === "APPOINTMENT";
+  return true;
+}
+
+export function resolveBusinessHubNavItem(pathname: string): BusinessHubNavItem | null {
+  const normalized = pathname.split("?")[0] ?? pathname;
+  let best: BusinessHubNavItem | null = null;
+
+  for (const item of BUSINESS_HUB_NAV_ITEMS) {
+    if (normalized === item.href || normalized.startsWith(`${item.href}/`)) {
+      if (!best || item.href.length > best.href.length) {
+        best = item;
+      }
+    }
+  }
+
+  return best;
+}
+
+/**
+ * Maps Business Hub routes to subscription feature keys from the database catalog.
+ */
+export function resolveBusinessHubFeatureKey(pathname: string): string | null {
+  return resolveBusinessHubNavItem(pathname)?.featureKey ?? null;
+}
+
+export function businessHubFeatureMeta(featureKey: string): {
+  label: string;
+  description: string;
+} {
+  const route = BUSINESS_HUB_NAV_ITEMS.find((item) => item.featureKey === featureKey);
+  return {
+    label: route?.label ?? featureKey.replace(/_/g, " "),
+    description: "Upgrade your plan to unlock this capability for your business.",
+  };
+}
+
+export function getVisibleBusinessHubNavItems(
+  storefrontMode: HubStorefrontMode | null | undefined,
+): BusinessHubNavItem[] {
+  if (!storefrontMode) return BUSINESS_HUB_NAV_ITEMS;
+  return BUSINESS_HUB_NAV_ITEMS.filter((item) =>
+    isBusinessHubNavVisibleForStorefrontMode(item.href, storefrontMode),
+  );
+}
+
+export function isBusinessHubRouteHiddenByStorefrontMode(
+  pathname: string,
+  storefrontMode: HubStorefrontMode | null | undefined,
+): boolean {
+  if (!storefrontMode) return false;
+  const navItem = resolveBusinessHubNavItem(pathname);
+  if (!navItem) return false;
+  return !isBusinessHubNavVisibleForStorefrontMode(navItem.href, storefrontMode);
+}

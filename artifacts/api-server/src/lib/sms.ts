@@ -1,0 +1,42 @@
+import { logger } from "./logger";
+import { logOperationalFailure } from "./operational-log";
+
+export function isSmsConfigured(): boolean {
+  return Boolean(
+    process.env.TWILIO_ACCOUNT_SID &&
+      process.env.TWILIO_AUTH_TOKEN &&
+      process.env.TWILIO_FROM_NUMBER,
+  );
+}
+
+export type SmsSendResult = {
+  sent: boolean;
+  providerUnavailable?: boolean;
+  error?: string;
+};
+
+export async function sendSms(
+  to: string,
+  body: string,
+): Promise<SmsSendResult> {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const from = process.env.TWILIO_FROM_NUMBER;
+
+  if (!accountSid || !authToken || !from) {
+    logger.info("SMS not configured: set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER");
+    return { sent: false, providerUnavailable: true };
+  }
+
+  try {
+    const twilio = await import("twilio");
+    const client = twilio.default(accountSid, authToken);
+    await client.messages.create({ from, to, body });
+    return { sent: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logOperationalFailure("sms_send_failed", { provider: "twilio" });
+    logger.error({ err }, "SMS send failed");
+    return { sent: false, error: message };
+  }
+}

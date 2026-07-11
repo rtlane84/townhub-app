@@ -1,0 +1,712 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover-border: hsl(var(--popover-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-border: var(--primary-border);
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary-border: var(--secondary-border);
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted-border: var(--muted-border);
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-border: var(--accent-border);
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive-border: var(--destructive-border);
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-platform-button: hsl(var(--platform-button, var(--primary)));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-primary-border: var(--sidebar-primary-border);
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-accent-border: var(--sidebar-accent-border);
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: 'Outfit', sans-serif;
+  --font-serif: 'Fraunces', serif;
+  --font-mono: Menlo, monospace;
+
+  --text-xs: 0.75rem;
+  --text-xs--line-height: calc(1 / 0.75);
+  --text-sm: 0.875rem;
+  --text-sm--line-height: calc(1.25 / 0.875);
+  --text-base: 1rem;
+  --text-base--line-height: calc(1.5 / 1);
+  --text-lg: 1.125rem;
+  --text-lg--line-height: calc(1.75 / 1.125);
+  --text-xl: 1.25rem;
+  --text-xl--line-height: calc(1.75 / 1.25);
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: calc(2 / 1.5);
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: calc(2.25 / 1.875);
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: calc(2.5 / 2.25);
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1;
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 1;
+  --text-7xl: 4.5rem;
+  --text-7xl--line-height: 1;
+  --text-8xl: 6rem;
+  --text-8xl--line-height: 1;
+  --text-9xl: 8rem;
+  --text-9xl--line-height: 1;
+
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+
+  --shadow-card: 0 2px 24px -6px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-card-hover: 0 12px 36px -10px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-float: 0 8px 32px -8px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+/* LIGHT MODE — premium Apple-quality community platform */
+:root {
+  --button-outline: rgba(15, 23, 42, 0.08);
+  --badge-outline: rgba(15, 23, 42, 0.06);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(15, 23, 42, 0.03);
+  --elevate-2: rgba(15, 23, 42, 0.07);
+
+  /* Soft cool canvas — calm, spacious, native */
+  --background: 220 16% 96.5%;
+  --foreground: 222 22% 12%;
+  --border: 220 14% 90%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 22% 12%;
+  --card-border: 220 14% 92%;
+
+  --sidebar: 220 18% 97%;
+  --sidebar-foreground: 222 22% 12%;
+  --sidebar-border: 220 14% 90%;
+  --sidebar-primary: 221 83% 32%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 16% 94%;
+  --sidebar-accent-foreground: 222 20% 22%;
+  --sidebar-ring: 221 83% 32%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 22% 12%;
+  --popover-border: 220 14% 90%;
+
+  /* TownHub navy — overridden at runtime by PlatformThemeProvider */
+  --primary: 221 83% 32%;
+  --primary-foreground: 0 0% 100%;
+
+  /* Soft sage secondary */
+  --secondary: 152 18% 42%;
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 220 16% 94%;
+  --muted-foreground: 220 10% 42%;
+
+  /* Warm amber accent — used sparingly for status / highlights */
+  --accent: 38 92% 52%;
+  --accent-foreground: 221 83% 18%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --input: 220 14% 88%;
+  --ring: 221 83% 32%;
+
+  --platform-button: 221 83% 32%;
+
+  --chart-1: 221 83% 32%;
+  --chart-2: 152 18% 42%;
+  --chart-3: 38 92% 52%;
+  --chart-4: 340 55% 52%;
+  --chart-5: 200 45% 45%;
+
+  /* Large, friendly radii — inspiration screenshots */
+  --radius: 1.5rem;
+
+  --shadow-2xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-xs: 0 1px 3px 0 rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 2px 8px -2px rgba(15, 23, 42, 0.06);
+  --shadow: 0 4px 16px -4px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 24px -6px rgba(15, 23, 42, 0.1), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 16px 40px -10px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --shadow-xl: 0 24px 50px -12px rgba(15, 23, 42, 0.14);
+  --shadow-2xl: 0 32px 64px -16px rgba(15, 23, 42, 0.16);
+}
+
+.dark {
+  --background: 20 20% 10%;
+  --foreground: 40 33% 98%;
+  --border: 20 15% 20%;
+  --card: 20 18% 12%;
+  --card-foreground: 40 33% 98%;
+  --card-border: 20 15% 20%;
+  --sidebar: 20 18% 12%;
+  --sidebar-foreground: 40 33% 98%;
+  --sidebar-border: 20 15% 20%;
+  --sidebar-primary: 25 80% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 20 15% 20%;
+  --sidebar-accent-foreground: 40 33% 98%;
+  --sidebar-ring: 25 80% 55%;
+  --popover: 20 18% 12%;
+  --popover-foreground: 40 33% 98%;
+  --popover-border: 20 15% 20%;
+  --primary: 25 80% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 130 25% 55%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 20 15% 18%;
+  --muted-foreground: 30 10% 70%;
+  --accent: 25 30% 25%;
+  --accent-foreground: 25 80% 70%;
+  --destructive: 0 60% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 20 15% 25%;
+  --ring: 25 80% 55%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary;
+    font-feature-settings: "ss01" on, "cv11" on;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-tight;
+    color: var(--platform-heading, hsl(var(--foreground)));
+  }
+}
+
+@layer utilities {
+  .th-card {
+    border-radius: var(--radius);
+    background: hsl(var(--card));
+    box-shadow: var(--shadow-card);
+  }
+  .th-card-interactive {
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 280ms ease;
+  }
+  .th-card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+  .th-fade-up {
+    animation: th-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .th-fade-up-delay-1 { animation-delay: 60ms; }
+  .th-fade-up-delay-2 { animation-delay: 120ms; }
+  .th-fade-up-delay-3 { animation-delay: 180ms; }
+  .th-press {
+    transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease;
+  }
+  .th-press:active {
+    transform: scale(0.97);
+    opacity: 0.92;
+  }
+  /* Platform heading color from admin theme (hex) with foreground fallback */
+  .text-platform-heading {
+    color: var(--platform-heading, hsl(var(--foreground)));
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes th-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Native Capacitor shell — safe areas, bottom tabs, touch polish */
+html.native-app {
+  /* Prefer WebKit env(); JS may override these on <html style> when env() is 0. */
+  --safe-area-top: max(env(safe-area-inset-top, 0px), constant(safe-area-inset-top, 0px));
+  --safe-area-right: max(env(safe-area-inset-right, 0px), constant(safe-area-inset-right, 0px));
+  --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), constant(safe-area-inset-bottom, 0px));
+  --safe-area-left: max(env(safe-area-inset-left, 0px), constant(safe-area-inset-left, 0px));
+  height: 100%;
+  overflow: hidden;
+  /* Solid canvas behind status bar + home indicator */
+  background-color: hsl(var(--background));
+  overscroll-behavior: none;
+}
+
+html.native-app body {
+  height: 100%;
+  overflow: hidden;
+  /* Do not pad the body for safe areas — that creates color gaps.
+     Header / tab bar apply insets so the same background paints edge-to-edge. */
+  overscroll-behavior: none;
+  background-color: hsl(var(--background));
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+
+html.native-app #root {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: hsl(var(--background));
+}
+
+/* App shell: header + scrollable main + in-flow tab bar stay anchored */
+html.native-app .native-app-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: hsl(var(--background));
+}
+
+/*
+ * Scroll ONLY this region. Children must grow with content (not flex-1),
+ * otherwise the page appears stuck and the tab bar can get clipped.
+ */
+html.native-app .native-scroll-root {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  background-color: hsl(var(--background));
+  touch-action: pan-y;
+}
+
+/* Opaque header so status-bar region matches the app canvas */
+html.native-app .native-site-header {
+  flex-shrink: 0;
+  padding-top: var(--safe-area-top);
+  border-bottom: 1px solid hsl(var(--border) / 0.35);
+  background-color: hsl(var(--background));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* In-flow tab bar — opaque canvas behind home indicator */
+html.native-app .native-bottom-tab-bar {
+  position: relative;
+  inset: auto;
+  flex-shrink: 0;
+  padding-bottom: max(0.35rem, var(--safe-area-bottom));
+  padding-left: max(0.75rem, var(--safe-area-left));
+  padding-right: max(0.75rem, var(--safe-area-right));
+  padding-top: 0.35rem;
+  border-top: none;
+  background-color: hsl(var(--background));
+  pointer-events: none;
+  z-index: 50;
+}
+
+html.native-app .native-bottom-tab-bar-inner {
+  pointer-events: auto;
+  border-radius: 1.5rem;
+  background: hsl(var(--card) / 0.94);
+  -webkit-backdrop-filter: saturate(200%) blur(24px);
+  backdrop-filter: saturate(200%) blur(24px);
+  box-shadow: var(--shadow-float);
+  border: 1px solid hsl(var(--border) / 0.45);
+}
+
+@supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
+  html.native-app .native-bottom-tab-bar-inner {
+    background: hsl(var(--card) / 0.82);
+  }
+}
+
+html.native-app .native-account-sheet {
+  padding-bottom: calc(1.25rem + var(--safe-area-bottom));
+}
+
+html.native-app .native-tab-item {
+  min-width: 48px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 200ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.native-app .native-tab-item[aria-current="page"] {
+  color: hsl(var(--primary));
+}
+
+html.native-app .native-tab-item[aria-current="page"] .native-tab-icon-wrap {
+  background: hsl(var(--primary) / 0.12);
+  transform: scale(1.04);
+}
+
+html.native-app .native-tab-item[aria-current="page"] .native-tab-icon {
+  transform: scale(1.02);
+}
+
+html.native-app input,
+html.native-app textarea,
+html.native-app select {
+  font-size: 16px;
+}
+
+html.native-app [data-slot="dialog-content"],
+html.native-app [data-slot="sheet-content"] {
+  max-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+}
+
+html.native-app.native-ios .native-scroll-root {
+  scroll-padding-bottom: 0.5rem;
+}
+
+/* Business Hub / Admin mobile “Sections” bar — must clear status bar + site header */
+html.native-app .dashboard-mobile-subnav {
+  z-index: 45;
+  border-bottom-color: hsl(var(--border) / 0.35);
+  background-color: hsl(var(--background));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@keyframes native-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html.native-app .native-animate-in {
+  animation: native-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+html.native-app .native-animate-in-delay-1 {
+  animation-delay: 60ms;
+}
+
+html.native-app .native-animate-in-delay-2 {
+  animation-delay: 120ms;
+}
+
+html.native-app .native-pressable {
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1), opacity 160ms ease;
+}
+
+html.native-app .native-pressable:active {
+  transform: scale(0.98);
+  opacity: 0.92;
+}
+
+@layer clerk {
+  .cl-socialButtonsBlockButton {
+    background-color: #ffffff !important;
+    border: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+
+  .cl-socialButtonsBlockButton:hover {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  .cl-socialButtonsBlockButtonText {
+    color: hsl(var(--foreground)) !important;
+    font-weight: 500;
+  }
+
+  .cl-formButtonPrimary {
+    background-color: hsl(var(--primary)) !important;
+    color: #ffffff !important;
+  }
+
+  .cl-formButtonPrimary:hover,
+  .cl-formButtonPrimary:focus {
+    background-color: hsl(221 64% 28%) !important;
+    color: #ffffff !important;
+  }
+
+  .cl-formButtonPrimaryText {
+    color: #ffffff !important;
+    font-weight: 500;
+  }
+}
+
+.food-truck-map .leaflet-container {
+  z-index: 0;
+  font-family: inherit;
+}
+
+.food-truck-map-marker {
+  background: transparent;
+  border: none;
+}
+
+.food-truck-map-marker-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px 9999px 9999px 0;
+  transform: rotate(-45deg);
+  background: hsl(var(--primary));
+  border: 2px solid hsl(var(--background));
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+}
+
+.food-truck-map-popup .leaflet-popup-content-wrapper {
+  border-radius: 1.25rem;
+  border: none;
+  box-shadow: 0 8px 28px -6px rgb(0 0 0 / 0.14);
+}
+
+.food-truck-map-popup .leaflet-popup-content {
+  margin: 0.75rem 1rem;
+}
+
+@keyframes order-row-highlight-in {
+  from {
+    background-color: hsl(var(--primary) / 0.18);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@keyframes order-row-updated-in {
+  from {
+    background-color: hsl(var(--accent) / 0.5);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@keyframes order-status-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.25);
+  }
+}
+
+.order-row-new {
+  animation: order-row-highlight-in 2s ease-out;
+}
+
+.order-row-updated {
+  animation: order-row-updated-in 1.5s ease-out;
+}
+
+.order-status-new,
+.order-status-updated {
+  animation: order-status-pulse 1.2s ease-in-out 2;
+}
+
+/* Kitchen ticket — screen hidden, print-only receipt layout */
+@media print {
+  @page {
+    margin: 0.2in;
+    size: auto;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .kitchen-ticket-print {
+    display: block !important;
+    width: 100%;
+    max-width: 3.25in;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .kitchen-ticket {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 11pt;
+    line-height: 1.35;
+    color: #000;
+  }
+
+  .kitchen-ticket-header {
+    text-align: center;
+    margin-bottom: 0.15in;
+  }
+
+  .kitchen-ticket-business {
+    font-size: 14pt;
+    font-weight: 700;
+    margin: 0 0 0.08in;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .kitchen-ticket-kitchen-label {
+    font-size: 10pt;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.12em;
+  }
+
+  .kitchen-ticket-rule {
+    border-top: 1px dashed #000;
+    margin: 0.12in 0;
+  }
+
+  .kitchen-ticket-section {
+    margin: 0;
+  }
+
+  .kitchen-ticket-order-number {
+    font-size: 16pt;
+    font-weight: 700;
+    margin: 0 0 0.06in;
+  }
+
+  .kitchen-ticket-label {
+    font-size: 9pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.06in;
+  }
+
+  .kitchen-ticket-meta,
+  .kitchen-ticket-value,
+  .kitchen-ticket-notes {
+    margin: 0 0 0.05in;
+    word-break: break-word;
+  }
+
+  .kitchen-ticket-value {
+    font-weight: 600;
+  }
+
+  .kitchen-ticket-meta {
+    font-size: 10pt;
+  }
+
+  .kitchen-ticket-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .kitchen-ticket-item {
+    margin: 0 0 0.1in;
+  }
+
+  .kitchen-ticket-item-row {
+    display: flex;
+    gap: 0.12in;
+    align-items: flex-start;
+  }
+
+  .kitchen-ticket-qty {
+    font-weight: 700;
+    min-width: 1.5em;
+    flex-shrink: 0;
+  }
+
+  .kitchen-ticket-item-name {
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .kitchen-ticket-notes {
+    font-size: 10pt;
+    white-space: pre-wrap;
+  }
+
+  .kitchen-ticket-footer {
+    margin-top: 0.05in;
+  }
+
+  .kitchen-ticket-subtotal-row,
+  .kitchen-ticket-total-row-main {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.2in;
+  }
+
+  .kitchen-ticket-subtotal-row {
+    font-size: 10pt;
+    margin-bottom: 0.04in;
+  }
+
+  .kitchen-ticket-total-row-main {
+    font-size: 13pt;
+    font-weight: 700;
+    margin-top: 0.06in;
+  }
+
+  .kitchen-ticket-payment {
+    margin: 0.1in 0 0;
+    font-size: 10pt;
+    font-weight: 600;
+  }
+}
+
+.kitchen-display-board:fullscreen {
+  border: none;
+  border-radius: 0;
+  min-height: 100vh;
+  max-height: 100vh;
+}
+
+.kitchen-display-board[data-fullscreen="true"] [data-kitchen-column-scroll] {
+  max-height: calc(100vh - 6rem);
+}

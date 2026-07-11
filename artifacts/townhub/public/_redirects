@@ -1,0 +1,10 @@
+# Intentionally empty for Cloudflare Workers.
+#
+# Do NOT add `/* /index.html 200` — Workers SPA mode
+# (assets.not_found_handling = single-page-application) already does that;
+# a catch-all fails deploy with error 100324.
+#
+# Do NOT rewrite /native-sso-callback → …/index.html — that fights Workers’
+# HTML trailing-slash handling and causes ERR_TOO_MANY_REDIRECTS.
+# The static file at public/native-sso-callback/index.html is served as
+# /native-sso-callback/ automatically.

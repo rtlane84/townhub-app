@@ -1,0 +1,31 @@
+# Cloudflare Workers (static assets) — TownHub frontend
+#
+# Dashboard (Workers & Pages → townhub → Settings → Build):
+#   Root directory:     (leave empty — repo root)
+#   Build command:      pnpm --filter @workspace/townhub run build
+#   Deploy command:     npx wrangler deploy
+#   Build output dir:   (optional / unused — assets come from this file)
+#
+# Auth: use the default Build API token (Workers Scripts Edit is enough).
+#   Do NOT set CLOUDFLARE_API_TOKEN as a Build variable — it overrides the
+#   Build → API token field and often causes auth error 10000.
+#   Remove any custom CLOUDFLARE_API_TOKEN from Build variables/secrets.
+#
+# Env (build-time):
+#   NODE_VERSION=22
+#   VITE_CLERK_PUBLISHABLE_KEY=...
+#   VITE_API_BASE_URL=https://your-api.example.com
+#
+# If auto `pnpm install --frozen-lockfile` fails with LOCKFILE_CONFIG_MISMATCH:
+#   SKIP_DEPENDENCY_INSTALL=true
+#   Build command: pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build
+
+# Must match the Workers Builds project name (CI overrides otherwise).
+name = "townhub-app"
+compatibility_date = "2026-07-09"
+
+# Assets-only Worker (SPA). Uses `wrangler deploy`, which matches Workers Builds
+# default token permissions (Workers Scripts Edit) — unlike `wrangler pages deploy`.
+[assets]
+directory = "artifacts/townhub/dist/public"
+not_found_handling = "single-page-application"
