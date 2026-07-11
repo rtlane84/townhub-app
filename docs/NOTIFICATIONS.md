@@ -220,11 +220,11 @@ HTTPS links in email / SMS / ntfy continue to use `APP_BASE_URL` helpers in `not
 ```text
 Customer checkout
        │
-       ├─ Pay at pickup ──► ORDER_RECEIVED (email + SMS + customer push)
+       ├─ Pay at pickup ──► ORDER_RECEIVED (customer) + NEW_ORDER (owner)
        │
-       └─ Card (Stripe) ──► payment webhook marks PAID ──► ORDER_RECEIVED
-
-Business owner ──► NEW_ORDER (email/SMS/Discord/ntfy per business + owner push)
+       └─ Card (Stripe) ──► payment webhook marks PAID
+                              ├── ORDER_RECEIVED (customer)
+                              └── NEW_ORDER (owner)  ← not before payment
 
 Business updates status ──► lifecycle email + SMS + customer push
 ```

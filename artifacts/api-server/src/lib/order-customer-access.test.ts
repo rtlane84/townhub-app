@@ -29,6 +29,40 @@ describe("authorizeOrderView", () => {
     assert.equal(result.allowed, true);
   });
 
+  it("allows a valid access token for linked orders without a Clerk session (Stripe return)", () => {
+    const result = authorizeOrderView({
+      viewerUserId: null,
+      viewerRole: null,
+      businessOwnerId: null,
+      orderCustomerUserId: "user_customer",
+      hasValidAccessToken: true,
+    });
+    assert.equal(result.allowed, true);
+  });
+
+  it("allows a valid access token when the linked customer is signed in", () => {
+    const result = authorizeOrderView({
+      viewerUserId: "user_customer",
+      viewerRole: "CUSTOMER",
+      businessOwnerId: null,
+      orderCustomerUserId: "user_customer",
+      hasValidAccessToken: true,
+    });
+    assert.equal(result.allowed, true);
+  });
+
+  it("denies another signed-in customer even with a valid access token", () => {
+    const result = authorizeOrderView({
+      viewerUserId: "user_other",
+      viewerRole: "CUSTOMER",
+      businessOwnerId: null,
+      orderCustomerUserId: "user_customer",
+      hasValidAccessToken: true,
+    });
+    assert.equal(result.allowed, false);
+    if (!result.allowed) assert.equal(result.statusCode, 403);
+  });
+
   it("allows the linked customer to view their order", () => {
     const result = authorizeOrderView({
       viewerUserId: "user_customer",

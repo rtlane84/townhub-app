@@ -11,9 +11,9 @@ import {
   getGetAdminBootstrapStatusQueryKey,
   useBootstrapAdmin,
 } from "@workspace/api-client-react";
-import { SignInButton } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePlatformBranding } from "@/components/theme-provider";
+import { NativeAwareSignIn } from "@/components/native-aware-sign-in";
 import { resolveSetupRedirectPath } from "@/lib/setup-redirect";
 
 export default function Setup() {
@@ -97,9 +97,7 @@ export default function Setup() {
             ) : !isSignedIn ? (
               <div className="text-center py-4">
                 <p className="text-sm text-muted-foreground mb-4">Sign in first to claim admin access.</p>
-                <SignInButton mode="modal">
-                  <Button className="w-full">Sign In</Button>
-                </SignInButton>
+                <NativeAwareSignIn label="Sign In" size="default" />
               </div>
             ) : alreadyAdmin ? (
               <div className="text-center py-4 space-y-3">

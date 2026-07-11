@@ -27,12 +27,17 @@ import { BusinessTags } from "@/components/business-tags";
 import { accentTintStyle, mergePlatformTheme, normalizeHex } from "@/lib/theme-colors";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
+import { triggerNativeHaptic } from "@/lib/native-haptics";
+import { isNativeApp } from "@/lib/native-platform";
 
 const categoryPillActiveClass =
   "rounded-full whitespace-nowrap bg-platform-button text-white border-0 !shadow-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-platform-button hover:text-white hover:!shadow-none active:!shadow-none";
 
 const storefrontPrimaryButtonClass =
   "rounded-full bg-platform-button text-white border-0 shadow-[0_2px_12px_-2px_rgba(30,58,138,0.35)] hover:bg-platform-button/90 hover:text-white";
+
+const storefrontAddButtonClass =
+  "h-10 min-w-[5.5rem] gap-1.5 rounded-full bg-platform-button px-4 text-[13px] font-semibold tracking-tight text-white border-0 shadow-[0_4px_14px_-4px_rgba(30,58,138,0.45)] transition-all duration-200 hover:bg-platform-button/90 hover:text-white hover:shadow-[0_6px_18px_-4px_rgba(30,58,138,0.5)] active:scale-[0.96] disabled:opacity-45";
 
 const categoryPillInactiveClass =
   "rounded-full whitespace-nowrap border-0 bg-card text-foreground shadow-[0_1px_3px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04] hover:bg-muted outline-none focus-visible:ring-0 focus-visible:ring-offset-0";
@@ -165,6 +170,7 @@ export default function Storefront() {
 
   async function handleAddToCart(product: Product) {
     if (addToCartLockRef.current) return;
+    if (isNativeApp()) triggerNativeHaptic("light");
     if (isAppointmentMode) {
       openAppointmentDialog(product.id);
       return;
@@ -331,6 +337,16 @@ export default function Storefront() {
                     </div>
                   )}
 
+                  {(() => {
+                    const showCutoff =
+                      Boolean(b.orderCutoffTime) && !isAppointmentMode && !isInformationMode;
+                    const hasContact =
+                      Boolean(b.address) ||
+                      Boolean(b.phone) ||
+                      businessHours.hasHours ||
+                      showCutoff;
+                    if (!hasContact) return null;
+                    return (
                   <div id="business-contact" className="space-y-4 p-5">
                     {b.address && (
                       <div className="flex items-start gap-3 text-sm">
@@ -371,15 +387,17 @@ export default function Storefront() {
                         </div>
                       </div>
                     )}
-                    {b.orderCutoffTime && !isAppointmentMode && !isInformationMode && (
+                    {showCutoff && (
                       <div className="flex items-start gap-3 text-sm">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent-foreground">
                           <Clock className="h-4 w-4" />
                         </span>
-                        <span className="pt-1.5 text-foreground/80">{copy.cutoffLabel(formatTime12h(b.orderCutoffTime))}</span>
+                        <span className="pt-1.5 text-foreground/80">{copy.cutoffLabel(formatTime12h(b.orderCutoffTime!))}</span>
                       </div>
                     )}
                   </div>
+                    );
+                  })()}
 
                   {/* Fulfillment info */}
                   {!isAppointmentMode && !isInformationMode && (pickupInstructions || deliveryInstructions || deliveryNotes || minimumOrderForDelivery || deliveryRadiusMiles) && (
@@ -529,13 +547,14 @@ export default function Storefront() {
                             <LoadingButton
                               size="sm"
                               variant="default"
-                              className={cn("h-9 rounded-full", storefrontPrimaryButtonClass)}
+                              className={storefrontAddButtonClass}
                               onClick={() => void handleAddToCart(product)}
                               disabled={!product.available || !b.active || addingProductId !== null}
                               loading={addingProductId === product.id}
                               loadingText="Adding…"
                             >
-                              <Plus className="mr-1 h-4 w-4" /> {copy.addButtonLabel}
+                              <Plus className="h-4 w-4" strokeWidth={2.5} />
+                              {copy.addButtonLabel}
                             </LoadingButton>
                           )}
                         </div>
@@ -611,13 +630,14 @@ export default function Storefront() {
                           <LoadingButton
                             size="sm"
                             variant="default"
-                            className={cn("h-9 rounded-full", storefrontPrimaryButtonClass)}
+                            className={storefrontAddButtonClass}
                             onClick={() => void handleAddToCart(product)}
                             disabled={!product.available || !b.active || addingProductId !== null}
                             loading={addingProductId === product.id}
                             loadingText="Adding…"
                           >
-                            <Plus className="mr-1 h-4 w-4" /> {copy.addButtonLabel}
+                            <Plus className="h-4 w-4" strokeWidth={2.5} />
+                            {copy.addButtonLabel}
                           </LoadingButton>
                         )}
                       </div>

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { useUser, useAuth, SignInButton } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
 import { BusinessPlansSection } from "@/components/business-plans-section";
+import { NativeAwareSignIn } from "@/components/native-aware-sign-in";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { useAsyncAction } from "@/hooks/use-async-action";
@@ -372,11 +373,13 @@ export default function ListYourBusiness() {
             <li className="flex gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We&apos;ll notify you when you&apos;re approved</li>
           </ul>
 
-          <SignInButton mode="modal">
-            <Button size="lg" className="w-full">
-              Sign in to start your application <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </SignInButton>
+          <NativeAwareSignIn
+            size="lg"
+            label="Sign in to start your application"
+            emailLabel="Sign in with email to apply"
+          >
+            Sign in to start your application <ArrowRight className="ml-2 h-4 w-4" />
+          </NativeAwareSignIn>
           <p className="text-xs text-center text-muted-foreground">
             New here? The button above lets you create a free account first.{" "}
             <a href="#plans" className="underline font-medium hover:text-foreground">

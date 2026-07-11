@@ -339,7 +339,7 @@ NEW → CONFIRMED → PREPARING → READY_FOR_PICKUP / OUT_FOR_DELIVERY → COMP
 | COMPLETED | ORDER_COMPLETED |
 | CANCELED | ORDER_CANCELLED |
 
-Owner receives NEW_ORDER alert on creation.
+Owner receives NEW_ORDER alert when the order is payable (pay-at-pickup on create; card after Stripe marks PAID).
 
 ---
 

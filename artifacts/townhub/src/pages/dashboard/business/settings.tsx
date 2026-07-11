@@ -511,17 +511,32 @@ export default function BusinessSettings() {
                 <Input
                   type="url"
                   value={form.websiteUrl}
-                  onChange={(e) => setForm((f) => ({ ...f, websiteUrl: e.target.value }))}
+                  onChange={(e) => {
+                    const websiteUrl = e.target.value;
+                    setForm((f) => ({
+                      ...f,
+                      websiteUrl,
+                      // Auto-enable the storefront card once a URL is entered.
+                      ...(websiteUrl.trim() && !f.websiteUrl.trim()
+                        ? { showWebsiteCard: true }
+                        : !websiteUrl.trim()
+                          ? { showWebsiteCard: false }
+                          : {}),
+                    }));
+                  }}
                   placeholder="https://www.yourbusiness.com"
                   data-testid="input-websiteUrl"
                 />
               </Field>
               <SettingsToggleRow
                 label="Show website on storefront"
-                description="Display a card linking to your external site."
+                description={
+                  form.websiteUrl.trim()
+                    ? "Display a card linking to your external site."
+                    : "Add a website URL above — the card only appears when a URL is set."
+                }
                 checked={form.showWebsiteCard}
                 onCheckedChange={(showWebsiteCard) => setForm((f) => ({ ...f, showWebsiteCard }))}
-                disabled={!form.websiteUrl.trim()}
                 data-testid="switch-showWebsiteCard"
               />
             </SettingsSection>
@@ -577,7 +592,7 @@ export default function BusinessSettings() {
 
                   <Field
                     label="When can customers order?"
-                    hint="Food trucks can require an active scheduled location; restaurants can use business hours."
+                    hint="Food trucks can require an active mobile scheduled location; restaurants can use business hours."
                   >
                     <Select
                       value={form.orderingAvailabilityMode}
@@ -599,7 +614,7 @@ export default function BusinessSettings() {
                               : mode === "BUSINESS_HOURS"
                                 ? "During business hours"
                                 : mode === "MOBILE_LOCATION_SCHEDULE"
-                                  ? "When a scheduled location is active"
+                                  ? "When a mobile scheduled location is active"
                                   : "Manual on/off"}
                           </SelectItem>
                         ))}

@@ -13,8 +13,15 @@ export type OrderViewAuthResult =
   | { allowed: false; statusCode: 403; error: string };
 
 /**
- * Guest orders require a valid signed access token unless the viewer is admin,
- * the business owner, or the linked customer.
+ * Who may view an order:
+ * - Admin / business owner
+ * - Linked customer (signed-in as the same Clerk user)
+ * - Anyone with a valid signed access token (guest checkout + Stripe success URL,
+ *   including when the order was placed while signed in — Safari / Capacitor Browser
+ *   often has no Clerk session on return)
+ *
+ * A valid token does not grant access to a different signed-in user who is not
+ * the linked customer (possession of the URL is enough for anonymous viewers).
  */
 export function authorizeOrderView(input: OrderViewAuthInput): OrderViewAuthResult {
   if (input.viewerRole === "ADMIN") {
@@ -29,6 +36,23 @@ export function authorizeOrderView(input: OrderViewAuthInput): OrderViewAuthResu
     return { allowed: true };
   }
 
+  // Stripe success_url always includes ?token= — allow it even when the order is
+  // linked to a Clerk user (native/system browser return has no session).
+  if (input.hasValidAccessToken) {
+    if (
+      input.viewerUserId &&
+      input.orderCustomerUserId &&
+      input.viewerUserId !== input.orderCustomerUserId
+    ) {
+      return {
+        allowed: false,
+        statusCode: 403,
+        error: "Forbidden: you do not have access to this order",
+      };
+    }
+    return { allowed: true };
+  }
+
   if (input.orderCustomerUserId) {
     if (input.viewerUserId && input.viewerUserId === input.orderCustomerUserId) {
       return { allowed: true };
@@ -38,10 +62,6 @@ export function authorizeOrderView(input: OrderViewAuthInput): OrderViewAuthResu
       statusCode: 403,
       error: "Forbidden: you do not have access to this order",
     };
-  }
-
-  if (input.hasValidAccessToken) {
-    return { allowed: true };
   }
 
   return {

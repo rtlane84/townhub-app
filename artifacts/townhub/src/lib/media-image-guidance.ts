@@ -12,6 +12,8 @@ export interface ImageSurfaceGuidance {
   label: string;
   recommendedSize: string;
   aspectClass: string;
+  /** Optional max-width for the preview frame in settings UIs. */
+  previewMaxClass?: string;
   hint?: string;
 }
 
@@ -26,12 +28,14 @@ export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> 
     label: "Business logo",
     recommendedSize: "400 × 400 px (square)",
     aspectClass: "aspect-square",
+    previewMaxClass: "max-w-[7.5rem]",
     hint: "Appears on your storefront and business listings.",
   },
   "business-hero": {
     label: "Storefront hero image",
     recommendedSize: "1600 × 900 px (16:9)",
     aspectClass: "aspect-[16/9]",
+    previewMaxClass: "max-w-sm",
     hint: "Wide banner at the top of your public storefront page.",
   },
   "homepage-hero": {
@@ -62,6 +66,7 @@ export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> 
     label: "Platform logo",
     recommendedSize: "200 × 200 px (square)",
     aspectClass: "aspect-square",
+    previewMaxClass: "max-w-[7.5rem]",
     hint: "Shown in the site header and footer.",
   },
 };

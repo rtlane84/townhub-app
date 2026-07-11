@@ -56,7 +56,10 @@ describe("ntfy order notifications", () => {
     assert.match(serviceSource, /await Promise\.all\(tasks\)/);
     assert.match(serviceSource, /deliverOwnerNtfy/);
     const ordersSource = fs.readFileSync(path.resolve(__dirname, "../routes/orders.ts"), "utf8");
+    assert.match(ordersSource, /if \(paymentMethod === "IN_PERSON"\)/);
     assert.match(ordersSource, /notifyOwnerNewOrderFromOrderId\(order\.id\)\.catch\(\(\) => \{\}\)/);
+    const webhookSource = fs.readFileSync(path.resolve(__dirname, "./stripe-webhook.ts"), "utf8");
+    assert.match(webhookSource, /notifyOwnerNewOrderFromOrderId\(evaluation\.orderId\)\.catch\(\(\) => \{\}\)/);
   });
 
   it("skips ntfy when disabled", () => {

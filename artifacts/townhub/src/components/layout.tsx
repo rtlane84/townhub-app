@@ -12,7 +12,9 @@ import { hidesStorefrontCart } from "@workspace/api-zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
-import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
+import { clerkUserButtonAppearance, nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
+import { isNativeApp } from "@/lib/native-platform";
+import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, resolveNativeHeaderLogoPx } from "@/lib/platform-branding";
 import { PlatformBrandMark } from "@/components/platform-brand-mark";
@@ -334,9 +336,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {!hideHeaderAccount && clerkLoaded && !isSignedIn && (
-              <SignInButton mode="modal">
-                <Button size="sm">Sign In</Button>
-              </SignInButton>
+              isNativeApp() ? (
+                <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
+                  <Button size="sm">Sign In</Button>
+                </SignInButton>
+              ) : (
+                <SignInButton mode="modal">
+                  <Button size="sm">Sign In</Button>
+                </SignInButton>
+              )
             )}
 
             {!hideHeaderAccount && clerkLoaded && isSignedIn && (
@@ -471,9 +479,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   )}
 
                   {clerkLoaded && !isSignedIn && (
-                    <div className="pt-3 border-t mt-3">
-                      <SignInButton mode="modal">
-                        <Button className="w-full" onClick={close}>Sign In</Button>
+                    <div className="pt-3 border-t mt-3 space-y-3">
+                      {isNativeApp() ? <NativeGoogleSignInButton /> : null}
+                      <SignInButton
+                        mode="modal"
+                        appearance={isNativeApp() ? nativeClerkAuthAppearance : undefined}
+                      >
+                        <Button className="w-full" onClick={close}>
+                          {isNativeApp() ? "Sign In with email" : "Sign In"}
+                        </Button>
                       </SignInButton>
                     </div>
                   )}

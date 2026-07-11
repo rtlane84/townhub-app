@@ -8,8 +8,8 @@ import {
   type MarkOrderPaidResult,
 } from "./stripe-config";
 import { handleAccountUpdatedEvent } from "./stripe-connect";
-import { notifyCustomerOrderReceived } from "./notification-service";
-import { publishOrderPaidLiveEvent } from "./business-live-events";
+import { notifyCustomerOrderReceived, notifyOwnerNewOrderFromOrderId } from "./notification-service";
+import { publishOrderCreatedLiveEvent, publishOrderPaidLiveEvent } from "./business-live-events";
 import { claimStripeWebhookEvent } from "./stripe-webhook-dedup";
 import {
   evaluateCheckoutSessionPayment,
@@ -114,6 +114,9 @@ export async function markOrderPaidFromCheckoutSession(
     return { ok: true, orderId: evaluation.orderId, alreadyPaid: true };
   }
 
+  // First time this session marks the order paid — notify owner + customer.
+  notifyOwnerNewOrderFromOrderId(evaluation.orderId).catch(() => {});
+  publishOrderCreatedLiveEvent(order.businessId, evaluation.orderId, order.status ?? "NEW");
   notifyCustomerOrderReceived(evaluation.orderId).catch(() => {});
   publishOrderPaidLiveEvent(order.businessId, evaluation.orderId);
 

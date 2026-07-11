@@ -1,11 +1,14 @@
-import { SignInButton } from "@clerk/react";
 import { useListPublicPricingPlans, getListPublicPricingPlansQueryKey } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
 import { Check, Layers, Loader2, Sparkles } from "lucide-react";
 import { formatPlanAmount, pricingPlanCtaLabel } from "@/lib/subscription-display";
+import { isNativeApp } from "@/lib/native-platform";
 import { cn } from "@/lib/utils";
+import { SignInButton } from "@clerk/react";
+import { nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
 
 type BusinessPlansSectionProps = {
   /** When true, plan cards prompt sign-in before applying. */
@@ -17,6 +20,7 @@ export function BusinessPlansSection({ promptSignIn = false, className }: Busine
   const { data: plans = [], isLoading } = useListPublicPricingPlans({
     query: { queryKey: getListPublicPricingPlansQueryKey() },
   });
+  const native = isNativeApp();
 
   return (
     <section id="plans" className={cn("scroll-mt-24", className)}>
@@ -33,6 +37,12 @@ export function BusinessPlansSection({ promptSignIn = false, className }: Busine
           as the platform evolves — no redeploy required.
         </p>
       </div>
+
+      {promptSignIn && native ? (
+        <div className="mx-auto mb-8 max-w-sm">
+          <NativeGoogleSignInButton />
+        </div>
+      ) : null}
 
       {isLoading ? (
         <div className="flex justify-center py-16">
@@ -113,11 +123,19 @@ export function BusinessPlansSection({ promptSignIn = false, className }: Busine
               </CardContent>
               {promptSignIn && (
                 <CardFooter>
-                  <SignInButton mode="modal">
-                    <Button className="w-full" variant={plan.isRecommended ? "default" : "outline"}>
-                      {pricingPlanCtaLabel(plan)}
-                    </Button>
-                  </SignInButton>
+                  {native ? (
+                    <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
+                      <Button className="w-full" variant={plan.isRecommended ? "default" : "outline"}>
+                        {pricingPlanCtaLabel(plan)}
+                      </Button>
+                    </SignInButton>
+                  ) : (
+                    <SignInButton mode="modal">
+                      <Button className="w-full" variant={plan.isRecommended ? "default" : "outline"}>
+                        {pricingPlanCtaLabel(plan)}
+                      </Button>
+                    </SignInButton>
+                  )}
                 </CardFooter>
               )}
             </Card>

@@ -492,11 +492,12 @@ router.post("/orders", async (req, res): Promise<void> => {
   res.status(201).json({ ...result, accessToken });
 
   // ── Fire-and-forget notifications (never block the response) ──────────────
-  notifyOwnerNewOrderFromOrderId(order.id).catch(() => {});
-  publishOrderCreatedLiveEvent(order.businessId, order.id, order.status ?? "NEW");
-
-  // Pay-at-pickup: notify customer immediately. Stripe orders notify after payment webhook.
+  // Pay-at-pickup: notify owner + customer immediately.
+  // Stripe: wait until the payment webhook marks PAID — otherwise owners get
+  // "New order" while the customer is still on Checkout (and abandoned carts notify).
   if (paymentMethod === "IN_PERSON") {
+    notifyOwnerNewOrderFromOrderId(order.id).catch(() => {});
+    publishOrderCreatedLiveEvent(order.businessId, order.id, order.status ?? "NEW");
     notifyCustomerOrderReceived(order.id).catch(() => {});
   }
 });

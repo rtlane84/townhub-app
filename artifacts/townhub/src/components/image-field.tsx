@@ -149,7 +149,8 @@ export function ImageField({
         className={cn(
           "relative w-full rounded-lg border bg-muted/30 overflow-hidden",
           guidance.aspectClass,
-          previewSrc ? "" : "flex items-center justify-center min-h-[120px]",
+          guidance.previewMaxClass,
+          previewSrc ? "" : "flex items-center justify-center min-h-[88px]",
         )}
       >
         {previewSrc ? (
@@ -159,8 +160,8 @@ export function ImageField({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="flex flex-col items-center justify-center text-muted-foreground py-8 px-4 text-center">
-            <ImageIcon className="h-8 w-8 mb-2 opacity-50" />
+          <div className="flex flex-col items-center justify-center text-muted-foreground py-5 px-3 text-center">
+            <ImageIcon className="h-6 w-6 mb-1.5 opacity-50" />
             <p className="text-xs">No image selected</p>
             <p className="text-[11px] mt-1 opacity-80">{guidance.recommendedSize}</p>
           </div>
