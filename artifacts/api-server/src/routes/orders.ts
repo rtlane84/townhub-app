@@ -91,6 +91,7 @@ import {
   calculateOrderPrepEstimate,
   serializePrepEstimate,
 } from "../lib/order-prep-estimate";
+import { assertProductAvailableForOrder } from "../lib/product-availability";
 import {
   buildStripeCheckoutLineItems,
   calculateOrderTotals,
@@ -296,6 +297,14 @@ router.post("/orders", async (req, res): Promise<void> => {
     const product = productMap.get(item.productId);
     if (!product) {
       res.status(400).json({ error: `Product ${item.productId} not found` });
+      return;
+    }
+    const availabilityCheck = assertProductAvailableForOrder(product);
+    if (!availabilityCheck.ok) {
+      res.status(400).json({
+        error: availabilityCheck.error,
+        code: availabilityCheck.code,
+      });
       return;
     }
     const groups = optionGroupsByProduct.get(product.id) ?? [];
@@ -923,6 +932,14 @@ router.post("/checkout/intents", async (req, res): Promise<void> => {
     const product = productMap.get(item.productId);
     if (!product) {
       res.status(400).json({ error: `Product ${item.productId} not found` });
+      return;
+    }
+    const availabilityCheck = assertProductAvailableForOrder(product);
+    if (!availabilityCheck.ok) {
+      res.status(400).json({
+        error: availabilityCheck.error,
+        code: availabilityCheck.code,
+      });
       return;
     }
     const groups = optionGroupsByProduct.get(product.id) ?? [];

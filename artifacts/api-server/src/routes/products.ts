@@ -180,9 +180,9 @@ router.get(
     if (fullCatalog) {
       if (available === "true") conditions.push(eq(productsTable.available, true));
       if (available === "false") conditions.push(eq(productsTable.available, false));
-    } else {
-      conditions.push(eq(productsTable.available, true));
     }
+    // Public callers receive available and unavailable items so storefronts can
+    // show "Sold out" and carts can detect stale lines. Ordering is enforced server-side.
     if (featured === "true") conditions.push(eq(productsTable.featured, true));
 
     const products = await db

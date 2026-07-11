@@ -1,7 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/components/cart-context";
-import { useGetBusinessCheckout, useCreateOrder, estimateOrderPrep } from "@workspace/api-client-react";
+import {
+  useGetBusinessCheckout,
+  useCreateOrder,
+  useListProducts,
+  getListProductsQueryKey,
+  estimateOrderPrep,
+} from "@workspace/api-client-react";
 import { FulfillmentType } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -34,6 +40,7 @@ import { CheckoutTotalsSummary } from "@/components/order-totals-summary";
 import { NativeEmptyState } from "@/components/native-empty-state";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
+import { cartItemUnavailableMessage } from "@/lib/product-availability-copy";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
@@ -58,6 +65,35 @@ export default function Cart() {
   const { data: business } = useGetBusinessCheckout(cart.businessId!, {
     query: { enabled: !!cart.businessId, queryKey: ["/api/businesses/checkout", cart.businessId] },
   });
+
+  const { data: catalogProducts } = useListProducts(cart.businessId!, {
+    query: {
+      enabled: !!cart.businessId,
+      queryKey: getListProductsQueryKey(cart.businessId!),
+    },
+  });
+
+  const catalogById = useMemo(() => {
+    const map = new Map<number, NonNullable<typeof catalogProducts>[number]>();
+    for (const product of catalogProducts ?? []) {
+      map.set(product.id, product);
+    }
+    return map;
+  }, [catalogProducts]);
+
+  const unavailableCartItems = useMemo(() => {
+    if (!catalogProducts) return [];
+    return cart.items.filter((item) => {
+      const live = catalogById.get(item.id);
+      return !live || live.available === false;
+    });
+  }, [cart.items, catalogById, catalogProducts]);
+
+  const hasUnavailableCartItems = unavailableCartItems.length > 0;
+  const unavailableLineKeys = useMemo(
+    () => new Set(unavailableCartItems.map((item) => item.lineKey)),
+    [unavailableCartItems],
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -123,6 +159,16 @@ export default function Cart() {
           description:
             business.orderingUnavailableReason ??
             "This business is not accepting orders right now.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (hasUnavailableCartItems) {
+        const first = unavailableCartItems[0];
+        toast({
+          title: "Item unavailable",
+          description: cartItemUnavailableMessage(first?.name ?? "An item"),
           variant: "destructive",
         });
         return;
@@ -199,9 +245,11 @@ export default function Cart() {
       deliveryAddress,
       fulfillmentType,
       getToken,
+      hasUnavailableCartItems,
       notes,
       setLocation,
       toast,
+      unavailableCartItems,
       user,
     ],
   );
@@ -236,6 +284,14 @@ export default function Cart() {
   const finalTotal = checkoutTotals.total;
 
   const handleCheckout = (payAtPickup: boolean) => {
+    if (hasUnavailableCartItems) {
+      toast({
+        title: "Item unavailable",
+        description: cartItemUnavailableMessage(unavailableCartItems[0]?.name ?? "An item"),
+        variant: "destructive",
+      });
+      return;
+    }
     if (!customerName.trim()) {
       toast({ title: "Missing details", description: "Please provide your name.", variant: "destructive" });
       return;
@@ -450,8 +506,14 @@ export default function Cart() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/50 max-h-[40vh] overflow-y-auto">
-                {cart.items.map((item) => (
-                  <div key={item.lineKey} className="p-4 flex gap-4">
+                {cart.items.map((item) => {
+                  const itemUnavailable = unavailableLineKeys.has(item.lineKey);
+                  return (
+                  <div
+                    key={item.lineKey}
+                    className={cn("flex gap-4 p-4", itemUnavailable && "bg-muted/40")}
+                    data-testid={itemUnavailable ? `cart-item-unavailable-${item.id}` : undefined}
+                  >
                     {item.imageUrl ? (
                       <img
                         src={item.imageUrl}
@@ -477,13 +539,30 @@ export default function Cart() {
                           {item.selectedOptions.map((o) => o.optionName).join(", ")}
                         </p>
                       )}
+                      {itemUnavailable ? (
+                        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                          {cartItemUnavailableMessage(item.name)}
+                        </p>
+                      ) : null}
                         <div className="flex items-center gap-3 mt-3">
                         <div className="flex items-center rounded-xl border border-border/50 bg-muted/20">
-                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => updateQuantity(item.lineKey, item.quantity - 1)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 rounded-xl"
+                            onClick={() => updateQuantity(item.lineKey, item.quantity - 1)}
+                          >
                             <Minus className="h-3.5 w-3.5" />
                           </Button>
                           <span className="w-8 text-center text-sm font-semibold">{item.quantity}</span>
-                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl" onClick={() => updateQuantity(item.lineKey, item.quantity + 1)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 rounded-xl"
+                            onClick={() => updateQuantity(item.lineKey, item.quantity + 1)}
+                            disabled={itemUnavailable}
+                            aria-label={itemUnavailable ? "Quantity locked while sold out" : "Increase quantity"}
+                          >
                             <Plus className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -493,10 +572,16 @@ export default function Cart() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-3 border-t border-border/40 bg-transparent p-5">
+              {hasUnavailableCartItems ? (
+                <div className="w-full rounded-xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+                  Remove unavailable items to continue checkout.
+                </div>
+              ) : null}
               <div className="w-full space-y-3">
                 {asapEstimateLabel ? (
                   <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2.5 text-sm">
@@ -523,6 +608,7 @@ export default function Cart() {
                     }}
                     disabled={
                       orderingBlocked ||
+                      hasUnavailableCartItems ||
                       (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) ||
                       isSubmitting
                     }
@@ -544,6 +630,7 @@ export default function Cart() {
                     }}
                     disabled={
                       orderingBlocked ||
+                      hasUnavailableCartItems ||
                       (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) ||
                       isSubmitting
                     }

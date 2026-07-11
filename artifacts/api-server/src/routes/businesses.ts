@@ -411,12 +411,8 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
   const products = await db
     .select()
     .from(productsTable)
-    .where(
-      and(
-        eq(productsTable.businessId, business.id),
-        eq(productsTable.available, true),
-      ),
-    )
+    .where(eq(productsTable.businessId, business.id))
+    // Unavailable items stay listed as Sold out; ordering is enforced server-side.
     .orderBy(productsTable.featured, productsTable.name);
 
   const optionGroupsByProduct = await loadOptionGroupsByProductIds(

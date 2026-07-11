@@ -69,6 +69,7 @@ export default function BusinessProducts() {
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM);
   const [modifierGroupIds, setModifierGroupIds] = useState<number[]>([]);
   const [specialPick, setSpecialPick] = useState("");
+  const [togglingAvailabilityId, setTogglingAvailabilityId] = useState<number | null>(null);
 
   const { data: products, isLoading } = useListProducts(businessId, {
     query: { enabled: !!businessId, queryKey: getListProductsQueryKey(businessId) },
@@ -107,10 +108,23 @@ export default function BusinessProducts() {
           });
           return;
         }
+        if (vars.data.available !== undefined && Object.keys(vars.data).length === 1) {
+          toast({
+            title: vars.data.available ? "Marked available" : "Marked unavailable",
+          });
+          return;
+        }
         setSheetOpen(false);
         toast({ title: "Item updated" });
       },
-      onError: () => toast({ title: "Failed to update item", variant: "destructive" }),
+      onError: (_err, vars) => {
+        invalidate();
+        if (vars.data.available !== undefined && Object.keys(vars.data).length === 1) {
+          toast({ title: "Couldn't update availability", variant: "destructive" });
+          return;
+        }
+        toast({ title: "Failed to update item", variant: "destructive" });
+      },
     },
   });
 
@@ -176,6 +190,26 @@ export default function BusinessProducts() {
 
   function setSpecial(productId: number, featured: boolean) {
     updateProduct.mutate({ businessId, id: productId, data: { featured } });
+  }
+
+  function setProductAvailable(productId: number, available: boolean) {
+    if (togglingAvailabilityId === productId) return;
+    setTogglingAvailabilityId(productId);
+    queryClient.setQueryData(
+      getListProductsQueryKey(businessId),
+      (current: typeof products) =>
+        current?.map((product) =>
+          product.id === productId ? { ...product, available } : product,
+        ),
+    );
+    updateProduct.mutate(
+      { businessId, id: productId, data: { available } },
+      {
+        onSettled: () => {
+          setTogglingAvailabilityId((current) => (current === productId ? null : current));
+        },
+      },
+    );
   }
 
   function addSpecialFromPicker(value: string) {
@@ -326,10 +360,26 @@ export default function BusinessProducts() {
                         </div>
                       )}
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <div className="flex shrink-0 flex-col items-end gap-2">
                       <span className="whitespace-nowrap text-sm font-semibold text-primary">
                         ${product.price.toFixed(2)}
                       </span>
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor={`product-available-${product.id}`}
+                          className="text-xs font-medium text-muted-foreground"
+                        >
+                          {product.available ? "Available" : "Unavailable"}
+                        </label>
+                        <Switch
+                          id={`product-available-${product.id}`}
+                          checked={product.available}
+                          disabled={togglingAvailabilityId === product.id}
+                          onCheckedChange={(available) => setProductAvailable(product.id, available)}
+                          data-testid={`switch-product-available-${product.id}`}
+                          aria-label={`${product.name} availability`}
+                        />
+                      </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(product)} data-testid={`button-edit-product-${product.id}`}>
                           <Pencil className="h-3.5 w-3.5" />
@@ -407,9 +457,24 @@ export default function BusinessProducts() {
                   testId="product-image"
                   businessId={businessId > 0 ? businessId : undefined}
                 />
-                <div className="flex items-center gap-2">
-                  <Switch checked={form.available} onCheckedChange={(v) => setForm((f) => ({ ...f, available: v }))} data-testid="switch-product-available" />
-                  <label className="text-sm font-medium">Available</label>
+                <div className="space-y-1.5 rounded-2xl bg-muted/35 px-4 py-3.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Available for ordering</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                        Turn this off when the item is temporarily sold out or unavailable.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.available}
+                      onCheckedChange={(v) => setForm((f) => ({ ...f, available: v }))}
+                      data-testid="switch-product-available"
+                      aria-label="Available for ordering"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {form.available ? "Available" : "Unavailable"}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch checked={form.taxable} onCheckedChange={(v) => setForm((f) => ({ ...f, taxable: v }))} data-testid="switch-product-taxable" />

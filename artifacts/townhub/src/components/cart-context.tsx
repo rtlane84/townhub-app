@@ -82,6 +82,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [cart]);
 
   const addToCart = (product: Product, businessId: number, options?: AddToCartOptions): boolean => {
+    if (product.available === false) {
+      return false;
+    }
     const quantity = options?.quantity ?? 1;
     const line = normalizeCartItem(product, quantity, options);
 

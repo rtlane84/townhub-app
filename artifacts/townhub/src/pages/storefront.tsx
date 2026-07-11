@@ -8,6 +8,7 @@ import {
 import { MapPin, Clock, Phone, Store, ShoppingBag, Plus, ArrowLeft, Info, Truck, CalendarDays, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/components/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -170,6 +171,7 @@ export default function Storefront() {
 
   async function handleAddToCart(product: Product) {
     if (addToCartLockRef.current) return;
+    if (!product.available) return;
     if (isNativeApp()) triggerNativeHaptic("light");
     if (isAppointmentMode) {
       openAppointmentDialog(product.id);
@@ -516,7 +518,14 @@ export default function Storefront() {
                       )}
                       <CardContent className="flex flex-1 flex-col p-4">
                         <div className="mb-2 flex items-start justify-between gap-2">
-                          <h4 className="font-semibold leading-tight tracking-tight text-foreground">{product.name}</h4>
+                          <div className="min-w-0">
+                            <h4 className="font-semibold leading-tight tracking-tight text-foreground">{product.name}</h4>
+                            {!product.available ? (
+                              <Badge variant="secondary" className="mt-1.5 text-xs font-medium">
+                                Sold out
+                              </Badge>
+                            ) : null}
+                          </div>
                           {!isAppointmentMode && (
                             <span className="shrink-0 font-semibold text-primary">${product.price.toFixed(2)}</span>
                           )}
@@ -533,18 +542,24 @@ export default function Storefront() {
                             <span />
                           )}
                           {!isInformationMode && (
-                            <LoadingButton
-                              size="sm"
-                              variant="default"
-                              className={storefrontAddButtonClass}
-                              onClick={() => void handleAddToCart(product)}
-                              disabled={!product.available || !b.active || addingProductId !== null}
-                              loading={addingProductId === product.id}
-                              loadingText="Adding…"
-                            >
-                              <Plus className="h-4 w-4" strokeWidth={2.5} />
-                              {copy.addButtonLabel}
-                            </LoadingButton>
+                            product.available ? (
+                              <LoadingButton
+                                size="sm"
+                                variant="default"
+                                className={storefrontAddButtonClass}
+                                onClick={() => void handleAddToCart(product)}
+                                disabled={!b.active || addingProductId !== null}
+                                loading={addingProductId === product.id}
+                                loadingText="Adding…"
+                              >
+                                <Plus className="h-4 w-4" strokeWidth={2.5} />
+                                {copy.addButtonLabel}
+                              </LoadingButton>
+                            ) : (
+                              <Button size="sm" variant="secondary" className="rounded-full" disabled>
+                                Sold out
+                              </Button>
+                            )
                           )}
                         </div>
                       </CardContent>
@@ -597,7 +612,14 @@ export default function Storefront() {
                     )}
                     <CardContent className="flex flex-1 flex-col p-4">
                       <div className="mb-2 flex items-start justify-between gap-2">
-                        <h4 className="font-semibold leading-tight tracking-tight text-foreground">{product.name}</h4>
+                        <div className="min-w-0">
+                          <h4 className="font-semibold leading-tight tracking-tight text-foreground">{product.name}</h4>
+                          {!product.available ? (
+                            <Badge variant="secondary" className="mt-1.5 text-xs font-medium">
+                              Sold out
+                            </Badge>
+                          ) : null}
+                        </div>
                         {!isAppointmentMode && (
                           <span className="shrink-0 font-semibold text-primary">${product.price.toFixed(2)}</span>
                         )}
@@ -616,18 +638,24 @@ export default function Storefront() {
                           <span />
                         )}
                         {!isInformationMode && (
-                          <LoadingButton
-                            size="sm"
-                            variant="default"
-                            className={storefrontAddButtonClass}
-                            onClick={() => void handleAddToCart(product)}
-                            disabled={!product.available || !b.active || addingProductId !== null}
-                            loading={addingProductId === product.id}
-                            loadingText="Adding…"
-                          >
-                            <Plus className="h-4 w-4" strokeWidth={2.5} />
-                            {copy.addButtonLabel}
-                          </LoadingButton>
+                          product.available ? (
+                            <LoadingButton
+                              size="sm"
+                              variant="default"
+                              className={storefrontAddButtonClass}
+                              onClick={() => void handleAddToCart(product)}
+                              disabled={!b.active || addingProductId !== null}
+                              loading={addingProductId === product.id}
+                              loadingText="Adding…"
+                            >
+                              <Plus className="h-4 w-4" strokeWidth={2.5} />
+                              {copy.addButtonLabel}
+                            </LoadingButton>
+                          ) : (
+                            <Button size="sm" variant="secondary" className="rounded-full" disabled>
+                              Sold out
+                            </Button>
+                          )
                         )}
                       </div>
                     </CardContent>
@@ -650,7 +678,7 @@ export default function Storefront() {
           }}
           businessId={b.id}
           businessName={b.name}
-          services={products.map((p) => ({ id: p.id, name: p.name }))}
+          services={products.filter((p) => p.available).map((p) => ({ id: p.id, name: p.name }))}
           initialProductId={appointmentProductId}
         />
       )}
