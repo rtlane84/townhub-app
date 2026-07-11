@@ -265,11 +265,49 @@ export async function createOrderRefund(input: {
       },
     );
 
-    const stripeStatus = mapStripeRefundStatus(stripeRefund.status);
+    if (!stripeRefund?.id?.startsWith("re_")) {
+      await db
+        .update(orderRefundsTable)
+        .set({ status: "FAILED" })
+        .where(eq(orderRefundsTable.id, refundRecord.id));
+      await syncOrderRefundAggregates(order.id);
+      logOperationalFailure("order_refund_failed", {
+        orderId: order.id,
+        refundRecordId: refundRecord.id,
+        error: "Stripe refund response missing refund id",
+      });
+      return {
+        ok: false,
+        statusCode: 502,
+        error: "Stripe did not return a refund id.",
+      };
+    }
+
+    // Confirm the refund exists on the connected account before treating it as final.
+    let confirmed = stripeRefund;
+    try {
+      confirmed = await stripe.refunds.retrieve(
+        stripeRefund.id,
+        {},
+        { stripeAccount: eligibility.connectedAccountId },
+      );
+    } catch (retrieveErr) {
+      logOperationalFailure("order_refund_failed", {
+        orderId: order.id,
+        refundRecordId: refundRecord.id,
+        stripeRefundId: stripeRefund.id,
+        error:
+          retrieveErr instanceof Error
+            ? `Refund create returned ${stripeRefund.id} but retrieve failed: ${retrieveErr.message}`
+            : "Refund create succeeded but retrieve failed",
+      });
+    }
+
+    const stripeStatus = mapStripeRefundStatus(confirmed.status);
     await db
       .update(orderRefundsTable)
       .set({
-        stripeRefundId: stripeRefund.id,
+        stripeRefundId: confirmed.id,
         status: stripeStatus,
       })
       .where(eq(orderRefundsTable.id, refundRecord.id));

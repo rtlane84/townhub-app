@@ -314,6 +314,15 @@ export default function BusinessOrderDetail({ params }: Props) {
                         {refund.createdAt ? new Date(refund.createdAt).toLocaleString() : ""}
                         {refund.createdByName ? ` · ${refund.createdByName}` : ""}
                       </p>
+                      {refund.stripeRefundId ? (
+                        <p className="font-mono text-xs text-muted-foreground break-all">
+                          Stripe: {refund.stripeRefundId}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-destructive">
+                          No Stripe refund id on file — this may not have reached Stripe.
+                        </p>
+                      )}
                       {refund.reason ? <p>{refund.reason}</p> : null}
                     </div>
                   ))}
