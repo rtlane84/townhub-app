@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { isNativeApp } from "@/lib/native-platform";
 import { hideNativeSplashScreen } from "@/lib/capacitor-shell";
+import {
+  hasNativeSplashShownThisSession,
+  markNativeSplashShownThisSession,
+} from "@/lib/native-splash-session";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { PlatformBrandMark } from "@/components/platform-brand-mark";
 
@@ -14,50 +18,31 @@ const CROSS_FADE_MS = 420;
 /** Keep the mark compact so the cold-start frame matches LaunchScreen (160pt). */
 const SPLASH_LOGO_SIZE_PX = 160;
 
-function useSplashCanvasIsDark(): boolean {
-  const [dark, setDark] = useState(() => {
-    if (typeof document !== "undefined" && document.documentElement.classList.contains("dark")) {
-      return true;
-    }
-    if (typeof window !== "undefined" && window.matchMedia) {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
-    }
-    return false;
-  });
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const sync = () => {
-      setDark(document.documentElement.classList.contains("dark") || mq.matches);
-    };
-    sync();
-    mq.addEventListener("change", sync);
-    const observer = new MutationObserver(sync);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => {
-      mq.removeEventListener("change", sync);
-      observer.disconnect();
-    };
-  }, []);
-
-  return dark;
-}
+/**
+ * Always light — matches Capacitor SplashScreen / LaunchScreen `#F4F5F8`.
+ * Dark-mode canvas made the transparent logo corners read as a black screen.
+ */
+const SPLASH_CANVAS = "#F4F5F8";
 
 /**
- * Native cold-start splash: solid canvas (light/dark), launch logo with spring
- * spin, fade-in wordmark, then cross-fade into the main app shell.
+ * Native cold-start splash: solid light canvas, launch logo with spring spin,
+ * fade-in wordmark, then cross-fade into the main app shell.
+ * Skipped on in-session remounts (e.g. Google OAuth return via location.assign).
  */
 export function AnimatedSplash() {
   const native = isNativeApp();
   const reduceMotion = useReducedMotion();
-  const isDark = useSplashCanvasIsDark();
   const { platformName } = usePlatformBranding();
-  const [visible, setVisible] = useState(native);
+  const [visible, setVisible] = useState(() => {
+    if (!native) return false;
+    // OAuth / deep-link remounts share this WebView session — don't replay splash.
+    return !hasNativeSplashShownThisSession();
+  });
   const [logoReady, setLogoReady] = useState(false);
 
   // Start the logo animation once the asset is decodable (including cache hits).
   useEffect(() => {
-    if (!native) return;
+    if (!native || !visible) return;
     let cancelled = false;
     const img = new Image();
     img.src = SPLASH_LOGO_SRC;
@@ -73,7 +58,7 @@ export function AnimatedSplash() {
     return () => {
       cancelled = true;
     };
-  }, [native]);
+  }, [native, visible]);
 
   // Hand off from the native LaunchScreen / Capacitor splash as soon as we paint.
   useEffect(() => {
@@ -83,7 +68,8 @@ export function AnimatedSplash() {
       if (cancelled) return;
       void hideNativeSplashScreen();
     };
-    // Two frames so the React overlay is on screen before the native layer fades.
+    // Two frames so the React overlay is on screen before the native layer fades
+    // (or immediately if we skipped the branded splash).
     requestAnimationFrame(() => {
       requestAnimationFrame(handoff);
     });
@@ -91,6 +77,12 @@ export function AnimatedSplash() {
       cancelled = true;
     };
   }, [native]);
+
+  // Remember that splash ran so OAuth remounts skip it.
+  useEffect(() => {
+    if (!native || !visible) return;
+    markNativeSplashShownThisSession();
+  }, [native, visible]);
 
   // Phase 3 — leave after the hold, regardless of theme fetch.
   useEffect(() => {
@@ -101,7 +93,6 @@ export function AnimatedSplash() {
 
   if (!native) return null;
 
-  const canvas = isDark ? "#1a1614" : "#F4F5F8";
   const subBrand = "ONE COMMUNITY.";
 
   return (
@@ -110,7 +101,7 @@ export function AnimatedSplash() {
         <motion.div
           key="townhub-animated-splash"
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center px-8"
-          style={{ backgroundColor: canvas }}
+          style={{ backgroundColor: SPLASH_CANVAS }}
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: CROSS_FADE_MS / 1000, ease: [0.22, 1, 0.36, 1] }}
@@ -125,22 +116,25 @@ export function AnimatedSplash() {
               draggable={false}
               className="select-none object-contain"
               style={{ width: SPLASH_LOGO_SIZE_PX, height: SPLASH_LOGO_SIZE_PX }}
-              initial={reduceMotion ? false : { rotate: 0 }}
+              initial={reduceMotion ? false : { opacity: 0, rotate: 0 }}
               animate={
                 reduceMotion
-                  ? { rotate: 0 }
+                  ? { opacity: 1, rotate: 0 }
                   : logoReady
-                    ? { rotate: 360 }
-                    : { rotate: 0 }
+                    ? { opacity: 1, rotate: 360 }
+                    : { opacity: 0, rotate: 0 }
               }
               transition={
                 reduceMotion || !logoReady
-                  ? { duration: 0 }
+                  ? { duration: reduceMotion ? 0 : 0.35 }
                   : {
-                      type: "spring",
-                      stiffness: 70,
-                      damping: 14,
-                      mass: 0.9,
+                      opacity: { duration: 0.35, ease: "easeOut" },
+                      rotate: {
+                        type: "spring",
+                        stiffness: 70,
+                        damping: 14,
+                        mass: 0.9,
+                      },
                     }
               }
             />
@@ -161,13 +155,13 @@ export function AnimatedSplash() {
               />
               <p
                 className="text-[10px] font-semibold uppercase tracking-[0.18em]"
-                style={{ color: isDark ? "rgba(255,255,255,0.72)" : "rgba(30,58,95,0.55)" }}
+                style={{ color: "rgba(30,58,95,0.55)" }}
               >
                 LOCAL INFO. LOCAL BUSINESSES.
               </p>
               <p
                 className="text-[11px] font-semibold uppercase tracking-[0.22em]"
-                style={{ color: isDark ? "#d4a574" : "#b8894a" }}
+                style={{ color: "#b8894a" }}
               >
                 {subBrand}
               </p>

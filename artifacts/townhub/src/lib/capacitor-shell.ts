@@ -15,6 +15,7 @@ import {
   clearNativeOAuthPending,
   installNativeOAuthResumeHandlers,
 } from "@/lib/native-oauth-resume";
+import { skipNativeSplashOnNextLoad } from "@/lib/native-splash-session";
 
 /** Fallback if React splash never mounts — keep native splash from sticking forever. */
 const SPLASH_NATIVE_FALLBACK_HIDE_MS = 4500;
@@ -235,6 +236,8 @@ export function initCapacitorShell(): void {
     if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
       if (isNativeSsoCallbackUrl(url)) {
         clearNativeOAuthPending();
+        // Full reload remounts React — skip the 3s branded splash on OAuth return.
+        skipNativeSplashOnNextLoad();
       }
       const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
       // Full navigation so Clerk reloads with OAuth query params and finishes the session.
@@ -249,6 +252,7 @@ export function initCapacitorShell(): void {
     if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
       if (isNativeSsoCallbackUrl(url)) {
         clearNativeOAuthPending();
+        skipNativeSplashOnNextLoad();
       }
       const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
       if (next !== window.location.href) {
