@@ -9,8 +9,10 @@ import { PlatformBrandMark } from "@/components/platform-brand-mark";
 const SPLASH_LOGO_SRC = "/splash-logo.png";
 
 /** Total time the branded splash stays up before cross-fading to the app. */
-const SPLASH_HOLD_MS = 2500;
+const SPLASH_HOLD_MS = 3000;
 const CROSS_FADE_MS = 420;
+/** Keep the mark compact so the cold-start frame matches LaunchScreen (160pt). */
+const SPLASH_LOGO_SIZE_PX = 160;
 
 function useSplashCanvasIsDark(): boolean {
   const [dark, setDark] = useState(() => {
@@ -118,10 +120,11 @@ export function AnimatedSplash() {
             <motion.img
               src={SPLASH_LOGO_SRC}
               alt=""
-              width={196}
-              height={196}
+              width={SPLASH_LOGO_SIZE_PX}
+              height={SPLASH_LOGO_SIZE_PX}
               draggable={false}
-              className="h-[min(42vw,196px)] w-[min(42vw,196px)] select-none object-contain"
+              className="select-none object-contain"
+              style={{ width: SPLASH_LOGO_SIZE_PX, height: SPLASH_LOGO_SIZE_PX }}
               initial={reduceMotion ? false : { rotate: 0 }}
               animate={
                 reduceMotion
