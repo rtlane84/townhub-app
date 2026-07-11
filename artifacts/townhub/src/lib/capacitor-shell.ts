@@ -16,9 +16,8 @@ import {
   installNativeOAuthResumeHandlers,
 } from "@/lib/native-oauth-resume";
 
-const SPLASH_MIN_VISIBLE_MS = 700;
-const SPLASH_ANIM_HOLD_MS = 1400;
-const SPLASH_EXIT_MS = 520;
+/** Fallback if React splash never mounts — keep native splash from sticking forever. */
+const SPLASH_NATIVE_FALLBACK_HIDE_MS = 4500;
 
 function isDarkThemeActive(): boolean {
   return document.documentElement.classList.contains("dark");
@@ -141,77 +140,25 @@ async function syncNativeStatusBar(): Promise<void> {
   }
 }
 
-async function hideNativeSplashScreen(fadeOutDuration = 150): Promise<void> {
+/** Hide Capacitor/native splash — called by AnimatedSplash on first paint. */
+export async function hideNativeSplashScreen(): Promise<void> {
   if (!isNativeApp()) return;
 
   try {
-    await SplashScreen.hide({ fadeOutDuration });
+    await SplashScreen.hide({ fadeOutDuration: 280 });
   } catch {
     // Splash screen already hidden or unavailable.
   }
 }
 
-function getBootSplashEl(): HTMLElement | null {
-  return document.getElementById("native-boot-splash");
-}
-
-function armBootSplash(): void {
-  const el = getBootSplashEl();
-  if (!el) return;
-  el.hidden = false;
-  el.setAttribute("aria-hidden", "false");
-  el.classList.add("is-armed");
-}
-
-function playBootSplashAnimation(): void {
-  const el = getBootSplashEl();
-  if (!el) return;
-  el.classList.add("is-playing");
-}
-
-function dismissBootSplash(): Promise<void> {
-  const el = getBootSplashEl();
-  if (!el) return Promise.resolve();
-
-  return new Promise((resolve) => {
-    el.classList.add("is-exiting");
-    window.setTimeout(() => {
-      el.remove();
-      resolve();
-    }, SPLASH_EXIT_MS);
-  });
-}
-
 /**
- * Hand off LaunchScreen → animated web splash → app.
- * Keep the web overlay static (matching native) until the native splash hides,
- * then play the entrance animation so it’s actually visible.
+ * Safety net only. The React AnimatedSplash owns the branded handoff and calls
+ * hideNativeSplashScreen() as soon as it paints.
  */
-function scheduleSplashHide(): void {
-  const startedAt = Date.now();
-  armBootSplash();
-
-  const finish = () => {
-    const elapsed = Date.now() - startedAt;
-    const wait = Math.max(0, SPLASH_MIN_VISIBLE_MS - elapsed);
-    window.setTimeout(() => {
-      void (async () => {
-        await hideNativeSplashScreen(160);
-        // Next frame so the reveal paints before the motion starts.
-        await new Promise<void>((r) => window.requestAnimationFrame(() => r()));
-        playBootSplashAnimation();
-        await new Promise<void>((r) => window.setTimeout(r, SPLASH_ANIM_HOLD_MS));
-        await dismissBootSplash();
-      })();
-    }, wait);
-  };
-
-  if (document.readyState === "complete") {
-    finish();
-    return;
-  }
-
-  window.addEventListener("load", finish, { once: true });
+function scheduleSplashHideFallback(): void {
+  window.setTimeout(() => {
+    void hideNativeSplashScreen();
+  }, SPLASH_NATIVE_FALLBACK_HIDE_MS);
 }
 
 function applyNativeDocumentClass(): void {
@@ -273,7 +220,7 @@ export function initCapacitorShell(): void {
       statusBarOverlaysWebView: Capacitor.getPlatform() === "ios",
     });
   });
-  scheduleSplashHide();
+  scheduleSplashHideFallback();
 
   const themeObserver = new MutationObserver(() => {
     void syncNativeStatusBar();

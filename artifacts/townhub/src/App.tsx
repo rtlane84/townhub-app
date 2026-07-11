@@ -13,6 +13,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { CartProvider } from "@/components/cart-context";
 import { PlatformThemeProvider } from "@/components/theme-provider";
+import { AnimatedSplash } from "@/components/animated-splash";
 
 import { RoutePageLoader } from "@/components/route-page-loader";
 import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
@@ -418,6 +419,7 @@ function ClerkProviderWithRoutes() {
         <NativePushRegistration />
         <PostSignInRedirector />
         <PlatformThemeProvider>
+        <AnimatedSplash />
         <CartProvider>
           <TooltipProvider>
             <Layout>
