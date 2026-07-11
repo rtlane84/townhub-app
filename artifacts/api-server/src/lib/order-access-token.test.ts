@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it, beforeEach, afterEach } from "node:test";
 import {
   createOrderAccessToken,
+  createPendingCheckoutAccessToken,
   verifyOrderAccessToken,
+  verifyPendingCheckoutAccessToken,
 } from "./order-access-token";
 
 describe("order access token", () => {
@@ -32,5 +34,13 @@ describe("order access token", () => {
     const token = createOrderAccessToken(42);
     const expiresAt = parseInt(token.split(".")[2] ?? "", 10);
     assert.equal(verifyOrderAccessToken(42, token, (expiresAt + 1) * 1000), false);
+  });
+
+  it("creates and verifies pending checkout tokens", () => {
+    const token = createPendingCheckoutAccessToken(99);
+    assert.match(token, /^pc\.99\.\d+\./);
+    assert.equal(verifyPendingCheckoutAccessToken(99, token), true);
+    assert.equal(verifyPendingCheckoutAccessToken(100, token), false);
+    assert.equal(verifyPendingCheckoutAccessToken(99, createOrderAccessToken(99)), false);
   });
 });

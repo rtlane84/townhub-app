@@ -22,10 +22,10 @@ describe("stripe-checkout-return", () => {
     assert.equal(shouldClearCartForStripeSuccess("success", 1, 1, true), false);
   });
 
-  it("stripePaymentPendingMessage shows waiting-for-acceptance copy before webhook marks paid", () => {
+  it("stripePaymentPendingMessage shows confirming copy before webhook marks paid", () => {
     assert.equal(
       stripePaymentPendingMessage("success", "STRIPE", "PENDING"),
-      "Payment received. Waiting for restaurant acceptance.",
+      "Confirming your card payment… this usually takes a few seconds.",
     );
     assert.equal(stripePaymentPendingMessage("success", "STRIPE", "PAID"), null);
     assert.equal(stripePaymentPendingMessage("canceled", "STRIPE", "PENDING"), null);

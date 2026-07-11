@@ -48,14 +48,16 @@ describe("order and commerce guard wiring", () => {
     assert.match(source, /createOrderAccessToken/);
     assert.match(source, /authorizeOrderAccess/);
     assert.match(source, /respondOrderNotFound/);
-    assert.match(source, /paymentStatus === "PAID"/);
+    assert.match(source, /paymentStatus\} = 'PAID'/);
     assert.match(source, /evaluateBusinessOrderingAvailability/);
     assert.match(source, /allocateBusinessOrderNumber/);
     assert.match(source, /requireOnlineOrderingFeature/);
     assert.match(source, /db\.transaction/);
     assert.match(source, /findOrderIdByIdempotencyKey/);
     assert.match(source, /parseOrderPaymentMethod/);
-    assert.match(source, /retrieveOpenStripeCheckoutSession/);
+    assert.match(source, /checkout\/intents/);
+    assert.match(source, /Card checkout no longer creates an order up front/);
+    assert.match(source, /materializePaidOrderFromPendingCheckout/);
   });
 
   it("enforces appointment feature gates", async () => {

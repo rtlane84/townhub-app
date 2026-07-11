@@ -9,6 +9,7 @@ import {
   ensureHoursEnabledColumn,
   ensureMobileBusinessSchema,
 } from "./lib/ensure-business-fulfillment-schema";
+import { ensurePendingCheckoutsTable } from "./lib/ensure-pending-checkouts";
 
 const rawPort = process.env["PORT"];
 
@@ -43,6 +44,12 @@ app.listen(port, async (err) => {
     await ensureHoursEnabledColumn();
   } catch (bootstrapErr) {
     logger.warn({ err: bootstrapErr }, "Business fulfillment schema bootstrap skipped");
+  }
+
+  try {
+    await ensurePendingCheckoutsTable();
+  } catch (bootstrapErr) {
+    logger.warn({ err: bootstrapErr }, "Pending checkouts schema bootstrap skipped");
   }
 
   try {

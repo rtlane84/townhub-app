@@ -4,6 +4,7 @@ export * from "./products";
 export * from "./product-options";
 export * from "./modifier-groups";
 export * from "./orders";
+export * from "./pending-checkouts";
 export * from "./order-refunds";
 export * from "./events";
 export * from "./highlights";

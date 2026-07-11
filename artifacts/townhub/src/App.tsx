@@ -23,6 +23,7 @@ import {
   NATIVE_SSO_HTTPS_BOUNCE_PATH,
 } from "@/lib/native-oauth";
 import { clearNativeOAuthPending } from "@/lib/native-oauth-resume";
+import { consumePostAuthRedirect } from "@/lib/native-post-auth-redirect";
 
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
@@ -31,6 +32,7 @@ import Businesses from "@/pages/businesses";
 import Storefront from "@/pages/storefront";
 import Cart from "@/pages/cart";
 import OrderConfirmation from "@/pages/order-confirmation";
+import CheckoutReturnPage from "@/pages/checkout-return";
 import MyOrders from "@/pages/my-orders";
 import MyOrderDetail from "@/pages/my-order-detail";
 import Help from "@/pages/help";
@@ -207,8 +209,10 @@ function NativeSsoBouncePage() {
   );
 }
 
-/** WebView / web: finish Clerk OAuth session, then go home. */
+/** WebView / web: finish Clerk OAuth session, then return to the pre-OAuth page. */
 function SsoCallbackPage() {
+  const [redirectUrl] = useState(() => consumePostAuthRedirect("/"));
+
   useEffect(() => {
     clearNativeOAuthPending();
   }, []);
@@ -216,8 +220,8 @@ function SsoCallbackPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <AuthenticateWithRedirectCallback
-        signInForceRedirectUrl="/"
-        signUpForceRedirectUrl="/"
+        signInForceRedirectUrl={redirectUrl}
+        signUpForceRedirectUrl={redirectUrl}
         continueSignUpUrl="/sign-up"
       />
       <p className="text-sm text-muted-foreground">Finishing sign-in…</p>
@@ -435,6 +439,7 @@ function ClerkProviderWithRoutes() {
                 <Route path="/businesses" component={Businesses} />
                 <Route path="/businesses/:slug" component={Storefront} />
                 <Route path="/cart" component={Cart} />
+                <Route path="/checkout/return/:pendingCheckoutId" component={CheckoutReturnPage} />
                 <Route path="/order/:id" component={OrderConfirmation} />
                 <ProtectedRoute path="/my-orders/:id" component={MyOrderDetail} />
                 <ProtectedRoute path="/my-orders" component={MyOrders} />

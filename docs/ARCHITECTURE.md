@@ -177,24 +177,28 @@ See [SECURITY.md](../SECURITY.md) for the full matrix. Summary:
 ## Guest Order Access Tokens
 
 ```text
-POST /api/orders
-  → creates order
+POST /api/orders (pay-at-pickup only)
+  → creates order (paymentStatus PENDING)
   → returns { id, accessToken, ... }
+
+POST /api/checkout/intents (card)
+  → creates pending_checkouts row (no order)
+  → returns { pendingCheckoutId, accessToken, url }
 
 GET /api/orders/:id?token={accessToken}
   → authorizeOrderAccess verifies HMAC
 
-POST /api/checkout/session { orderId, accessToken }
-  → same authorization before Stripe session creation
+POST /api/checkout/confirm { pendingCheckoutId, accessToken }
+  → materializes PAID order if Stripe session is paid (webhook safety net)
 ```
 
 Implementation:
 
-- `lib/order-access-token.ts` — HMAC create/verify using `SESSION_SECRET`
+- `lib/order-access-token.ts` — HMAC create/verify using `SESSION_SECRET` (order + pending checkout tokens)
 - `lib/order-request-access.ts` — extracts token from query/header/body
 - `lib/order-customer-access.ts` — role-based view rules
 
-Frontend: `src/lib/order-access.ts` builds `/order/:id?token=…` paths. Stripe success URL includes the token.
+Frontend: `src/lib/order-access.ts` builds confirmation paths. Stripe success URL uses `pendingCheckoutId` + pending token, then routes to `/order/:id` after materialization.
 
 ---
 
@@ -203,16 +207,15 @@ Frontend: `src/lib/order-access.ts` builds `/order/:id?token=…` paths. Stripe 
 Each business has its own Stripe Express connected account. Card payments are **direct charges** on that account.
 
 ```text
-Customer → POST /orders (paymentMethod: STRIPE)
-        → POST /checkout/session
+Customer → POST /checkout/intents
         → Stripe Checkout on connected account
         → checkout.session.completed webhook
-        → order paymentStatus = PAID
+        → create Order (PAID / NEW) + notify owner & customer
 ```
 
 - Platform `STRIPE_SECRET_KEY` enables Connect API calls
 - Business completes onboarding via Dashboard → Settings → Payments
-- Pay-at-pickup (`IN_PERSON`) bypasses Stripe entirely
+- Pay-at-pickup (`IN_PERSON`) creates the order immediately and bypasses Stripe
 - Mock mode when no platform key (dev only; blocked in production)
 
 Guide: [STRIPE_SETUP.md](STRIPE_SETUP.md).

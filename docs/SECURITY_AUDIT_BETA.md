@@ -223,7 +223,7 @@ None from the original audit.
 
 | Tier | Limit | Routes |
 |------|-------|--------|
-| Write | 60 / 15 min | `POST /orders`, `/checkout/session`, `/appointment-requests`, `/businesses/apply`, `/media/upload`, etc. |
+| Write | 60 / 15 min | `POST /orders`, `/checkout/intents`, `/appointment-requests`, `/businesses/apply`, `/media/upload`, etc. |
 | Order lookup | 30 / 15 min | `GET /orders/:id` |
 | Read | 120 / 15 min | `/weather`, `/media/optimize`, food-truck feeds |
 | General | 300 / 15 min | All other `/api/*` |

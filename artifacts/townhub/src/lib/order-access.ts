@@ -31,3 +31,84 @@ export async function fetchOrderById(
 
   return response.json() as Promise<Order>;
 }
+
+export type CheckoutIntentResult = {
+  url: string | null;
+  sessionId?: string | null;
+  mockMode?: boolean;
+  pendingCheckoutId: number;
+  accessToken: string;
+  orderId?: number;
+  orderAccessToken?: string;
+};
+
+/** Start Stripe checkout without creating an order until payment succeeds. */
+export async function createCheckoutIntent(
+  body: Record<string, unknown>,
+  authToken?: string | null,
+): Promise<CheckoutIntentResult> {
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
+  const response = await fetch(resolveApiUrl("/api/checkout/intents"), {
+    method: "POST",
+    credentials: "include",
+    headers,
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const err = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(err?.error || "Could not start checkout");
+  }
+
+  return response.json() as Promise<CheckoutIntentResult>;
+}
+
+export type ConfirmPendingCheckoutResult = Order & {
+  accessToken?: string;
+  pendingCheckoutId?: number;
+  orderId?: number;
+};
+
+/**
+ * Ask the API to materialize a PAID order from a pending checkout (webhook safety net).
+ */
+export async function confirmPendingCheckoutPayment(
+  pendingCheckoutId: number,
+  accessToken?: string | null,
+  authToken?: string | null,
+): Promise<ConfirmPendingCheckoutResult> {
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
+  const response = await fetch(resolveApiUrl("/api/checkout/confirm"), {
+    method: "POST",
+    credentials: "include",
+    headers,
+    body: JSON.stringify({
+      pendingCheckoutId,
+      ...(accessToken?.trim() ? { accessToken: accessToken.trim() } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Payment not confirmed yet");
+  }
+
+  const data = (await response.json()) as ConfirmPendingCheckoutResult;
+  return {
+    ...data,
+    orderId: data.id,
+  };
+}

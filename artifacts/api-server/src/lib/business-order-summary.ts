@@ -8,6 +8,9 @@ import {
 
 const PENDING_ORDER_STATUSES = ["NEW", "CONFIRMED", "PREPARING"] as const;
 
+/** Owner-facing lists: paid card orders + all pay-at-pickup (see isBusinessActionableOrder). */
+const PAID_OR_IN_PERSON = sql`(coalesce(${ordersTable.paymentMethod}, 'STRIPE') <> 'STRIPE' OR ${ordersTable.paymentStatus} = 'PAID')`;
+
 export function getTodayStart(now = new Date()): Date {
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
@@ -35,6 +38,7 @@ export async function loadBusinessOrderSummary(
         and(
           eq(ordersTable.businessId, businessId),
           gte(ordersTable.createdAt, todayStart),
+          PAID_OR_IN_PERSON,
         ),
       ),
     db
@@ -46,12 +50,13 @@ export async function loadBusinessOrderSummary(
         and(
           eq(ordersTable.businessId, businessId),
           inArray(ordersTable.status, [...PENDING_ORDER_STATUSES]),
+          PAID_OR_IN_PERSON,
         ),
       ),
     db
       .select()
       .from(ordersTable)
-      .where(eq(ordersTable.businessId, businessId))
+      .where(and(eq(ordersTable.businessId, businessId), PAID_OR_IN_PERSON))
       .orderBy(desc(ordersTable.createdAt))
       .limit(5),
   ]);

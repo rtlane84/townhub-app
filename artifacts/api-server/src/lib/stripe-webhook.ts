@@ -9,7 +9,10 @@ import {
 } from "./stripe-config";
 import { handleAccountUpdatedEvent } from "./stripe-connect";
 import { notifyCustomerOrderReceived, notifyOwnerNewOrderFromOrderId } from "./notification-service";
-import { publishOrderCreatedLiveEvent, publishOrderPaidLiveEvent } from "./business-live-events";
+import {
+  publishOrderCreatedLiveEvent,
+  publishOrderPaidLiveEvent,
+} from "./business-live-events";
 import { claimStripeWebhookEvent } from "./stripe-webhook-dedup";
 import {
   evaluateCheckoutSessionPayment,
@@ -28,6 +31,10 @@ import {
   persistPaymentIntentFromCheckoutSession,
   syncRefundFromStripe,
 } from "./order-refund";
+import {
+  findPendingCheckoutForStripeSession,
+  materializePaidOrderFromPendingCheckout,
+} from "./pending-checkout-materialize";
 
 export {
   evaluateCheckoutSessionPayment,
@@ -42,6 +49,10 @@ function logCheckoutPaymentRejection(reason: string, orderId?: number): void {
   logOperationalFailure("stripe_webhook_failed", { reason, orderId });
 }
 
+/**
+ * Preferred path: materialize a PAID order from pending_checkouts after Stripe pays.
+ * Legacy path: mark an existing order PAID (orders created before this refactor).
+ */
 export async function markOrderPaidFromCheckoutSession(
   session: Stripe.Checkout.Session,
   eventAccount?: string | null,
@@ -50,6 +61,57 @@ export async function markOrderPaidFromCheckoutSession(
     return { ok: false, reason: "session_not_paid" };
   }
 
+  const pending = await findPendingCheckoutForStripeSession(session);
+  if (pending) {
+    const materialized = await materializePaidOrderFromPendingCheckout({
+      pending,
+      session,
+      eventAccount,
+    });
+    if (!materialized.ok) {
+      logCheckoutPaymentRejection(materialized.reason, materialized.orderId);
+      return {
+        ok: false,
+        reason: materialized.reason,
+        orderId: materialized.orderId,
+      };
+    }
+
+    if (!materialized.alreadyExisted) {
+      const [order] = await db
+        .select({ businessId: ordersTable.businessId, status: ordersTable.status })
+        .from(ordersTable)
+        .where(eq(ordersTable.id, materialized.orderId));
+
+      notifyOwnerNewOrderFromOrderId(materialized.orderId).catch(() => {});
+      if (order) {
+        publishOrderCreatedLiveEvent(
+          order.businessId,
+          materialized.orderId,
+          order.status ?? "NEW",
+        );
+      }
+      notifyCustomerOrderReceived(materialized.orderId).catch(() => {});
+      if (order) {
+        publishOrderPaidLiveEvent(order.businessId, materialized.orderId);
+      }
+    }
+
+    return {
+      ok: true,
+      orderId: materialized.orderId,
+      alreadyPaid: materialized.alreadyExisted,
+    };
+  }
+
+  // Legacy: order was created before payment (pre-refactor sessions still in flight).
+  return markLegacyOrderPaidFromCheckoutSession(session, eventAccount);
+}
+
+async function markLegacyOrderPaidFromCheckoutSession(
+  session: Stripe.Checkout.Session,
+  eventAccount?: string | null,
+): Promise<MarkOrderPaidResult> {
   const orderId = parseCheckoutSessionOrderId(session);
   if (!orderId) {
     return { ok: false, reason: "missing_order_id" };
@@ -60,10 +122,7 @@ export async function markOrderPaidFromCheckoutSession(
     return { ok: false, reason: "missing_connected_account", orderId };
   }
 
-  const [order] = await db
-    .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.id, orderId));
+  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId));
 
   if (!order) {
     return { ok: false, reason: "order_not_found", orderId };
@@ -100,10 +159,7 @@ export async function markOrderPaidFromCheckoutSession(
       ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
     })
     .where(
-      and(
-        eq(ordersTable.id, evaluation.orderId),
-        ne(ordersTable.paymentStatus, "PAID"),
-      ),
+      and(eq(ordersTable.id, evaluation.orderId), ne(ordersTable.paymentStatus, "PAID")),
     )
     .returning({ id: ordersTable.id });
 
@@ -114,7 +170,6 @@ export async function markOrderPaidFromCheckoutSession(
     return { ok: true, orderId: evaluation.orderId, alreadyPaid: true };
   }
 
-  // First time this session marks the order paid — notify owner + customer.
   notifyOwnerNewOrderFromOrderId(evaluation.orderId).catch(() => {});
   publishOrderCreatedLiveEvent(order.businessId, evaluation.orderId, order.status ?? "NEW");
   notifyCustomerOrderReceived(evaluation.orderId).catch(() => {});
@@ -146,8 +201,9 @@ export async function handleStripeWebhookEvent(event: Stripe.Event): Promise<{
       return { handled: true, kind: "subscription" };
     }
 
-    const orderId = parseCheckoutSessionOrderId(session);
-    if (!orderId) {
+    const hasPending = Boolean(session.metadata?.pendingCheckoutId);
+    const hasOrder = Boolean(parseCheckoutSessionOrderId(session));
+    if (!hasPending && !hasOrder) {
       return { handled: false };
     }
 

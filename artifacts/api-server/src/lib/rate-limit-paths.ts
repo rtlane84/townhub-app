@@ -33,6 +33,8 @@ export function isWriteLimitedRoute(path: string, method: string): boolean {
   if (path === "/orders") return true;
   if (path === "/orders/prep-estimate") return true;
   if (path === "/checkout/session") return true;
+  if (path === "/checkout/intents") return true;
+  if (path === "/checkout/confirm") return true;
   if (path === "/appointment-requests") return true;
   if (path === "/businesses/apply") return true;
   if (path === "/businesses/register") return true;

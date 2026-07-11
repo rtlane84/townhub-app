@@ -36,6 +36,16 @@ export function createOrderAccessToken(orderId: number, nowMs = Date.now()): str
   return `v2.${orderId}.${expiresAt}.${signature}`;
 }
 
+/** Guest token for a pending Stripe checkout (before an order row exists). */
+export function createPendingCheckoutAccessToken(
+  pendingCheckoutId: number,
+  nowMs = Date.now(),
+): string {
+  const expiresAt = Math.floor((nowMs + TOKEN_TTL_MS) / 1000);
+  const signature = signPayload(`pending:${pendingCheckoutId}:${expiresAt}`);
+  return `pc.${pendingCheckoutId}.${expiresAt}.${signature}`;
+}
+
 export function verifyOrderAccessToken(
   orderId: number,
   token: string | null | undefined,
@@ -60,4 +70,25 @@ export function verifyOrderAccessToken(
 
   const expected = createLegacyOrderAccessToken(orderId);
   return timingSafeEqualStrings(trimmed, expected);
+}
+
+export function verifyPendingCheckoutAccessToken(
+  pendingCheckoutId: number,
+  token: string | null | undefined,
+  nowMs = Date.now(),
+): boolean {
+  if (!token?.trim()) return false;
+  const trimmed = token.trim();
+  if (!trimmed.startsWith("pc.")) return false;
+  const parts = trimmed.split(".");
+  if (parts.length !== 4) return false;
+  const tokenId = parseInt(parts[1] ?? "", 10);
+  const expiresAt = parseInt(parts[2] ?? "", 10);
+  const signature = parts[3] ?? "";
+  if (tokenId !== pendingCheckoutId) return false;
+  if (!Number.isFinite(expiresAt) || expiresAt < Math.floor(nowMs / 1000)) {
+    return false;
+  }
+  const expected = signPayload(`pending:${pendingCheckoutId}:${expiresAt}`);
+  return timingSafeEqualStrings(signature, expected);
 }

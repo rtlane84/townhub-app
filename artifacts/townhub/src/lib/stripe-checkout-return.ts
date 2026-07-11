@@ -39,7 +39,7 @@ export function stripePaymentPendingMessage(
 ): string | null {
   if (stripeReturn !== "success" || paymentMethod !== "STRIPE") return null;
   if (paymentStatus === "PAID") return null;
-  return "Payment received. Waiting for restaurant acceptance.";
+  return "Confirming your card payment… this usually takes a few seconds.";
 }
 
 export function formatOrderPaymentLabel(

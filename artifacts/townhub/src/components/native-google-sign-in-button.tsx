@@ -5,6 +5,7 @@ import { LoadingButton } from "@/components/ui/loading-button";
 import { isNativeApp } from "@/lib/native-platform";
 import { getNativeSsoHttpsCallbackUrl } from "@/lib/native-oauth";
 import { markNativeOAuthPending } from "@/lib/native-oauth-resume";
+import { rememberPostAuthRedirect } from "@/lib/native-post-auth-redirect";
 
 function clerkErrorMessage(err: unknown): string {
   if (err && typeof err === "object") {
@@ -77,6 +78,7 @@ export function NativeGoogleSignInButton({
       }
 
       markNativeOAuthPending();
+      rememberPostAuthRedirect();
       await Browser.open({ url: verificationUrl });
     } catch (err) {
       setError(clerkErrorMessage(err));

@@ -236,9 +236,9 @@ export function initCapacitorShell(): void {
     if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
       if (isNativeSsoCallbackUrl(url)) {
         clearNativeOAuthPending();
-        // Full reload remounts React — skip the 3s branded splash on OAuth return.
-        skipNativeSplashOnNextLoad();
       }
+      // Full reload remounts React — skip branded splash on OAuth / checkout return.
+      skipNativeSplashOnNextLoad();
       const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
       // Full navigation so Clerk reloads with OAuth query params and finishes the session.
       window.location.assign(next);
@@ -252,8 +252,8 @@ export function initCapacitorShell(): void {
     if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
       if (isNativeSsoCallbackUrl(url)) {
         clearNativeOAuthPending();
-        skipNativeSplashOnNextLoad();
       }
+      skipNativeSplashOnNextLoad();
       const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
       if (next !== window.location.href) {
         window.location.assign(next);

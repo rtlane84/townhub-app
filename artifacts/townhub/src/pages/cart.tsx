@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useCart } from "@/components/cart-context";
-import { useGetBusinessCheckout, useCreateOrder, useCreateCheckoutSession, estimateOrderPrep } from "@workspace/api-client-react";
+import { useGetBusinessCheckout, useCreateOrder, estimateOrderPrep } from "@workspace/api-client-react";
 import { FulfillmentType } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,11 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Separator } from "@/components/ui/separator";
 import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Info } from "lucide-react";
 import { useAsyncAction } from "@/hooks/use-async-action";
-import { orderConfirmationPath } from "@/lib/order-access";
+import { createCheckoutIntent, orderConfirmationPath } from "@/lib/order-access";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatTime12h } from "@workspace/api-zod";
-import { useUser } from "@clerk/react";
+import { useAuth, useUser } from "@clerk/react";
 import {
   resolvePaymentMode,
   allowsOnlinePayment,
@@ -85,7 +85,7 @@ export default function Cart() {
   const [checkoutTarget, setCheckoutTarget] = useState<"card" | "pickup" | null>(null);
 
   const createOrder = useCreateOrder();
-  const createCheckoutSession = useCreateCheckoutSession();
+  const { getToken } = useAuth();
 
   const meetsDeliveryMinimum =
     !minimumOrderForDelivery || total >= minimumOrderForDelivery;
@@ -129,25 +129,25 @@ export default function Cart() {
         return;
       }
 
-      const order = await createOrder.mutateAsync({
-        data: {
-          businessId: cart.businessId!,
-          fulfillmentType,
-          customerName: customerName.trim(),
-          customerEmail: customerEmail.trim(),
-          customerPhone: customerPhone.trim(),
-          deliveryAddress: fulfillmentType === "DELIVERY" ? deliveryAddress : undefined,
-          notes,
-          paymentMethod: payAtPickup ? "IN_PERSON" : "STRIPE",
-          items: cart.items.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            selectedOptionIds: item.selectedOptionIds.length ? item.selectedOptionIds : undefined,
-          })),
-        },
-      });
+      const checkoutPayload = {
+        businessId: cart.businessId!,
+        fulfillmentType,
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim(),
+        customerPhone: customerPhone.trim(),
+        deliveryAddress: fulfillmentType === "DELIVERY" ? deliveryAddress : undefined,
+        notes,
+        items: cart.items.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+          selectedOptionIds: item.selectedOptionIds.length ? item.selectedOptionIds : undefined,
+        })),
+      };
 
       if (payAtPickup) {
+        const order = await createOrder.mutateAsync({
+          data: { ...checkoutPayload, paymentMethod: "IN_PERSON" },
+        });
         clearCart();
         triggerOrderPlacedHaptic();
         setLocation(
@@ -159,36 +159,47 @@ export default function Cart() {
         return;
       }
 
-      const session = await createCheckoutSession.mutateAsync({
-        data: { orderId: order.id, accessToken: order.accessToken },
-      });
-      if (session.url) {
-        openStripeCheckoutUrl(session.url);
+      // Card: pending checkout only — order is created after Stripe confirms payment.
+      const authToken = await getToken();
+      const intent = await createCheckoutIntent(
+        { ...checkoutPayload, paymentMethod: "STRIPE" },
+        authToken,
+      );
+
+      if (intent.url) {
+        openStripeCheckoutUrl(intent.url);
         return;
       }
 
-      clearCart();
-      triggerOrderPlacedHaptic();
+      // Mock / already-materialized path
+      if (intent.orderId && intent.orderAccessToken) {
+        clearCart();
+        triggerOrderPlacedHaptic();
+        setLocation(
+          user
+            ? `/my-orders/${intent.orderId}`
+            : orderConfirmationPath(intent.orderId, intent.orderAccessToken),
+        );
+        toast({ title: "Order placed successfully!" });
+        return;
+      }
+
       setLocation(
-        user
-          ? `/my-orders/${order.id}`
-          : orderConfirmationPath(order.id, order.accessToken),
+        `/checkout/return/${intent.pendingCheckoutId}?payment=success&token=${encodeURIComponent(intent.accessToken)}`,
       );
-      toast({ title: "Order placed successfully!" });
     },
     [
-      business?.orderingAvailable,
-      business?.orderingUnavailableReason,
+      business,
       cart.businessId,
       cart.items,
       clearCart,
-      createCheckoutSession,
       createOrder,
       customerEmail,
       customerName,
       customerPhone,
       deliveryAddress,
       fulfillmentType,
+      getToken,
       notes,
       setLocation,
       toast,

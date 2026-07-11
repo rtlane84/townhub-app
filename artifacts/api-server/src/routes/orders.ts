@@ -6,6 +6,7 @@ import {
   orderItemsTable,
   orderItemOptionsTable,
   orderIdempotencyKeysTable,
+  pendingCheckoutsTable,
   productsTable,
   businessesTable,
   usersTable,
@@ -26,11 +27,15 @@ import {
   RefundOrderBody,
   EstimateOrderPrepBody,
 } from "@workspace/api-zod";
-import { createStripeCheckoutSession, stripe, isMockMode, retrieveOpenStripeCheckoutSession } from "../lib/stripe";
+import { createStripeCheckoutSession, stripe, isMockMode, retrieveStripeCheckoutSession } from "../lib/stripe";
 import { logOperationalFailure } from "../lib/operational-log";
 import { respondIfUserDisabled } from "../lib/user-account-status";
 import { recordStripeWebhookReceived } from "../lib/system-runtime-state";
-import { handleStripeWebhookEvent, verifyStripeWebhookSignature } from "../lib/stripe-webhook";
+import {
+  handleStripeWebhookEvent,
+  markOrderPaidFromCheckoutSession,
+  verifyStripeWebhookSignature,
+} from "../lib/stripe-webhook";
 import { validatePaymentMethodForBusiness, parseOrderPaymentMethod } from "../lib/payment-mode";
 import { validateOnlineCardPaymentReady } from "../lib/stripe-connect";
 import { getAppBaseUrl } from "../lib/app-base-url";
@@ -40,12 +45,20 @@ import {
   notifyOwnerNewOrderFromOrderId,
   notifyCustomerOrderReceived,
   notifyCustomerOrderStatusChange,
+  notifyOwnerRefundFailed,
+  notifyCustomerOrderRefund,
 } from "../lib/notifications";
 import {
   publishOrderCreatedLiveEvent,
-  publishOrderRefundedLiveEvent,
   publishOrderUpdatedLiveEvent,
+  publishOrderRefundedLiveEvent,
 } from "../lib/business-live-events";
+import {
+  createOrderAccessToken,
+  createPendingCheckoutAccessToken,
+  verifyPendingCheckoutAccessToken,
+} from "../lib/order-access-token";
+import { materializePaidOrderFromPendingCheckout } from "../lib/pending-checkout-materialize";
 import { authorizeOrderStatusUpdate } from "../lib/order-access";
 import { validateGuestOrderContact } from "../lib/guest-checkout";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
@@ -55,15 +68,10 @@ import {
   authorizeOrderRefund,
 } from "../lib/order-refund";
 import {
-  notifyCustomerOrderRefund,
-  notifyOwnerRefundFailed,
-} from "../lib/notification-service";
-import {
   loadOptionGroupsByProductIds,
   validateOrderItemSelections,
   type OrderOptionSnapshot,
 } from "../lib/product-options";
-import { createOrderAccessToken } from "../lib/order-access-token";
 import {
   findOrderIdByIdempotencyKey,
 } from "../lib/order-idempotency";
@@ -359,18 +367,17 @@ router.post("/orders", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Invalid payment method." });
     return;
   }
+  if (paymentMethod === "STRIPE") {
+    res.status(400).json({
+      error:
+        "Card checkout no longer creates an order up front. Use POST /api/checkout/intents instead.",
+    });
+    return;
+  }
   const paymentError = validatePaymentMethodForBusiness(business, paymentMethod);
   if (paymentError) {
     res.status(400).json({ error: paymentError });
     return;
-  }
-
-  if (paymentMethod === "STRIPE") {
-    const stripeError = validateOnlineCardPaymentReady(business);
-    if (stripeError) {
-      res.status(400).json({ error: stripeError });
-      return;
-    }
   }
 
   const deliveryFee =
@@ -431,6 +438,7 @@ router.post("/orders", async (req, res): Promise<void> => {
         total: String(total),
         deliveryFee: deliveryFee ? String(deliveryFee) : null,
         paymentMethod,
+        paymentStatus: "PENDING",
       })
       .returning();
 
@@ -492,14 +500,10 @@ router.post("/orders", async (req, res): Promise<void> => {
   res.status(201).json({ ...result, accessToken });
 
   // ── Fire-and-forget notifications (never block the response) ──────────────
-  // Pay-at-pickup: notify owner + customer immediately.
-  // Stripe: wait until the payment webhook marks PAID — otherwise owners get
-  // "New order" while the customer is still on Checkout (and abandoned carts notify).
-  if (paymentMethod === "IN_PERSON") {
-    notifyOwnerNewOrderFromOrderId(order.id).catch(() => {});
-    publishOrderCreatedLiveEvent(order.businessId, order.id, order.status ?? "NEW");
-    notifyCustomerOrderReceived(order.id).catch(() => {});
-  }
+  // Pay-at-pickup only — card orders are created after Stripe confirms payment.
+  notifyOwnerNewOrderFromOrderId(order.id).catch(() => {});
+  publishOrderCreatedLiveEvent(order.businessId, order.id, order.status ?? "NEW");
+  notifyCustomerOrderReceived(order.id).catch(() => {});
 });
 
 // GET /api/me/orders — signed-in customer's own order history
@@ -756,6 +760,10 @@ router.get(
     );
 
     const conditions = [eq(ordersTable.businessId, params.data.businessId)];
+    // Never surface unpaid card checkouts (legacy rows) — owners only see actionable orders.
+    conditions.push(
+      sql`(coalesce(${ordersTable.paymentMethod}, 'STRIPE') <> 'STRIPE' OR ${ordersTable.paymentStatus} = 'PAID')`,
+    );
     if (listQuery.status) {
       conditions.push(eq(ordersTable.status, listQuery.status as never));
     }
@@ -862,70 +870,130 @@ router.get("/admin/orders", async (req, res): Promise<void> => {
   res.json(ordersWithItems);
 });
 
-// POST /api/checkout/session
-router.post("/checkout/session", async (req, res): Promise<void> => {
-  const parsed = CreateCheckoutSessionBody.safeParse(req.body);
+// POST /api/checkout/intents — create pending checkout + Stripe session (no order yet)
+router.post("/checkout/intents", async (req, res): Promise<void> => {
+  const parsed = CreateOrderBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
 
-  const order = await getOrderWithItems(parsed.data.orderId);
-  if (!order) {
-    res.status(404).json({ error: "Order not found" });
+  const d = parsed.data;
+  const guestValidation = validateGuestOrderContact({
+    customerName: d.customerName,
+    customerEmail: d.customerEmail,
+    customerPhone: d.customerPhone,
+    fulfillmentType: d.fulfillmentType,
+    deliveryAddress: d.deliveryAddress,
+  });
+  if (!guestValidation.ok) {
+    res.status(400).json({ error: guestValidation.error });
     return;
   }
 
-  const [orderRow] = await db
+  const { userId: customerUserId } = getAuth(req);
+  if (customerUserId) {
+    const [customer] = await db
+      .select({ status: usersTable.status })
+      .from(usersTable)
+      .where(eq(usersTable.id, customerUserId));
+    if (customer && respondIfUserDisabled(customer.status, res)) {
+      return;
+    }
+  }
+
+  const products = await db
     .select()
-    .from(ordersTable)
-    .where(eq(ordersTable.id, parsed.data.orderId));
+    .from(productsTable)
+    .where(eq(productsTable.businessId, d.businessId));
+  const productMap = new Map(products.map((p) => [p.id, p]));
+  const optionGroupsByProduct = await loadOptionGroupsByProductIds(products.map((p) => p.id));
 
-  if (!orderRow) {
-    res.status(404).json({ error: "Order not found" });
-    return;
-  }
+  const orderItems: Array<{
+    productId: number;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    taxable: boolean;
+    options: OrderOptionSnapshot[];
+  }> = [];
 
-  const accessToken =
-    parsed.data.accessToken?.trim() || extractOrderAccessToken(req) || null;
-
-  const viewer = await loadOrderViewerContext(req, order.businessId);
-  const checkoutAuth = authorizeOrderAccess(
-    buildOrderAccessInput(orderRow.id, orderRow.customerUserId, {
-      ...viewer,
-      orderCustomerUserId: orderRow.customerUserId,
-      accessToken,
-    }),
-  );
-
-  if (!checkoutAuth.allowed) {
-    respondOrderNotFound(res);
-    return;
-  }
-
-  if (orderRow.paymentStatus === "PAID") {
-    res.status(400).json({ error: "This order has already been paid." });
-    return;
+  for (const item of d.items) {
+    const product = productMap.get(item.productId);
+    if (!product) {
+      res.status(400).json({ error: `Product ${item.productId} not found` });
+      return;
+    }
+    const groups = optionGroupsByProduct.get(product.id) ?? [];
+    const priced = validateOrderItemSelections(
+      product,
+      groups,
+      item.quantity,
+      item.selectedOptionIds,
+    );
+    if (!priced.ok) {
+      res.status(400).json({ error: priced.error });
+      return;
+    }
+    orderItems.push({
+      productId: item.productId,
+      productName: priced.productName,
+      quantity: item.quantity,
+      unitPrice: priced.unitPrice,
+      subtotal: priced.subtotal,
+      taxable: product.taxable !== false,
+      options: priced.options,
+    });
   }
 
   const [business] = await db
     .select()
     .from(businessesTable)
-    .where(eq(businessesTable.id, order.businessId));
+    .where(eq(businessesTable.id, d.businessId));
 
   if (!business) {
     res.status(404).json({ error: "Business not found" });
     return;
   }
 
-  const paymentError = validatePaymentMethodForBusiness(business, order.paymentMethod ?? "STRIPE");
-  if (paymentError) {
-    res.status(400).json({ error: paymentError });
+  let mobileLocations:
+    | Array<{
+        locationDate: string;
+        startTime: string | null;
+        endTime: string | null;
+        isActive: boolean;
+      }>
+    | undefined;
+  if (business.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE") {
+    mobileLocations = await db
+      .select({
+        locationDate: foodTruckLocationsTable.locationDate,
+        startTime: foodTruckLocationsTable.startTime,
+        endTime: foodTruckLocationsTable.endTime,
+        isActive: foodTruckLocationsTable.isActive,
+      })
+      .from(foodTruckLocationsTable)
+      .where(eq(foodTruckLocationsTable.businessId, business.id));
+  }
+
+  const availability = evaluateBusinessOrderingAvailability(business, { mobileLocations });
+  if (!availability.available) {
+    res.status(400).json({
+      error: availability.reason ?? BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE,
+    });
     return;
   }
 
-  if (order.paymentMethod === "IN_PERSON") {
-    res.status(400).json({ error: "Online checkout is not available for pay-at-pickup orders." });
+  const featureGate = await requireOnlineOrderingFeature(d.businessId);
+  if (!featureGate.ok) {
+    res.status(featureGate.status).json({ error: featureGate.error });
+    return;
+  }
+
+  const paymentError = validatePaymentMethodForBusiness(business, "STRIPE");
+  if (paymentError) {
+    res.status(400).json({ error: paymentError });
     return;
   }
 
@@ -936,7 +1004,9 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
   }
 
   if (!business.stripeConnectedAccountId) {
-    res.status(400).json({ error: "This business has not connected Stripe for online card payments." });
+    res.status(400).json({
+      error: "This business has not connected Stripe for online card payments.",
+    });
     return;
   }
 
@@ -945,53 +1015,255 @@ router.post("/checkout/session", async (req, res): Promise<void> => {
     return;
   }
 
-  if (
-    orderRow.stripeSessionId &&
-    business.stripeConnectedAccountId &&
-    !isMockMode
-  ) {
-    const existingSession = await retrieveOpenStripeCheckoutSession(
-      orderRow.stripeSessionId,
-      business.stripeConnectedAccountId,
-    );
-    if (existingSession) {
-      res.json({ url: existingSession.url, sessionId: existingSession.sessionId, mockMode: false });
+  const deliveryFee =
+    d.fulfillmentType === "DELIVERY" && business.deliveryFee
+      ? parseFloat(business.deliveryFee)
+      : null;
+
+  const orderTotals = calculateOrderTotals({
+    items: orderItems.map((item) => ({
+      lineSubtotalCents: dollarsToCents(item.subtotal),
+      taxable: item.taxable,
+    })),
+    taxEnabled: business.taxEnabled === true,
+    taxRatePercent: business.taxRatePercent ? parseFloat(business.taxRatePercent) : 0,
+    taxLabel: business.taxLabel ?? undefined,
+    deliveryFeeCents: deliveryFee ? dollarsToCents(deliveryFee) : 0,
+  });
+
+  const total = centsToDollars(orderTotals.totalCents);
+  const prepEstimate = calculateOrderPrepEstimate({
+    defaultPrepMinutes: business.defaultPrepMinutes,
+    deliveryBufferMinutes: business.deliveryBufferMinutes,
+    fulfillmentType: d.fulfillmentType,
+    lineItems: d.items.map((item) => ({
+      productId: item.productId,
+      quantity: item.quantity,
+    })),
+    productMap,
+  });
+
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const [pending] = await db
+    .insert(pendingCheckoutsTable)
+    .values({
+      businessId: d.businessId,
+      status: "OPEN",
+      fulfillmentType: d.fulfillmentType,
+      customerName: d.customerName.trim(),
+      customerEmail: d.customerEmail.trim(),
+      customerPhone: d.customerPhone?.trim() ?? null,
+      customerUserId: customerUserId ?? null,
+      deliveryAddress: d.deliveryAddress?.trim(),
+      notes: d.notes,
+      specialFields: d.specialFields,
+      itemsJson: orderItems,
+      subtotalCents: orderTotals.subtotalCents,
+      taxCents: orderTotals.taxCents,
+      taxRatePercent:
+        orderTotals.taxRatePercent != null ? String(orderTotals.taxRatePercent) : null,
+      taxLabel: orderTotals.taxLabel,
+      deliveryFee: deliveryFee ? String(deliveryFee) : null,
+      total: String(total),
+      estimatedWindowStart: prepEstimate.estimatedWindowStart,
+      estimatedWindowEnd: prepEstimate.estimatedWindowEnd,
+      stripeConnectedAccountId: business.stripeConnectedAccountId,
+      expiresAt,
+    })
+    .returning();
+
+  const accessToken = createPendingCheckoutAccessToken(pending.id);
+  const baseUrl = getAppBaseUrl();
+  const successUrl =
+    `${baseUrl}/native-checkout-return/?pendingCheckoutId=${pending.id}` +
+    `&payment=success&token=${encodeURIComponent(accessToken)}`;
+  const cancelUrl = `${baseUrl}/native-checkout-return/?payment=canceled`;
+
+  const lineItems = buildStripeCheckoutLineItems({
+    items: orderItems.map((i) => ({
+      productName: i.productName,
+      unitPrice: i.unitPrice,
+      quantity: i.quantity,
+    })),
+    deliveryFee,
+    tax: centsToDollars(orderTotals.taxCents),
+    taxLabel: orderTotals.taxLabel,
+  });
+
+  const result = await createStripeCheckoutSession({
+    lineItems,
+    connectedAccountId: business.stripeConnectedAccountId,
+    successUrl,
+    cancelUrl,
+    metadata: {
+      pendingCheckoutId: String(pending.id),
+      connectedAccountId: business.stripeConnectedAccountId,
+    },
+  });
+
+  if (result.sessionId) {
+    await db
+      .update(pendingCheckoutsTable)
+      .set({ stripeSessionId: result.sessionId })
+      .where(eq(pendingCheckoutsTable.id, pending.id));
+  }
+
+  // Mock mode: no Stripe session — materialize immediately so local/dev still works.
+  if (result.mockMode) {
+    const mockSessionId = `cs_mock_${pending.id}`;
+    const mockSession = {
+      id: mockSessionId,
+      payment_status: "paid" as const,
+      amount_total: dollarsToCents(total),
+      metadata: {
+        pendingCheckoutId: String(pending.id),
+        connectedAccountId: business.stripeConnectedAccountId,
+      },
+      payment_intent: null,
+    };
+
+    await db
+      .update(pendingCheckoutsTable)
+      .set({ stripeSessionId: mockSessionId })
+      .where(eq(pendingCheckoutsTable.id, pending.id));
+
+    const [fresh] = await db
+      .select()
+      .from(pendingCheckoutsTable)
+      .where(eq(pendingCheckoutsTable.id, pending.id));
+
+    const materialized = await materializePaidOrderFromPendingCheckout({
+      pending: fresh!,
+      session: mockSession as never,
+      eventAccount: business.stripeConnectedAccountId,
+    });
+
+    if (materialized.ok) {
+      notifyOwnerNewOrderFromOrderId(materialized.orderId).catch(() => {});
+      publishOrderCreatedLiveEvent(d.businessId, materialized.orderId, "NEW");
+      notifyCustomerOrderReceived(materialized.orderId).catch(() => {});
+      res.json({
+        url: null,
+        sessionId: mockSessionId,
+        mockMode: true,
+        pendingCheckoutId: pending.id,
+        accessToken,
+        orderId: materialized.orderId,
+        orderAccessToken: createOrderAccessToken(materialized.orderId),
+      });
       return;
     }
   }
 
-  const baseUrl = getAppBaseUrl();
-  const orderToken = createOrderAccessToken(order.id);
+  res.status(201).json({
+    url: result.url,
+    sessionId: result.sessionId,
+    mockMode: result.mockMode,
+    pendingCheckoutId: pending.id,
+    accessToken,
+  });
+});
 
-  const result = await createStripeCheckoutSession(
-    order.id,
-    order.orderNumber,
-    buildStripeCheckoutLineItems({
-      items: order.items.map((i) => ({
-        productName: i.productName,
-        unitPrice: i.unitPrice,
-        quantity: i.quantity,
-      })),
-      deliveryFee: order.deliveryFee,
-      tax: order.tax,
-      taxLabel: order.taxLabel,
-    }),
-    business.stripeConnectedAccountId,
-    `${baseUrl}/order/${order.id}?payment=success&token=${encodeURIComponent(orderToken)}`,
-    `${baseUrl}/cart?payment=canceled`,
+/** @deprecated Card checkout uses POST /checkout/intents — orders are created after payment. */
+router.post("/checkout/session", async (_req, res): Promise<void> => {
+  res.status(400).json({
+    error:
+      "Card checkout no longer uses an order id up front. Use POST /api/checkout/intents.",
+  });
+});
+
+/**
+ * POST /api/checkout/confirm
+ * Body: { pendingCheckoutId, accessToken? }
+ * Materializes the PAID order from Stripe (idempotent webhook safety net).
+ */
+router.post("/checkout/confirm", async (req, res): Promise<void> => {
+  const pendingCheckoutId = Number(
+    (req.body as { pendingCheckoutId?: unknown })?.pendingCheckoutId,
   );
+  const accessToken =
+    typeof (req.body as { accessToken?: unknown })?.accessToken === "string"
+      ? String((req.body as { accessToken: string }).accessToken).trim()
+      : extractOrderAccessToken(req);
 
-  if (result.sessionId) {
-    await db
-      .update(ordersTable)
-      .set({
-        stripeSessionId: result.sessionId,
-        stripeConnectedAccountId: business.stripeConnectedAccountId,
-      })
-      .where(eq(ordersTable.id, order.id));
+  if (!Number.isFinite(pendingCheckoutId) || pendingCheckoutId <= 0) {
+    res.status(400).json({ error: "pendingCheckoutId is required." });
+    return;
   }
 
-  res.json(result);
+  const [pending] = await db
+    .select()
+    .from(pendingCheckoutsTable)
+    .where(eq(pendingCheckoutsTable.id, pendingCheckoutId));
+
+  if (!pending) {
+    respondOrderNotFound(res);
+    return;
+  }
+
+  const tokenOk = verifyPendingCheckoutAccessToken(pending.id, accessToken);
+  const { userId } = getAuth(req);
+  const linkedCustomer =
+    Boolean(userId) &&
+    Boolean(pending.customerUserId) &&
+    userId === pending.customerUserId;
+
+  if (!tokenOk && !linkedCustomer) {
+    respondOrderNotFound(res);
+    return;
+  }
+
+  if (pending.orderId) {
+    const paid = await getOrderWithItems(pending.orderId);
+    res.json({
+      ...paid,
+      accessToken: createOrderAccessToken(pending.orderId),
+      pendingCheckoutId: pending.id,
+    });
+    return;
+  }
+
+  const connectedAccountId = pending.stripeConnectedAccountId;
+  if (!pending.stripeSessionId || !connectedAccountId) {
+    res.status(409).json({ error: "Checkout session is not ready to confirm yet." });
+    return;
+  }
+
+  if (isMockMode) {
+    res.status(409).json({ error: "Payment confirmation requires Stripe to be configured." });
+    return;
+  }
+
+  const session = await retrieveStripeCheckoutSession(
+    pending.stripeSessionId,
+    connectedAccountId,
+  );
+
+  if (!session) {
+    res.status(409).json({ error: "Could not retrieve the Stripe checkout session." });
+    return;
+  }
+
+  const result = await markOrderPaidFromCheckoutSession(session, connectedAccountId);
+  if (!result.ok) {
+    if (result.reason === "session_not_paid") {
+      res.status(409).json({ error: "Payment is not complete yet.", reason: result.reason });
+      return;
+    }
+    logOperationalFailure("stripe_checkout_confirm_failed", {
+      reason: result.reason,
+      orderId: result.orderId,
+    });
+    res.status(409).json({ error: "Payment could not be confirmed yet.", reason: result.reason });
+    return;
+  }
+
+  const updated = await getOrderWithItems(result.orderId);
+  res.json({
+    ...updated,
+    accessToken: createOrderAccessToken(result.orderId),
+    pendingCheckoutId: pending.id,
+  });
 });
 
 // POST /api/checkout/webhook (Stripe webhook)

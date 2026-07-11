@@ -63,6 +63,16 @@ export function parseCheckoutSessionOrderId(session: Stripe.Checkout.Session): n
   return id;
 }
 
+export function parseCheckoutSessionPendingCheckoutId(
+  session: Stripe.Checkout.Session,
+): number | null {
+  const raw = session.metadata?.pendingCheckoutId;
+  if (!raw) return null;
+  const id = parseInt(raw, 10);
+  if (!Number.isFinite(id) || id <= 0) return null;
+  return id;
+}
+
 export type MarkOrderPaidResult =
   | { ok: true; orderId: number; alreadyPaid: boolean }
   | { ok: false; reason: string; orderId?: number };

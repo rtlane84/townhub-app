@@ -51,11 +51,13 @@ If `STRIPE_SECRET_KEY` is unset, checkout runs in **mock mode** (dev only — re
 ### 3. Register the platform webhook endpoint
 
 1. Stripe Dashboard → **Developers** → **Webhooks** → **Add endpoint**
-2. **Endpoint URL:** `https://yourdomain.com/api/checkout/webhook`
-3. **Events:**
-  - `checkout.session.completed` (required — marks orders paid)
+2. **Endpoint URL:** `https://your-api-host/api/checkout/webhook`
+3. **Listen to:** **Events on Connected accounts** (required — Checkout runs on each business’s Connect account). Platform-only listening will leave orders `PENDING` after a successful card payment.
+4. **Events:**
+  - `checkout.session.completed` (required — creates the paid order from pending checkout)
   - `account.updated` (recommended — refreshes business Connect status)
-4. Copy the **Signing secret** → `STRIPE_WEBHOOK_SECRET`
+  - `customer.subscription.*` / `invoice.*` if you use platform billing
+5. Copy the **Signing secret** → `STRIPE_WEBHOOK_SECRET`
 
 **Local development with Stripe CLI:**
 
@@ -63,7 +65,7 @@ If `STRIPE_SECRET_KEY` is unset, checkout runs in **mock mode** (dev only — re
 stripe listen --forward-to localhost:8080/api/checkout/webhook
 ```
 
-Use the CLI’s printed `whsec_...` as `STRIPE_WEBHOOK_SECRET` in your local `.env`. This secret is **different** from production dashboard secrets.
+For Connect checkout locally, also forward connected-account events (Stripe CLI `listen` includes them when using a Connect-enabled platform). Use the CLI’s printed `whsec_...` as `STRIPE_WEBHOOK_SECRET` in your local `.env`. This secret is **different** from production dashboard secrets.
 
 ### 4. Deploy and verify (platform)
 
@@ -126,20 +128,25 @@ Online card checkout is **disabled** until Connect status is **Connected** and S
 ## How payment confirmation works
 
 ```text
-Customer → order (STRIPE) → Checkout on business connected account
+Customer → POST /api/checkout/intents (pending_checkouts row, no order yet)
+       → Stripe Checkout on business connected account
        → payment succeeds
        → platform webhook (signed) checkout.session.completed
-       → order paymentStatus = PAID
+       → create Order + items with paymentStatus = PAID, status = NEW
+       → notify business owner + customer
 ```
+
+Pay-at-pickup (`IN_PERSON`) still uses `POST /api/orders` and creates the order immediately with `paymentStatus = PENDING` so it appears in the business dashboard right away.
 
 Safety measures:
 
+- **No unpaid card orders** — businesses never see abandoned or “payment processing” Stripe checkouts
 - **Webhook signature verification** on raw body — forged requests return `400`
 - **Connected account match** — session must belong to the business’s connected account
-- **Idempotent updates** — duplicate webhooks do not double-apply
-- **Session + amount checks** — order total and session binding validated
+- **Idempotent materialization** — duplicate webhooks / confirm calls cannot create duplicate orders (`pending.order_id`, unique `stripe_session_id`)
+- **Session + amount checks** — pending checkout total and session binding validated
 - **Pay-at-pickup guard** — `IN_PERSON` orders never marked paid via webhook
-- **Success page is not payment proof** — only the webhook marks orders `PAID`
+- **Success page is not payment proof** — only webhook (or confirm safety net after Stripe reports paid) creates the paid order
 
 ---
 
@@ -159,21 +166,22 @@ Safety measures:
 ### End-to-end card checkout
 
 1. Ensure business payment mode allows online payment and Connect is **Connected**.
-2. Place an order with **Pay with Card**.
+2. Start checkout with **Pay with Card** (creates a pending checkout, not an order).
 3. Pay with test card `**4242 4242 4242 4242`**, any future expiry, any CVC.
 4. Stripe Dashboard → **Webhooks** → confirm `checkout.session.completed` returned **200**.
-5. Business Hub → order should show `**PAID`** only after webhook delivery (not from redirect alone).
+5. Business Hub → a **new PAID** order should appear only after webhook delivery (not while the customer is still on Stripe).
 
 ### Test scenarios
 
 
-| Scenario                                    | Expected                                      |
-| ------------------------------------------- | --------------------------------------------- |
-| Business not connected, customer tries card | Order/checkout rejected — online unavailable  |
-| Pay at pickup                               | Order created, no Stripe, stays `PENDING`     |
-| Duplicate webhook                           | Order stays `PAID`, no duplicate side effects |
-| Invalid webhook signature                   | `400`, order unchanged                        |
-| Mock mode (no platform key, dev only)       | Fake redirect, order stays `PENDING`          |
+| Scenario                                    | Expected                                                        |
+| ------------------------------------------- | --------------------------------------------------------------- |
+| Business not connected, customer tries card | Checkout intent rejected — online unavailable                   |
+| Pay at pickup                               | Order created immediately, no Stripe, stays `PENDING`           |
+| Card checkout before payment                | No order in business dashboard                                  |
+| Duplicate webhook                           | Single PAID order, no duplicate side effects                    |
+| Invalid webhook signature                   | `400`, no order created                                         |
+| Mock mode (no platform key, dev only)       | Pending checkout materialized to PAID order immediately         |
 
 
 ---
@@ -186,10 +194,11 @@ Safety measures:
 | **Connect Stripe** fails / “Connect is not enabled” | Platform operator has not completed [Stripe Connect setup](https://dashboard.stripe.com/connect) on the TownHub Stripe account (test or live mode must match your keys) |
 | Status stuck **Setup in progress**                 | Incomplete onboarding — click **Continue Stripe setup**                         |
 | Status **Restricted**                              | Stripe disabled the account — use **Manage Stripe** or Stripe support           |
-| Checkout works but order stays `PENDING`           | Webhook missing, wrong URL, or secret mismatch                                  |
+| Checkout works but no order appears                | Webhook missing, wrong URL, secret mismatch, or not listening to Connected accounts |
 | `400 Invalid Stripe signature`                     | Wrong `STRIPE_WEBHOOK_SECRET`, or body not raw                                  |
 | Customer sees “Online card payments not available” | Business not connected or not **Connected** status                              |
 | System Status Stripe unhealthy (live)              | Live key without webhook secret                                                 |
+| Business sees unpaid “processing” card orders      | Legacy rows — new card checkouts never create orders until paid                 |
 
 
 Check API logs for `[operational] stripe_webhook_failed`. Logs never include secret keys or card data.
