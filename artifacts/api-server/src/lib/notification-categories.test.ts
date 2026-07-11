@@ -31,7 +31,18 @@ describe("notification-categories", () => {
       implementedOnly: true,
     });
     assert.ok(cats.some((c) => c.key === "OWNER_NEW_ORDER"));
+    assert.ok(cats.some((c) => c.key === "OWNER_APPOINTMENT_REQUEST"));
     assert.ok(!cats.some((c) => c.key === "OWNER_LOW_INVENTORY"));
+    // Mandatory Stripe alerts are hidden from preference toggles.
+    assert.ok(!cats.some((c) => c.key === "OWNER_STRIPE_ISSUE"));
+    // Subscription push not implemented yet — hidden from App Push UI.
+    assert.ok(!cats.some((c) => c.key === "OWNER_SUBSCRIPTION"));
+  });
+
+  it("maps stripe critical events to OWNER_STRIPE_ISSUE", () => {
+    assert.equal(categoryForEventType("REFUND_FAILED"), "OWNER_STRIPE_ISSUE");
+    assert.equal(categoryForEventType("STRIPE_CONNECT_ISSUE"), "OWNER_STRIPE_ISSUE");
+    assert.equal(getNotificationCategory("OWNER_STRIPE_ISSUE")?.userToggleable, false);
   });
 
   it("has definitions for every registry key", () => {

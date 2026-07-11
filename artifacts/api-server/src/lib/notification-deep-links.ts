@@ -11,6 +11,7 @@ export type NotificationDeepLinkTarget =
   | { type: "APPOINTMENTS"; audience: "OWNER" }
   | { type: "APPOINTMENT"; appointmentRequestId: number; audience: "CUSTOMER" | "OWNER" }
   | { type: "BUSINESS_DASHBOARD" }
+  | { type: "BUSINESS_SETTINGS" }
   | { type: "BUSINESS_SUBSCRIPTION" }
   | { type: "ADMIN_APPLICATIONS" }
   | { type: "ADMIN_SYSTEM_STATUS" }
@@ -31,6 +32,8 @@ export function buildNotificationDeepLinkPath(target: NotificationDeepLinkTarget
         : "/my-orders";
     case "BUSINESS_DASHBOARD":
       return "/dashboard/business";
+    case "BUSINESS_SETTINGS":
+      return "/dashboard/business/settings";
     case "BUSINESS_SUBSCRIPTION":
       return "/dashboard/business/subscription";
     case "ADMIN_APPLICATIONS":

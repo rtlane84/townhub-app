@@ -41,6 +41,8 @@ export async function isCategoryEnabledForUser(
 ): Promise<boolean> {
   const def = getNotificationCategory(category);
   if (!def) return true;
+  // Mandatory categories cannot be disabled.
+  if (def.userToggleable === false) return true;
 
   const [row] = await db
     .select()
@@ -61,7 +63,10 @@ export async function upsertUserNotificationPreferences(
   userId: string,
   updates: Array<{ category: string; enabled: boolean }>,
 ): Promise<ResolvedPreference[]> {
-  const valid = updates.filter((u) => getNotificationCategory(u.category));
+  const valid = updates.filter((u) => {
+    const def = getNotificationCategory(u.category);
+    return Boolean(def) && def!.userToggleable !== false;
+  });
   if (valid.length === 0) {
     return getUserNotificationPreferences(userId);
   }
@@ -110,6 +115,10 @@ export async function filterEnabledCategoriesForUser(
   const enabled = new Set<NotificationCategoryKey>();
   for (const key of categories) {
     const def = NOTIFICATION_CATEGORIES[key];
+    if (def.userToggleable === false) {
+      enabled.add(key);
+      continue;
+    }
     const stored = byCategory.get(key);
     if (stored === undefined ? def.defaultEnabled : stored) {
       enabled.add(key);

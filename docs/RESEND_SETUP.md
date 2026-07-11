@@ -14,8 +14,11 @@ Summary:
 |-------|-----------|---------|
 | Order received | Customer | Email + SMS (when contact info provided) |
 | Order status change | Customer | Email + SMS per lifecycle event |
-| New order | Business owner | Email + SMS (per business settings) |
-| New appointment request | Business owner | Email + SMS (per business settings) |
+| New order | Business owner | Email / SMS / Discord / ntfy when that channel’s **Enable** is on |
+| New appointment request | Business owner | Same channels when Enable is on and appointments are enabled |
+| Refund failed / Stripe Connect issue | Business owner | **Email + TownHub app push only** (mandatory; ignores Email Enable) |
+
+Operational owner alerts are configured under **Business Hub → Notifications** (one Enable per channel). Critical payment alerts cannot be turned off there — see [NOTIFICATIONS.md](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
 
 Implementation: `artifacts/api-server/src/lib/notification-service.ts`, `email-templates/`, `notification-sms.ts`, and `notification-delivery.ts`.
 
@@ -98,7 +101,7 @@ If it shows **Not configured**, check that both `RESEND_API_KEY` and `RESEND_FRO
 
 ### Send a real notification
 
-1. Ensure a business has owner notification email enabled (**Business → Settings → Notifications**).
+1. Ensure a business has **Email** Enable on and a notification address under **Business Hub → Notifications**.
 2. Place a test order on a storefront **or** update an order status as the business owner.
 3. Confirm the email arrives (check spam if needed).
 

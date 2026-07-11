@@ -2951,6 +2951,10 @@ components:
           type: boolean
         ntfyEnabled:
           type: boolean
+        notifyNewOrdersByNtfy:
+          type: boolean
+        notifyAppointmentRequestsByNtfy:
+          type: boolean
         ntfyTopic:
           type: ["string", "null"]
         ntfyConnectedAt:
@@ -3194,6 +3198,10 @@ components:
         notifyAppointmentRequestsByDiscord:
           type: boolean
         ntfyEnabled:
+          type: boolean
+        notifyNewOrdersByNtfy:
+          type: boolean
+        notifyAppointmentRequestsByNtfy:
           type: boolean
         isMobileBusiness:
           type: boolean

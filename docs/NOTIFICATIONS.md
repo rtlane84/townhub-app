@@ -46,7 +46,7 @@ Related docs (narrower topics):
 1. **Event occurs** in a route, webhook, or job (e.g. order `CONFIRMED`, new application).
 2. **Orchestrator** loads context (order, business, recipients) and builds channel-specific copy.
 3. **Category** is derived via `categoryForEventType()` (`notification-categories.ts`).
-4. **Preferences** gate authenticated PUSH delivery (`user_notification_preferences`). Business channel toggles (email/SMS/Discord/ntfy) still live on `businesses`.
+4. **Preferences** gate optional authenticated PUSH (`user_notification_preferences`). Mandatory categories (`userToggleable: false`) always deliver. Business channel Enable flags (email/SMS/Discord/ntfy) still live on `businesses` and only control operational order/appointment alerts.
 5. **Adapters** send in parallel; failures are logged, not thrown to the API client.
 6. **Deep link** (path or HTTPS URL) is included so taps open the right screen.
 
@@ -158,9 +158,9 @@ Categories are the unit of **user preference** and push routing. Audience: Platf
 | `OWNER_ORDER_CANCELED` | No | Order canceled |
 | `OWNER_APPOINTMENT_REQUEST` | Yes | Appointment request |
 | `OWNER_CUSTOMER_MESSAGE` | No | Customer message |
-| `OWNER_STRIPE_ISSUE` | Yes | Refund failed / Stripe issues |
+| `OWNER_STRIPE_ISSUE` | Yes (mandatory) | Refund failed / Connect issues — always email + app push; not user-toggleable |
 | `OWNER_LOW_INVENTORY` | No | Low inventory |
-| `OWNER_SUBSCRIPTION` | Yes | Owner subscription / application outcome emails |
+| `OWNER_SUBSCRIPTION` | No (email yes; push reserved) | Owner subscription / application outcome **emails**; App Push toggle hidden until push is wired |
 
 ### Customers
 
@@ -174,15 +174,51 @@ Categories are the unit of **user preference** and push routing. Audience: Platf
 | `CUSTOMER_APPOINTMENT_REMINDER` | No | Appointment reminders |
 | `CUSTOMER_EVENT_REMINDER` | No | Event reminders |
 
-Business **channel** settings (email address, SMS toggles, Discord webhook, ntfy topic) remain on the business record and are independent of category preferences. Category preferences primarily gate **PUSH** (and future authenticated channels) for signed-in users.
+Business **channel** settings (Email / SMS / Discord / ntfy Enable + destinations) live on the business record and are independent of category preferences. Category preferences primarily gate optional **TownHub App Push** for signed-in users.
+
+### Business Hub → Notifications (owner UI)
+
+| Control | What it does |
+| ------- | ------------ |
+| **Email / SMS / Discord / ntfy / TownHub App Push → Enable** | When on, that channel receives **all** operational owner alerts: new orders, and appointment requests when appointments are enabled. When off, neither operational event is sent on that channel. |
+| Destination / setup fields | Notification email, phone, Discord webhook, ntfy topic |
+| **In-shop sound** | Local chime for live Business Hub toasts only |
+
+Per-event DB flags on the business (`notifyNewOrdersByEmail`, …) and user preference rows (`OWNER_NEW_ORDER`, `OWNER_APPOINTMENT_REQUEST`) remain for compatibility. Saving/toggling Enable ON writes both operational flags `true`; OFF writes both `false`.
+
+**Critical Stripe / payment alerts** are always-on (email + App Push) and are not controlled by these Enable switches — see [Critical Stripe / payment alerts](#critical-stripe--payment-alerts).
+
+`OWNER_SUBSCRIPTION` (subscription updates push) is **not** shown until App Push for those events is implemented. Subscription **emails** still send independently.
+
+---
+
+## Critical Stripe / payment alerts
+
+These are **not** controlled by Email / SMS / Discord / ntfy Enable or by TownHub App Push category toggles.
+
+| Event | Trigger | Delivery |
+| ----- | ------- | -------- |
+| Refund failed | Owner refund API returns 5xx after a failed Stripe refund | Owner **email** (if notification address set) + **TownHub app push** |
+| Stripe Connect issue | `account.updated` / Connect sync enters an unhealthy state | Owner **email** + **TownHub app push** |
+
+Connect issues include: account disconnected (was connected), charges disabled, payouts disabled, verification / additional information required, restricted account, and other states that block normal payment or payout operation (`pending` with a connected account, or `restricted`). Payouts disabled is stored as Connect status `restricted`.
+
+**Channels:** email + TownHub app push only. **Never** SMS, Discord, or ntfy.
+
+**Hub UI:** while Connect status is `pending` or `restricted`, Business Hub shows a persistent warning banner (CTA → Settings). Refund failures are notified immediately; they do not keep a separate persistent banner.
+
+Implementation: `stripe-critical-alerts.ts`, `notifyOwnerRefundFailed` / `notifyOwnerStripeConnectIssue` in `notification-service.ts`, `StripeConnectAlertBanner` in the dashboard layout.
 
 ---
 
 ## User notification preferences
 
 - API: `GET` / `PUT` `/api/me/notification-preferences`
-- UI: Business Hub → **Notifications** → “Push & in-app categories”
-- Defaults: all implemented categories **enabled** until the user opts out
+- UI: Business Hub → **Notifications** → “TownHub App Push” (single Enable for operational push)
+- Defaults: all **toggleable** implemented categories **enabled** until the user opts out
+- Non-toggleable categories (e.g. `OWNER_STRIPE_ISSUE`) are omitted from the UI and rejected on PUT
+- Unimplemented categories (e.g. `OWNER_SUBSCRIPTION` push) are omitted until wired
+- Copy distinguishes **operational** channel Enables from always-on **critical** payment/account alerts
 
 Test push (signed-in): `POST /api/me/notifications/test-push`
 
@@ -209,6 +245,7 @@ HTTPS links in email / SMS / ntfy continue to use `APP_BASE_URL` helpers in `not
 | Owner order | `/dashboard/business/orders/{id}` |
 | Appointments | `/dashboard/business/appointments` |
 | Business hub | `/dashboard/business` |
+| Business settings | `/dashboard/business/settings` |
 | Subscription | `/dashboard/business/subscription` |
 | Admin applications | `/dashboard/admin/applications` |
 | Event | `/events/{id}` |
@@ -280,7 +317,9 @@ See also [IOS_APP.md](./IOS_APP.md).
 
 ## Free phone notifications (ntfy)
 
-Owners can still use [ntfy](https://ntfy.sh) for free phone alerts without App Store push. Configure in Business Hub → Notifications. Server: `NTFY_SERVER_URL` (default `https://ntfy.sh`). Topics are per-business and independent of `device_tokens`.
+Owners can use [ntfy](https://ntfy.sh) for free phone alerts without App Store push. Configure under Business Hub → Notifications → **Free phone notifications** (Enable + topic setup). When enabled, ntfy receives the same operational alerts as other channels (new orders and appointment requests). Critical Stripe/payment alerts are **not** sent via ntfy.
+
+Server: `NTFY_SERVER_URL` (default `https://ntfy.sh`). Topics are per-business and independent of `device_tokens`.
 
 ---
 

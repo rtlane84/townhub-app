@@ -110,6 +110,8 @@ export interface Business {
   notifyNewOrdersByDiscord?: boolean;
   notifyAppointmentRequestsByDiscord?: boolean;
   ntfyEnabled?: boolean;
+  notifyNewOrdersByNtfy?: boolean;
+  notifyAppointmentRequestsByNtfy?: boolean;
   /** @nullable */
   ntfyTopic?: string | null;
   /** @nullable */

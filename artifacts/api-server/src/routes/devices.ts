@@ -157,6 +157,17 @@ router.put("/me/notification-preferences", requireAuth, async (req, res): Promis
     return;
   }
 
+  const nonToggleable = parsed.data.preferences.filter((p) => {
+    const def = getNotificationCategory(p.category);
+    return def?.userToggleable === false;
+  });
+  if (nonToggleable.length > 0) {
+    res.status(400).json({
+      message: `These alerts cannot be disabled: ${nonToggleable.map((p) => p.category).join(", ")}`,
+    });
+    return;
+  }
+
   const preferences = await upsertUserNotificationPreferences(
     req.dbUser!.id,
     parsed.data.preferences,

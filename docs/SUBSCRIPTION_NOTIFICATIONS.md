@@ -11,6 +11,8 @@ TownHub sends branded **owner lifecycle emails** for platform subscriptions (bus
 
 TownHub emails focus on onboarding, account status, and next steps. They explicitly tell owners that Stripe sends official billing documents separately.
 
+These subscription lifecycle emails are **separate** from mandatory **Stripe Connect / refund** critical alerts (customer payment account health). Connect issues use email + TownHub app push and are documented in [NOTIFICATIONS.md](./NOTIFICATIONS.md#critical-stripe--payment-alerts). There is no App Push toggle for subscription updates until that push path is implemented; subscription emails continue regardless.
+
 ## Setup
 
 1. Configure email transport — see [RESEND_SETUP.md](./RESEND_SETUP.md) or SMTP vars in `.env.example`.

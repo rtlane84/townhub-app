@@ -38,6 +38,7 @@ export {
   notifyOwnerNewOrderFromOrderId,
   notifyCustomerOrderRefund,
   notifyOwnerRefundFailed,
+  notifyOwnerStripeConnectIssue,
   loadOrderNotificationData,
 } from "./notification-service";
 
@@ -70,6 +71,7 @@ export async function notifyOwnerNewAppointmentRequest(input: {
     discordWebhookUrl?: string | null;
     notifyAppointmentRequestsByDiscord?: boolean | null;
     ntfyEnabled?: boolean | null;
+    notifyAppointmentRequestsByNtfy?: boolean | null;
     ntfyTopic?: string | null;
   };
   appointmentRequestId: number;
@@ -153,7 +155,12 @@ export async function notifyOwnerNewAppointmentRequest(input: {
     }
 
     const ntfyTopic = input.business.ntfyTopic?.trim();
-    if (input.business.ntfyEnabled && ntfyTopic && isValidNtfyTopic(ntfyTopic)) {
+    if (
+      input.business.ntfyEnabled &&
+      input.business.notifyAppointmentRequestsByNtfy !== false &&
+      ntfyTopic &&
+      isValidNtfyTopic(ntfyTopic)
+    ) {
       const ntfy = buildOwnerNewAppointmentNtfyMessage({
         businessName: input.business.name,
         customerName: input.customerName,

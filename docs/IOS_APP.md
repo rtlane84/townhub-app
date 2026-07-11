@@ -104,6 +104,8 @@ Quick checklist:
 4. `pnpm --filter @workspace/townhub run ios:sync` after installing `@capacitor/push-notifications`.
 5. Sign in on a physical device, accept permission, confirm `device_tokens`, then send a test from `POST /api/me/notifications/test-push`.
 
+Operational App Push (orders/appointments) uses a single Enable in Business Hub → Notifications. **Critical Stripe / payment alerts always push** when a device is registered and cannot be disabled — see [NOTIFICATIONS.md](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
+
 ## Useful scripts
 
 All commands run from the repo root:

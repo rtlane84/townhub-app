@@ -126,3 +126,30 @@ export function buildAdminApplicationPush(input: {
     deepLink: buildNotificationDeepLinkPath({ type: "ADMIN_APPLICATIONS" }),
   };
 }
+
+export function buildOwnerRefundFailedPush(
+  order: OrderNotificationData,
+  refundAmountCents: number,
+): PushCopy {
+  const refundAmount = (refundAmountCents / 100).toFixed(2);
+  return {
+    title: "Refund failed",
+    body: `${formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber)} · $${refundAmount} could not be refunded.`,
+    deepLink: buildNotificationDeepLinkPath({
+      type: "ORDER",
+      orderId: order.orderId,
+      audience: "OWNER",
+    }),
+  };
+}
+
+export function buildOwnerStripeConnectIssuePush(input: {
+  headline: string;
+  detail: string;
+}): PushCopy {
+  return {
+    title: input.headline,
+    body: input.detail,
+    deepLink: buildNotificationDeepLinkPath({ type: "BUSINESS_SETTINGS" }),
+  };
+}

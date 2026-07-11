@@ -126,6 +126,8 @@ export const businessesTable = pgTable("businesses", {
 
   // Free phone push via ntfy (topic-only; server URL from NTFY_SERVER_URL)
   ntfyEnabled: boolean("ntfy_enabled").notNull().default(false),
+  notifyNewOrdersByNtfy: boolean("notify_new_orders_by_ntfy").notNull().default(true),
+  notifyAppointmentRequestsByNtfy: boolean("notify_appointment_requests_by_ntfy").notNull().default(true),
   ntfyTopic: text("ntfy_topic"),
   ntfyConnectedAt: timestamp("ntfy_connected_at", { withTimezone: true }),
   ntfyLastTestAt: timestamp("ntfy_last_test_at", { withTimezone: true }),

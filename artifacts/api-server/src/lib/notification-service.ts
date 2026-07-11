@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, businessesTable } from "@workspace/db";
 import { resolveOrderTotalsDisplay } from "@workspace/api-zod";
-import { buildOwnerNewOrderEmail, buildOwnerRefundFailedEmail } from "./email-templates/business-emails";
+import { buildOwnerNewOrderEmail, buildOwnerRefundFailedEmail, buildOwnerStripeConnectIssueEmail } from "./email-templates/business-emails";
 import { buildCustomerLifecycleEmail, buildCustomerOrderRefundEmail } from "./email-templates/customer-emails";
 import {
   statusToCustomerEvent,
@@ -24,6 +24,8 @@ import { deliverPushToUsers } from "./push-delivery";
 import {
   buildCustomerOrderPush,
   buildOwnerNewOrderPush,
+  buildOwnerRefundFailedPush,
+  buildOwnerStripeConnectIssuePush,
 } from "./notification-push-copy";
 import {
   buildOwnerNewOrderDiscordPayload,
@@ -35,6 +37,7 @@ import {
   sendOwnerNtfyNotification,
 } from "./ntfy-owner-notifications";
 import { isValidNtfyTopic } from "./ntfy-topic";
+import type { StripeConnectIssueDetails } from "./stripe-critical-alerts";
 
 export {
   statusToCustomerEvent,
@@ -244,7 +247,12 @@ export async function notifyOwnerNewOrderFromOrderId(orderId: number): Promise<v
   }
 
   const ntfyTopic = business.ntfyTopic?.trim();
-  if (business.ntfyEnabled && ntfyTopic && isValidNtfyTopic(ntfyTopic)) {
+  if (
+    business.ntfyEnabled &&
+    business.notifyNewOrdersByNtfy !== false &&
+    ntfyTopic &&
+    isValidNtfyTopic(ntfyTopic)
+  ) {
     const ntfy = buildOwnerNewOrderNtfyMessage(order);
     tasks.push(
       deliverOwnerNtfy({
@@ -319,19 +327,97 @@ export async function notifyOwnerRefundFailed(
   if (!business) return;
 
   const email = buildOwnerRefundFailedEmail(order, refundAmountCents);
+  const tasks: Promise<unknown>[] = [];
 
+  // Critical: always email when an address exists — ignores operational Email Enable.
   const ownerEmail =
     business.notificationEmail?.trim() || business.orderNotificationEmail?.trim() || null;
+  if (ownerEmail) {
+    tasks.push(
+      deliverOwnerEmail({
+        businessId: business.id,
+        eventType: "REFUND_FAILED",
+        to: ownerEmail,
+        subject: email.subject,
+        body: email.text,
+        html: email.html,
+        orderId,
+      }),
+    );
+  }
 
-  if (!ownerEmail) return;
+  // Critical: always push to registered owner devices — ignores category opt-outs.
+  if (business.ownerId) {
+    const push = buildOwnerRefundFailedPush(order, refundAmountCents);
+    tasks.push(
+      deliverPushToUsers({
+        userIds: [business.ownerId],
+        businessId: business.id,
+        eventType: "REFUND_FAILED",
+        title: push.title,
+        body: push.body,
+        deepLink: push.deepLink,
+        orderId,
+        category: "OWNER_STRIPE_ISSUE",
+        respectPreferences: false,
+      }),
+    );
+  }
 
-  await deliverOwnerEmail({
-    businessId: business.id,
-    eventType: "REFUND_FAILED",
-    to: ownerEmail,
-    subject: email.subject,
-    body: email.text,
-    html: email.html,
-    orderId,
+  if (tasks.length) await Promise.all(tasks);
+}
+
+/** Critical Stripe Connect / payment account alert (email + mandatory app push). */
+export async function notifyOwnerStripeConnectIssue(input: {
+  businessId: number;
+  businessName: string;
+  businessLogoUrl?: string | null;
+  ownerId?: string | null;
+  notificationEmail?: string | null;
+  orderNotificationEmail?: string | null;
+  issue: StripeConnectIssueDetails;
+}): Promise<void> {
+  const email = buildOwnerStripeConnectIssueEmail({
+    businessName: input.businessName,
+    businessLogoUrl: input.businessLogoUrl,
+    headline: input.issue.headline,
+    detail: input.issue.detail,
   });
+  const tasks: Promise<unknown>[] = [];
+
+  const ownerEmail =
+    input.notificationEmail?.trim() || input.orderNotificationEmail?.trim() || null;
+  if (ownerEmail) {
+    tasks.push(
+      deliverOwnerEmail({
+        businessId: input.businessId,
+        eventType: "STRIPE_CONNECT_ISSUE",
+        to: ownerEmail,
+        subject: email.subject,
+        body: email.text,
+        html: email.html,
+      }),
+    );
+  }
+
+  if (input.ownerId) {
+    const push = buildOwnerStripeConnectIssuePush({
+      headline: input.issue.headline,
+      detail: input.issue.detail,
+    });
+    tasks.push(
+      deliverPushToUsers({
+        userIds: [input.ownerId],
+        businessId: input.businessId,
+        eventType: "STRIPE_CONNECT_ISSUE",
+        title: push.title,
+        body: push.body,
+        deepLink: push.deepLink,
+        category: "OWNER_STRIPE_ISSUE",
+        respectPreferences: false,
+      }),
+    );
+  }
+
+  if (tasks.length) await Promise.all(tasks);
 }

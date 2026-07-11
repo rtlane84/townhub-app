@@ -158,7 +158,9 @@ Configured under **Business Hub → Notifications** (and related settings). Live
 | ------- | ------------------------ |
 | Sound enabled | Toast may play the selected notification sound |
 | Sound volume | Loudness of in-browser sound |
-| Email / SMS / ntfy / Discord toggles | **Unchanged** — server delivery is independent of dashboard |
+| Email / SMS / ntfy / Discord Enable | **Unchanged** — server delivery for orders/appointments is independent of the open dashboard |
+
+Additionally, when Stripe Connect status is `pending` or `restricted`, Business Hub shows a **persistent Stripe warning banner** (not dismissible while unresolved). That banner is separate from new-order / appointment toast banners. See [NOTIFICATIONS.md](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
 
 Browser/desktop notifications (if configured separately) are also independent of this SSE/toast/banner system.
 

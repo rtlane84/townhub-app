@@ -714,7 +714,11 @@ export default function BusinessSettings() {
                 <SettingsSection
                   icon={Clock}
                   title="Order timing"
-                  description="How long customers should expect to wait for pickup or delivery."
+                  description={
+                    form.deliveryEnabled
+                      ? "How long customers should expect to wait for pickup or delivery."
+                      : "How long customers should expect to wait for pickup."
+                  }
                 >
                   {textField("Minimum prep time (minutes)", "defaultPrepMinutes", {
                     type: "number",
@@ -739,7 +743,9 @@ export default function BusinessSettings() {
                       {[
                         "Every order starts with your minimum prep time.",
                         "If a menu item takes longer, we'll automatically use that instead.",
-                        "Delivery orders add your delivery buffer.",
+                        ...(form.deliveryEnabled
+                          ? ["Delivery orders add your delivery buffer."]
+                          : []),
                         "Larger orders may automatically receive a few extra preparation minutes.",
                       ].map((line) => (
                         <li key={line} className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground">
@@ -751,45 +757,59 @@ export default function BusinessSettings() {
                   </div>
                 </SettingsSection>
 
-                <SettingsSection
-                  icon={Truck}
-                  title="Fulfillment"
-                  description="Fees, delivery area, and instructions shown at checkout and on your storefront."
-                >
-                  <div className="grid grid-cols-2 gap-4">
-                    {textField("Delivery fee ($)", "deliveryFee", { type: "number", placeholder: "0.00" })}
-                    {textField("Min. for delivery ($)", "minimumOrderForDelivery", {
-                      type: "number",
-                      placeholder: "0.00",
-                      hint: "Customers must reach this amount to choose delivery.",
-                    })}
-                  </div>
-                  <Field
-                    label="Delivery area (miles)"
-                    hint="Shown to customers as your normal delivery area."
+                {form.pickupEnabled || form.deliveryEnabled ? (
+                  <SettingsSection
+                    icon={Truck}
+                    title="Fulfillment"
+                    description={
+                      form.deliveryEnabled
+                        ? "Fees, delivery area, and instructions shown at checkout and on your storefront."
+                        : "Instructions shown at checkout and on your storefront."
+                    }
                   >
-                    <Input
-                      type="number"
-                      value={form.deliveryRadiusMiles}
-                      onChange={(e) => setForm((f) => ({ ...f, deliveryRadiusMiles: e.target.value }))}
-                      placeholder="5"
-                      data-testid="input-deliveryRadiusMiles"
-                    />
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      Orders outside this area are not automatically blocked.
-                    </p>
-                  </Field>
-                  {textField("Pickup instructions", "pickupInstructions", {
-                    multiline: true,
-                    placeholder: "Come to the side entrance on Oak St.",
-                    hint: "Shown at checkout when customers choose pickup.",
-                  })}
-                  {textField("Delivery instructions", "deliveryInstructions", {
-                    multiline: true,
-                    placeholder: "We deliver within 5 miles. Call when en route.",
-                    hint: "Shown at checkout and on your storefront.",
-                  })}
-                </SettingsSection>
+                    {form.deliveryEnabled ? (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          {textField("Delivery fee ($)", "deliveryFee", { type: "number", placeholder: "0.00" })}
+                          {textField("Min. for delivery ($)", "minimumOrderForDelivery", {
+                            type: "number",
+                            placeholder: "0.00",
+                            hint: "Customers must reach this amount to choose delivery.",
+                          })}
+                        </div>
+                        <Field
+                          label="Delivery area (miles)"
+                          hint="Shown to customers as your normal delivery area."
+                        >
+                          <Input
+                            type="number"
+                            value={form.deliveryRadiusMiles}
+                            onChange={(e) => setForm((f) => ({ ...f, deliveryRadiusMiles: e.target.value }))}
+                            placeholder="5"
+                            data-testid="input-deliveryRadiusMiles"
+                          />
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            Orders outside this area are not automatically blocked.
+                          </p>
+                        </Field>
+                      </>
+                    ) : null}
+                    {form.pickupEnabled
+                      ? textField("Pickup instructions", "pickupInstructions", {
+                          multiline: true,
+                          placeholder: "Come to the side entrance on Oak St.",
+                          hint: "Shown at checkout when customers choose pickup.",
+                        })
+                      : null}
+                    {form.deliveryEnabled
+                      ? textField("Delivery instructions", "deliveryInstructions", {
+                          multiline: true,
+                          placeholder: "We deliver within 5 miles. Call when en route.",
+                          hint: "Shown at checkout and on your storefront.",
+                        })
+                      : null}
+                  </SettingsSection>
+                ) : null}
 
                 {business ? (
                   <BusinessStripePaymentsCard businessId={business.id} stripeReturn={stripeReturn} />

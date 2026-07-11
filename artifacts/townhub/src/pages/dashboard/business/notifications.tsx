@@ -12,9 +12,7 @@ import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { acceptsAppointmentRequests } from "@workspace/api-zod";
@@ -46,6 +44,8 @@ import {
 } from "@/lib/notification-preferences";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
 import {
+  channelAlertsHelperText,
+  channelEventFlags,
   deliveryFormFromBusiness,
   isDiscordSettingsDirty,
   isEmailSettingsDirty,
@@ -121,13 +121,9 @@ export default function BusinessNotifications() {
     notificationEmail: "",
     notificationPhone: "",
     discordWebhookUrl: "",
+    emailEnabled: true,
+    smsEnabled: false,
     discordEnabled: false,
-    notifyNewOrdersByEmail: true,
-    notifyNewOrdersBySms: false,
-    notifyNewOrdersByDiscord: false,
-    notifyAppointmentRequestsByEmail: true,
-    notifyAppointmentRequestsBySms: false,
-    notifyAppointmentRequestsByDiscord: false,
   });
 
   useEffect(() => {
@@ -152,6 +148,7 @@ export default function BusinessNotifications() {
     : false;
 
   const acceptsAppointments = acceptsAppointmentRequests(business ?? {});
+  const channelHelperText = channelAlertsHelperText(acceptsAppointments);
 
   const invalidateBusiness = () => {
     if (selectedBusinessId != null) {
@@ -179,70 +176,41 @@ export default function BusinessNotifications() {
 
   function saveEmailSettings() {
     if (!business) return;
+    const flags = channelEventFlags(deliveryForm.emailEnabled);
     updateBusiness.mutate({
       id: business.id,
       data: {
         notificationEmail: opt(deliveryForm.notificationEmail),
-        notifyNewOrdersByEmail: deliveryForm.notifyNewOrdersByEmail,
-        notifyAppointmentRequestsByEmail: deliveryForm.notifyAppointmentRequestsByEmail,
+        notifyNewOrdersByEmail: flags.notifyNewOrders,
+        notifyAppointmentRequestsByEmail: flags.notifyAppointmentRequests,
       },
     });
   }
 
   function saveSmsSettings() {
     if (!business) return;
+    const flags = channelEventFlags(deliveryForm.smsEnabled);
     updateBusiness.mutate({
       id: business.id,
       data: {
         notificationPhone: opt(deliveryForm.notificationPhone),
-        notifyNewOrdersBySms: deliveryForm.notifyNewOrdersBySms,
-        notifyAppointmentRequestsBySms: deliveryForm.notifyAppointmentRequestsBySms,
+        notifyNewOrdersBySms: flags.notifyNewOrders,
+        notifyAppointmentRequestsBySms: flags.notifyAppointmentRequests,
       },
     });
   }
 
   function saveDiscordSettings() {
     if (!business) return;
-    const discordOn = deliveryForm.discordEnabled;
+    const flags = channelEventFlags(deliveryForm.discordEnabled);
     updateBusiness.mutate({
       id: business.id,
       data: {
         discordWebhookUrl: opt(deliveryForm.discordWebhookUrl) ?? null,
-        notifyNewOrdersByDiscord: discordOn && deliveryForm.notifyNewOrdersByDiscord,
-        notifyAppointmentRequestsByDiscord:
-          discordOn && deliveryForm.notifyAppointmentRequestsByDiscord,
+        notifyNewOrdersByDiscord: flags.notifyNewOrders,
+        notifyAppointmentRequestsByDiscord: flags.notifyAppointmentRequests,
       },
     });
-  }
-
-  function deliveryToggle(
-    label: string,
-    desc: string,
-    key: keyof Pick<
-      DeliveryForm,
-      | "notifyNewOrdersByEmail"
-      | "notifyNewOrdersBySms"
-      | "notifyNewOrdersByDiscord"
-      | "notifyAppointmentRequestsByEmail"
-      | "notifyAppointmentRequestsBySms"
-      | "notifyAppointmentRequestsByDiscord"
-    >,
-    disabled = false,
-  ) {
-    return (
-      <div className="flex items-center justify-between py-2">
-        <div>
-          <p className="text-sm font-medium">{label}</p>
-          <p className="text-xs text-muted-foreground">{desc}</p>
-        </div>
-        <Switch
-          checked={deliveryForm[key]}
-          onCheckedChange={(val) => setDeliveryForm((f) => ({ ...f, [key]: val }))}
-          disabled={disabled}
-          data-testid={`switch-${key}`}
-        />
-      </div>
-    );
   }
 
   const testEmail = useTestBusinessNotificationEmail({
@@ -372,8 +340,10 @@ export default function BusinessNotifications() {
   const discordConfigured = Boolean(deliveryForm.discordWebhookUrl.trim());
   const settingsSaving = updateBusiness.isPending;
 
-  const emailTestDisabled = !emailConfigured || emailSettingsDirty || settingsSaving;
-  const smsTestDisabled = !smsConfigured || smsSettingsDirty || settingsSaving;
+  const emailTestDisabled =
+    !deliveryForm.emailEnabled || !emailConfigured || emailSettingsDirty || settingsSaving;
+  const smsTestDisabled =
+    !deliveryForm.smsEnabled || !smsConfigured || smsSettingsDirty || settingsSaving;
   const discordTestDisabled =
     !deliveryForm.discordEnabled || !discordConfigured || discordSettingsDirty || settingsSaving;
 
@@ -409,16 +379,26 @@ export default function BusinessNotifications() {
         <div>
           <h1 className="text-2xl font-serif font-bold">Notifications</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Configure how you&apos;re alerted when you&apos;re away and while Business Hub is open.
+            Turn on channels for operational alerts (new orders and appointments). Critical payment,
+            refund, and account-security notices always go by email and TownHub app push — they cannot
+            be turned off here.
           </p>
         </div>
 
         <NotificationProviderCard
           title="Email"
-          description="Receive order and appointment alerts in your inbox."
+          description={`Operational alerts. ${channelHelperText}`}
           icon={<Mail className="h-4 w-4" />}
           testId="notification-email-card"
         >
+          <ProviderEnableRow
+            label="Enable email notifications"
+            description={channelHelperText}
+            checked={deliveryForm.emailEnabled}
+            onCheckedChange={(emailEnabled) => setDeliveryForm((f) => ({ ...f, emailEnabled }))}
+            testId="toggle-email-enabled"
+          />
+
           <div>
             <label className="text-sm font-medium mb-1.5 block" htmlFor="notification-email">
               Notification email
@@ -429,24 +409,9 @@ export default function BusinessNotifications() {
               value={deliveryForm.notificationEmail}
               onChange={(e) => setDeliveryForm((f) => ({ ...f, notificationEmail: e.target.value }))}
               placeholder="owner@yourbusiness.com"
+              disabled={!deliveryForm.emailEnabled}
               data-testid="input-notificationEmail"
             />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-1 divide-y divide-border">
-            {deliveryToggle(
-              "New orders",
-              "Email when a customer places an order",
-              "notifyNewOrdersByEmail",
-            )}
-            {acceptsAppointments &&
-              deliveryToggle(
-                "Appointment requests",
-                "Email when a customer requests an appointment",
-                "notifyAppointmentRequestsByEmail",
-              )}
           </div>
 
           <ProviderConnectionStatus
@@ -466,17 +431,29 @@ export default function BusinessNotifications() {
             testTestId="test-notification-email"
             testDisabled={emailTestDisabled}
             testDisabledTitle={
-              emailSettingsDirty ? UNSAVED_SETTINGS_TEST_HINT : !emailConfigured ? "Add an email address first" : undefined
+              emailSettingsDirty
+                ? UNSAVED_SETTINGS_TEST_HINT
+                : !deliveryForm.emailEnabled || !emailConfigured
+                  ? "Enable email and add an address first"
+                  : undefined
             }
           />
         </NotificationProviderCard>
 
         <NotificationProviderCard
           title="SMS"
-          description="Urgent text alerts for new orders and appointments."
+          description={`Operational alerts. ${channelHelperText}`}
           icon={<MessageSquare className="h-4 w-4" />}
           testId="notification-sms-card"
         >
+          <ProviderEnableRow
+            label="Enable SMS notifications"
+            description={channelHelperText}
+            checked={deliveryForm.smsEnabled}
+            onCheckedChange={(smsEnabled) => setDeliveryForm((f) => ({ ...f, smsEnabled }))}
+            testId="toggle-sms-enabled"
+          />
+
           <div>
             <label className="text-sm font-medium mb-1.5 block" htmlFor="notification-phone">
               Notification phone
@@ -487,20 +464,9 @@ export default function BusinessNotifications() {
               value={deliveryForm.notificationPhone}
               onChange={(e) => setDeliveryForm((f) => ({ ...f, notificationPhone: e.target.value }))}
               placeholder="+15555550100"
+              disabled={!deliveryForm.smsEnabled}
               data-testid="input-notificationPhone"
             />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-1 divide-y divide-border">
-            {deliveryToggle("New orders", "Text when a customer places an order", "notifyNewOrdersBySms")}
-            {acceptsAppointments &&
-              deliveryToggle(
-                "Appointment requests",
-                "Text when a customer requests an appointment",
-                "notifyAppointmentRequestsBySms",
-              )}
           </div>
 
           <ProviderConnectionStatus
@@ -520,20 +486,24 @@ export default function BusinessNotifications() {
             testTestId="test-notification-sms"
             testDisabled={smsTestDisabled}
             testDisabledTitle={
-              smsSettingsDirty ? UNSAVED_SETTINGS_TEST_HINT : !smsConfigured ? "Add a phone number first" : undefined
+              smsSettingsDirty
+                ? UNSAVED_SETTINGS_TEST_HINT
+                : !deliveryForm.smsEnabled || !smsConfigured
+                  ? "Enable SMS and add a phone number first"
+                  : undefined
             }
           />
         </NotificationProviderCard>
 
         <NotificationProviderCard
           title="Free phone notifications"
-          description="Instant alerts on your phone without SMS charges via the ntfy app."
+          description={`Operational alerts via the free ntfy app. ${channelHelperText}`}
           icon={<Smartphone className="h-4 w-4" />}
           testId="ntfy-phone-notifications-card"
         >
           <ProviderEnableRow
             label="Enable phone notifications"
-            description="Uses the free ntfy app — no SMS fees from TownHub."
+            description={channelHelperText}
             checked={ntfyEnabled}
             onCheckedChange={handleNtfyToggle}
             disabled={updateBusiness.isPending}
@@ -673,30 +643,23 @@ export default function BusinessNotifications() {
             testLabel="Send test notification"
             testTestId="test-notification-ntfy"
             testDisabled={!ntfyEnabled || !ntfyTopic || settingsSaving}
-            testDisabledTitle={!ntfyEnabled || !ntfyTopic ? "Enable phone notifications and copy your topic first" : undefined}
+            testDisabledTitle={
+              !ntfyEnabled || !ntfyTopic ? "Enable phone notifications and copy your topic first" : undefined
+            }
           />
         </NotificationProviderCard>
 
         <NotificationProviderCard
           title="Discord"
-          description="Post alerts to a Discord channel your team already monitors."
+          description={`Operational alerts. ${channelHelperText}`}
           icon={<Hash className="h-4 w-4" />}
           testId="notification-discord-card"
         >
           <ProviderEnableRow
             label="Enable Discord notifications"
-            description="Send order and appointment alerts to your webhook."
+            description={channelHelperText}
             checked={deliveryForm.discordEnabled}
-            onCheckedChange={(enabled) =>
-              setDeliveryForm((f) => ({
-                ...f,
-                discordEnabled: enabled,
-                notifyNewOrdersByDiscord: enabled ? f.notifyNewOrdersByDiscord || true : false,
-                notifyAppointmentRequestsByDiscord: enabled
-                  ? f.notifyAppointmentRequestsByDiscord
-                  : false,
-              }))
-            }
+            onCheckedChange={(discordEnabled) => setDeliveryForm((f) => ({ ...f, discordEnabled }))}
             testId="toggle-discord-enabled"
           />
 
@@ -726,25 +689,6 @@ export default function BusinessNotifications() {
               data-testid="input-discordWebhookUrl"
             />
           </div>
-
-          {deliveryForm.discordEnabled ? (
-            <>
-              <Separator />
-              <div className="space-y-1 divide-y divide-border">
-                {deliveryToggle(
-                  "New orders",
-                  "Post when a customer places an order",
-                  "notifyNewOrdersByDiscord",
-                )}
-                {acceptsAppointments &&
-                  deliveryToggle(
-                    "Appointment requests",
-                    "Post when a customer requests an appointment",
-                    "notifyAppointmentRequestsByDiscord",
-                  )}
-              </div>
-            </>
-          ) : null}
 
           <ProviderConnectionStatus
             status={discordConnection.status}
@@ -815,9 +759,13 @@ export default function BusinessNotifications() {
           />
         </NotificationProviderCard>
 
-        <Separator />
-
-        <UserNotificationPreferencesPanel audience="BUSINESS_OWNER" />
+        <UserNotificationPreferencesPanel
+          audience="BUSINESS_OWNER"
+          title="TownHub App Push"
+          description="Operational alerts on your signed-in phone. Critical payment, refund, and account-security notices always use email and TownHub app push — they stay on even if this switch is off."
+          acceptsAppointments={acceptsAppointments}
+          enableDescription={channelHelperText}
+        />
       </div>
     </BusinessDashboardLayout>
   );

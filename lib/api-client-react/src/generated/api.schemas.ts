@@ -457,6 +457,8 @@ export interface Business {
   notifyNewOrdersByDiscord?: boolean;
   notifyAppointmentRequestsByDiscord?: boolean;
   ntfyEnabled?: boolean;
+  notifyNewOrdersByNtfy?: boolean;
+  notifyAppointmentRequestsByNtfy?: boolean;
   /** @nullable */
   ntfyTopic?: string | null;
   /** @nullable */
@@ -677,6 +679,8 @@ export interface BusinessUpdate {
   notifyNewOrdersByDiscord?: boolean;
   notifyAppointmentRequestsByDiscord?: boolean;
   ntfyEnabled?: boolean;
+  notifyNewOrdersByNtfy?: boolean;
+  notifyAppointmentRequestsByNtfy?: boolean;
   /** Enable mobile location schedule publishing for this business. */
   isMobileBusiness?: boolean;
   storefrontMode?: StorefrontMode | null;

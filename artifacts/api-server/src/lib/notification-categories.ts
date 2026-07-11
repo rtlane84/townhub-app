@@ -17,6 +17,11 @@ export type NotificationCategoryDefinition = {
   defaultEnabled: boolean;
   /** Whether the category is implemented today (false = reserved / future). */
   implemented: boolean;
+  /**
+   * When false, the category is mandatory: hidden from preference toggles and
+   * push delivery ignores user opt-outs.
+   */
+  userToggleable?: boolean;
 };
 
 export const NOTIFICATION_CATEGORIES = {
@@ -91,9 +96,10 @@ export const NOTIFICATION_CATEGORIES = {
     key: "OWNER_STRIPE_ISSUE",
     audience: "BUSINESS_OWNER",
     label: "Stripe account issues",
-    description: "Problems with Stripe Connect or payouts.",
+    description: "Problems with Stripe Connect, refunds, or payouts.",
     defaultEnabled: true,
     implemented: true,
+    userToggleable: false,
   },
   OWNER_LOW_INVENTORY: {
     key: "OWNER_LOW_INVENTORY",
@@ -109,7 +115,8 @@ export const NOTIFICATION_CATEGORIES = {
     label: "Subscription updates",
     description: "Trial, billing, and plan changes for your business.",
     defaultEnabled: true,
-    implemented: true,
+    // Push not wired yet — hide from TownHub App Push until implemented.
+    implemented: false,
   },
 
   // ── Customers ───────────────────────────────────────────────
@@ -186,11 +193,15 @@ export function getNotificationCategory(
 export function listNotificationCategories(options?: {
   audience?: NotificationAudience;
   implementedOnly?: boolean;
+  /** When true (default), omit mandatory categories that users cannot toggle. */
+  toggleableOnly?: boolean;
 }): NotificationCategoryDefinition[] {
+  const toggleableOnly = options?.toggleableOnly !== false;
   return ALL_NOTIFICATION_CATEGORY_KEYS.map((key) => NOTIFICATION_CATEGORIES[key]).filter(
     (cat) => {
       if (options?.audience && cat.audience !== options.audience) return false;
       if (options?.implementedOnly && !cat.implemented) return false;
+      if (toggleableOnly && cat.userToggleable === false) return false;
       return true;
     },
   );
@@ -213,6 +224,7 @@ export function categoryForEventType(eventType: string): NotificationCategoryKey
     case "NEW_APPOINTMENT_REQUEST":
       return "OWNER_APPOINTMENT_REQUEST";
     case "REFUND_FAILED":
+    case "STRIPE_CONNECT_ISSUE":
       return "OWNER_STRIPE_ISSUE";
     case "SUBSCRIPTION_TRIAL_STARTED":
     case "SUBSCRIPTION_TRIAL_ENDING":

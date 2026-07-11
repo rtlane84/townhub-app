@@ -6,6 +6,7 @@ import { listDeviceTokensForUsers, removeInvalidDeviceTokens } from "./device-to
 import { isCategoryEnabledForUser } from "./user-notification-preferences";
 import {
   categoryForEventType,
+  getNotificationCategory,
   type NotificationCategoryKey,
 } from "./notification-categories";
 import { buildPushDataPayload } from "./notification-deep-links";
@@ -72,6 +73,8 @@ export async function deliverPushToUsers(input: {
   appointmentRequestId?: number;
   category?: NotificationCategoryKey | null;
   data?: Record<string, string>;
+  /** When false, skip preference checks (mandatory alerts). Default true. */
+  respectPreferences?: boolean;
 }): Promise<void> {
   const uniqueUserIds = [...new Set(input.userIds.filter(Boolean))];
   if (uniqueUserIds.length === 0) return;
@@ -82,6 +85,12 @@ export async function deliverPushToUsers(input: {
   const eligibleUserIds: string[] = [];
   for (const userId of uniqueUserIds) {
     if (!category) {
+      eligibleUserIds.push(userId);
+      continue;
+    }
+    const categoryDef = getNotificationCategory(category);
+    // Mandatory (non-toggleable) categories always deliver.
+    if (categoryDef?.userToggleable === false || input.respectPreferences === false) {
       eligibleUserIds.push(userId);
       continue;
     }

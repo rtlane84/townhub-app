@@ -7,6 +7,10 @@ import {
   businessHasOnlinePaymentsReady,
   type StripeConnectStatusSnapshot,
 } from "./stripe-connect-status";
+import {
+  describeStripeConnectIssue,
+  shouldNotifyStripeConnectTransition,
+} from "./stripe-critical-alerts";
 
 export type {
   StripeConnectPaymentStatus,
@@ -45,16 +49,41 @@ export async function syncBusinessStripeConnectStatus(
 
   const accountId = business.stripeConnectedAccountId?.trim() ?? null;
   if (!accountId) {
+    const previousStatus = business.stripeConnectStatus;
     if (business.stripeConnectStatus !== "not_connected") {
       await db
         .update(businessesTable)
         .set({ stripeConnectStatus: "not_connected" })
         .where(eq(businessesTable.id, businessId));
     }
+    if (shouldNotifyStripeConnectTransition(previousStatus, "not_connected", null)) {
+      const issue = describeStripeConnectIssue({
+        paymentStatus: "not_connected",
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        detailsSubmitted: false,
+        requirementsCurrentlyDueCount: 0,
+        connectedAccountId: null,
+        previousStatus,
+      });
+      if (issue) {
+        const { notifyOwnerStripeConnectIssue } = await import("./notification-service");
+        void notifyOwnerStripeConnectIssue({
+          businessId: business.id,
+          businessName: business.name,
+          businessLogoUrl: business.logoUrl,
+          ownerId: business.ownerId,
+          notificationEmail: business.notificationEmail,
+          orderNotificationEmail: business.orderNotificationEmail,
+          issue,
+        }).catch(() => {});
+      }
+    }
     return connectStatusFromAccount(null, null);
   }
 
   const account = await retrieveConnectAccount(accountId);
+  const previousStatus = business.stripeConnectStatus;
   const paymentStatus = deriveConnectPaymentStatus(account, accountId);
 
   if (business.stripeConnectStatus !== paymentStatus) {
@@ -64,7 +93,32 @@ export async function syncBusinessStripeConnectStatus(
       .where(eq(businessesTable.id, businessId));
   }
 
-  return connectStatusFromAccount(account, accountId);
+  const snapshot = connectStatusFromAccount(account, accountId);
+  if (shouldNotifyStripeConnectTransition(previousStatus, paymentStatus, accountId)) {
+    const issue = describeStripeConnectIssue({
+      paymentStatus,
+      chargesEnabled: snapshot.chargesEnabled,
+      payoutsEnabled: snapshot.payoutsEnabled,
+      detailsSubmitted: snapshot.detailsSubmitted,
+      requirementsCurrentlyDueCount: snapshot.requirementsCurrentlyDueCount,
+      connectedAccountId: accountId,
+      previousStatus,
+    });
+    if (issue) {
+      const { notifyOwnerStripeConnectIssue } = await import("./notification-service");
+      void notifyOwnerStripeConnectIssue({
+        businessId: business.id,
+        businessName: business.name,
+        businessLogoUrl: business.logoUrl,
+        ownerId: business.ownerId,
+        notificationEmail: business.notificationEmail,
+        orderNotificationEmail: business.orderNotificationEmail,
+        issue,
+      }).catch(() => {});
+    }
+  }
+
+  return snapshot;
 }
 
 export async function ensureExpressConnectedAccount(
@@ -159,6 +213,7 @@ export async function handleAccountUpdatedEvent(account: import("stripe").defaul
 
   if (!business) return;
 
+  const previousStatus = business.stripeConnectStatus;
   const paymentStatus = deriveConnectPaymentStatus(account, account.id);
   await db
     .update(businessesTable)
@@ -167,6 +222,33 @@ export async function handleAccountUpdatedEvent(account: import("stripe").defaul
       stripeConnectStatus: paymentStatus,
     })
     .where(eq(businessesTable.id, business.id));
+
+  const snapshot = connectStatusFromAccount(account, account.id);
+  if (
+    shouldNotifyStripeConnectTransition(previousStatus, paymentStatus, account.id)
+  ) {
+    const issue = describeStripeConnectIssue({
+      paymentStatus,
+      chargesEnabled: snapshot.chargesEnabled,
+      payoutsEnabled: snapshot.payoutsEnabled,
+      detailsSubmitted: snapshot.detailsSubmitted,
+      requirementsCurrentlyDueCount: snapshot.requirementsCurrentlyDueCount,
+      connectedAccountId: account.id,
+      previousStatus,
+    });
+    if (issue) {
+      const { notifyOwnerStripeConnectIssue } = await import("./notification-service");
+      void notifyOwnerStripeConnectIssue({
+        businessId: business.id,
+        businessName: business.name,
+        businessLogoUrl: business.logoUrl,
+        ownerId: business.ownerId,
+        notificationEmail: business.notificationEmail,
+        orderNotificationEmail: business.orderNotificationEmail,
+        issue,
+      }).catch(() => {});
+    }
+  }
 }
 
 export function validateOnlineCardPaymentReady(business: Business): string | null {

@@ -24,6 +24,7 @@ export type OwnerEventType =
   | "APPLICATION_APPROVED"
   | "APPLICATION_REJECTED"
   | "REFUND_FAILED"
+  | "STRIPE_CONNECT_ISSUE"
   | SubscriptionNotificationEvent
   | PlatformAdminEvent;
 

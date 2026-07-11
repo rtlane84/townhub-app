@@ -52,6 +52,20 @@ describe("business order timing settings copy", () => {
     assert.match(settingsSource, /Orders outside this area are not automatically blocked\./);
   });
 
+  it("hides delivery fulfillment fields when delivery is off", () => {
+    assert.match(settingsSource, /form\.deliveryEnabled \? \(/);
+    assert.match(settingsSource, /Delivery fee \(\$\)/);
+    assert.match(settingsSource, /Delivery instructions/);
+    assert.match(
+      settingsSource,
+      /form\.deliveryEnabled[\s\S]*textField\("Delivery instructions"/,
+    );
+    assert.match(
+      settingsSource,
+      /form\.pickupEnabled[\s\S]*textField\("Pickup instructions"/,
+    );
+  });
+
   it("removes fixed same-day cutoff from settings, storefront, and cart", () => {
     assert.doesNotMatch(settingsSource, /Last same-day order/);
     assert.doesNotMatch(settingsSource, /orderCutoffTime/);

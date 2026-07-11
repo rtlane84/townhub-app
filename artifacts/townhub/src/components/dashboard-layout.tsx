@@ -29,6 +29,7 @@ import { isBusinessHubAppointmentLivePage, isBusinessHubLiveEventsRoute, isBusin
 import { OrderDashboardRefreshProvider } from "@/hooks/order-dashboard-refresh-context";
 import { NewOrderAlertBanner } from "@/components/new-order-alert-banner";
 import { NewAppointmentAlertBanner } from "@/components/new-appointment-alert-banner";
+import { StripeConnectAlertBanner } from "@/components/stripe-connect-alert-banner";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { BusinessSwitcher } from "@/components/business-switcher";
 import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
@@ -303,6 +304,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
 
       <main className={cn(DASHBOARD_MAIN, "p-4 md:p-8 lg:p-10 print:p-0", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
         <div className="print:hidden">
+          <StripeConnectAlertBanner />
           {showOrderNotificationBanner ? <NewOrderAlertBanner /> : null}
           {showAppointmentNotificationBanner ? <NewAppointmentAlertBanner /> : null}
         </div>

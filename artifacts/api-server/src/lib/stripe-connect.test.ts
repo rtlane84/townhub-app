@@ -64,6 +64,21 @@ describe("stripe-connect-status", () => {
     );
   });
 
+  it("deriveConnectPaymentStatus returns restricted when payouts are disabled", () => {
+    assert.equal(
+      deriveConnectPaymentStatus(
+        {
+          id: "acct_123",
+          charges_enabled: true,
+          payouts_enabled: false,
+          details_submitted: true,
+        } as never,
+        "acct_123",
+      ),
+      "restricted",
+    );
+  });
+
   it("connectStatusFromAccount never exposes full account ids", () => {
     const status = connectStatusFromAccount(
       {

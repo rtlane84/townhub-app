@@ -11,8 +11,10 @@ See **[NOTIFICATIONS.md](./NOTIFICATIONS.md)** for the full order lifecycle flow
 | Event | Recipient | When |
 |-------|-----------|------|
 | Order lifecycle updates | Customer | When email/phone provided at checkout |
-| New order | Business owner | Owner enabled **Text me for new orders** and has a notification phone |
-| New appointment request | Business owner | Owner enabled **Text me for appointment requests** and has a notification phone |
+| New order | Business owner | **SMS** Enable is on and a notification phone is set |
+| New appointment request | Business owner | **SMS** Enable is on, appointments are enabled for the business, and a notification phone is set |
+
+Critical Stripe / payment alerts are **not** sent by SMS. See [NOTIFICATIONS.md](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
 
 Implementation: `artifacts/api-server/src/lib/sms.ts`, `notification-sms.ts`, and `notification-delivery.ts`.
 
@@ -127,7 +129,7 @@ If it shows **Not configured**, check that all three env vars are set and the AP
 | Symptom | Likely cause |
 |---------|----------------|
 | SMS status **Not configured** in System Status | Missing one or more `TWILIO_*` env vars |
-| Logs show `LOGGED`, not `SENT` | Twilio not configured, or business SMS toggle off, or no notification phone |
+| Logs show `LOGGED`, not `SENT` | Twilio not configured, or **SMS** Enable is off, or no notification phone |
 | Twilio error 21211 | Invalid `to` number — use E.164 on the business notification phone |
 | Twilio error 21608 / unverified number | Trial account — verify the recipient in Twilio Console |
 | Message blocked / 30034 | US A2P 10DLC not registered — complete Twilio compliance setup |

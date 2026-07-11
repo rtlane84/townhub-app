@@ -114,6 +114,8 @@ export function serializeBusiness(
     notifyNewOrdersByDiscord: b.notifyNewOrdersByDiscord,
     notifyAppointmentRequestsByDiscord: b.notifyAppointmentRequestsByDiscord,
     ntfyEnabled: b.ntfyEnabled,
+    notifyNewOrdersByNtfy: b.notifyNewOrdersByNtfy,
+    notifyAppointmentRequestsByNtfy: b.notifyAppointmentRequestsByNtfy,
     ntfyTopic: b.ntfyTopic,
     ntfyConnectedAt: b.ntfyConnectedAt,
     ntfyLastTestAt: b.ntfyLastTestAt,
@@ -150,6 +152,8 @@ export function serializePublicBusiness(
     notifyAppointmentRequestsByDiscord: _notifyAppointmentRequestsByDiscord,
     discordWebhookUrl: _discordWebhookUrl,
     ntfyEnabled: _ntfyEnabled,
+    notifyNewOrdersByNtfy: _notifyNewOrdersByNtfy,
+    notifyAppointmentRequestsByNtfy: _notifyAppointmentRequestsByNtfy,
     ntfyTopic: _ntfyTopic,
     ntfyConnectedAt: _ntfyConnectedAt,
     ntfyLastTestAt: _ntfyLastTestAt,
@@ -651,10 +655,18 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     const enabled = (d as Record<string, unknown>).ntfyEnabled === true;
     if (enabled) {
       Object.assign(updateData, ntfySettingsForEnable(access.business));
+      updateData.notifyNewOrdersByNtfy = true;
+      updateData.notifyAppointmentRequestsByNtfy = true;
     } else {
       updateData.ntfyEnabled = false;
+      updateData.notifyNewOrdersByNtfy = false;
+      updateData.notifyAppointmentRequestsByNtfy = false;
     }
   }
+  if ((d as Record<string, unknown>).notifyNewOrdersByNtfy !== undefined)
+    updateData.notifyNewOrdersByNtfy = (d as Record<string, unknown>).notifyNewOrdersByNtfy;
+  if ((d as Record<string, unknown>).notifyAppointmentRequestsByNtfy !== undefined)
+    updateData.notifyAppointmentRequestsByNtfy = (d as Record<string, unknown>).notifyAppointmentRequestsByNtfy;
   if ((d as Record<string, unknown>).isMobileBusiness !== undefined) {
     const enabled = (d as Record<string, unknown>).isMobileBusiness === true;
     updateData.isMobileBusiness = enabled;

@@ -23,14 +23,21 @@ export type ResolvedPreference = {
 
 export function resolvePreferencesFromRows(
   rows: PreferenceRowLike[],
-  options?: { audience?: NotificationAudience; implementedOnly?: boolean },
+  options?: {
+    audience?: NotificationAudience;
+    implementedOnly?: boolean;
+    /** When true (default), omit mandatory categories that users cannot toggle. */
+    toggleableOnly?: boolean;
+  },
 ): ResolvedPreference[] {
   const byCategory = new Map(rows.map((row) => [row.category, row]));
+  const toggleableOnly = options?.toggleableOnly !== false;
 
   return ALL_NOTIFICATION_CATEGORY_KEYS.filter((key) => {
     const def = NOTIFICATION_CATEGORIES[key];
     if (options?.audience && def.audience !== options.audience) return false;
     if (options?.implementedOnly && !def.implemented) return false;
+    if (toggleableOnly && def.userToggleable === false) return false;
     return true;
   }).map((key) => {
     const def = NOTIFICATION_CATEGORIES[key];

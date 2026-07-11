@@ -1,4 +1,4 @@
-import { dashboardOrderUrl } from "../notification-urls";
+import { dashboardOrderUrl, dashboardSettingsUrl } from "../notification-urls";
 import {
   formatNotificationEstimatedWindow,
   formatOrderReferenceLabel,
@@ -144,6 +144,34 @@ export function buildOwnerRefundFailedEmail(
 
   return {
     subject: `Refund failed for ${ticketLabel}`,
+    text,
+    html,
+  };
+}
+
+export function buildOwnerStripeConnectIssueEmail(input: {
+  businessName: string;
+  businessLogoUrl?: string | null;
+  headline: string;
+  detail: string;
+}): EmailContent {
+  const openUrl = dashboardSettingsUrl();
+  const html = renderEmailLayout({
+    preheader: input.headline,
+    businessName: input.businessName,
+    businessLogoUrl: input.businessLogoUrl,
+    heading: input.headline,
+    bodyHtml: `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">${input.detail}</p>`,
+    actionLabel: "Open payment settings",
+    actionUrl: openUrl,
+    footerNote:
+      "This is a critical payment alert. TownHub always sends these by email and app push so you can keep accepting payments.",
+  });
+
+  const text = [input.headline, "", input.detail, "", `Open payment settings: ${openUrl}`].join("\n");
+
+  return {
+    subject: `${input.headline} — ${input.businessName}`,
     text,
     html,
   };

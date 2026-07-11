@@ -68,5 +68,17 @@ describe("ntfy order notifications", () => {
       "utf8",
     );
     assert.match(serviceSource, /business\.ntfyEnabled/);
+    assert.match(serviceSource, /notifyNewOrdersByNtfy/);
+  });
+
+  it("syncs ntfy event flags when enable is toggled on the business route", () => {
+    const routeSource = fs.readFileSync(
+      path.resolve(__dirname, "../routes/businesses.ts"),
+      "utf8",
+    );
+    assert.match(routeSource, /notifyNewOrdersByNtfy = true/);
+    assert.match(routeSource, /notifyAppointmentRequestsByNtfy = true/);
+    assert.match(routeSource, /notifyNewOrdersByNtfy = false/);
+    assert.match(routeSource, /notifyAppointmentRequestsByNtfy = false/);
   });
 });

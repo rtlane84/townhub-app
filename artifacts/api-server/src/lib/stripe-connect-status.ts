@@ -38,6 +38,11 @@ export function deriveConnectPaymentStatus(
     return "pending";
   }
 
+  // Charges work but payouts do not — treat as restricted so owners get critical alerts.
+  if (!account.payouts_enabled) {
+    return "restricted";
+  }
+
   return "connected";
 }
 

@@ -273,16 +273,20 @@ Owners pass `?businessId=` on list/upload. See [SECURITY.md](../SECURITY.md).
 
 ## Notifications
 
-Fire-and-forget delivery via `notification-service.ts`. All attempts logged to `notification_logs` (viewable in Admin → System Status).
+Fire-and-forget delivery via `notification-service.ts` (and related orchestrators). All attempts logged to `notification_logs` (viewable in Admin → System Status).
 
 | Channel | Provider | Config |
 |---------|----------|--------|
 | Email | Resend (preferred) or SMTP | `RESEND_API_KEY` + `RESEND_FROM` |
 | SMS | Twilio | `TWILIO_*` |
+| Discord / ntfy | Per-business webhook / topic | Business Hub → Notifications |
+| Push (iOS) | APNs | `APNS_*` — see [NOTIFICATIONS.md](NOTIFICATIONS.md) |
 
-Triggers: order lifecycle, new orders (owner), appointment requests (owner), application approval/rejection, subscription lifecycle.
+**Operational owner alerts** (new order, appointment request): Email / SMS / Discord / ntfy / TownHub App Push each have a single **Enable** control.
 
-Guide: [NOTIFICATIONS.md](NOTIFICATIONS.md).
+**Critical Stripe / payment alerts** (refund failed, Connect unhealthy): always owner email + TownHub app push; never SMS/Discord/ntfy; persistent Hub banner while Connect is `pending`/`restricted`.
+
+Guide: [NOTIFICATIONS.md](NOTIFICATIONS.md). Live Hub toasts/SSE: [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](BUSINESS_HUB_LIVE_NOTIFICATIONS.md).
 
 **Known gap:** guest notification links use `/order/{id}` without `?token=` — guests may need the token from the confirmation email flow.
 

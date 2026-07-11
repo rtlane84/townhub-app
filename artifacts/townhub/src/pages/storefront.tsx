@@ -122,11 +122,21 @@ export default function Storefront() {
   const businessHours = resolveBusinessHours(b);
 
   const bannerText = bx.bannerText as string | undefined;
-  const pickupInstructions = bx.pickupInstructions as string | undefined;
-  const deliveryInstructions = bx.deliveryInstructions as string | undefined;
-  const deliveryNotes = bx.deliveryNotes as string | undefined;
-  const minimumOrderForDelivery = bx.minimumOrderForDelivery as number | undefined;
-  const deliveryRadiusMiles = bx.deliveryRadiusMiles as number | undefined;
+  const pickupEnabled = b.pickupEnabled === true;
+  const deliveryEnabled = b.deliveryEnabled === true;
+  const pickupInstructions = pickupEnabled
+    ? (bx.pickupInstructions as string | undefined)
+    : undefined;
+  const deliveryInstructions = deliveryEnabled
+    ? (bx.deliveryInstructions as string | undefined)
+    : undefined;
+  const deliveryNotes = deliveryEnabled ? (bx.deliveryNotes as string | undefined) : undefined;
+  const minimumOrderForDelivery = deliveryEnabled
+    ? (bx.minimumOrderForDelivery as number | undefined)
+    : undefined;
+  const deliveryRadiusMiles = deliveryEnabled
+    ? (bx.deliveryRadiusMiles as number | undefined)
+    : undefined;
 
   const today = new Date().toISOString().slice(0, 10);
   const upcomingLocations = foodTruckLocations

@@ -52,6 +52,10 @@ export function dashboardBusinessHubUrl(): string {
   return `${getAppBaseUrl()}/dashboard/business`;
 }
 
+export function dashboardSettingsUrl(): string {
+  return `${getAppBaseUrl()}/dashboard/business/settings`;
+}
+
 export function dashboardAdminApplicationsUrl(): string {
   return `${getAppBaseUrl()}/dashboard/admin/applications`;
 }

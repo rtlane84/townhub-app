@@ -149,6 +149,16 @@ Under **Ordering Options → Payment options**, choose a mode that includes onli
 
 Online card checkout is **disabled** until Connect status is **Connected** and Stripe reports charges enabled.
 
+### Connect status and owner alerts
+
+Stored `stripeConnectStatus` values: `not_connected` | `pending` | `connected` | `restricted`.
+
+- **connected** — details submitted, charges enabled, **and** payouts enabled
+- **pending** — account exists but onboarding / charges not ready (or requirements due)
+- **restricted** — Stripe `disabled_reason`, or charges OK but **payouts disabled**, or other blocking Connect states
+
+When Connect becomes unhealthy (or a refund fails with a server error), TownHub sends **mandatory** owner email + TownHub app push, and Business Hub shows a persistent warning while status is `pending` or `restricted`. These alerts are **not** gated by Notifications channel Enable toggles and are **not** sent via SMS/Discord/ntfy. Details: [NOTIFICATIONS.md — Critical Stripe / payment alerts](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
+
 ---
 
 ## How payment confirmation works
@@ -233,6 +243,7 @@ Check API logs for `[operational] stripe_webhook_failed`. Logs never include sec
 
 ## Related docs
 
+- [NOTIFICATIONS.md](./NOTIFICATIONS.md) — owner alerts including mandatory Connect / refund critical alerts
 - [RESEND_SETUP.md](./RESEND_SETUP.md) — email notifications
 - [TWILIO_SETUP.md](./TWILIO_SETUP.md) — SMS notifications
 - [PRODUCTION.md](../PRODUCTION.md) — full production checklist

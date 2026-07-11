@@ -1,26 +1,44 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   useGetMyNotificationPreferences,
   useUpdateMyNotificationPreferences,
   getGetMyNotificationPreferencesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Bell, Loader2 } from "lucide-react";
+import {
+  NotificationProviderCard,
+  ProviderEnableRow,
+} from "@/components/notifications/notification-provider-ui";
+import { channelAlertsHelperText } from "@/lib/notification-settings-form";
 
 type Audience = "PLATFORM_ADMIN" | "BUSINESS_OWNER" | "CUSTOMER";
+
+/** Operational App Push categories controlled by the single Enable toggle. */
+export const OWNER_OPERATIONAL_PUSH_CATEGORIES = [
+  "OWNER_NEW_ORDER",
+  "OWNER_APPOINTMENT_REQUEST",
+] as const;
 
 type Props = {
   audience?: Audience;
   title?: string;
   description?: string;
+  enableDescription?: string;
+  acceptsAppointments?: boolean;
+  icon?: ReactNode;
+  testId?: string;
 };
 
 export function UserNotificationPreferencesPanel({
-  audience,
-  title = "Push & in-app categories",
-  description = "Choose which TownHub alerts you want on your signed-in devices. Email, SMS, Discord, and ntfy delivery for your business are configured separately above.",
+  audience = "BUSINESS_OWNER",
+  title = "TownHub App Push",
+  description = "Operational alerts on your signed-in phone. Critical payment and account alerts always use email and TownHub app push.",
+  enableDescription,
+  acceptsAppointments = false,
+  icon = <Bell className="h-4 w-4" />,
+  testId = "user-notification-preferences",
 }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -40,11 +58,25 @@ export function UserNotificationPreferencesPanel({
   const update = useUpdateMyNotificationPreferences();
 
   const preferences = data?.preferences ?? [];
+  const operationalPrefs = preferences.filter((pref) =>
+    (OWNER_OPERATIONAL_PUSH_CATEGORIES as readonly string[]).includes(pref.category),
+  );
+  // Enabled if either operational category is on (same pattern as Email/SMS channel Enable).
+  const pushEnabled =
+    operationalPrefs.length === 0 ? true : operationalPrefs.some((pref) => pref.enabled);
 
-  async function setEnabled(category: string, enabled: boolean) {
+  const enableHelper =
+    enableDescription ?? channelAlertsHelperText(acceptsAppointments);
+
+  async function setOperationalPushEnabled(enabled: boolean) {
     try {
       await update.mutateAsync({
-        data: { preferences: [{ category, enabled }] },
+        data: {
+          preferences: OWNER_OPERATIONAL_PUSH_CATEGORIES.map((category) => ({
+            category,
+            enabled,
+          })),
+        },
       });
       await queryClient.invalidateQueries({ queryKey });
     } catch {
@@ -57,12 +89,12 @@ export function UserNotificationPreferencesPanel({
   }
 
   return (
-    <div className="space-y-4" data-testid="user-notification-preferences">
-      <div>
-        <h3 className="text-base font-semibold tracking-tight">{title}</h3>
-        <p className="text-sm text-muted-foreground mt-1">{description}</p>
-      </div>
-
+    <NotificationProviderCard
+      title={title}
+      description={description}
+      icon={icon}
+      testId={testId}
+    >
       {isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -70,32 +102,18 @@ export function UserNotificationPreferencesPanel({
         </div>
       ) : isError ? (
         <p className="text-sm text-destructive">Could not load notification preferences.</p>
-      ) : preferences.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No categories available for your account.</p>
       ) : (
-        <ul className="divide-y rounded-lg border">
-          {preferences.map((pref) => (
-            <li
-              key={pref.category}
-              className="flex items-start justify-between gap-4 px-4 py-3"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{pref.label}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{pref.description}</p>
-              </div>
-              <Switch
-                checked={pref.enabled}
-                disabled={update.isPending}
-                onCheckedChange={(checked) => {
-                  void setEnabled(pref.category, checked);
-                }}
-                aria-label={pref.label}
-                data-testid={`pref-${pref.category}`}
-              />
-            </li>
-          ))}
-        </ul>
+        <ProviderEnableRow
+          label="Enable app push"
+          description={enableHelper}
+          checked={pushEnabled}
+          onCheckedChange={(checked) => {
+            void setOperationalPushEnabled(checked);
+          }}
+          disabled={update.isPending}
+          testId="toggle-app-push-enabled"
+        />
       )}
-    </div>
+    </NotificationProviderCard>
   );
 }
