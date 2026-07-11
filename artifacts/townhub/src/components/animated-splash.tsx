@@ -42,8 +42,8 @@ function useSplashCanvasIsDark(): boolean {
 }
 
 /**
- * Native cold-start splash: solid canvas (light/dark), launch logo, spring spin +
- * scale pulse, fade-in wordmark, then cross-fade into the main app shell.
+ * Native cold-start splash: solid canvas (light/dark), launch logo with spring
+ * spin, fade-in wordmark, then cross-fade into the main app shell.
  */
 export function AnimatedSplash() {
   const native = isNativeApp();
@@ -122,29 +122,22 @@ export function AnimatedSplash() {
               height={196}
               draggable={false}
               className="h-[min(42vw,196px)] w-[min(42vw,196px)] select-none object-contain"
-              initial={reduceMotion ? false : { scale: 1, rotate: 0 }}
+              initial={reduceMotion ? false : { rotate: 0 }}
               animate={
                 reduceMotion
-                  ? { scale: 1, rotate: 0 }
+                  ? { rotate: 0 }
                   : logoReady
-                    ? { scale: [1, 1.2, 1], rotate: 360 }
-                    : { scale: 1, rotate: 0 }
+                    ? { rotate: 360 }
+                    : { rotate: 0 }
               }
               transition={
                 reduceMotion || !logoReady
                   ? { duration: 0 }
                   : {
-                      scale: {
-                        duration: 1.15,
-                        times: [0, 0.45, 1],
-                        ease: ["easeOut", "easeInOut"],
-                      },
-                      rotate: {
-                        type: "spring",
-                        stiffness: 70,
-                        damping: 14,
-                        mass: 0.9,
-                      },
+                      type: "spring",
+                      stiffness: 70,
+                      damping: 14,
+                      mass: 0.9,
                     }
               }
             />
@@ -163,6 +156,12 @@ export function AnimatedSplash() {
                 name={platformName}
                 className="text-xl tracking-tight sm:text-2xl"
               />
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.18em]"
+                style={{ color: isDark ? "rgba(255,255,255,0.72)" : "rgba(30,58,95,0.55)" }}
+              >
+                LOCAL INFO. LOCAL BUSINESSES.
+              </p>
               <p
                 className="text-[11px] font-semibold uppercase tracking-[0.22em]"
                 style={{ color: isDark ? "#d4a574" : "#b8894a" }}
