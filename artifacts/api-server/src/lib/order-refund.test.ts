@@ -78,6 +78,17 @@ describe("validateRefundAmount", () => {
   });
 });
 
+describe("mapStripeRefundStatus", () => {
+  it("maps Stripe refund states without assuming success", () => {
+    assert.equal(mapStripeRefundStatus("succeeded"), "SUCCEEDED");
+    assert.equal(mapStripeRefundStatus("failed"), "FAILED");
+    assert.equal(mapStripeRefundStatus("canceled"), "CANCELED");
+    assert.equal(mapStripeRefundStatus("pending"), "PENDING");
+    assert.equal(mapStripeRefundStatus("requires_action"), "PENDING");
+    assert.equal(mapStripeRefundStatus(undefined), "PENDING");
+  });
+});
+
 describe("computeAggregateRefundStatus", () => {
   it("returns PARTIAL for partial refunds", () => {
     assert.equal(computeAggregateRefundStatus(1000, 500, false), "PARTIAL");
@@ -145,6 +156,7 @@ describe("mapStripeRefundStatus", () => {
     assert.equal(mapStripeRefundStatus("succeeded"), "SUCCEEDED");
     assert.equal(mapStripeRefundStatus("failed"), "FAILED");
     assert.equal(mapStripeRefundStatus("pending"), "PENDING");
+    assert.equal(mapStripeRefundStatus("requires_action"), "PENDING");
   });
 });
 

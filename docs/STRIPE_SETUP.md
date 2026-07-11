@@ -36,28 +36,54 @@ TownHub creates **Express** connected accounts for businesses and runs **direct 
 | Variable                | Required            | Example                        | Notes                                                         |
 | ----------------------- | ------------------- | ------------------------------ | ------------------------------------------------------------- |
 | `STRIPE_SECRET_KEY`     | For real payments   | `sk_test_...` or `sk_live_...` | Platform secret key — never expose in browser or git          |
-| `STRIPE_WEBHOOK_SECRET` | With Stripe enabled | `whsec_...`                    | Signing secret from your platform webhook endpoint            |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | With Connect orders | `whsec_...` | Signing secret from the **Connected accounts** webhook destination |
+| `STRIPE_PLATFORM_WEBHOOK_SECRET` | With subscriptions | `whsec_...` | Signing secret from the **Your account** webhook destination |
+| `STRIPE_WEBHOOK_SECRET` | Legacy fallback | `whsec_...` | Optional temporary fallback if only one destination is configured |
 | `APP_BASE_URL`          | Recommended         | `http://localhost:23032`       | Used for Stripe onboarding return URLs and checkout redirects |
 
 
 ```bash
 STRIPE_SECRET_KEY=sk_test_xxxxxxxx
-STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxx
+STRIPE_CONNECT_WEBHOOK_SECRET=whsec_connect_xxxxxxxx
+STRIPE_PLATFORM_WEBHOOK_SECRET=whsec_platform_xxxxxxxx
 APP_BASE_URL=http://localhost:23032
 ```
 
 If `STRIPE_SECRET_KEY` is unset, checkout runs in **mock mode** (dev only — redirects without charging). **Mock mode is blocked in production.**
 
-### 3. Register the platform webhook endpoint
+### 3. Register two webhook destinations (same URL)
 
-1. Stripe Dashboard → **Developers** → **Webhooks** → **Add endpoint**
-2. **Endpoint URL:** `https://your-api-host/api/checkout/webhook`
-3. **Listen to:** **Events on Connected accounts** (required — Checkout runs on each business’s Connect account). Platform-only listening will leave orders `PENDING` after a successful card payment.
-4. **Events:**
-  - `checkout.session.completed` (required — creates the paid order from pending checkout)
-  - `account.updated` (recommended — refreshes business Connect status)
-  - `customer.subscription.*` / `invoice.*` if you use platform billing
-5. Copy the **Signing secret** → `STRIPE_WEBHOOK_SECRET`
+Both destinations use: `https://your-api-host/api/checkout/webhook`
+
+TownHub verifies signatures against `STRIPE_CONNECT_WEBHOOK_SECRET`, then `STRIPE_PLATFORM_WEBHOOK_SECRET`, then legacy `STRIPE_WEBHOOK_SECRET`.
+
+#### A) Connected accounts (customer orders + refunds)
+
+1. Stripe Dashboard → **Developers** → **Webhooks** → **Add destination**
+2. **Events from:** **Connected accounts**
+3. **Events:**
+   - `checkout.session.completed` (required — creates paid order)
+   - `account.updated` (recommended — Connect status)
+   - `refund.created`
+   - `refund.updated`
+   - `refund.failed`
+   - `charge.refunded`
+4. Copy **Signing secret** → Railway `STRIPE_CONNECT_WEBHOOK_SECRET`
+
+#### B) Your account / platform (owner subscriptions)
+
+1. Add a **second** destination to the **same URL**
+2. **Events from:** **Your account**
+3. **Events:**
+   - `checkout.session.completed`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.paid`
+   - `invoice.payment_failed`
+4. Copy **Signing secret** → Railway `STRIPE_PLATFORM_WEBHOOK_SECRET`
+
+Also set Railway **`APP_BASE_URL`** to your **frontend** origin (e.g. `https://townhub-app.ronnie-0cd.workers.dev`), not the Railway API host. Stripe success URLs must reach `/native-checkout-return`. Optional: `FRONTEND_BASE_URL` if `APP_BASE_URL` must stay on the API.
 
 **Local development with Stripe CLI:**
 
@@ -65,7 +91,7 @@ If `STRIPE_SECRET_KEY` is unset, checkout runs in **mock mode** (dev only — re
 stripe listen --forward-to localhost:8080/api/checkout/webhook
 ```
 
-For Connect checkout locally, also forward connected-account events (Stripe CLI `listen` includes them when using a Connect-enabled platform). Use the CLI’s printed `whsec_...` as `STRIPE_WEBHOOK_SECRET` in your local `.env`. This secret is **different** from production dashboard secrets.
+Use the CLI’s printed `whsec_...` as `STRIPE_CONNECT_WEBHOOK_SECRET` (and/or legacy `STRIPE_WEBHOOK_SECRET`) locally. This secret is **different** from production dashboard secrets.
 
 ### 4. Deploy and verify (platform)
 
@@ -73,7 +99,7 @@ For Connect checkout locally, also forward connected-account events (Stripe CLI 
 2. **Admin → System Status** — Stripe should show **Healthy** with `mode: test` or `live`, `webhookConfigured: true`, and `connectSupport: true`.
 3. Production checklist:
   - [ ] Live platform key (`sk_live_...`) in production
-     [ ] Live webhook signing secret matches the live endpoint
+     [ ] Connect + platform webhook secrets match their destinations
      [ ] Webhook URL uses HTTPS
      [ ] Mock checkout is **not** used in production
 

@@ -236,6 +236,7 @@ export async function handleStripeWebhookEvent(event: Stripe.Event): Promise<{
   if (
     event.type === "refund.created" ||
     event.type === "refund.updated" ||
+    event.type === "refund.failed" ||
     event.type === "charge.refunded" ||
     event.type === "charge.refund.updated"
   ) {
@@ -246,13 +247,32 @@ export async function handleStripeWebhookEvent(event: Stripe.Event): Promise<{
   return { handled: false };
 }
 
+function parseRefundRecordIdFromMetadata(
+  metadata: Stripe.Metadata | null | undefined,
+): number | null {
+  const raw = metadata?.refundRecordId;
+  if (!raw) return null;
+  const id = parseInt(raw, 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
 async function handleOrderRefundWebhookEvent(event: Stripe.Event): Promise<boolean> {
-  if (event.type === "refund.created" || event.type === "refund.updated") {
+  if (
+    event.type === "refund.created" ||
+    event.type === "refund.updated" ||
+    event.type === "refund.failed"
+  ) {
     const refund = event.data.object as Stripe.Refund;
+    const status =
+      event.type === "refund.failed"
+        ? ("FAILED" as const)
+        : mapStripeRefundStatus(refund.status);
     const result = await syncRefundFromStripe({
       stripeRefundId: refund.id,
-      status: mapStripeRefundStatus(refund.status),
+      status,
       amountCents: refund.amount ?? undefined,
+      refundRecordId: parseRefundRecordIdFromMetadata(refund.metadata),
+      reason: refund.reason ?? refund.metadata?.reason ?? null,
     });
     return result.updated;
   }
@@ -267,6 +287,8 @@ async function handleOrderRefundWebhookEvent(event: Stripe.Event): Promise<boole
         stripeRefundId: refund.id,
         status: mapStripeRefundStatus(refund.status),
         amountCents: refund.amount ?? undefined,
+        refundRecordId: parseRefundRecordIdFromMetadata(refund.metadata),
+        reason: refund.reason ?? refund.metadata?.reason ?? null,
       });
       updated = updated || result.updated;
     }

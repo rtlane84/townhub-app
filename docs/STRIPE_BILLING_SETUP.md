@@ -16,14 +16,17 @@ These reuse the platform Stripe keys (same account as Connect platform credentia
 | Variable | Purpose |
 |----------|---------|
 | `STRIPE_SECRET_KEY` | Platform secret key (`sk_test_` / `sk_live_`) |
-| `STRIPE_WEBHOOK_SECRET` | Signing secret for `POST /api/checkout/webhook` |
+| `STRIPE_PLATFORM_WEBHOOK_SECRET` | Signing secret for the **Your account** webhook destination (subscriptions) |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | Signing secret for the **Connected accounts** destination (orders/refunds) — see [STRIPE_SETUP.md](STRIPE_SETUP.md) |
+| `STRIPE_WEBHOOK_SECRET` | Legacy single-secret fallback (optional) |
 | `APP_BASE_URL` | Checkout success/cancel URLs and Customer Portal return URL |
 
 Example (`.env`):
 
 ```bash
 STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PLATFORM_WEBHOOK_SECRET=whsec_platform_...
+STRIPE_CONNECT_WEBHOOK_SECRET=whsec_connect_...
 APP_BASE_URL=http://localhost:23032
 ```
 

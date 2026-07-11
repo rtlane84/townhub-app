@@ -138,7 +138,10 @@ export function mapStripeRefundStatus(
       return "FAILED";
     case "canceled":
       return "CANCELED";
+    case "pending":
+    case "requires_action":
     default:
+      // Do not treat unknown / in-flight states as succeeded.
       return "PENDING";
   }
 }

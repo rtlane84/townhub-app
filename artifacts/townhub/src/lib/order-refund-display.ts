@@ -59,11 +59,12 @@ export function getRemainingRefundableAmount(
 
 export function canIssueRefund(order: Pick<
   Order,
-  "paymentMethod" | "paymentStatus" | "refundStatus" | "refundableAmount" | "total" | "refundedAmount"
+  "paymentMethod" | "paymentStatus" | "refundStatus" | "refundableAmount" | "total" | "refundedAmount" | "refunds"
 >): boolean {
   if (order.paymentMethod !== "STRIPE") return false;
   if (order.paymentStatus !== "PAID") return false;
   if (order.refundStatus === "FULL") return false;
+  if (order.refunds?.some((refund) => refund.status === "PENDING")) return false;
   return getRemainingRefundableAmount(order) > 0;
 }
 

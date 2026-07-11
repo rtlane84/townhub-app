@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRoute, Link } from "wouter";
 import { useAuth } from "@clerk/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getGetOrderQueryKey } from "@workspace/api-client-react";
-import { fetchOrderById } from "@/lib/order-access";
+import { confirmOrderPayment, fetchOrderById } from "@/lib/order-access";
 import { CheckCircle2, ShoppingBag, Store, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +22,16 @@ import { getCustomerEstimatedWindowLabel } from "@/lib/order-prep-timing";
 import { OrderTotalsSummary } from "@/components/order-totals-summary";
 import { formatOrderTicketNumber, formatOrderReferenceLabel } from "@workspace/api-zod";
 
+const CONFIRM_POLL_MS = 2500;
+const CONFIRM_MAX_MS = 60_000;
+
 export default function OrderConfirmation() {
   const [, params] = useRoute("/order/:id");
   const orderId = Number(params?.id);
   const { getToken, isSignedIn } = useAuth();
   const { cart, clearCartForBusiness } = useCart();
+  const queryClient = useQueryClient();
+  const confirmStartedRef = useRef(false);
 
   const accessToken = useMemo(
     () => new URLSearchParams(typeof window !== "undefined" ? window.location.search : "").get("token"),
@@ -38,14 +43,57 @@ export default function OrderConfirmation() {
     [orderId],
   );
 
+  const queryKey = [...getGetOrderQueryKey(orderId), accessToken, isSignedIn];
+
   const { data: order, isLoading } = useQuery({
-    queryKey: [...getGetOrderQueryKey(orderId), accessToken, isSignedIn],
+    queryKey,
     enabled: !!orderId,
     queryFn: async () => {
       const authToken = isSignedIn ? await getToken() : null;
       return fetchOrderById(orderId, accessToken, authToken);
     },
   });
+
+  // Legacy PENDING card orders: poll confirm until Stripe session is paid.
+  useEffect(() => {
+    if (!orderId || !order || confirmStartedRef.current) return;
+    if (stripeReturn !== "success") return;
+    if (order.paymentMethod !== "STRIPE" || order.paymentStatus === "PAID") return;
+
+    confirmStartedRef.current = true;
+    let cancelled = false;
+    const started = Date.now();
+
+    const run = async () => {
+      while (!cancelled && Date.now() - started < CONFIRM_MAX_MS) {
+        try {
+          const authToken = isSignedIn ? await getToken() : null;
+          const updated = await confirmOrderPayment(orderId, accessToken, authToken);
+          if (updated.paymentStatus === "PAID") {
+            queryClient.setQueryData(queryKey, updated);
+            return;
+          }
+        } catch {
+          // Webhook / Stripe may still be catching up.
+        }
+        await new Promise((resolve) => setTimeout(resolve, CONFIRM_POLL_MS));
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    orderId,
+    order,
+    stripeReturn,
+    accessToken,
+    isSignedIn,
+    getToken,
+    queryClient,
+    queryKey,
+  ]);
 
   useEffect(() => {
     if (!orderId || !order) return;

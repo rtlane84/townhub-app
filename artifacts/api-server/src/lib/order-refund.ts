@@ -330,17 +330,36 @@ export async function syncRefundFromStripe(input: {
   stripeRefundId: string;
   status: OrderRefundRecordStatus;
   amountCents?: number;
-}): Promise<{ updated: boolean; orderId?: number }> {
-  const [refundRecord] = await db
+  /** Optional Stripe refund metadata.refundRecordId for race before stripeRefundId is stored. */
+  refundRecordId?: number | null;
+  reason?: string | null;
+}): Promise<{ updated: boolean; orderId?: number; becameSucceeded?: boolean }> {
+  let refundRecord: OrderRefund | undefined;
+
+  const [byStripeId] = await db
     .select()
     .from(orderRefundsTable)
     .where(eq(orderRefundsTable.stripeRefundId, input.stripeRefundId));
+  refundRecord = byStripeId;
+
+  if (!refundRecord && input.refundRecordId != null) {
+    const [byLocalId] = await db
+      .select()
+      .from(orderRefundsTable)
+      .where(eq(orderRefundsTable.id, input.refundRecordId));
+    refundRecord = byLocalId;
+  }
 
   if (!refundRecord) {
     return { updated: false };
   }
 
-  if (refundRecord.status === input.status) {
+  const previousStatus = refundRecord.status;
+  if (
+    previousStatus === input.status &&
+    refundRecord.stripeRefundId === input.stripeRefundId &&
+    (input.amountCents == null || refundRecord.amountCents === input.amountCents)
+  ) {
     return { updated: false, orderId: refundRecord.orderId };
   }
 
@@ -348,13 +367,19 @@ export async function syncRefundFromStripe(input: {
     .update(orderRefundsTable)
     .set({
       status: input.status,
+      stripeRefundId: input.stripeRefundId,
       ...(input.amountCents != null ? { amountCents: input.amountCents } : {}),
+      ...(input.reason != null ? { reason: input.reason } : {}),
     })
     .where(eq(orderRefundsTable.id, refundRecord.id));
 
   await syncOrderRefundAggregates(refundRecord.orderId);
 
-  if (input.status === "SUCCEEDED") {
+  const becameSucceeded =
+    input.status === "SUCCEEDED" && previousStatus !== "SUCCEEDED";
+
+  if (becameSucceeded) {
+    const amountCents = input.amountCents ?? refundRecord.amountCents;
     const [order] = await db
       .select({ businessId: ordersTable.businessId })
       .from(ordersTable)
@@ -362,9 +387,14 @@ export async function syncRefundFromStripe(input: {
     if (order) {
       publishOrderRefundedLiveEvent(order.businessId, refundRecord.orderId, "REFUNDED");
     }
+    void import("./notification-service")
+      .then(({ notifyCustomerOrderRefund }) =>
+        notifyCustomerOrderRefund(refundRecord!.orderId, amountCents),
+      )
+      .catch(() => {});
   }
 
-  return { updated: true, orderId: refundRecord.orderId };
+  return { updated: true, orderId: refundRecord.orderId, becameSucceeded };
 }
 
 export function extractPaymentIntentIdFromStripeObject(

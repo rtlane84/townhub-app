@@ -3,6 +3,7 @@ import { isEmailConfigured } from "./email";
 import { isSmsConfigured } from "./sms";
 import { getMediaStorageBackend } from "./media-storage";
 import { getStripeKeyMode, validateStripeConfig } from "./stripe-config";
+import { hasAnyStripeWebhookSecret } from "./stripe-webhook-verify";
 import {
   estimateNextTrialReminderRun,
   getLastFailedTrialReminderJobRun,
@@ -109,6 +110,8 @@ const SECRET_SUBSTRINGS = [
   "SMTP_PASS",
   "CLERK_SECRET_KEY",
   "STRIPE_SECRET_KEY",
+  "STRIPE_CONNECT_WEBHOOK_SECRET",
+  "STRIPE_PLATFORM_WEBHOOK_SECRET",
   "STRIPE_WEBHOOK_SECRET",
 ];
 
@@ -368,7 +371,10 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   const mode = getStripeKeyMode(key);
   const validation = validateStripeConfig();
-  const webhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim());
+  const webhookConfigured = hasAnyStripeWebhookSecret();
+  const connectWebhookConfigured = Boolean(process.env.STRIPE_CONNECT_WEBHOOK_SECRET?.trim());
+  const platformWebhookConfigured = Boolean(process.env.STRIPE_PLATFORM_WEBHOOK_SECRET?.trim());
+  const legacyWebhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim());
   const billingConfigured = mode !== "mock";
   const lastWebhook = getLastStripeWebhookReceived();
   const subscriptionCounts = await queryStripeSubscriptionCounts();
@@ -383,6 +389,9 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
         billingConfigured: false,
         connectConfigured: false,
         webhookConfigured,
+        connectWebhookConfigured,
+        platformWebhookConfigured,
+        legacyWebhookConfigured,
         ...(lastWebhook
           ? { lastWebhookReceivedAt: lastWebhook.at, lastWebhookEventType: lastWebhook.eventType }
           : {}),
@@ -412,6 +421,9 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
       billingConfigured,
       connectConfigured: billingConfigured,
       webhookConfigured,
+      connectWebhookConfigured,
+      platformWebhookConfigured,
+      legacyWebhookConfigured,
       configIssueCount: validation.issues.length,
       ...(lastWebhook
         ? { lastWebhookReceivedAt: lastWebhook.at, lastWebhookEventType: lastWebhook.eventType }

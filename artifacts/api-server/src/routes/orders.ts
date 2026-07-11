@@ -1174,57 +1174,147 @@ router.post("/checkout/session", async (_req, res): Promise<void> => {
 
 /**
  * POST /api/checkout/confirm
- * Body: { pendingCheckoutId, accessToken? }
- * Materializes the PAID order from Stripe (idempotent webhook safety net).
+ * Body: { pendingCheckoutId?, orderId?, accessToken? }
+ * Materializes / marks PAID from Stripe (idempotent webhook safety net).
+ * Prefer pendingCheckoutId (new flow). orderId supports legacy pre-payment orders.
  */
 router.post("/checkout/confirm", async (req, res): Promise<void> => {
-  const pendingCheckoutId = Number(
-    (req.body as { pendingCheckoutId?: unknown })?.pendingCheckoutId,
-  );
+  const body = req.body as {
+    pendingCheckoutId?: unknown;
+    orderId?: unknown;
+    accessToken?: unknown;
+  };
+  const pendingCheckoutId = Number(body.pendingCheckoutId);
+  const legacyOrderId = Number(body.orderId);
   const accessToken =
-    typeof (req.body as { accessToken?: unknown })?.accessToken === "string"
-      ? String((req.body as { accessToken: string }).accessToken).trim()
+    typeof body.accessToken === "string"
+      ? body.accessToken.trim()
       : extractOrderAccessToken(req);
 
-  if (!Number.isFinite(pendingCheckoutId) || pendingCheckoutId <= 0) {
-    res.status(400).json({ error: "pendingCheckoutId is required." });
+  const hasPending =
+    Number.isFinite(pendingCheckoutId) && pendingCheckoutId > 0;
+  const hasLegacyOrder = Number.isFinite(legacyOrderId) && legacyOrderId > 0;
+
+  if (!hasPending && !hasLegacyOrder) {
+    res.status(400).json({ error: "pendingCheckoutId or orderId is required." });
     return;
   }
 
-  const [pending] = await db
-    .select()
-    .from(pendingCheckoutsTable)
-    .where(eq(pendingCheckoutsTable.id, pendingCheckoutId));
+  if (hasPending) {
+    const [pending] = await db
+      .select()
+      .from(pendingCheckoutsTable)
+      .where(eq(pendingCheckoutsTable.id, pendingCheckoutId));
 
-  if (!pending) {
-    respondOrderNotFound(res);
-    return;
-  }
+    if (!pending) {
+      respondOrderNotFound(res);
+      return;
+    }
 
-  const tokenOk = verifyPendingCheckoutAccessToken(pending.id, accessToken);
-  const { userId } = getAuth(req);
-  const linkedCustomer =
-    Boolean(userId) &&
-    Boolean(pending.customerUserId) &&
-    userId === pending.customerUserId;
+    const tokenOk = verifyPendingCheckoutAccessToken(pending.id, accessToken);
+    const { userId } = getAuth(req);
+    const linkedCustomer =
+      Boolean(userId) &&
+      Boolean(pending.customerUserId) &&
+      userId === pending.customerUserId;
 
-  if (!tokenOk && !linkedCustomer) {
-    respondOrderNotFound(res);
-    return;
-  }
+    if (!tokenOk && !linkedCustomer) {
+      respondOrderNotFound(res);
+      return;
+    }
 
-  if (pending.orderId) {
-    const paid = await getOrderWithItems(pending.orderId);
+    if (pending.orderId) {
+      const paid = await getOrderWithItems(pending.orderId);
+      res.json({
+        ...paid,
+        accessToken: createOrderAccessToken(pending.orderId),
+        pendingCheckoutId: pending.id,
+      });
+      return;
+    }
+
+    const connectedAccountId = pending.stripeConnectedAccountId;
+    if (!pending.stripeSessionId || !connectedAccountId) {
+      res.status(409).json({ error: "Checkout session is not ready to confirm yet." });
+      return;
+    }
+
+    if (isMockMode) {
+      res.status(409).json({ error: "Payment confirmation requires Stripe to be configured." });
+      return;
+    }
+
+    const session = await retrieveStripeCheckoutSession(
+      pending.stripeSessionId,
+      connectedAccountId,
+    );
+
+    if (!session) {
+      res.status(409).json({ error: "Could not retrieve the Stripe checkout session." });
+      return;
+    }
+
+    const result = await markOrderPaidFromCheckoutSession(session, connectedAccountId);
+    if (!result.ok) {
+      if (result.reason === "session_not_paid") {
+        res.status(409).json({ error: "Payment is not complete yet.", reason: result.reason });
+        return;
+      }
+      logOperationalFailure("stripe_checkout_confirm_failed", {
+        reason: result.reason,
+        orderId: result.orderId,
+      });
+      res.status(409).json({ error: "Payment could not be confirmed yet.", reason: result.reason });
+      return;
+    }
+
+    const updated = await getOrderWithItems(result.orderId);
     res.json({
-      ...paid,
-      accessToken: createOrderAccessToken(pending.orderId),
+      ...updated,
+      accessToken: createOrderAccessToken(result.orderId),
       pendingCheckoutId: pending.id,
     });
     return;
   }
 
-  const connectedAccountId = pending.stripeConnectedAccountId;
-  if (!pending.stripeSessionId || !connectedAccountId) {
+  // Legacy: order was created before payment (pre-pending-checkout flow).
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, legacyOrderId));
+
+  if (!order) {
+    respondOrderNotFound(res);
+    return;
+  }
+
+  const viewer = await loadOrderViewerContext(req, order.businessId);
+  const viewAuth = authorizeOrderAccess(
+    buildOrderAccessInput(order.id, order.customerUserId, {
+      ...viewer,
+      accessToken: accessToken || viewer.accessToken,
+      orderCustomerUserId: order.customerUserId,
+    }),
+  );
+
+  if (!viewAuth.allowed) {
+    respondOrderNotFound(res);
+    return;
+  }
+
+  if (order.paymentStatus === "PAID") {
+    const paid = await getOrderWithItems(order.id);
+    res.json({ ...paid, accessToken: createOrderAccessToken(order.id) });
+    return;
+  }
+
+  if (order.paymentMethod !== "STRIPE") {
+    res.status(409).json({ error: "Order is not a card checkout." });
+    return;
+  }
+
+  const connectedAccountId = order.stripeConnectedAccountId;
+  if (!order.stripeSessionId || !connectedAccountId) {
     res.status(409).json({ error: "Checkout session is not ready to confirm yet." });
     return;
   }
@@ -1235,7 +1325,7 @@ router.post("/checkout/confirm", async (req, res): Promise<void> => {
   }
 
   const session = await retrieveStripeCheckoutSession(
-    pending.stripeSessionId,
+    order.stripeSessionId,
     connectedAccountId,
   );
 
@@ -1262,7 +1352,6 @@ router.post("/checkout/confirm", async (req, res): Promise<void> => {
   res.json({
     ...updated,
     accessToken: createOrderAccessToken(result.orderId),
-    pendingCheckoutId: pending.id,
   });
 });
 
@@ -1271,7 +1360,6 @@ router.post("/checkout/webhook", async (req, res): Promise<void> => {
   const verification = verifyStripeWebhookSignature({
     rawBody: req.body,
     signatureHeader: req.headers["stripe-signature"],
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     stripeClient: stripe,
   });
 

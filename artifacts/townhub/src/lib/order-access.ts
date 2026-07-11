@@ -112,3 +112,34 @@ export async function confirmPendingCheckoutPayment(
     orderId: data.id,
   };
 }
+
+/** Legacy safety net: mark a pre-payment order PAID after Stripe reports paid. */
+export async function confirmOrderPayment(
+  orderId: number,
+  accessToken?: string | null,
+  authToken?: string | null,
+): Promise<Order> {
+  const headers: HeadersInit = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
+  const response = await fetch(resolveApiUrl("/api/checkout/confirm"), {
+    method: "POST",
+    credentials: "include",
+    headers,
+    body: JSON.stringify({
+      orderId,
+      ...(accessToken?.trim() ? { accessToken: accessToken.trim() } : {}),
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Payment not confirmed yet");
+  }
+
+  return response.json() as Promise<Order>;
+}

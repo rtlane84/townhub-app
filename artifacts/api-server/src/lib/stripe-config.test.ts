@@ -19,10 +19,28 @@ describe("stripe-config", () => {
     const result = validateStripeConfig({
       secretKey: "sk_live_abc",
       webhookSecret: "",
+      connectWebhookSecret: "",
+      platformWebhookSecret: "",
       nodeEnv: "production",
     });
     assert.equal(result.ok, false);
-    assert.ok(result.issues.some((i) => i.includes("Webhook signing secret")));
+    assert.ok(result.issues.some((i) => i.includes("webhook signing secret")));
+  });
+
+  it("validateStripeConfig accepts connect or platform webhook secrets", () => {
+    const connectOnly = validateStripeConfig({
+      secretKey: "sk_live_abc",
+      connectWebhookSecret: "whsec_connect",
+      nodeEnv: "production",
+    });
+    assert.equal(connectOnly.ok, true);
+
+    const platformOnly = validateStripeConfig({
+      secretKey: "sk_live_abc",
+      platformWebhookSecret: "whsec_platform",
+      nodeEnv: "production",
+    });
+    assert.equal(platformOnly.ok, true);
   });
 
   it("validateStripeConfig flags test keys in production", () => {

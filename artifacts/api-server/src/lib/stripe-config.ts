@@ -20,10 +20,14 @@ export function validateStripeConfig(
   env: {
     secretKey?: string;
     webhookSecret?: string;
+    connectWebhookSecret?: string;
+    platformWebhookSecret?: string;
     nodeEnv?: string;
   } = {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    connectWebhookSecret: process.env.STRIPE_CONNECT_WEBHOOK_SECRET,
+    platformWebhookSecret: process.env.STRIPE_PLATFORM_WEBHOOK_SECRET,
     nodeEnv: process.env.NODE_ENV,
   },
 ): StripeConfigValidation {
@@ -41,11 +45,25 @@ export function validateStripeConfig(
     issues.push("Stripe secret key format is unrecognized.");
   }
 
-  const webhookSecret = env.webhookSecret?.trim();
-  if (!webhookSecret) {
-    issues.push("Webhook signing secret is required when Stripe is enabled.");
-  } else if (!webhookSecret.startsWith("whsec_")) {
-    issues.push("Webhook signing secret should start with whsec_.");
+  const secrets = [
+    env.connectWebhookSecret,
+    env.platformWebhookSecret,
+    env.webhookSecret,
+  ]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+
+  if (secrets.length === 0) {
+    issues.push(
+      "At least one webhook signing secret is required when Stripe is enabled (connect and/or platform destination; legacy single secret is a fallback).",
+    );
+  } else {
+    for (const secret of secrets) {
+      if (!secret.startsWith("whsec_")) {
+        issues.push("Webhook signing secret should start with whsec_.");
+        break;
+      }
+    }
   }
 
   if (mode === "test" && env.nodeEnv === "production") {

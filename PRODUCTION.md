@@ -52,7 +52,9 @@ Examples: Railway variables, Render environment, Fly secrets, Replit Secrets.
 | Secret | Purpose |
 |--------|---------|
 | `STRIPE_SECRET_KEY` | Platform secret key (`sk_live_...`) |
-| `STRIPE_WEBHOOK_SECRET` | Webhook signing secret for `POST /api/checkout/webhook` |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | Connected-accounts webhook signing secret (orders + refunds) |
+| `STRIPE_PLATFORM_WEBHOOK_SECRET` | Platform-account webhook signing secret (subscriptions) |
+| `STRIPE_WEBHOOK_SECRET` | Optional legacy fallback if only one destination is configured |
 
 See [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) (Connect) and [docs/STRIPE_BILLING_SETUP.md](docs/STRIPE_BILLING_SETUP.md) (subscriptions).
 

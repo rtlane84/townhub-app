@@ -5,61 +5,14 @@ import {
   parseCheckoutSessionConnectedAccountId,
 } from "./stripe-config";
 
-export type StripeWebhookVerificationResult =
-  | { ok: true; event: Stripe.Event }
-  | { ok: false; status: number; error: string; reason: string };
-
-export function verifyStripeWebhookSignature(input: {
-  rawBody: unknown;
-  signatureHeader: string | string[] | undefined;
-  webhookSecret: string | undefined;
-  stripeClient: Stripe | null;
-}): StripeWebhookVerificationResult {
-  const sig = input.signatureHeader;
-  if (!sig || typeof sig !== "string") {
-    return {
-      ok: false,
-      status: 400,
-      error: "Missing Stripe signature",
-      reason: "missing_signature",
-    };
-  }
-
-  const webhookSecret = input.webhookSecret?.trim();
-  if (!webhookSecret || !input.stripeClient) {
-    return {
-      ok: false,
-      status: 503,
-      error: "Webhook processing not configured",
-      reason: "not_configured",
-    };
-  }
-
-  if (!Buffer.isBuffer(input.rawBody)) {
-    return {
-      ok: false,
-      status: 400,
-      error: "Webhook requires raw request body",
-      reason: "invalid_body",
-    };
-  }
-
-  try {
-    const event = input.stripeClient.webhooks.constructEvent(
-      input.rawBody,
-      sig,
-      webhookSecret,
-    );
-    return { ok: true, event };
-  } catch {
-    return {
-      ok: false,
-      status: 400,
-      error: "Invalid Stripe signature",
-      reason: "invalid_signature",
-    };
-  }
-}
+export {
+  verifyStripeWebhookSignature,
+  resolveStripeWebhookSecrets,
+  hasAnyStripeWebhookSecret,
+  type StripeWebhookVerificationResult,
+  type StripeWebhookSecretSource,
+  type ResolvedStripeWebhookSecret,
+} from "./stripe-webhook-verify";
 
 export type CheckoutSessionOrderSnapshot = {
   id: number;

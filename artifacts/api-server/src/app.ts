@@ -16,6 +16,8 @@ import {
 import { createApiRateLimitMiddleware } from "./middlewares/rate-limit";
 import { createApiErrorRecorderMiddleware } from "./middlewares/api-error-recorder";
 import { shouldTrustProxyForRateLimit } from "./lib/rate-limit-config";
+import { getFrontendBaseUrl } from "./lib/app-base-url";
+import { buildNativeCheckoutReturnHtml } from "./lib/native-checkout-return-html";
 
 const app: Express = express();
 
@@ -49,6 +51,18 @@ app.use(
 // Public uptime monitor endpoint — no auth, minimal payload
 app.get("/health", (_req, res) => {
   res.json(buildPublicHealthResponse());
+});
+
+/**
+ * Stripe Checkout success/cancel lands here when APP_BASE_URL is the API host.
+ * Bounce into the Capacitor app (townhub://) or the real frontend origin.
+ */
+app.get(["/native-checkout-return", "/native-checkout-return/"], (_req, res) => {
+  res
+    .status(200)
+    .type("html")
+    .set("Cache-Control", "no-store")
+    .send(buildNativeCheckoutReturnHtml(getFrontendBaseUrl()));
 });
 
 // Clerk proxy — must be before body parsers

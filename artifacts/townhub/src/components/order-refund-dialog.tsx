@@ -52,8 +52,18 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
           queryClient.invalidateQueries({ queryKey: getListBusinessOrdersQueryKey(order.businessId) });
         }
         toast({
-          title: "Refund issued",
-          description: `${formatRefundAmountCents(result.refund.amountCents)} refunded to the customer.`,
+          title:
+            result.refund.status === "SUCCEEDED"
+              ? "Refund completed"
+              : result.refund.status === "PENDING"
+                ? "Refund submitted"
+                : "Refund updated",
+          description:
+            result.refund.status === "SUCCEEDED"
+              ? `${formatRefundAmountCents(result.refund.amountCents)} was returned to the customer.`
+              : result.refund.status === "PENDING"
+                ? `${formatRefundAmountCents(result.refund.amountCents)} refund is processing with Stripe. Status will update when confirmed.`
+                : `Refund status: ${result.refund.status}.`,
         });
         onOpenChange(false);
       },
@@ -99,7 +109,13 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
   const refundCopy = issueRefundCopy(formatRefundAmountCents(selectedAmountCents));
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (refundMutation.isPending) return;
+        onOpenChange(next);
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{refundCopy.title}</DialogTitle>
@@ -136,6 +152,7 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
                 variant={mode === "full" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setMode("full")}
+                disabled={refundMutation.isPending}
                 data-testid="button-refund-full"
               >
                 Full refund
@@ -145,6 +162,7 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
                 variant={mode === "partial" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setMode("partial")}
+                disabled={refundMutation.isPending}
                 data-testid="button-refund-partial"
               >
                 Custom amount
@@ -164,6 +182,7 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
                 value={partialAmount}
                 onChange={(event) => setPartialAmount(event.target.value)}
                 placeholder="0.00"
+                disabled={refundMutation.isPending}
                 data-testid="input-refund-amount"
               />
             </div>
@@ -176,8 +195,18 @@ export function OrderRefundDialog({ order, open, onOpenChange }: OrderRefundDial
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               rows={3}
+              disabled={refundMutation.isPending}
               data-testid="input-refund-reason"
             />
+          </div>
+
+          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+            <p className="font-medium text-foreground">
+              Confirm refund of {formatRefundAmountCents(selectedAmountCents)}
+            </p>
+            <p className="text-muted-foreground mt-1">
+              Fulfillment status is unchanged. Only payment refund status updates when Stripe confirms.
+            </p>
           </div>
         </div>
 
