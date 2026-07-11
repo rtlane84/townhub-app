@@ -8,6 +8,7 @@ import {
   ensureDeliveryBufferMinutesColumn,
   ensureHoursEnabledColumn,
   ensureMobileBusinessSchema,
+  ensureOrderClosingBufferMinutesColumn,
 } from "./lib/ensure-business-fulfillment-schema";
 import { ensurePendingCheckoutsTable } from "./lib/ensure-pending-checkouts";
 
@@ -40,6 +41,7 @@ app.listen(port, async (err) => {
   try {
     await ensureBusinessTypeEnumValues();
     await ensureDeliveryBufferMinutesColumn();
+    await ensureOrderClosingBufferMinutesColumn();
     await ensureMobileBusinessSchema();
     await ensureHoursEnabledColumn();
   } catch (bootstrapErr) {

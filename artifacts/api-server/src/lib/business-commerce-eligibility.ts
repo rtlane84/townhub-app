@@ -24,6 +24,7 @@ export type OrderingEligibilityBusiness = {
   orderingAvailabilityMode?: string | null;
   orderingEnabled?: boolean | null;
   structuredHours?: unknown;
+  orderClosingBufferMinutes?: number | null;
 };
 
 /**
@@ -45,6 +46,7 @@ export function evaluateBusinessOrderingAvailability(
       orderingEnabled: business.orderingEnabled,
       structuredHours: business.structuredHours,
       mobileLocations: options?.mobileLocations,
+      orderClosingBufferMinutes: business.orderClosingBufferMinutes,
     },
     options?.now,
   );

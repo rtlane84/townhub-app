@@ -10,6 +10,14 @@ export async function ensureDeliveryBufferMinutesColumn(): Promise<void> {
   logger.info("Ensured businesses.delivery_buffer_minutes column");
 }
 
+/** Ensure relative closing buffer column exists (minutes before hours/stop end). */
+export async function ensureOrderClosingBufferMinutesColumn(): Promise<void> {
+  await db.execute(
+    sql`ALTER TABLE businesses ADD COLUMN IF NOT EXISTS order_closing_buffer_minutes integer NOT NULL DEFAULT 0`,
+  );
+  logger.info("Ensured businesses.order_closing_buffer_minutes column");
+}
+
 /**
  * Ensure business_type enum has identity categories (not operational modes).
  * FOOD_TRUCK / CAFE_BAKERY remain in Postgres if already present but are migrated off rows.

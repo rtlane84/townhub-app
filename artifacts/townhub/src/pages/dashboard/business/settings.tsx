@@ -22,22 +22,43 @@ import {
   resolveOrderingAvailabilityMode,
   isOrderingStorefrontMode,
   isPaymentMode,
-  normalizeOptionalTime,
   normalizeWebsiteUrl,
   BUSINESS_TYPE_OPTIONS,
   ORDERING_AVAILABILITY_MODES,
+  resolveOrderClosingBufferMinutes,
 } from "@workspace/api-zod";
 import type { BusinessDayHours, PaymentMode, BusinessType, StorefrontMode, OrderingAvailabilityMode } from "@workspace/api-client-react";
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { PaymentModeSelector } from "@/components/payment-mode-selector";
 import { BusinessStripePaymentsCard } from "@/components/business-stripe-payments-card";
 import { StorefrontModeSelector } from "@/components/storefront-mode-selector";
-import { TimePicker, coerceFormTime } from "@/components/time-picker";
 import { ImageField } from "@/components/image-field";
 import { StorefrontUrlField } from "@/components/storefront-url-field";
 import { AddAnotherBusinessButton } from "@/components/add-another-business-link";
-import { Building2, ImageIcon, Layers, MousePointerClick, ShoppingBag, Truck, CheckCircle, RotateCcw, Save, Megaphone } from "lucide-react";
+import { Building2, Check, Clock, ImageIcon, Layers, MousePointerClick, ShoppingBag, Truck, CheckCircle, RotateCcw, Save, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const ORDERING_AVAILABILITY_OPTION_COPY: Record<
+  OrderingAvailabilityMode,
+  { label: string; description: string }
+> = {
+  ALWAYS: {
+    label: "Always",
+    description: "Customers can order whenever your business is active.",
+  },
+  BUSINESS_HOURS: {
+    label: "Business hours",
+    description: "Customers can order only during today's business hours.",
+  },
+  MOBILE_LOCATION_SCHEDULE: {
+    label: "Scheduled mobile location",
+    description: "Customers can order only while an active scheduled location is open.",
+  },
+  MANUAL: {
+    label: "Manual",
+    description: "Turn online ordering on or off yourself.",
+  },
+};
 
 type FormState = {
   name: string;
@@ -57,12 +78,12 @@ type FormState = {
   storefrontMode: StorefrontMode;
   orderingAvailabilityMode: OrderingAvailabilityMode;
   orderingEnabled: boolean;
+  orderClosingBufferMinutes: string;
   deliveryFee: string;
   minimumOrderForDelivery: string;
   deliveryRadiusMiles: string;
   pickupInstructions: string;
   deliveryInstructions: string;
-  orderCutoffTime: string;
   defaultPrepMinutes: string;
   deliveryBufferMinutes: string;
   accentColor: string;
@@ -91,12 +112,12 @@ const EMPTY: FormState = {
   storefrontMode: "ORDERING",
   orderingAvailabilityMode: "ALWAYS",
   orderingEnabled: true,
+  orderClosingBufferMinutes: "0",
   deliveryFee: "",
   minimumOrderForDelivery: "",
   deliveryRadiusMiles: "",
   pickupInstructions: "",
   deliveryInstructions: "",
-  orderCutoffTime: "",
   defaultPrepMinutes: "15",
   deliveryBufferMinutes: "15",
   accentColor: "",
@@ -172,7 +193,8 @@ export default function BusinessSettings() {
       storefrontMode: resolveStorefrontMode(biz),
       orderingAvailabilityMode: resolveOrderingAvailabilityMode(biz),
       orderingEnabled: biz.orderingEnabled !== false,
-      orderCutoffTime: coerceFormTime(biz.orderCutoffTime),
+      orderClosingBufferMinutes:
+        biz.orderClosingBufferMinutes != null ? String(biz.orderClosingBufferMinutes) : "0",
       defaultPrepMinutes: biz.defaultPrepMinutes != null ? String(biz.defaultPrepMinutes) : "15",
       deliveryBufferMinutes:
         biz.deliveryBufferMinutes != null ? String(biz.deliveryBufferMinutes) : "15",
@@ -267,7 +289,9 @@ export default function BusinessSettings() {
               paymentMode,
               orderingAvailabilityMode: form.orderingAvailabilityMode,
               orderingEnabled: form.orderingEnabled,
-              orderCutoffTime: normalizeOptionalTime(form.orderCutoffTime) || undefined,
+              orderClosingBufferMinutes: resolveOrderClosingBufferMinutes(
+                form.orderClosingBufferMinutes,
+              ),
               defaultPrepMinutes: optNum(form.defaultPrepMinutes),
               deliveryBufferMinutes: optNum(form.deliveryBufferMinutes),
               minimumOrderForDelivery: optNum(form.minimumOrderForDelivery),
@@ -571,7 +595,7 @@ export default function BusinessSettings() {
                 <SettingsSection
                   icon={ShoppingBag}
                   title="Ordering"
-                  description="When checkout is available, how customers pay, and sales tax."
+                  description="Choose how customers place orders, when ordering is available, and how they pay."
                 >
                   <SettingsToggleRow
                     label="Pickup"
@@ -592,7 +616,7 @@ export default function BusinessSettings() {
 
                   <Field
                     label="When can customers order?"
-                    hint="Food trucks can require an active mobile scheduled location; restaurants can use business hours."
+                    hint="Choose when customers are allowed to place new orders."
                   >
                     <Select
                       value={form.orderingAvailabilityMode}
@@ -609,17 +633,14 @@ export default function BusinessSettings() {
                       <SelectContent>
                         {ORDERING_AVAILABILITY_MODES.map((mode) => (
                           <SelectItem key={mode} value={mode}>
-                            {mode === "ALWAYS"
-                              ? "Always (when business is active)"
-                              : mode === "BUSINESS_HOURS"
-                                ? "During business hours"
-                                : mode === "MOBILE_LOCATION_SCHEDULE"
-                                  ? "When a mobile scheduled location is active"
-                                  : "Manual on/off"}
+                            {ORDERING_AVAILABILITY_OPTION_COPY[mode].label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {ORDERING_AVAILABILITY_OPTION_COPY[form.orderingAvailabilityMode].description}
+                    </p>
                   </Field>
                   {form.orderingAvailabilityMode === "MANUAL" ? (
                     <SettingsToggleRow
@@ -632,8 +653,32 @@ export default function BusinessSettings() {
                   ) : null}
                   {form.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE" ? (
                     <p className="text-xs text-muted-foreground">
-                      Manage today&apos;s location under Mobile Schedule. Checkout is blocked when no schedule window is active.
+                      Set today&apos;s stop under Mobile Schedule. Ordering is only available while a location is open.
                     </p>
+                  ) : null}
+                  {form.orderingAvailabilityMode === "BUSINESS_HOURS" ||
+                  form.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE" ? (
+                    <Field
+                      label="Stop accepting new orders"
+                      hint="Prevents new ASAP orders shortly before today's business hours or active mobile location ends."
+                    >
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={240}
+                          step={1}
+                          value={form.orderClosingBufferMinutes}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, orderClosingBufferMinutes: e.target.value }))
+                          }
+                          placeholder="0"
+                          className="max-w-[7rem]"
+                          data-testid="input-orderClosingBufferMinutes"
+                        />
+                        <span className="text-sm text-muted-foreground">minutes before closing</span>
+                      </div>
+                    </Field>
                   ) : null}
 
                   <Separator />
@@ -653,7 +698,7 @@ export default function BusinessSettings() {
 
                   <SettingsToggleRow
                     label="Sales tax"
-                    description="Charge tax on taxable items at checkout (calculated on the server)."
+                    description="Charge tax on taxable items at checkout."
                     checked={form.taxEnabled}
                     onCheckedChange={(taxEnabled) => setForm((f) => ({ ...f, taxEnabled }))}
                     data-testid="switch-taxEnabled"
@@ -664,52 +709,76 @@ export default function BusinessSettings() {
                       {textField("Tax label", "taxLabel", { placeholder: "Sales Tax" })}
                     </div>
                   ) : null}
+                </SettingsSection>
 
-                  <Separator />
-
-                  <Field
-                    label="Same-day order cutoff"
-                    hint="Optional — last time customers can place orders for same-day pickup or delivery."
-                  >
-                    <TimePicker
-                      value={form.orderCutoffTime}
-                      onChange={(orderCutoffTime) => setForm((f) => ({ ...f, orderCutoffTime }))}
-                      optional
-                      data-testid="input-orderCutoffTime"
-                    />
-                  </Field>
-                  {textField("Default prep time (minutes)", "defaultPrepMinutes", {
+                <SettingsSection
+                  icon={Clock}
+                  title="Order timing"
+                  description="How long customers should expect to wait for pickup or delivery."
+                >
+                  {textField("Minimum prep time (minutes)", "defaultPrepMinutes", {
                     type: "number",
                     placeholder: "15",
-                    hint: "Base for ASAP estimates. Uses the longer of this and each item’s prep time.",
+                    hint:
+                      "The minimum time needed to prepare any order. If a menu item requires more time, we'll automatically use the longer time.",
                   })}
                   {form.deliveryEnabled
                     ? textField("Delivery buffer (minutes)", "deliveryBufferMinutes", {
                         type: "number",
                         placeholder: "15",
-                        hint: "Extra time added on top of prep for ASAP delivery estimates (drive / dispatch).",
+                        hint:
+                          "Extra time added only to delivery orders for packing, driver dispatch, and travel.",
                       })
                     : null}
+                  <div
+                    className="space-y-3 rounded-2xl bg-muted/35 px-4 py-3.5"
+                    data-testid="order-timing-summary"
+                  >
+                    <p className="text-sm font-medium text-foreground">How order timing works</p>
+                    <ul className="space-y-2">
+                      {[
+                        "Every order starts with your minimum prep time.",
+                        "If a menu item takes longer, we'll automatically use that instead.",
+                        "Delivery orders add your delivery buffer.",
+                        "Larger orders may automatically receive a few extra preparation minutes.",
+                      ].map((line) => (
+                        <li key={line} className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground">
+                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground/70" aria-hidden />
+                          <span>{line}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </SettingsSection>
 
                 <SettingsSection
                   icon={Truck}
                   title="Fulfillment"
-                  description="Fees, delivery rules, and instructions shown at checkout and on your storefront."
+                  description="Fees, delivery area, and instructions shown at checkout and on your storefront."
                 >
                   <div className="grid grid-cols-2 gap-4">
                     {textField("Delivery fee ($)", "deliveryFee", { type: "number", placeholder: "0.00" })}
                     {textField("Min. for delivery ($)", "minimumOrderForDelivery", {
                       type: "number",
                       placeholder: "0.00",
-                      hint: "Enforced at checkout.",
+                      hint: "Customers must reach this amount to choose delivery.",
                     })}
                   </div>
-                  {textField("Delivery area (miles)", "deliveryRadiusMiles", {
-                    type: "number",
-                    placeholder: "5",
-                    hint: "Shown on your storefront for customers — not enforced by the app.",
-                  })}
+                  <Field
+                    label="Delivery area (miles)"
+                    hint="Shown to customers as your normal delivery area."
+                  >
+                    <Input
+                      type="number"
+                      value={form.deliveryRadiusMiles}
+                      onChange={(e) => setForm((f) => ({ ...f, deliveryRadiusMiles: e.target.value }))}
+                      placeholder="5"
+                      data-testid="input-deliveryRadiusMiles"
+                    />
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Orders outside this area are not automatically blocked.
+                    </p>
+                  </Field>
                   {textField("Pickup instructions", "pickupInstructions", {
                     multiline: true,
                     placeholder: "Come to the side entrance on Oak St.",

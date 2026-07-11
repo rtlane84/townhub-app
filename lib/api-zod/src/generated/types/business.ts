@@ -54,18 +54,28 @@ export interface Business {
   /** True when payment mode allows online card checkout and Stripe Connect is ready. */
   onlinePaymentsAvailable?: boolean;
   stripeConnectStatus?: StripeConnectPaymentStatus;
-  /** @nullable */
+  /**
+     * Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today's close or mobile stop end.
+     * @deprecated
+     * @nullable
+     */
   orderCutoffTime?: string | null;
   /**
-     * Default prep time in minutes when items do not specify their own.
+     * Minimum/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.
      * @minimum 1
      */
   defaultPrepMinutes?: number;
   /**
-     * Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer). Defaults to 15.
+     * Extra minutes added only to delivery ASAP estimates after prep (packing/dispatch/travel). Defaults to 15.
      * @minimum 0
      */
   deliveryBufferMinutes?: number;
+  /**
+     * Stop accepting new ASAP orders this many minutes before today's business closeTime or active mobile stop endTime. 0 means until the exact close/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.
+     * @minimum 0
+     * @maximum 240
+     */
+  orderClosingBufferMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */

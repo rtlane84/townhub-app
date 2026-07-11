@@ -17,7 +17,6 @@ import { useAsyncAction } from "@/hooks/use-async-action";
 import { createCheckoutIntent, orderConfirmationPath } from "@/lib/order-access";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { useToast } from "@/hooks/use-toast";
-import { formatTime12h } from "@workspace/api-zod";
 import { useAuth, useUser } from "@clerk/react";
 import {
   resolvePaymentMode,
@@ -335,9 +334,6 @@ export default function Cart() {
                       <RadioGroupItem value="PICKUP" id="pickup" />
                       <div>
                         <Label htmlFor="pickup" className="cursor-pointer font-medium">Store Pickup</Label>
-                        {business?.orderCutoffTime && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">Order by {formatTime12h(business.orderCutoffTime)}</p>
-                        )}
                       </div>
                     </div>
                   )}

@@ -164,6 +164,9 @@ export const getMyBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
 export const getMyBusinessResponseDeliveryBufferMinutesMin = 0;
 
+export const getMyBusinessResponseOrderClosingBufferMinutesMin = 0;
+export const getMyBusinessResponseOrderClosingBufferMinutesMax = 240;
+
 
 
 export const GetMyBusinessResponse = zod.object({
@@ -196,9 +199,10 @@ export const GetMyBusinessResponse = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(getMyBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(getMyBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(getMyBusinessResponseOrderClosingBufferMinutesMin).max(getMyBusinessResponseOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -269,6 +273,9 @@ export const listBusinessesResponseStructuredHoursItemDayOfWeekMax = 6;
 
 export const listBusinessesResponseDeliveryBufferMinutesMin = 0;
 
+export const listBusinessesResponseOrderClosingBufferMinutesMin = 0;
+export const listBusinessesResponseOrderClosingBufferMinutesMax = 240;
+
 
 
 export const ListBusinessesResponseItem = zod.object({
@@ -301,9 +308,10 @@ export const ListBusinessesResponseItem = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(listBusinessesResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(listBusinessesResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(listBusinessesResponseOrderClosingBufferMinutesMin).max(listBusinessesResponseOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -449,6 +457,9 @@ export const getBusinessCheckoutResponseStructuredHoursItemDayOfWeekMax = 6;
 
 export const getBusinessCheckoutResponseDeliveryBufferMinutesMin = 0;
 
+export const getBusinessCheckoutResponseOrderClosingBufferMinutesMin = 0;
+export const getBusinessCheckoutResponseOrderClosingBufferMinutesMax = 240;
+
 
 
 export const GetBusinessCheckoutResponse = zod.object({
@@ -481,9 +492,10 @@ export const GetBusinessCheckoutResponse = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(getBusinessCheckoutResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(getBusinessCheckoutResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(getBusinessCheckoutResponseOrderClosingBufferMinutesMin).max(getBusinessCheckoutResponseOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -534,6 +546,9 @@ export const getBusinessBySlugResponseBusinessStructuredHoursItemDayOfWeekMax = 
 
 export const getBusinessBySlugResponseBusinessDeliveryBufferMinutesMin = 0;
 
+export const getBusinessBySlugResponseBusinessOrderClosingBufferMinutesMin = 0;
+export const getBusinessBySlugResponseBusinessOrderClosingBufferMinutesMax = 240;
+
 
 
 export const GetBusinessBySlugResponse = zod.object({
@@ -567,9 +582,10 @@ export const GetBusinessBySlugResponse = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(getBusinessBySlugResponseBusinessDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(getBusinessBySlugResponseBusinessDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(getBusinessBySlugResponseBusinessOrderClosingBufferMinutesMin).max(getBusinessBySlugResponseBusinessOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -685,6 +701,9 @@ export const createBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
 
 export const createBusinessBodyDeliveryBufferMinutesMin = 0;
 
+export const createBusinessBodyOrderClosingBufferMinutesMin = 0;
+export const createBusinessBodyOrderClosingBufferMinutesMax = 240;
+
 
 
 export const CreateBusinessBody = zod.object({
@@ -709,9 +728,10 @@ export const CreateBusinessBody = zod.object({
   "minimumOrder": zod.number().optional(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).optional(),
-  "orderCutoffTime": zod.string().optional(),
-  "defaultPrepMinutes": zod.number().min(1).optional(),
-  "deliveryBufferMinutes": zod.number().min(createBusinessBodyDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer).'),
+  "orderCutoffTime": zod.string().optional().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(createBusinessBodyDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel).'),
+  "orderClosingBufferMinutes": zod.number().min(createBusinessBodyOrderClosingBufferMinutesMin).max(createBusinessBodyOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end.'),
   "orderingAvailabilityMode": zod.enum(['ALWAYS', 'BUSINESS_HOURS', 'MOBILE_LOCATION_SCHEDULE', 'MANUAL']).optional().describe('ALWAYS accepts orders whenever the business is active. BUSINESS_HOURS requires structured hours to be open now. MOBILE_LOCATION_SCHEDULE requires an active mobile-business location window. MANUAL uses the orderingEnabled owner toggle.\n'),
   "orderingEnabled": zod.boolean().optional(),
   "ownerId": zod.string().optional()
@@ -730,6 +750,9 @@ export const getBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
 
 export const getBusinessResponseDeliveryBufferMinutesMin = 0;
+
+export const getBusinessResponseOrderClosingBufferMinutesMin = 0;
+export const getBusinessResponseOrderClosingBufferMinutesMax = 240;
 
 
 
@@ -763,9 +786,10 @@ export const GetBusinessResponse = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(getBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(getBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(getBusinessResponseOrderClosingBufferMinutesMin).max(getBusinessResponseOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -816,6 +840,9 @@ export const updateBusinessBodyStructuredHoursItemDayOfWeekMax = 6;
 
 export const updateBusinessBodyDeliveryBufferMinutesMin = 0;
 
+export const updateBusinessBodyOrderClosingBufferMinutesMin = 0;
+export const updateBusinessBodyOrderClosingBufferMinutesMax = 240;
+
 
 
 export const UpdateBusinessBody = zod.object({
@@ -844,9 +871,10 @@ export const UpdateBusinessBody = zod.object({
   "minimumOrder": zod.number().optional(),
   "payAtPickupEnabled": zod.boolean().optional(),
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).optional(),
-  "orderCutoffTime": zod.string().optional(),
-  "defaultPrepMinutes": zod.number().min(1).optional(),
-  "deliveryBufferMinutes": zod.number().min(updateBusinessBodyDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer).'),
+  "orderCutoffTime": zod.string().optional().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(updateBusinessBodyDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel).'),
+  "orderClosingBufferMinutes": zod.number().min(updateBusinessBodyOrderClosingBufferMinutesMin).max(updateBusinessBodyOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -882,6 +910,9 @@ export const updateBusinessResponseStructuredHoursItemDayOfWeekMax = 6;
 
 export const updateBusinessResponseDeliveryBufferMinutesMin = 0;
 
+export const updateBusinessResponseOrderClosingBufferMinutesMin = 0;
+export const updateBusinessResponseOrderClosingBufferMinutesMax = 240;
+
 
 
 export const UpdateBusinessResponse = zod.object({
@@ -914,9 +945,10 @@ export const UpdateBusinessResponse = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(updateBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(updateBusinessResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(updateBusinessResponseOrderClosingBufferMinutesMin).max(updateBusinessResponseOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -2172,6 +2204,9 @@ export const assignBusinessOwnerResponseStructuredHoursItemDayOfWeekMax = 6;
 
 export const assignBusinessOwnerResponseDeliveryBufferMinutesMin = 0;
 
+export const assignBusinessOwnerResponseOrderClosingBufferMinutesMin = 0;
+export const assignBusinessOwnerResponseOrderClosingBufferMinutesMax = 240;
+
 
 
 export const AssignBusinessOwnerResponse = zod.object({
@@ -2204,9 +2239,10 @@ export const AssignBusinessOwnerResponse = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(assignBusinessOwnerResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(assignBusinessOwnerResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(assignBusinessOwnerResponseOrderClosingBufferMinutesMin).max(assignBusinessOwnerResponseOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -2253,6 +2289,9 @@ export const listAdminBusinessesResponseStructuredHoursItemDayOfWeekMax = 6;
 
 export const listAdminBusinessesResponseDeliveryBufferMinutesMin = 0;
 
+export const listAdminBusinessesResponseOrderClosingBufferMinutesMin = 0;
+export const listAdminBusinessesResponseOrderClosingBufferMinutesMax = 240;
+
 
 
 export const ListAdminBusinessesResponseItem = zod.object({
@@ -2285,9 +2324,10 @@ export const ListAdminBusinessesResponseItem = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(listAdminBusinessesResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(listAdminBusinessesResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(listAdminBusinessesResponseOrderClosingBufferMinutesMin).max(listAdminBusinessesResponseOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),
@@ -3276,6 +3316,9 @@ export const regenerateBusinessNtfyTopicResponseStructuredHoursItemDayOfWeekMax 
 
 export const regenerateBusinessNtfyTopicResponseDeliveryBufferMinutesMin = 0;
 
+export const regenerateBusinessNtfyTopicResponseOrderClosingBufferMinutesMin = 0;
+export const regenerateBusinessNtfyTopicResponseOrderClosingBufferMinutesMax = 240;
+
 
 
 export const RegenerateBusinessNtfyTopicResponse = zod.object({
@@ -3308,9 +3351,10 @@ export const RegenerateBusinessNtfyTopicResponse = zod.object({
   "paymentMode": zod.enum(['ONLINE_ONLY', 'PAY_AT_PICKUP_ONLY', 'BOTH']).nullish(),
   "onlinePaymentsAvailable": zod.boolean().optional().describe('True when payment mode allows online card checkout and Stripe Connect is ready.'),
   "stripeConnectStatus": zod.enum(['not_connected', 'pending', 'connected', 'restricted']).optional(),
-  "orderCutoffTime": zod.string().nullish(),
-  "defaultPrepMinutes": zod.number().min(1).optional().describe('Default prep time in minutes when items do not specify their own.'),
-  "deliveryBufferMinutes": zod.number().min(regenerateBusinessNtfyTopicResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added to ASAP estimates for delivery (drive\/dispatch buffer). Defaults to 15.'),
+  "orderCutoffTime": zod.string().nullish().describe('Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes relative to today\'s close or mobile stop end.'),
+  "defaultPrepMinutes": zod.number().min(1).optional().describe('Minimum\/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.'),
+  "deliveryBufferMinutes": zod.number().min(regenerateBusinessNtfyTopicResponseDeliveryBufferMinutesMin).optional().describe('Extra minutes added only to delivery ASAP estimates after prep (packing\/dispatch\/travel). Defaults to 15.'),
+  "orderClosingBufferMinutes": zod.number().min(regenerateBusinessNtfyTopicResponseOrderClosingBufferMinutesMin).max(regenerateBusinessNtfyTopicResponseOrderClosingBufferMinutesMax).optional().describe('Stop accepting new ASAP orders this many minutes before today\'s business closeTime or active mobile stop endTime. 0 means until the exact close\/end. Applies only to BUSINESS_HOURS and MOBILE_LOCATION_SCHEDULE.'),
   "minimumOrderForDelivery": zod.number().nullish(),
   "deliveryRadiusMiles": zod.number().nullish(),
   "deliveryNotes": zod.string().nullish(),

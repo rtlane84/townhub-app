@@ -16,7 +16,7 @@ import { useState, useRef } from "react";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { BusinessHoursDisplay } from "@/components/business-hours-display";
 import { resolveBusinessHours } from "@/lib/business-hours";
-import { resolvePaymentMode, paymentModeStorefrontNote, resolveStorefrontMode, storefrontCopy, isAppointmentStorefrontMode, isInformationStorefrontMode, showsStorefrontCatalog, informationPrimaryCtaLabel, formatTime12h, formatTimeRange12h, normalizeWebsiteUrl } from "@workspace/api-zod";
+import { resolvePaymentMode, paymentModeStorefrontNote, resolveStorefrontMode, storefrontCopy, isAppointmentStorefrontMode, isInformationStorefrontMode, showsStorefrontCatalog, informationPrimaryCtaLabel, formatTimeRange12h, normalizeWebsiteUrl } from "@workspace/api-zod";
 import { AppointmentBookingDialog } from "@/components/appointment-booking-dialog";
 import { ProductOptionsDialog } from "@/components/product-options-dialog";
 import type { Product } from "@workspace/api-client-react";
@@ -338,13 +338,10 @@ export default function Storefront() {
                   )}
 
                   {(() => {
-                    const showCutoff =
-                      Boolean(b.orderCutoffTime) && !isAppointmentMode && !isInformationMode;
                     const hasContact =
                       Boolean(b.address) ||
                       Boolean(b.phone) ||
-                      businessHours.hasHours ||
-                      showCutoff;
+                      businessHours.hasHours;
                     if (!hasContact) return null;
                     return (
                   <div id="business-contact" className="space-y-4 p-5">
@@ -385,14 +382,6 @@ export default function Storefront() {
                             showOpenNow
                           />
                         </div>
-                      </div>
-                    )}
-                    {showCutoff && (
-                      <div className="flex items-start gap-3 text-sm">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent-foreground">
-                          <Clock className="h-4 w-4" />
-                        </span>
-                        <span className="pt-1.5 text-foreground/80">{copy.cutoffLabel(formatTime12h(b.orderCutoffTime!))}</span>
                       </div>
                     )}
                   </div>

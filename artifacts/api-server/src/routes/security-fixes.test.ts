@@ -58,6 +58,9 @@ describe("order and commerce guard wiring", () => {
     assert.match(source, /checkout\/intents/);
     assert.match(source, /Card checkout no longer creates an order up front/);
     assert.match(source, /materializePaidOrderFromPendingCheckout/);
+    // Closing buffer is enforced centrally via evaluateBusinessOrderingAvailability
+    // on both pay-at-pickup create and Stripe checkout intent paths.
+    assert.equal((source.match(/evaluateBusinessOrderingAvailability/g) ?? []).length >= 2, true);
   });
 
   it("enforces appointment feature gates", async () => {

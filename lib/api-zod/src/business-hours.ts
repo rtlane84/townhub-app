@@ -121,7 +121,16 @@ export function formatBusinessHoursLines(hours: DayHoursInput[]): string[] {
   });
 }
 
-export function isOpenNow(hours: DayHoursInput[], now = new Date()): boolean {
+export function isOpenNow(
+  hours: DayHoursInput[],
+  now = new Date(),
+  /**
+   * Optional ordering buffer: treat the shop as closed this many minutes before
+   * today's closeTime. Display/"open now" callers should omit this (default 0).
+   * Overnight windows (close <= open) remain unsupported.
+   */
+  closingBufferMinutes = 0,
+): boolean {
   const today = normalizeWeeklyHours(hours)[now.getDay()];
   if (today.isClosed || !today.openTime || !today.closeTime) return false;
 
@@ -132,5 +141,10 @@ export function isOpenNow(hours: DayHoursInput[], now = new Date()): boolean {
   const closeMinutes = closeH * 60 + closeM;
 
   if (closeMinutes <= openMinutes) return false;
-  return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+  const buffer = Number.isFinite(closingBufferMinutes)
+    ? Math.max(0, Math.floor(closingBufferMinutes))
+    : 0;
+  const effectiveClose = closeMinutes - buffer;
+  if (effectiveClose <= openMinutes) return false;
+  return currentMinutes >= openMinutes && currentMinutes < effectiveClose;
 }

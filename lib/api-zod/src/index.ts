@@ -13,8 +13,11 @@ export * from "./order-ticket-display";
 export {
   ORDERING_AVAILABILITY_MODES,
   DEFAULT_ORDERING_AVAILABILITY_MODE,
+  DEFAULT_ORDER_CLOSING_BUFFER_MINUTES,
+  MAX_ORDER_CLOSING_BUFFER_MINUTES,
   isOrderingAvailabilityMode,
   resolveOrderingAvailabilityMode,
+  resolveOrderClosingBufferMinutes,
   hasActiveMobileLocationNow,
   evaluateOrderingAvailability,
   ORDERING_UNAVAILABLE_MESSAGES,

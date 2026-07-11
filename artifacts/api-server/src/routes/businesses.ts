@@ -17,21 +17,21 @@ import {
   UpdateBusinessParams,
   DeleteBusinessParams,
   GetBusinessBySlugParams,
+  parseStructuredHours,
+  allowsOnlinePayment,
+  resolvePaymentMode,
+  resolveOrderingAvailabilityMode,
+  resolveOrderClosingBufferMinutes,
+  defaultStorefrontModeForBusinessType,
+  normalizeWebsiteUrl,
+  normalizeLegacyBusinessType,
+  type FoodTruckLocationWindow,
 } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../middlewares/requireRole";
 import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
 import { nullsToUndefinedTopLevel } from "../lib/request-body";
-import { parseStructuredHours } from "@workspace/api-zod";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import { isValidDiscordWebhookUrl } from "../lib/discord-webhook";
-import {
-  allowsOnlinePayment,
-  resolvePaymentMode,
-  resolveOrderingAvailabilityMode,
-  defaultStorefrontModeForBusinessType,
-  normalizeWebsiteUrl,
-  normalizeLegacyBusinessType,
-} from "@workspace/api-zod";
 import {
   loadOptionGroupsByProductIds,
   loadAssignedModifierGroupsByProductIds,
@@ -51,7 +51,6 @@ import {
   slugifyFromBusinessName,
 } from "../lib/business-slug";
 import { evaluateBusinessOrderingAvailability } from "../lib/business-commerce-eligibility";
-import type { FoodTruckLocationWindow } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -103,6 +102,7 @@ export function serializeBusiness(
     orderCutoffTime: b.orderCutoffTime,
     defaultPrepMinutes: b.defaultPrepMinutes,
     deliveryBufferMinutes: b.deliveryBufferMinutes ?? 15,
+    orderClosingBufferMinutes: b.orderClosingBufferMinutes ?? 0,
     orderNotificationEmail: b.orderNotificationEmail,
     notificationEmail: b.notificationEmail ?? b.orderNotificationEmail,
     notificationPhone: b.notificationPhone,
@@ -275,6 +275,13 @@ router.post("/businesses/register", requireAdmin, async (req, res): Promise<void
         orderCutoffTime: parsed.data.orderCutoffTime ?? null,
         ...(parsed.data.defaultPrepMinutes != null
           ? { defaultPrepMinutes: parsed.data.defaultPrepMinutes }
+          : {}),
+        ...(parsed.data.orderClosingBufferMinutes != null
+          ? {
+              orderClosingBufferMinutes: resolveOrderClosingBufferMinutes(
+                parsed.data.orderClosingBufferMinutes,
+              ),
+            }
           : {}),
         isMobileBusiness: normalizedType.isMobileBusiness,
         eventLocationEnabled: normalizedType.isMobileBusiness,
@@ -477,6 +484,13 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
         payAtPickupEnabled: paymentFields.payAtPickupEnabled,
         paymentMode: paymentFields.paymentMode,
         orderCutoffTime: parsed.data.orderCutoffTime,
+        ...(parsed.data.orderClosingBufferMinutes != null
+          ? {
+              orderClosingBufferMinutes: resolveOrderClosingBufferMinutes(
+                parsed.data.orderClosingBufferMinutes,
+              ),
+            }
+          : {}),
         isMobileBusiness: normalizedType.isMobileBusiness,
         eventLocationEnabled: normalizedType.isMobileBusiness,
         storefrontMode: defaultStorefrontModeForBusinessType(normalizedType.type),
@@ -579,6 +593,10 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.defaultPrepMinutes = (d as Record<string, unknown>).defaultPrepMinutes;
   if ((d as Record<string, unknown>).deliveryBufferMinutes !== undefined)
     updateData.deliveryBufferMinutes = (d as Record<string, unknown>).deliveryBufferMinutes;
+  if ((d as Record<string, unknown>).orderClosingBufferMinutes !== undefined)
+    updateData.orderClosingBufferMinutes = resolveOrderClosingBufferMinutes(
+      (d as Record<string, unknown>).orderClosingBufferMinutes,
+    );
   if ((d as Record<string, unknown>).minimumOrderForDelivery !== undefined)
     updateData.minimumOrderForDelivery = (d as Record<string, unknown>).minimumOrderForDelivery
       ? String((d as Record<string, unknown>).minimumOrderForDelivery)

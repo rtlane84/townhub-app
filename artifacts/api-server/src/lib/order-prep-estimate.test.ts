@@ -10,6 +10,29 @@ import { calculateOrderPrepEstimate } from "./order-prep-estimate.ts";
 describe("calculateAsapPrepEstimate", () => {
   const orderedAt = new Date("2026-07-04T12:00:00.000Z");
 
+  it("uses business prep as a floor when an item needs longer", () => {
+    const pickup = calculateAsapPrepEstimate({
+      defaultPrepMinutes: 25,
+      fulfillmentType: "PICKUP",
+      items: [{ quantity: 1, prepTimeMinutes: 40 }],
+      orderedAt,
+    });
+    const delivery = calculateAsapPrepEstimate({
+      defaultPrepMinutes: 25,
+      deliveryBufferMinutes: 30,
+      fulfillmentType: "DELIVERY",
+      items: [{ quantity: 1, prepTimeMinutes: 40 }],
+      orderedAt,
+    });
+
+    assert.equal(pickup.centerMinutes, 40);
+    assert.equal(pickup.minMinutes, 35);
+    assert.equal(pickup.maxMinutes, 45);
+    assert.equal(delivery.centerMinutes, 70);
+    assert.equal(delivery.minMinutes, 65);
+    assert.equal(delivery.maxMinutes, 75);
+  });
+
   it("uses the longest item prep time instead of summing item prep times", () => {
     const estimate = calculateAsapPrepEstimate({
       defaultPrepMinutes: 15,

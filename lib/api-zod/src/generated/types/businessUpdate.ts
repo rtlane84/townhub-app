@@ -33,14 +33,27 @@ export interface BusinessUpdate {
   minimumOrder?: number;
   payAtPickupEnabled?: boolean;
   paymentMode?: PaymentMode;
+  /**
+     * Deprecated fixed HH:MM cutoff. Prefer orderClosingBufferMinutes.
+     * @deprecated
+     */
   orderCutoffTime?: string;
-  /** @minimum 1 */
+  /**
+     * Minimum/default prep time in minutes. ASAP estimates use the longer of this value and the longest item prep time in the order.
+     * @minimum 1
+     */
   defaultPrepMinutes?: number;
   /**
-     * Extra minutes added to ASAP estimates for delivery (drive/dispatch buffer).
+     * Extra minutes added only to delivery ASAP estimates after prep (packing/dispatch/travel).
      * @minimum 0
      */
   deliveryBufferMinutes?: number;
+  /**
+     * Stop accepting new ASAP orders this many minutes before today's business closeTime or active mobile stop endTime. 0 means until the exact close/end.
+     * @minimum 0
+     * @maximum 240
+     */
+  orderClosingBufferMinutes?: number;
   /** @nullable */
   minimumOrderForDelivery?: number | null;
   /** @nullable */

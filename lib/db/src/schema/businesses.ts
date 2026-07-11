@@ -96,10 +96,17 @@ export const businessesTable = pgTable("businesses", {
 
   payAtPickupEnabled: boolean("pay_at_pickup_enabled").notNull().default(false),
   paymentMode: paymentModeEnum("payment_mode"),
+  /** @deprecated Fixed HH:MM cutoff is no longer shown or edited in the product UI; availability modes own the ordering window. Kept for backward-compatible API payloads. */
   orderCutoffTime: text("order_cutoff_time"),
   defaultPrepMinutes: integer("default_prep_minutes").notNull().default(15),
   /** Extra minutes added on top of prep for delivery ETAs (drive/dispatch buffer). */
   deliveryBufferMinutes: integer("delivery_buffer_minutes").notNull().default(15),
+  /**
+   * Stop accepting new ASAP orders this many minutes before today's closeTime
+   * (BUSINESS_HOURS) or active mobile stop endTime (MOBILE_LOCATION_SCHEDULE).
+   * 0 = until the exact close/end. Ignored for ALWAYS / MANUAL.
+   */
+  orderClosingBufferMinutes: integer("order_closing_buffer_minutes").notNull().default(0),
 
   // Stripe Connect (per-business connected account for card payments)
   stripeConnectedAccountId: text("stripe_connected_account_id"),
