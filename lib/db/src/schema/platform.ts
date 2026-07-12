@@ -1,4 +1,21 @@
-import { boolean, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
+
+/** Homepage town-photo carousel slide stored on platform_settings.town_photos. */
+export type TownPhoto = {
+  id: string;
+  url: string;
+  caption: string | null;
+  isPrimary: boolean;
+  sortOrder: number;
+};
 
 // Single-row platform-wide settings table. Always upsert with id = 1.
 export const platformSettingsTable = pgTable("platform_settings", {
@@ -22,11 +39,19 @@ export const platformSettingsTable = pgTable("platform_settings", {
   heroOverlaySize: text("hero_overlay_size").notNull().default("medium"),
   heroOverlayAlign: text("hero_overlay_align").notNull().default("center"),
   showShopButton: boolean("show_shop_button").notNull().default(true),
-  showListBusinessButton: boolean("show_list_business_button").notNull().default(true),
-  heroButtonPlacement: text("hero_button_placement").notNull().default("bottom-center"),
+  showListBusinessButton: boolean("show_list_business_button")
+    .notNull()
+    .default(true),
+  /** When false, hero/town-photo overlay image is kept but not shown on the homepage. */
+  showHeroOverlay: boolean("show_hero_overlay").notNull().default(true),
+  heroButtonPlacement: text("hero_button_placement")
+    .notNull()
+    .default("bottom-center"),
   logoSizePx: integer("logo_size_px").notNull().default(24),
   weatherEnabled: boolean("weather_enabled").notNull().default(false),
   weatherLocation: text("weather_location"),
+  /** Ordered homepage town photos for the hero carousel. Empty = fall back to heroImageUrl. */
+  townPhotos: jsonb("town_photos").$type<TownPhoto[]>().notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow()

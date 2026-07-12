@@ -192,23 +192,26 @@ export function NativeBottomTabBar() {
                 onClick={() => handleTabPress(tab)}
                 className={cn(
                   "native-tab-item flex min-h-[52px] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-1",
-                  active ? "text-primary" : "text-muted-foreground",
                 )}
                 aria-current={active ? "page" : undefined}
                 aria-label={tab.label}
               >
                 <span
                   className={cn(
-                    "native-tab-icon-wrap flex h-9 w-9 items-center justify-center rounded-2xl transition-all duration-200",
-                    active ? "bg-primary/12" : "bg-transparent",
+                    "native-tab-icon-wrap flex h-8 w-8 items-center justify-center transition-all duration-200",
                   )}
                 >
                   <Icon
-                    className="native-tab-icon h-[22px] w-[22px] transition-transform duration-200"
-                    strokeWidth={active ? 2.35 : 1.85}
+                    className="native-tab-icon h-[22px] w-[22px] transition-opacity duration-200"
+                    strokeWidth={active ? 2.25 : 1.7}
                   />
                 </span>
-                <span className={cn("text-[10px] font-medium leading-none tracking-wide", active && "font-semibold")}>
+                <span
+                  className={cn(
+                    "text-[10px] font-medium leading-none tracking-wide",
+                    active && "font-semibold",
+                  )}
+                >
                   {tab.label}
                 </span>
               </button>

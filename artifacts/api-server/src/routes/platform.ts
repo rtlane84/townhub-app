@@ -1,8 +1,13 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, platformSettingsTable, notificationLogsTable } from "@workspace/db";
+import {
+  db,
+  platformSettingsTable,
+  notificationLogsTable,
+} from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { serializeNotificationLog } from "../lib/notifications";
+import { normalizeTownPhotos } from "../lib/town-photos";
 
 const router: IRouter = Router();
 
@@ -27,6 +32,7 @@ const THEME_DEFAULTS = {
   heroOverlayAlign: "center" as "left" | "center" | "right",
   showShopButton: true,
   showListBusinessButton: true,
+  showHeroOverlay: true,
   heroButtonPlacement: "bottom-center" as
     | "bottom-left"
     | "bottom-center"
@@ -34,6 +40,7 @@ const THEME_DEFAULTS = {
   logoSizePx: 24,
   weatherEnabled: false,
   weatherLocation: null as string | null,
+  townPhotos: [] as ReturnType<typeof normalizeTownPhotos>,
 };
 
 function clampLogoSize(value: unknown): number {
@@ -46,17 +53,23 @@ function normalizeHeroImageFit(value: unknown): "cover" | "contain" {
   return value === "contain" ? "contain" : THEME_DEFAULTS.heroImageFit;
 }
 
-function normalizeHeroImagePosition(value: unknown): "center" | "top" | "bottom" {
+function normalizeHeroImagePosition(
+  value: unknown,
+): "center" | "top" | "bottom" {
   if (value === "top" || value === "bottom") return value;
   return THEME_DEFAULTS.heroImagePosition;
 }
 
-function normalizeHeroOverlaySize(value: unknown): "small" | "medium" | "large" {
+function normalizeHeroOverlaySize(
+  value: unknown,
+): "small" | "medium" | "large" {
   if (value === "small" || value === "large") return value;
   return THEME_DEFAULTS.heroOverlaySize;
 }
 
-function normalizeHeroOverlayAlign(value: unknown): "left" | "center" | "right" {
+function normalizeHeroOverlayAlign(
+  value: unknown,
+): "left" | "center" | "right" {
   if (value === "left" || value === "right") return value;
   return THEME_DEFAULTS.heroOverlayAlign;
 }
@@ -68,7 +81,9 @@ function normalizeHeroButtonPlacement(
   return THEME_DEFAULTS.heroButtonPlacement;
 }
 
-function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelect) {
+function serializePlatformSettings(
+  row: typeof platformSettingsTable.$inferSelect,
+) {
   return {
     id: row.id,
     primaryColor: row.primaryColor,
@@ -92,16 +107,21 @@ function serializePlatformSettings(row: typeof platformSettingsTable.$inferSelec
     showShopButton: row.showShopButton ?? THEME_DEFAULTS.showShopButton,
     showListBusinessButton:
       row.showListBusinessButton ?? THEME_DEFAULTS.showListBusinessButton,
+    showHeroOverlay: row.showHeroOverlay ?? THEME_DEFAULTS.showHeroOverlay,
     heroButtonPlacement: normalizeHeroButtonPlacement(row.heroButtonPlacement),
     logoSizePx: row.logoSizePx ?? THEME_DEFAULTS.logoSizePx,
     weatherEnabled: row.weatherEnabled ?? THEME_DEFAULTS.weatherEnabled,
     weatherLocation: row.weatherLocation,
+    townPhotos: normalizeTownPhotos(row.townPhotos),
     updatedAt: row.updatedAt,
   };
 }
 
 async function getOrCreateSettings() {
-  const [row] = await db.select().from(platformSettingsTable).where(eq(platformSettingsTable.id, 1));
+  const [row] = await db
+    .select()
+    .from(platformSettingsTable)
+    .where(eq(platformSettingsTable.id, 1));
   if (row) return row;
   const [created] = await db
     .insert(platformSettingsTable)
@@ -116,7 +136,10 @@ router.get("/admin/settings/theme", getPlatformThemeHandler);
 // Alias for public clients; same handler as admin path above.
 router.get("/platform/theme", getPlatformThemeHandler);
 
-async function getPlatformThemeHandler(req: Request, res: Response): Promise<void> {
+async function getPlatformThemeHandler(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const settings = await getOrCreateSettings();
     res.json(serializePlatformSettings(settings));
@@ -149,13 +172,18 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     "heroOverlayAlign",
     "showShopButton",
     "showListBusinessButton",
+    "showHeroOverlay",
     "heroButtonPlacement",
     "logoSizePx",
     "weatherEnabled",
     "weatherLocation",
+    "townPhotos",
   ] as const;
 
-  const updates: Record<string, string | null | number | boolean> = {};
+  const updates: Record<
+    string,
+    string | null | number | boolean | ReturnType<typeof normalizeTownPhotos>
+  > = {};
   for (const key of allowed) {
     if (key in req.body) {
       const value = req.body[key];
@@ -171,8 +199,16 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
         updates[key] = Boolean(value);
         continue;
       }
-      if (key === "showShopButton" || key === "showListBusinessButton") {
+      if (
+        key === "showShopButton" ||
+        key === "showListBusinessButton" ||
+        key === "showHeroOverlay"
+      ) {
         updates[key] = Boolean(value);
+        continue;
+      }
+      if (key === "townPhotos") {
+        updates[key] = normalizeTownPhotos(value);
         continue;
       }
       if (key === "heroImageFit") {
@@ -221,11 +257,18 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     res.json(serializePlatformSettings(updated));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    if (/brand_prefix_color|brand_town_color|brand_hub_color|column .* does not exist/i.test(message)) {
-      req.log?.error({ err }, "Platform settings update failed — missing brand color columns");
+    if (
+      /brand_prefix_color|brand_town_color|brand_hub_color|town_photos|show_hero_overlay|column .* does not exist/i.test(
+        message,
+      )
+    ) {
+      req.log?.error(
+        { err },
+        "Platform settings update failed — missing platform_settings columns",
+      );
       res.status(500).json({
         error:
-          "Database is missing brand wordmark color columns. Restart the API server (auto-migrates) or run: pnpm --filter @workspace/db run push",
+          "Database is missing platform settings columns. Restart the API server (auto-migrates) or run: pnpm --filter @workspace/db run push",
       });
       return;
     }
@@ -245,7 +288,9 @@ router.get("/admin/notification-logs", async (req, res): Promise<void> => {
 
   const conditions = [];
   if (orderIdRaw) {
-    conditions.push(eq(notificationLogsTable.orderId, parseInt(String(orderIdRaw), 10)));
+    conditions.push(
+      eq(notificationLogsTable.orderId, parseInt(String(orderIdRaw), 10)),
+    );
   }
   if (statusRaw && typeof statusRaw === "string") {
     conditions.push(eq(notificationLogsTable.status, statusRaw));

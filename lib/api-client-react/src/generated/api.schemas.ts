@@ -1039,6 +1039,8 @@ export interface BusinessSlugAvailability {
 export interface MarketplaceStats {
   /** Number of active local businesses */
   localShopsCount: number;
+  /** Number of active local businesses open right now */
+  openShopsCount: number;
   /** Number of available products across active businesses */
   uniqueItemsCount: number;
 }
@@ -1526,6 +1528,22 @@ export interface FoodTruckLocationWithBusiness {
   isActive: boolean;
 }
 
+export interface TownPhoto {
+  /** Stable client-generated identifier for the photo slide */
+  id: string;
+  /** Public image URL (from media upload or absolute URL) */
+  url: string;
+  /**
+     * Optional short caption shown with the slide
+     * @nullable
+     */
+  caption?: string | null;
+  /** When true, this photo is preferred as the default/first slide */
+  isPrimary: boolean;
+  /** Display order (ascending). Primary photo is sorted first when set. */
+  sortOrder: number;
+}
+
 export type PlatformThemeHeroImageFit = typeof PlatformThemeHeroImageFit[keyof typeof PlatformThemeHeroImageFit];
 
 
@@ -1611,6 +1629,8 @@ export interface PlatformTheme {
   heroOverlayAlign?: PlatformThemeHeroOverlayAlign;
   showShopButton?: boolean;
   showListBusinessButton?: boolean;
+  /** When false, the hero overlay image is hidden on the homepage but kept in settings. */
+  showHeroOverlay?: boolean;
   heroButtonPlacement?: PlatformThemeHeroButtonPlacement;
   /**
      * @minimum 16
@@ -1620,6 +1640,8 @@ export interface PlatformTheme {
   weatherEnabled?: boolean;
   /** @nullable */
   weatherLocation?: string | null;
+  /** Ordered homepage town photos for the hero carousel. Empty falls back to heroImageUrl. */
+  townPhotos?: TownPhoto[];
   updatedAt?: string;
 }
 
@@ -1691,6 +1713,8 @@ export interface PlatformThemeInput {
   heroOverlayAlign?: PlatformThemeInputHeroOverlayAlign;
   showShopButton?: boolean;
   showListBusinessButton?: boolean;
+  /** When false, the hero overlay image is hidden on the homepage but kept in settings. */
+  showHeroOverlay?: boolean;
   heroButtonPlacement?: PlatformThemeInputHeroButtonPlacement;
   /**
      * @minimum 16
@@ -1699,6 +1723,8 @@ export interface PlatformThemeInput {
   logoSizePx?: number;
   weatherEnabled?: boolean;
   weatherLocation?: string;
+  /** Replace the full town-photo collection (ordered). Pass [] to clear. */
+  townPhotos?: TownPhoto[];
 }
 
 export interface WeatherCurrent {

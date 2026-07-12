@@ -3864,11 +3864,14 @@ components:
 
     MarketplaceStats:
       type: object
-      required: [localShopsCount, uniqueItemsCount]
+      required: [localShopsCount, openShopsCount, uniqueItemsCount]
       properties:
         localShopsCount:
           type: integer
           description: Number of active local businesses
+        openShopsCount:
+          type: integer
+          description: Number of active local businesses open right now
         uniqueItemsCount:
           type: integer
           description: Number of available products across active businesses
@@ -4558,6 +4561,26 @@ components:
           type: boolean
 
     # ─── Platform Theme ────────────────────────────────────────────
+    TownPhoto:
+      type: object
+      required: [id, url, isPrimary, sortOrder]
+      properties:
+        id:
+          type: string
+          description: Stable client-generated identifier for the photo slide
+        url:
+          type: string
+          description: Public image URL (from media upload or absolute URL)
+        caption:
+          type: ["string", "null"]
+          description: Optional short caption shown with the slide
+        isPrimary:
+          type: boolean
+          description: When true, this photo is preferred as the default/first slide
+        sortOrder:
+          type: integer
+          description: Display order (ascending). Primary photo is sorted first when set.
+
     PlatformTheme:
       type: object
       required: [id, primaryColor, accentColor, backgroundColor, buttonColor]
@@ -4611,6 +4634,9 @@ components:
           type: boolean
         showListBusinessButton:
           type: boolean
+        showHeroOverlay:
+          type: boolean
+          description: When false, the hero overlay image is hidden on the homepage but kept in settings.
         heroButtonPlacement:
           type: string
           enum: [bottom-left, bottom-center, bottom-right]
@@ -4622,6 +4648,11 @@ components:
           type: boolean
         weatherLocation:
           type: ["string", "null"]
+        townPhotos:
+          type: array
+          description: Ordered homepage town photos for the hero carousel. Empty falls back to heroImageUrl.
+          items:
+            $ref: "#/components/schemas/TownPhoto"
         updatedAt:
           type: string
           format: date-time
@@ -4676,6 +4707,9 @@ components:
           type: boolean
         showListBusinessButton:
           type: boolean
+        showHeroOverlay:
+          type: boolean
+          description: When false, the hero overlay image is hidden on the homepage but kept in settings.
         heroButtonPlacement:
           type: string
           enum: [bottom-left, bottom-center, bottom-right]
@@ -4687,6 +4721,11 @@ components:
           type: boolean
         weatherLocation:
           type: string
+        townPhotos:
+          type: array
+          description: Replace the full town-photo collection (ordered). Pass [] to clear.
+          items:
+            $ref: "#/components/schemas/TownPhoto"
 
     WeatherCurrent:
       type: object

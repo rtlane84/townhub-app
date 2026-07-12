@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { migrateLegacyProductOptionsToModifierGroups } from "@workspace/db/migrate-legacy-product-options";
 import { ensureDefaultSubscriptionFeatures } from "./lib/business-features";
 import { ensurePlatformBrandWordColorColumns } from "./lib/ensure-platform-brand-colors";
+import { ensurePlatformTownPhotosColumn } from "./lib/ensure-platform-town-photos";
 import {
   ensureBusinessTypeEnumValues,
   ensureDeliveryBufferMinutesColumn,
@@ -35,7 +36,19 @@ app.listen(port, async (err) => {
   try {
     await ensurePlatformBrandWordColorColumns();
   } catch (bootstrapErr) {
-    logger.warn({ err: bootstrapErr }, "Platform brand wordmark color columns bootstrap skipped");
+    logger.warn(
+      { err: bootstrapErr },
+      "Platform brand wordmark color columns bootstrap skipped",
+    );
+  }
+
+  try {
+    await ensurePlatformTownPhotosColumn();
+  } catch (bootstrapErr) {
+    logger.warn(
+      { err: bootstrapErr },
+      "Platform town_photos column bootstrap skipped",
+    );
   }
 
   try {
@@ -45,25 +58,37 @@ app.listen(port, async (err) => {
     await ensureMobileBusinessSchema();
     await ensureHoursEnabledColumn();
   } catch (bootstrapErr) {
-    logger.warn({ err: bootstrapErr }, "Business fulfillment schema bootstrap skipped");
+    logger.warn(
+      { err: bootstrapErr },
+      "Business fulfillment schema bootstrap skipped",
+    );
   }
 
   try {
     await ensurePendingCheckoutsTable();
   } catch (bootstrapErr) {
-    logger.warn({ err: bootstrapErr }, "Pending checkouts schema bootstrap skipped");
+    logger.warn(
+      { err: bootstrapErr },
+      "Pending checkouts schema bootstrap skipped",
+    );
   }
 
   try {
     await ensureDefaultSubscriptionFeatures();
   } catch (bootstrapErr) {
-    logger.warn({ err: bootstrapErr }, "Subscription feature catalog bootstrap skipped");
+    logger.warn(
+      { err: bootstrapErr },
+      "Subscription feature catalog bootstrap skipped",
+    );
   }
 
   try {
     await migrateLegacyProductOptionsToModifierGroups();
   } catch (migrationErr) {
-    logger.warn({ err: migrationErr }, "Legacy product options migration skipped");
+    logger.warn(
+      { err: migrationErr },
+      "Legacy product options migration skipped",
+    );
   }
 
   logger.info({ port }, "Server listening");

@@ -18,6 +18,7 @@ import {
   DeleteBusinessParams,
   GetBusinessBySlugParams,
   parseStructuredHours,
+  isOpenNow,
   allowsOnlinePayment,
   resolvePaymentMode,
   resolveOrderingAvailabilityMode,
@@ -329,8 +330,24 @@ router.get("/marketplace/stats", async (_req, res): Promise<void> => {
     .innerJoin(businessesTable, eq(productsTable.businessId, businessesTable.id))
     .where(and(eq(businessesTable.active, true), eq(productsTable.available, true)));
 
+  const activeShops = await db
+    .select({
+      structuredHours: businessesTable.structuredHours,
+      hoursEnabled: businessesTable.hoursEnabled,
+    })
+    .from(businessesTable)
+    .where(eq(businessesTable.active, true));
+
+  const openShopsCount = activeShops.reduce((total, shop) => {
+    if (shop.hoursEnabled === false) return total;
+    const hours = parseStructuredHours(shop.structuredHours);
+    if (!hours || !isOpenNow(hours)) return total;
+    return total + 1;
+  }, 0);
+
   res.json({
     localShopsCount: shopRow?.value ?? 0,
+    openShopsCount,
     uniqueItemsCount: itemRow?.value ?? 0,
   });
 });

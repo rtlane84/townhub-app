@@ -28,9 +28,15 @@ export function resolveHeaderMinHeightPx(
   options?: { native?: boolean },
 ): number {
   if (options?.native) {
-    return Math.max(NATIVE_HEADER_CONTENT_HEIGHT_PX, NATIVE_HEADER_LOGO_PX + HEADER_LOGO_VERTICAL_PADDING_PX);
+    return Math.max(
+      NATIVE_HEADER_CONTENT_HEIGHT_PX,
+      NATIVE_HEADER_LOGO_PX + HEADER_LOGO_VERTICAL_PADDING_PX,
+    );
   }
-  return Math.max(HEADER_BASE_MIN_HEIGHT_PX, logoSizePx + HEADER_LOGO_VERTICAL_PADDING_PX);
+  return Math.max(
+    HEADER_BASE_MIN_HEIGHT_PX,
+    logoSizePx + HEADER_LOGO_VERTICAL_PADDING_PX,
+  );
 }
 
 /** Native header always uses the compact logo size, ignoring web admin logo size. */
@@ -80,7 +86,10 @@ export type HeroImageFit = "cover" | "contain";
 export type HeroImagePosition = "center" | "top" | "bottom";
 export type HeroOverlaySize = "small" | "medium" | "large";
 export type HeroOverlayAlign = "left" | "center" | "right";
-export type HeroButtonPlacement = "bottom-left" | "bottom-center" | "bottom-right";
+export type HeroButtonPlacement =
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
 
 export const DEFAULT_HERO_IMAGE_FIT: HeroImageFit = "cover";
 export const DEFAULT_HERO_IMAGE_POSITION: HeroImagePosition = "center";
@@ -88,7 +97,9 @@ export const DEFAULT_HERO_OVERLAY_SIZE: HeroOverlaySize = "medium";
 export const DEFAULT_HERO_OVERLAY_ALIGN: HeroOverlayAlign = "center";
 export const DEFAULT_SHOW_SHOP_BUTTON = true;
 export const DEFAULT_SHOW_LIST_BUSINESS_BUTTON = true;
-export const DEFAULT_HERO_BUTTON_PLACEMENT: HeroButtonPlacement = "bottom-center";
+export const DEFAULT_SHOW_HERO_OVERLAY = true;
+export const DEFAULT_HERO_BUTTON_PLACEMENT: HeroButtonPlacement =
+  "bottom-center";
 
 export const HERO_IMAGE_FIT_OPTIONS = [
   {
@@ -106,7 +117,10 @@ export const HERO_IMAGE_FIT_OPTIONS = [
 ] as const;
 
 export function heroImageFitHelperText(fit: HeroImageFit): string {
-  return HERO_IMAGE_FIT_OPTIONS.find((option) => option.value === fit)?.helperText ?? "";
+  return (
+    HERO_IMAGE_FIT_OPTIONS.find((option) => option.value === fit)?.helperText ??
+    ""
+  );
 }
 
 export const HERO_IMAGE_POSITION_OPTIONS = [
@@ -137,15 +151,18 @@ export const HERO_BUTTON_PLACEMENT_OPTIONS = [
 export const HERO_SECTION_MIN_HEIGHT_PX = 340;
 /** Mobile / iOS keeps a shorter card */
 export const HERO_SECTION_MOBILE_MIN_HEIGHT_PX = 176;
-export const HERO_SECTION_MIN_HEIGHT_CLASS =
-  "min-h-[176px] md:min-h-[340px]";
+export const HERO_SECTION_MIN_HEIGHT_CLASS = "min-h-[176px] md:min-h-[340px]";
 
-export function resolvePlatformName(theme?: Pick<PlatformTheme, "platformName"> | null): string {
+export function resolvePlatformName(
+  theme?: Pick<PlatformTheme, "platformName"> | null,
+): string {
   const name = theme?.platformName?.trim();
   return name || DEFAULT_PLATFORM_NAME;
 }
 
-export function resolveTagline(theme?: Pick<PlatformTheme, "tagline" | "townName"> | null): string {
+export function resolveTagline(
+  theme?: Pick<PlatformTheme, "tagline" | "townName"> | null,
+): string {
   const custom = theme?.tagline?.trim();
   if (custom) return custom;
 
@@ -157,7 +174,9 @@ export function resolveTagline(theme?: Pick<PlatformTheme, "tagline" | "townName
   return DEFAULT_HERO_TAGLINE;
 }
 
-export function resolveFooterTagline(theme?: Pick<PlatformTheme, "tagline" | "townName"> | null): string {
+export function resolveFooterTagline(
+  theme?: Pick<PlatformTheme, "tagline" | "townName"> | null,
+): string {
   const custom = theme?.tagline?.trim();
   if (custom) return custom;
 
@@ -169,7 +188,9 @@ export function resolveFooterTagline(theme?: Pick<PlatformTheme, "tagline" | "to
   return DEFAULT_FOOTER_TAGLINE;
 }
 
-export function resolveShopCtaLabel(theme?: Pick<PlatformTheme, "townName"> | null): string {
+export function resolveShopCtaLabel(
+  theme?: Pick<PlatformTheme, "townName"> | null,
+): string {
   const town = theme?.townName?.trim();
   return town ? `Shop ${town}` : "Shop the Neighborhood";
 }
@@ -188,10 +209,18 @@ export function resolveWeatherLocation(
   return theme?.townName?.trim() || "";
 }
 
-export function resolveLogoSizePx(theme?: Pick<PlatformTheme, "logoSizePx"> | null): number {
+export function resolveLogoSizePx(
+  theme?: Pick<PlatformTheme, "logoSizePx"> | null,
+): number {
   const raw = theme?.logoSizePx;
-  const n = typeof raw === "number" ? raw : typeof raw === "string" ? parseInt(raw, 10) : NaN;
-  if (!Number.isNaN(n) && n >= LOGO_SIZE_MIN_PX && n <= LOGO_SIZE_MAX_PX) return n;
+  const n =
+    typeof raw === "number"
+      ? raw
+      : typeof raw === "string"
+        ? parseInt(raw, 10)
+        : NaN;
+  if (!Number.isNaN(n) && n >= LOGO_SIZE_MIN_PX && n <= LOGO_SIZE_MAX_PX)
+    return n;
   return DEFAULT_LOGO_SIZE_PX;
 }
 
@@ -237,11 +266,18 @@ export function resolveShowListBusinessButton(
   return theme?.showListBusinessButton !== false;
 }
 
+export function resolveShowHeroOverlay(
+  theme?: Pick<PlatformTheme, "showHeroOverlay"> | null,
+): boolean {
+  return theme?.showHeroOverlay !== false;
+}
+
 export function resolveHeroButtonPlacement(
   theme?: Pick<PlatformTheme, "heroButtonPlacement"> | null,
 ): HeroButtonPlacement {
   const placement = theme?.heroButtonPlacement;
-  if (placement === "bottom-left" || placement === "bottom-right") return placement;
+  if (placement === "bottom-left" || placement === "bottom-right")
+    return placement;
   return DEFAULT_HERO_BUTTON_PLACEMENT;
 }
 
@@ -252,7 +288,11 @@ export function heroImageObjectClasses(
 ): string {
   const fitClass = fit === "contain" ? "object-contain" : "object-cover";
   const positionClass =
-    position === "top" ? "object-top" : position === "bottom" ? "object-bottom" : "object-center";
+    position === "top"
+      ? "object-top"
+      : position === "bottom"
+        ? "object-bottom"
+        : "object-center";
   return `${fitClass} ${positionClass}`;
 }
 
@@ -274,11 +314,17 @@ export function heroOverlaySizeClasses(size: HeroOverlaySize): string {
 
 /** Flexbox horizontal-justify class for a given left/center/right alignment. */
 export function heroHorizontalJustifyClass(align: HeroOverlayAlign): string {
-  return align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center";
+  return align === "left"
+    ? "justify-start"
+    : align === "right"
+      ? "justify-end"
+      : "justify-center";
 }
 
 /** Flexbox horizontal-justify class for the CTA button row placement. */
-export function heroButtonPlacementJustifyClass(placement: HeroButtonPlacement): string {
+export function heroButtonPlacementJustifyClass(
+  placement: HeroButtonPlacement,
+): string {
   return placement === "bottom-left"
     ? "justify-start"
     : placement === "bottom-right"
@@ -300,6 +346,7 @@ export type BrandingFields = {
   heroOverlayAlign: HeroOverlayAlign;
   showShopButton: boolean;
   showListBusinessButton: boolean;
+  showHeroOverlay: boolean;
   heroButtonPlacement: HeroButtonPlacement;
 };
 
@@ -318,6 +365,7 @@ export function themeToBrandingFields(theme: PlatformTheme): BrandingFields {
     heroOverlayAlign: resolveHeroOverlayAlign(theme),
     showShopButton: resolveShowShopButton(theme),
     showListBusinessButton: resolveShowListBusinessButton(theme),
+    showHeroOverlay: resolveShowHeroOverlay(theme),
     heroButtonPlacement: resolveHeroButtonPlacement(theme),
   };
 }
@@ -338,6 +386,7 @@ export function buildBrandingPayload(fields: BrandingFields) {
     heroOverlayAlign: fields.heroOverlayAlign,
     showShopButton: fields.showShopButton,
     showListBusinessButton: fields.showListBusinessButton,
+    showHeroOverlay: fields.showHeroOverlay,
     heroButtonPlacement: fields.heroButtonPlacement,
   };
 }

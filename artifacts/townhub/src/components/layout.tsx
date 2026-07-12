@@ -163,27 +163,73 @@ export function Layout({ children }: { children: React.ReactNode }) {
       >
         <div
           className={cn(
-            "container mx-auto flex items-center justify-between px-5 sm:px-6 lg:px-8",
-            isNative && "px-4",
+            "container mx-auto flex items-center px-5 sm:px-6 lg:px-8",
+            isNative ? "px-4" : "justify-between",
           )}
           style={{ minHeight: headerMinHeightPx }}
         >
+          {isNative ? (
+            <>
+              {/* 3-column native header: sides balance so logo+title stay centered */}
+              <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
+                <div className="flex min-w-0 items-center justify-start">
+                  {showNativeDashboardBack ? (
+                    <Link
+                      href="/"
+                      className={cn(
+                        returnToMarketplaceClass(),
+                        "shrink-0 gap-1.5 px-1.5 py-1.5 -ml-1 min-h-10",
+                      )}
+                      aria-label="Back to app"
+                    >
+                      <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden />
+                      <span className="text-sm font-semibold text-foreground">Back</span>
+                    </Link>
+                  ) : null}
+                </div>
 
+                <Link
+                  href="/"
+                  className="flex max-w-[min(70vw,16rem)] items-center justify-center gap-2 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
+                >
+                  <PlatformLogo sizePx={nativeHeaderLogoPx} />
+                  <PlatformBrandMark name={platformName} compact />
+                </Link>
+
+                <div className="flex min-w-0 items-center justify-end gap-1.5">
+                  {!hideCart && (
+                    <Link
+                      href="/cart"
+                      onClick={() => {
+                        triggerTabChangeHaptic();
+                      }}
+                    >
+                      <Button variant="ghost" size="icon" className="relative text-foreground h-11 w-11">
+                        <ShoppingBag className="h-[22px] w-[22px]" strokeWidth={1.9} />
+                        {itemCount > 0 && (
+                          <Badge className="absolute -top-0.5 -right-0.5 h-5 min-w-5 flex items-center justify-center px-1 text-[10px] rounded-full">
+                            {itemCount}
+                          </Badge>
+                        )}
+                        <span className="sr-only">Cart</span>
+                      </Button>
+                    </Link>
+                  )}
+                  {!hideHeaderAccount && clerkLoaded && !isSignedIn && (
+                    <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
+                      <Button size="sm">Sign In</Button>
+                    </SignInButton>
+                  )}
+                  {!hideHeaderAccount && clerkLoaded && isSignedIn && (
+                    <UserButton appearance={clerkUserButtonAppearance} />
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
           {/* Left: logo + desktop nav */}
-          <div className={cn("flex items-center min-w-0", isNative ? "gap-2.5" : "gap-5")}>
-            {showNativeDashboardBack ? (
-              <Link
-                href="/"
-                className={cn(
-                  returnToMarketplaceClass(),
-                  "shrink-0 gap-1.5 px-1.5 py-1.5 -ml-1 min-h-10",
-                )}
-                aria-label="Back to app"
-              >
-                <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden />
-                <span className="text-sm font-semibold text-foreground">Back</span>
-              </Link>
-            ) : null}
+          <div className="flex items-center min-w-0 gap-5">
             <Link
               href="/"
               className="flex items-center gap-2 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
@@ -191,11 +237,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <PlatformLogo sizePx={nativeHeaderLogoPx} />
               <PlatformBrandMark
                 name={platformName}
-                compact={isNative}
-                className={cn(
-                  !isNative && "text-lg sm:text-xl",
-                  showNativeDashboardBack && "hidden sm:inline-flex",
-                )}
+                className="text-lg sm:text-xl"
               />
             </Link>
 
@@ -519,6 +561,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Sheet>
             )}
           </div>
+            </>
+          )}
         </div>
       </header>
 

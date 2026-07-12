@@ -311,7 +311,7 @@ html.native-app .native-app-shell {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background-color: hsl(var(--background));
+  background-color: hsl(220 16% 94%);
 }
 
 /*
@@ -325,7 +325,7 @@ html.native-app .native-scroll-root {
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
-  background-color: hsl(var(--background));
+  background-color: hsl(220 16% 94%);
   touch-action: pan-y;
 }
 
@@ -333,40 +333,43 @@ html.native-app .native-scroll-root {
 html.native-app .native-site-header {
   flex-shrink: 0;
   padding-top: var(--safe-area-top);
-  border-bottom: 1px solid hsl(var(--border) / 0.35);
-  background-color: hsl(var(--background));
+  border-bottom: none;
+  background-color: hsl(220 16% 94%);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 
-/* In-flow tab bar — opaque canvas behind home indicator */
+/* In-flow tab bar — solid black bar with rounded top corners (reference chrome) */
 html.native-app .native-bottom-tab-bar {
   position: relative;
   inset: auto;
   flex-shrink: 0;
-  padding-bottom: max(0.35rem, var(--safe-area-bottom));
-  padding-left: max(0.75rem, var(--safe-area-left));
-  padding-right: max(0.75rem, var(--safe-area-right));
-  padding-top: 0.35rem;
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0;
   border-top: none;
-  background-color: hsl(var(--background));
+  background-color: #000000;
   pointer-events: none;
   z-index: 50;
 }
 
 html.native-app .native-bottom-tab-bar-inner {
   pointer-events: auto;
-  border-radius: 1.5rem;
-  background: hsl(var(--card) / 0.94);
-  -webkit-backdrop-filter: saturate(200%) blur(24px);
-  backdrop-filter: saturate(200%) blur(24px);
-  box-shadow: var(--shadow-float);
-  border: 1px solid hsl(var(--border) / 0.45);
+  max-width: none;
+  border-radius: 1.75rem 1.75rem 0 0;
+  background: #000000;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  border: none;
+  padding-top: 0.45rem;
+  padding-bottom: 0.35rem;
 }
 
 @supports (backdrop-filter: blur(24px)) or (-webkit-backdrop-filter: blur(24px)) {
   html.native-app .native-bottom-tab-bar-inner {
-    background: hsl(var(--card) / 0.82);
+    background: #000000;
   }
 }
 
@@ -376,21 +379,22 @@ html.native-app .native-account-sheet {
 
 html.native-app .native-tab-item {
   min-width: 48px;
+  color: rgba(255, 255, 255, 0.62);
   -webkit-tap-highlight-color: transparent;
   transition: color 200ms ease, transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html.native-app .native-tab-item[aria-current="page"] {
-  color: hsl(var(--primary));
+  color: #ffffff;
 }
 
 html.native-app .native-tab-item[aria-current="page"] .native-tab-icon-wrap {
-  background: hsl(var(--primary) / 0.12);
-  transform: scale(1.04);
+  background: transparent;
+  transform: none;
 }
 
 html.native-app .native-tab-item[aria-current="page"] .native-tab-icon {
-  transform: scale(1.02);
+  transform: none;
 }
 
 html.native-app input,

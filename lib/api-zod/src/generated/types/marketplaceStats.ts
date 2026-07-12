@@ -9,6 +9,8 @@
 export interface MarketplaceStats {
   /** Number of active local businesses */
   localShopsCount: number;
+  /** Number of active local businesses open right now */
+  openShopsCount: number;
   /** Number of available products across active businesses */
   uniqueItemsCount: number;
 }

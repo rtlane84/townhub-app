@@ -10,6 +10,7 @@ import type { PlatformThemeHeroImageFit } from './platformThemeHeroImageFit';
 import type { PlatformThemeHeroImagePosition } from './platformThemeHeroImagePosition';
 import type { PlatformThemeHeroOverlayAlign } from './platformThemeHeroOverlayAlign';
 import type { PlatformThemeHeroOverlaySize } from './platformThemeHeroOverlaySize';
+import type { TownPhoto } from './townPhoto';
 
 export interface PlatformTheme {
   id: number;
@@ -52,6 +53,8 @@ export interface PlatformTheme {
   heroOverlayAlign?: PlatformThemeHeroOverlayAlign;
   showShopButton?: boolean;
   showListBusinessButton?: boolean;
+  /** When false, the hero overlay image is hidden on the homepage but kept in settings. */
+  showHeroOverlay?: boolean;
   heroButtonPlacement?: PlatformThemeHeroButtonPlacement;
   /**
      * @minimum 16
@@ -61,5 +64,7 @@ export interface PlatformTheme {
   weatherEnabled?: boolean;
   /** @nullable */
   weatherLocation?: string | null;
+  /** Ordered homepage town photos for the hero carousel. Empty falls back to heroImageUrl. */
+  townPhotos?: TownPhoto[];
   updatedAt?: Date;
 }

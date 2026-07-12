@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useMemo } from "react";
-import { useGetPlatformTheme, getGetPlatformThemeQueryKey } from "@workspace/api-client-react";
-import type { PlatformTheme } from "@workspace/api-client-react";
+import {
+  useGetPlatformTheme,
+  getGetPlatformThemeQueryKey,
+} from "@workspace/api-client-react";
+import type { PlatformTheme, TownPhoto } from "@workspace/api-client-react";
 import {
   DEFAULT_PLATFORM_NAME,
   resolveFooterTagline,
@@ -13,6 +16,7 @@ import {
   resolvePlatformName,
   resolveShopCtaLabel,
   resolveShowListBusinessButton,
+  resolveShowHeroOverlay,
   resolveShowShopButton,
   resolveTagline,
   resolveWeatherEnabled,
@@ -36,6 +40,7 @@ export type PlatformBranding = {
   heroOverlayAlign: HeroOverlayAlign;
   showShopButton: boolean;
   showListBusinessButton: boolean;
+  showHeroOverlay: boolean;
   heroButtonPlacement: HeroButtonPlacement;
   footerTagline: string;
   metaDescription: string;
@@ -43,6 +48,7 @@ export type PlatformBranding = {
   logoUrl: string | null;
   logoSizePx: number;
   townName: string | null;
+  townPhotos: TownPhoto[];
   weatherEnabled: boolean;
   weatherLocation: string;
   themeLoading: boolean;
@@ -59,6 +65,7 @@ const PlatformBrandingContext = createContext<PlatformBranding>({
   heroOverlayAlign: "center",
   showShopButton: true,
   showListBusinessButton: true,
+  showHeroOverlay: true,
   heroButtonPlacement: "bottom-center",
   footerTagline: resolveFooterTagline(null),
   metaDescription: resolveTagline(null),
@@ -66,6 +73,7 @@ const PlatformBrandingContext = createContext<PlatformBranding>({
   logoUrl: null,
   logoSizePx: 24,
   townName: null,
+  townPhotos: [],
   weatherEnabled: false,
   weatherLocation: "",
   themeLoading: true,
@@ -75,7 +83,11 @@ export function usePlatformBranding(): PlatformBranding {
   return useContext(PlatformBrandingContext);
 }
 
-export function PlatformThemeProvider({ children }: { children: React.ReactNode }) {
+export function PlatformThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { data: theme, isPending: themePending } = useGetPlatformTheme({
     query: {
       queryKey: getGetPlatformThemeQueryKey(),
@@ -97,6 +109,7 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
       heroOverlayAlign: resolveHeroOverlayAlign(theme),
       showShopButton: resolveShowShopButton(theme),
       showListBusinessButton: resolveShowListBusinessButton(theme),
+      showHeroOverlay: resolveShowHeroOverlay(theme),
       heroButtonPlacement: resolveHeroButtonPlacement(theme),
       footerTagline: resolveFooterTagline(theme),
       metaDescription: resolveTagline(theme),
@@ -104,6 +117,7 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
       logoUrl: theme?.logoUrl?.trim() || null,
       logoSizePx: resolveLogoSizePx(theme),
       townName: theme?.townName?.trim() || null,
+      townPhotos: Array.isArray(theme?.townPhotos) ? theme.townPhotos : [],
       weatherEnabled: resolveWeatherEnabled(theme),
       weatherLocation: resolveWeatherLocation(theme),
       themeLoading: themePending && theme == null,
@@ -129,7 +143,9 @@ export function PlatformThemeProvider({ children }: { children: React.ReactNode 
     if (ogTitle) {
       ogTitle.setAttribute("content", branding.platformName);
     }
-    const ogDescription = document.querySelector('meta[property="og:description"]');
+    const ogDescription = document.querySelector(
+      'meta[property="og:description"]',
+    );
     if (ogDescription) {
       ogDescription.setAttribute("content", description);
     }

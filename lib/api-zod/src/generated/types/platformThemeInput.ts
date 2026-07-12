@@ -10,6 +10,7 @@ import type { PlatformThemeInputHeroImageFit } from './platformThemeInputHeroIma
 import type { PlatformThemeInputHeroImagePosition } from './platformThemeInputHeroImagePosition';
 import type { PlatformThemeInputHeroOverlayAlign } from './platformThemeInputHeroOverlayAlign';
 import type { PlatformThemeInputHeroOverlaySize } from './platformThemeInputHeroOverlaySize';
+import type { TownPhoto } from './townPhoto';
 
 export interface PlatformThemeInput {
   primaryColor?: string;
@@ -35,6 +36,8 @@ export interface PlatformThemeInput {
   heroOverlayAlign?: PlatformThemeInputHeroOverlayAlign;
   showShopButton?: boolean;
   showListBusinessButton?: boolean;
+  /** When false, the hero overlay image is hidden on the homepage but kept in settings. */
+  showHeroOverlay?: boolean;
   heroButtonPlacement?: PlatformThemeInputHeroButtonPlacement;
   /**
      * @minimum 16
@@ -43,4 +46,6 @@ export interface PlatformThemeInput {
   logoSizePx?: number;
   weatherEnabled?: boolean;
   weatherLocation?: string;
+  /** Replace the full town-photo collection (ordered). Pass [] to clear. */
+  townPhotos?: TownPhoto[];
 }

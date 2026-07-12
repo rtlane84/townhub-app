@@ -430,6 +430,7 @@ export const GetPlatformStatsResponse = zod.object({
  */
 export const GetMarketplaceStatsResponse = zod.object({
   "localShopsCount": zod.number().describe('Number of active local businesses'),
+  "openShopsCount": zod.number().describe('Number of active local businesses open right now'),
   "uniqueItemsCount": zod.number().describe('Number of available products across active businesses')
 })
 
@@ -3581,10 +3582,18 @@ export const GetPlatformThemeResponse = zod.object({
   "heroOverlayAlign": zod.enum(['left', 'center', 'right']).optional(),
   "showShopButton": zod.boolean().optional(),
   "showListBusinessButton": zod.boolean().optional(),
+  "showHeroOverlay": zod.boolean().optional().describe('When false, the hero overlay image is hidden on the homepage but kept in settings.'),
   "heroButtonPlacement": zod.enum(['bottom-left', 'bottom-center', 'bottom-right']).optional(),
   "logoSizePx": zod.number().min(getPlatformThemeResponseLogoSizePxMin).max(getPlatformThemeResponseLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().nullish(),
+  "townPhotos": zod.array(zod.object({
+  "id": zod.string().describe('Stable client-generated identifier for the photo slide'),
+  "url": zod.string().describe('Public image URL (from media upload or absolute URL)'),
+  "caption": zod.string().nullish().describe('Optional short caption shown with the slide'),
+  "isPrimary": zod.boolean().describe('When true, this photo is preferred as the default\/first slide'),
+  "sortOrder": zod.number().describe('Display order (ascending). Primary photo is sorted first when set.')
+})).optional().describe('Ordered homepage town photos for the hero carousel. Empty falls back to heroImageUrl.'),
   "updatedAt": zod.coerce.date().optional()
 })
 
@@ -3618,10 +3627,18 @@ export const UpdatePlatformThemeBody = zod.object({
   "heroOverlayAlign": zod.enum(['left', 'center', 'right']).optional(),
   "showShopButton": zod.boolean().optional(),
   "showListBusinessButton": zod.boolean().optional(),
+  "showHeroOverlay": zod.boolean().optional().describe('When false, the hero overlay image is hidden on the homepage but kept in settings.'),
   "heroButtonPlacement": zod.enum(['bottom-left', 'bottom-center', 'bottom-right']).optional(),
   "logoSizePx": zod.number().min(updatePlatformThemeBodyLogoSizePxMin).max(updatePlatformThemeBodyLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
-  "weatherLocation": zod.string().optional()
+  "weatherLocation": zod.string().optional(),
+  "townPhotos": zod.array(zod.object({
+  "id": zod.string().describe('Stable client-generated identifier for the photo slide'),
+  "url": zod.string().describe('Public image URL (from media upload or absolute URL)'),
+  "caption": zod.string().nullish().describe('Optional short caption shown with the slide'),
+  "isPrimary": zod.boolean().describe('When true, this photo is preferred as the default\/first slide'),
+  "sortOrder": zod.number().describe('Display order (ascending). Primary photo is sorted first when set.')
+})).optional().describe('Replace the full town-photo collection (ordered). Pass [] to clear.')
 })
 
 export const updatePlatformThemeResponseLogoSizePxMin = 16;
@@ -3651,10 +3668,18 @@ export const UpdatePlatformThemeResponse = zod.object({
   "heroOverlayAlign": zod.enum(['left', 'center', 'right']).optional(),
   "showShopButton": zod.boolean().optional(),
   "showListBusinessButton": zod.boolean().optional(),
+  "showHeroOverlay": zod.boolean().optional().describe('When false, the hero overlay image is hidden on the homepage but kept in settings.'),
   "heroButtonPlacement": zod.enum(['bottom-left', 'bottom-center', 'bottom-right']).optional(),
   "logoSizePx": zod.number().min(updatePlatformThemeResponseLogoSizePxMin).max(updatePlatformThemeResponseLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().nullish(),
+  "townPhotos": zod.array(zod.object({
+  "id": zod.string().describe('Stable client-generated identifier for the photo slide'),
+  "url": zod.string().describe('Public image URL (from media upload or absolute URL)'),
+  "caption": zod.string().nullish().describe('Optional short caption shown with the slide'),
+  "isPrimary": zod.boolean().describe('When true, this photo is preferred as the default\/first slide'),
+  "sortOrder": zod.number().describe('Display order (ascending). Primary photo is sorted first when set.')
+})).optional().describe('Ordered homepage town photos for the hero carousel. Empty falls back to heroImageUrl.'),
   "updatedAt": zod.coerce.date().optional()
 })
 

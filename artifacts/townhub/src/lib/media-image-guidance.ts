@@ -4,6 +4,7 @@ export type ImageSurface =
   | "business-hero"
   | "homepage-hero"
   | "homepage-hero-overlay"
+  | "homepage-town-photo"
   | "event"
   | "highlight"
   | "platform-logo";
@@ -17,7 +18,10 @@ export interface ImageSurfaceGuidance {
   hint?: string;
 }
 
-export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> = {
+export const IMAGE_SURFACE_GUIDANCE: Record<
+  ImageSurface,
+  ImageSurfaceGuidance
+> = {
   product: {
     label: "Product image",
     recommendedSize: "1200 × 900 px (4:3)",
@@ -42,13 +46,19 @@ export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> 
     label: "Homepage hero image",
     recommendedSize: "1920 × 800 px (wide banner)",
     aspectClass: "aspect-[21/9]",
-    hint: "Background image for the main homepage hero section.",
+    hint: "Fallback background when no town photos are uploaded.",
   },
   "homepage-hero-overlay": {
     label: "Hero overlay image",
     recommendedSize: "1200 × 600 px transparent PNG",
     aspectClass: "aspect-[2/1]",
     hint: "Transparent logo + text that sits over the hero background. Never cropped.",
+  },
+  "homepage-town-photo": {
+    label: "Town photo",
+    recommendedSize: "1600 × 900 px (16:9)",
+    aspectClass: "aspect-[16/9]",
+    hint: "Homepage carousel slide. Use object-cover-safe crops; important subjects near center.",
   },
   event: {
     label: "Event image",
@@ -72,7 +82,9 @@ export const IMAGE_SURFACE_GUIDANCE: Record<ImageSurface, ImageSurfaceGuidance> 
 };
 
 /** Surfaces that ship with ImageField guidance for launch. */
-export const LAUNCH_IMAGE_SURFACES = Object.keys(IMAGE_SURFACE_GUIDANCE) as ImageSurface[];
+export const LAUNCH_IMAGE_SURFACES = Object.keys(
+  IMAGE_SURFACE_GUIDANCE,
+) as ImageSurface[];
 
 export const ACCEPTED_IMAGE_MIME_TYPES = [
   "image/jpeg",

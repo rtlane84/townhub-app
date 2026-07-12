@@ -148,6 +148,7 @@ export * from './subscriptionPlanInput';
 export * from './systemHealthReport';
 export * from './systemHealthStatus';
 export * from './testMyPushNotification200';
+export * from './townPhoto';
 export * from './unregisterDevice200';
 export * from './unregisterDeviceInput';
 export * from './updateNotificationPreferencesInput';

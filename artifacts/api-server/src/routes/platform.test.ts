@@ -4,7 +4,10 @@ import { readFile } from "node:fs/promises";
 
 describe("platform theme API hero settings", () => {
   it("serializes hero display defaults for backwards compatibility", async () => {
-    const source = await readFile(new URL("./platform.ts", import.meta.url), "utf8");
+    const source = await readFile(
+      new URL("./platform.ts", import.meta.url),
+      "utf8",
+    );
     assert.match(source, /heroImageFit: "cover"/);
     assert.match(source, /heroImagePosition: "center"/);
     assert.match(source, /heroOverlaySize: "medium"/);
@@ -22,5 +25,7 @@ describe("platform theme API hero settings", () => {
     assert.match(source, /"showShopButton"/);
     assert.match(source, /"showListBusinessButton"/);
     assert.match(source, /"heroButtonPlacement"/);
+    assert.match(source, /"townPhotos"/);
+    assert.match(source, /normalizeTownPhotos/);
   });
 });

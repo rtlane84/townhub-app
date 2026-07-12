@@ -7,7 +7,10 @@ import {
 } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { DashboardPageHeader } from "@/components/dashboard-page-header";
-import { SettingsSection, SettingsToggleRow } from "@/components/settings-section";
+import {
+  SettingsSection,
+  SettingsToggleRow,
+} from "@/components/settings-section";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
@@ -15,14 +18,34 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Palette, Save, RotateCcw, CheckCircle, Type, CloudSun, ImageIcon } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
+import {
+  Palette,
+  Save,
+  RotateCcw,
+  CheckCircle,
+  Type,
+  CloudSun,
+  ImageIcon,
+  Images,
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ColorPickerField,
+  ColorPreviewSwatches,
+} from "@/components/color-picker-field";
 import { ImageField } from "@/components/image-field";
 import { HeroPreviewFrame } from "@/components/hero-preview-frame";
 import { PlatformBrandMark } from "@/components/platform-brand-mark";
+import { TownPhotosEditor } from "@/components/town-photos-editor";
 import { PLATFORM_THEME_DEFAULTS } from "@/lib/theme-colors";
 import { splitPlatformBrandName } from "@/lib/platform-brand-name";
+import type { TownPhoto } from "@workspace/api-client-react";
 
 import {
   DEFAULT_HERO_BUTTON_PLACEMENT,
@@ -32,6 +55,7 @@ import {
   DEFAULT_HERO_OVERLAY_SIZE,
   DEFAULT_PLATFORM_NAME,
   DEFAULT_SHOW_LIST_BUSINESS_BUTTON,
+  DEFAULT_SHOW_HERO_OVERLAY,
   DEFAULT_SHOW_SHOP_BUTTON,
   buildBrandingPayload,
   DEFAULT_LOGO_SIZE_PX,
@@ -55,8 +79,16 @@ import {
   type HeroOverlaySize,
 } from "@/lib/platform-branding";
 
-type ColorKey = "primaryColor" | "accentColor" | "backgroundColor" | "buttonColor" | "headingColor";
-type BrandWordColorKey = "brandPrefixColor" | "brandTownColor" | "brandHubColor";
+type ColorKey =
+  | "primaryColor"
+  | "accentColor"
+  | "backgroundColor"
+  | "buttonColor"
+  | "headingColor";
+type BrandWordColorKey =
+  | "brandPrefixColor"
+  | "brandTownColor"
+  | "brandHubColor";
 
 const COLOR_DEFAULTS: Record<ColorKey, string> = {
   primaryColor: PLATFORM_THEME_DEFAULTS.primaryColor,
@@ -72,11 +104,16 @@ const BRAND_WORD_COLOR_DEFAULTS: Record<BrandWordColorKey, string> = {
   brandHubColor: "",
 };
 
-const COLOR_FIELDS: Array<{ key: ColorKey; label: string; description: string }> = [
+const COLOR_FIELDS: Array<{
+  key: ColorKey;
+  label: string;
+  description: string;
+}> = [
   {
     key: "primaryColor",
     label: "Brand color",
-    description: "Links, active nav, and default marketplace accents on web and iOS.",
+    description:
+      "Links, active nav, and default marketplace accents on web and iOS.",
   },
   {
     key: "accentColor",
@@ -91,12 +128,14 @@ const COLOR_FIELDS: Array<{ key: ColorKey; label: string; description: string }>
   {
     key: "buttonColor",
     label: "Button color",
-    description: "Optional override for primary buttons. Leave matching brand color if unsure.",
+    description:
+      "Optional override for primary buttons. Leave matching brand color if unsure.",
   },
   {
     key: "headingColor",
     label: "Heading color",
-    description: "Optional — section titles. Leave blank to use the default navy heading.",
+    description:
+      "Optional — section titles. Leave blank to use the default navy heading.",
   },
 ];
 
@@ -114,6 +153,7 @@ const BRANDING_DEFAULTS: BrandingFields = {
   heroOverlayAlign: DEFAULT_HERO_OVERLAY_ALIGN,
   showShopButton: DEFAULT_SHOW_SHOP_BUTTON,
   showListBusinessButton: DEFAULT_SHOW_LIST_BUSINESS_BUTTON,
+  showHeroOverlay: DEFAULT_SHOW_HERO_OVERLAY,
   heroButtonPlacement: DEFAULT_HERO_BUTTON_PLACEMENT,
 };
 
@@ -127,11 +167,14 @@ const WEATHER_DEFAULTS: WeatherFields = {
   weatherLocation: "",
 };
 
-function logoSizeOptions(currentPx: number): Array<{ value: number; label: string }> {
-  const presets: Array<{ value: number; label: string }> = LOGO_SIZE_PRESETS.map((p) => ({
-    value: p.value,
-    label: p.label,
-  }));
+function logoSizeOptions(
+  currentPx: number,
+): Array<{ value: number; label: string }> {
+  const presets: Array<{ value: number; label: string }> =
+    LOGO_SIZE_PRESETS.map((p) => ({
+      value: p.value,
+      label: p.label,
+    }));
   if (!presets.some((p) => p.value === currentPx)) {
     presets.push({ value: currentPx, label: `${currentPx}px` });
   }
@@ -145,9 +188,13 @@ export default function AdminSettings() {
   const { toast } = useToast();
 
   const [colors, setColors] = useState(COLOR_DEFAULTS);
-  const [brandWordColors, setBrandWordColors] = useState(BRAND_WORD_COLOR_DEFAULTS);
+  const [brandWordColors, setBrandWordColors] = useState(
+    BRAND_WORD_COLOR_DEFAULTS,
+  );
   const [branding, setBranding] = useState<BrandingFields>(BRANDING_DEFAULTS);
-  const [weatherSettings, setWeatherSettings] = useState<WeatherFields>(WEATHER_DEFAULTS);
+  const [townPhotos, setTownPhotos] = useState<TownPhoto[]>([]);
+  const [weatherSettings, setWeatherSettings] =
+    useState<WeatherFields>(WEATHER_DEFAULTS);
   const [isDirty, setIsDirty] = useState(false);
   const lastSyncAt = useRef<string | null>(null);
 
@@ -166,13 +213,20 @@ export default function AdminSettings() {
     // Older servers omit them (undefined) — keep local values instead of wiping to "".
     setBrandWordColors((prev) => ({
       brandPrefixColor:
-        theme.brandPrefixColor !== undefined ? theme.brandPrefixColor || "" : prev.brandPrefixColor,
+        theme.brandPrefixColor !== undefined
+          ? theme.brandPrefixColor || ""
+          : prev.brandPrefixColor,
       brandTownColor:
-        theme.brandTownColor !== undefined ? theme.brandTownColor || "" : prev.brandTownColor,
+        theme.brandTownColor !== undefined
+          ? theme.brandTownColor || ""
+          : prev.brandTownColor,
       brandHubColor:
-        theme.brandHubColor !== undefined ? theme.brandHubColor || "" : prev.brandHubColor,
+        theme.brandHubColor !== undefined
+          ? theme.brandHubColor || ""
+          : prev.brandHubColor,
     }));
     setBranding(themeToBrandingFields(theme));
+    setTownPhotos(Array.isArray(theme.townPhotos) ? theme.townPhotos : []);
     setWeatherSettings({
       weatherEnabled: theme.weatherEnabled ?? false,
       weatherLocation: theme.weatherLocation?.trim() || "",
@@ -186,17 +240,26 @@ export default function AdminSettings() {
     markDirty();
   };
 
-  const handleBrandWordColorChange = (key: BrandWordColorKey, value: string) => {
+  const handleBrandWordColorChange = (
+    key: BrandWordColorKey,
+    value: string,
+  ) => {
     setBrandWordColors((prev) => ({ ...prev, [key]: value }));
     markDirty();
   };
 
-  const handleBrandingChange = (key: keyof BrandingFields, value: string | number | boolean) => {
+  const handleBrandingChange = (
+    key: keyof BrandingFields,
+    value: string | number | boolean,
+  ) => {
     setBranding((prev) => ({ ...prev, [key]: value }));
     markDirty();
   };
 
-  const handleWeatherChange = (key: keyof WeatherFields, value: boolean | string) => {
+  const handleWeatherChange = (
+    key: keyof WeatherFields,
+    value: boolean | string,
+  ) => {
     setWeatherSettings((prev) => ({ ...prev, [key]: value }));
     markDirty();
   };
@@ -219,15 +282,19 @@ export default function AdminSettings() {
           brandTownColor: nextBrandWordColors.brandTownColor,
           brandHubColor: nextBrandWordColors.brandHubColor,
           ...buildBrandingPayload(branding),
+          townPhotos,
           weatherEnabled: weatherSettings.weatherEnabled,
           weatherLocation: weatherSettings.weatherLocation.trim(),
         },
       });
       // Prefer server values; if an older API omits wordmark colors, keep what we saved.
       const savedBrandWordColors = {
-        brandPrefixColor: updated.brandPrefixColor ?? nextBrandWordColors.brandPrefixColor,
-        brandTownColor: updated.brandTownColor ?? nextBrandWordColors.brandTownColor,
-        brandHubColor: updated.brandHubColor ?? nextBrandWordColors.brandHubColor,
+        brandPrefixColor:
+          updated.brandPrefixColor ?? nextBrandWordColors.brandPrefixColor,
+        brandTownColor:
+          updated.brandTownColor ?? nextBrandWordColors.brandTownColor,
+        brandHubColor:
+          updated.brandHubColor ?? nextBrandWordColors.brandHubColor,
       };
       const droppedWordmarkColors =
         (nextBrandWordColors.brandPrefixColor && !updated.brandPrefixColor) ||
@@ -242,7 +309,8 @@ export default function AdminSettings() {
       setColors({
         primaryColor: updated.primaryColor || COLOR_DEFAULTS.primaryColor,
         accentColor: updated.accentColor || COLOR_DEFAULTS.accentColor,
-        backgroundColor: updated.backgroundColor || COLOR_DEFAULTS.backgroundColor,
+        backgroundColor:
+          updated.backgroundColor || COLOR_DEFAULTS.backgroundColor,
         buttonColor: updated.buttonColor || COLOR_DEFAULTS.buttonColor,
         headingColor: updated.headingColor || "",
       });
@@ -252,13 +320,20 @@ export default function AdminSettings() {
         brandHubColor: savedBrandWordColors.brandHubColor || "",
       });
       setBranding(themeToBrandingFields(updated));
+      setTownPhotos(
+        Array.isArray(updated.townPhotos) ? updated.townPhotos : [],
+      );
       setWeatherSettings({
         weatherEnabled: updated.weatherEnabled ?? false,
         weatherLocation: updated.weatherLocation?.trim() || "",
       });
       setIsDirty(false);
-      await queryClient.invalidateQueries({ queryKey: getGetPlatformThemeQueryKey() });
-      await queryClient.invalidateQueries({ queryKey: getGetWeatherQueryKey() });
+      await queryClient.invalidateQueries({
+        queryKey: getGetPlatformThemeQueryKey(),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: getGetWeatherQueryKey(),
+      });
 
       if (droppedWordmarkColors) {
         toast({
@@ -268,10 +343,14 @@ export default function AdminSettings() {
           variant: "destructive",
         });
       } else {
-        toast({ title: "Settings saved", description: "Platform appearance updated across web and iOS." });
+        toast({
+          title: "Settings saved",
+          description: "Platform appearance updated across web and iOS.",
+        });
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to save settings.";
+      const message =
+        err instanceof Error ? err.message : "Failed to save settings.";
       toast({ title: "Error", description: message, variant: "destructive" });
     }
   };
@@ -280,11 +359,14 @@ export default function AdminSettings() {
     setColors(COLOR_DEFAULTS);
     setBrandWordColors(BRAND_WORD_COLOR_DEFAULTS);
     setBranding(BRANDING_DEFAULTS);
+    setTownPhotos([]);
     setWeatherSettings(WEATHER_DEFAULTS);
     markDirty();
   };
 
-  const brandParts = splitPlatformBrandName(branding.platformName.trim() || DEFAULT_PLATFORM_NAME);
+  const brandParts = splitPlatformBrandName(
+    branding.platformName.trim() || DEFAULT_PLATFORM_NAME,
+  );
   const prefixLabel = brandParts.prefix.trim() || "Prefix";
   const townLabel = brandParts.town || "Town";
   const hubLabel = brandParts.hub || "Hub";
@@ -335,18 +417,21 @@ export default function AdminSettings() {
                   <Input
                     id="platformName"
                     value={branding.platformName}
-                    onChange={(e) => handleBrandingChange("platformName", e.target.value)}
+                    onChange={(e) =>
+                      handleBrandingChange("platformName", e.target.value)
+                    }
                     placeholder="Clay TownHub"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Names ending in TownHub (e.g. Clay TownHub) get a three-color wordmark below.
+                    Names ending in TownHub (e.g. Clay TownHub) get a
+                    three-color wordmark below.
                   </p>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <p className="text-sm font-medium">Wordmark colors</p>
                   <p className="text-xs text-muted-foreground">
-                    Separate colors for each part of the name in the header and footer. Leave blank for defaults
-                    (muted / brand / heading).
+                    Separate colors for each part of the name in the header and
+                    footer. Leave blank for defaults (muted / brand / heading).
                   </p>
                   <div className="mt-3 grid gap-5 md:grid-cols-3">
                     <ColorPickerField
@@ -354,7 +439,9 @@ export default function AdminSettings() {
                       label={`${prefixLabel} color`}
                       description="First word (e.g. Clay)"
                       value={brandWordColors.brandPrefixColor}
-                      onChange={(value) => handleBrandWordColorChange("brandPrefixColor", value)}
+                      onChange={(value) =>
+                        handleBrandWordColorChange("brandPrefixColor", value)
+                      }
                       placeholder="#64748B"
                     />
                     <ColorPickerField
@@ -362,7 +449,9 @@ export default function AdminSettings() {
                       label={`${townLabel} color`}
                       description="Middle word"
                       value={brandWordColors.brandTownColor}
-                      onChange={(value) => handleBrandWordColorChange("brandTownColor", value)}
+                      onChange={(value) =>
+                        handleBrandWordColorChange("brandTownColor", value)
+                      }
                       placeholder={PLATFORM_THEME_DEFAULTS.primaryColor}
                     />
                     <ColorPickerField
@@ -370,7 +459,9 @@ export default function AdminSettings() {
                       label={`${hubLabel} color`}
                       description="Last word"
                       value={brandWordColors.brandHubColor}
-                      onChange={(value) => handleBrandWordColorChange("brandHubColor", value)}
+                      onChange={(value) =>
+                        handleBrandWordColorChange("brandHubColor", value)
+                      }
                       placeholder="#0F172A"
                     />
                   </div>
@@ -380,7 +471,9 @@ export default function AdminSettings() {
                   <Input
                     id="townName"
                     value={branding.townName}
-                    onChange={(e) => handleBrandingChange("townName", e.target.value)}
+                    onChange={(e) =>
+                      handleBrandingChange("townName", e.target.value)
+                    }
                     placeholder="Clay"
                   />
                   <p className="text-xs text-muted-foreground">
@@ -392,7 +485,9 @@ export default function AdminSettings() {
                   <Input
                     id="tagline"
                     value={branding.tagline}
-                    onChange={(e) => handleBrandingChange("tagline", e.target.value)}
+                    onChange={(e) =>
+                      handleBrandingChange("tagline", e.target.value)
+                    }
                     placeholder="Order Local. Support Local."
                   />
                   <p className="text-xs text-muted-foreground">
@@ -403,36 +498,45 @@ export default function AdminSettings() {
                   surface="platform-logo"
                   label="Logo"
                   value={branding.logoUrl}
-                  onChange={(logoUrl) => handleBrandingChange("logoUrl", logoUrl)}
+                  onChange={(logoUrl) =>
+                    handleBrandingChange("logoUrl", logoUrl)
+                  }
                   testId="platform-logo"
                 />
                 <div className="space-y-2">
                   <Label htmlFor="logoSizePx">Web logo size</Label>
                   <Select
                     value={String(branding.logoSizePx)}
-                    onValueChange={(value) => handleBrandingChange("logoSizePx", parseInt(value, 10))}
+                    onValueChange={(value) =>
+                      handleBrandingChange("logoSizePx", parseInt(value, 10))
+                    }
                   >
                     <SelectTrigger id="logoSizePx">
                       <SelectValue placeholder="Select size" />
                     </SelectTrigger>
                     <SelectContent>
-                      {logoSizeOptions(branding.logoSizePx).map(({ value, label }) => (
-                        <SelectItem key={value} value={String(value)}>
-                          {label}
-                          {value === DEFAULT_LOGO_SIZE_PX ? " (default)" : ""}
-                          {" — "}
-                          {value}px
-                        </SelectItem>
-                      ))}
+                      {logoSizeOptions(branding.logoSizePx).map(
+                        ({ value, label }) => (
+                          <SelectItem key={value} value={String(value)}>
+                            {label}
+                            {value === DEFAULT_LOGO_SIZE_PX ? " (default)" : ""}
+                            {" — "}
+                            {value}px
+                          </SelectItem>
+                        ),
+                      )}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Web header and footer only. The iOS app uses a fixed compact size.
+                    Web header and footer only. The iOS app uses a fixed compact
+                    size.
                   </p>
                 </div>
               </div>
 
-              {(branding.logoUrl || branding.platformName || branding.townName) && (
+              {(branding.logoUrl ||
+                branding.platformName ||
+                branding.townName) && (
                 <div className="rounded-2xl bg-muted/35 p-4">
                   <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Preview
@@ -443,7 +547,10 @@ export default function AdminSettings() {
                         src={branding.logoUrl}
                         alt=""
                         className="shrink-0 rounded object-contain"
-                        style={{ width: branding.logoSizePx, height: branding.logoSizePx }}
+                        style={{
+                          width: branding.logoSizePx,
+                          height: branding.logoSizePx,
+                        }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = "none";
                         }}
@@ -451,13 +558,18 @@ export default function AdminSettings() {
                     ) : (
                       <div
                         className="flex shrink-0 items-center justify-center rounded bg-primary/10 text-xs text-primary"
-                        style={{ width: branding.logoSizePx, height: branding.logoSizePx }}
+                        style={{
+                          width: branding.logoSizePx,
+                          height: branding.logoSizePx,
+                        }}
                       >
                         Logo
                       </div>
                     )}
                     <PlatformBrandMark
-                      name={branding.platformName.trim() || DEFAULT_PLATFORM_NAME}
+                      name={
+                        branding.platformName.trim() || DEFAULT_PLATFORM_NAME
+                      }
                       className="text-lg"
                       colors={{
                         prefix: brandWordColors.brandPrefixColor || null,
@@ -484,18 +596,35 @@ export default function AdminSettings() {
             </SettingsSection>
 
             <SettingsSection
+              icon={Images}
+              title="Town photos"
+              description="Homepage carousel photos. Reorder, set a primary photo, and add optional captions."
+            >
+              <TownPhotosEditor
+                photos={townPhotos}
+                onChange={(next) => {
+                  setTownPhotos(next);
+                  markDirty();
+                }}
+              />
+            </SettingsSection>
+
+            <SettingsSection
               icon={ImageIcon}
               title="Homepage hero"
-              description="Background image, optional logo overlay, and call-to-action buttons on the marketplace home."
+              description="Fallback hero image (used when no town photos are set), optional logo overlay, and call-to-action buttons."
             >
               <ImageField
                 surface="homepage-hero"
                 value={branding.heroImageUrl}
-                onChange={(heroImageUrl) => handleBrandingChange("heroImageUrl", heroImageUrl)}
+                onChange={(heroImageUrl) =>
+                  handleBrandingChange("heroImageUrl", heroImageUrl)
+                }
                 testId="homepage-hero"
               />
               <p className="text-xs text-muted-foreground -mt-3">
-                Recommended 1920 × 800 px. Fill mode may crop on smaller screens.
+                Recommended 1920 × 800 px. Fill mode may crop on smaller
+                screens.
               </p>
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
@@ -503,7 +632,10 @@ export default function AdminSettings() {
                   <Select
                     value={branding.heroImageFit}
                     onValueChange={(value) =>
-                      handleBrandingChange("heroImageFit", value as HeroImageFit)
+                      handleBrandingChange(
+                        "heroImageFit",
+                        value as HeroImageFit,
+                      )
                     }
                   >
                     <SelectTrigger id="heroImageFit">
@@ -526,7 +658,10 @@ export default function AdminSettings() {
                   <Select
                     value={branding.heroImagePosition}
                     onValueChange={(value) =>
-                      handleBrandingChange("heroImagePosition", value as HeroImagePosition)
+                      handleBrandingChange(
+                        "heroImagePosition",
+                        value as HeroImagePosition,
+                      )
                     }
                   >
                     <SelectTrigger id="heroImagePosition">
@@ -549,19 +684,33 @@ export default function AdminSettings() {
                 surface="homepage-hero-overlay"
                 label="Overlay image (logo + text)"
                 value={branding.heroOverlayImageUrl}
-                onChange={(url) => handleBrandingChange("heroOverlayImageUrl", url)}
+                onChange={(url) =>
+                  handleBrandingChange("heroOverlayImageUrl", url)
+                }
                 testId="homepage-hero-overlay"
               />
               <p className="text-xs text-muted-foreground -mt-3">
-                Optional transparent PNG. Sits on the background and is never cropped.
+                Optional transparent PNG. Sits on the background and is never
+                cropped.
               </p>
+              <SettingsToggleRow
+                label="Show overlay on homepage"
+                description="Turn off to hide the overlay on town photos without deleting the image."
+                checked={branding.showHeroOverlay}
+                onCheckedChange={(value) =>
+                  handleBrandingChange("showHeroOverlay", value)
+                }
+              />
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="heroOverlaySize">Overlay size</Label>
                   <Select
                     value={branding.heroOverlaySize}
                     onValueChange={(value) =>
-                      handleBrandingChange("heroOverlaySize", value as HeroOverlaySize)
+                      handleBrandingChange(
+                        "heroOverlaySize",
+                        value as HeroOverlaySize,
+                      )
                     }
                   >
                     <SelectTrigger id="heroOverlaySize">
@@ -581,7 +730,10 @@ export default function AdminSettings() {
                   <Select
                     value={branding.heroOverlayAlign}
                     onValueChange={(value) =>
-                      handleBrandingChange("heroOverlayAlign", value as HeroOverlayAlign)
+                      handleBrandingChange(
+                        "heroOverlayAlign",
+                        value as HeroOverlayAlign,
+                      )
                     }
                   >
                     <SelectTrigger id="heroOverlayAlign">
@@ -603,13 +755,17 @@ export default function AdminSettings() {
                   label="Shop button"
                   description="Links to the marketplace directory."
                   checked={branding.showShopButton}
-                  onCheckedChange={(value) => handleBrandingChange("showShopButton", value)}
+                  onCheckedChange={(value) =>
+                    handleBrandingChange("showShopButton", value)
+                  }
                 />
                 <SettingsToggleRow
                   label="List Your Business"
                   description="Invites owners to apply."
                   checked={branding.showListBusinessButton}
-                  onCheckedChange={(value) => handleBrandingChange("showListBusinessButton", value)}
+                  onCheckedChange={(value) =>
+                    handleBrandingChange("showListBusinessButton", value)
+                  }
                 />
               </div>
               <div className="max-w-xs space-y-2">
@@ -617,7 +773,10 @@ export default function AdminSettings() {
                 <Select
                   value={branding.heroButtonPlacement}
                   onValueChange={(value) =>
-                    handleBrandingChange("heroButtonPlacement", value as HeroButtonPlacement)
+                    handleBrandingChange(
+                      "heroButtonPlacement",
+                      value as HeroButtonPlacement,
+                    )
                   }
                 >
                   <SelectTrigger id="heroButtonPlacement">
@@ -638,18 +797,25 @@ export default function AdminSettings() {
                   <p className="text-xs text-muted-foreground">Live preview</p>
                   <HeroPreviewFrame
                     heroImageUrl={branding.heroImageUrl || null}
-                    heroOverlayImageUrl={branding.heroOverlayImageUrl || null}
+                    heroOverlayImageUrl={
+                      branding.showHeroOverlay
+                        ? branding.heroOverlayImageUrl || null
+                        : null
+                    }
                     heroImageFit={branding.heroImageFit}
                     heroImagePosition={branding.heroImagePosition}
                     heroOverlaySize={branding.heroOverlaySize}
                     heroOverlayAlign={branding.heroOverlayAlign}
                     heroButtonPlacement={branding.heroButtonPlacement}
                     buttons={
-                      branding.showShopButton || branding.showListBusinessButton ? (
+                      branding.showShopButton ||
+                      branding.showListBusinessButton ? (
                         <>
                           {branding.showShopButton ? (
                             <span className="inline-flex items-center rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-slate-900 shadow-xl ring-1 ring-black/5">
-                              {resolveShopCtaLabel({ townName: branding.townName || null })}
+                              {resolveShopCtaLabel({
+                                townName: branding.townName || null,
+                              })}
                             </span>
                           ) : null}
                           {branding.showListBusinessButton ? (
@@ -683,11 +849,13 @@ export default function AdminSettings() {
                 ))}
               </div>
               <ColorPreviewSwatches
-                items={COLOR_FIELDS.filter((f) => colors[f.key]).map(({ key, label }) => ({
-                  key,
-                  label: label.split(" ")[0],
-                  value: colors[key],
-                }))}
+                items={COLOR_FIELDS.filter((f) => colors[f.key]).map(
+                  ({ key, label }) => ({
+                    key,
+                    label: label.split(" ")[0],
+                    value: colors[key],
+                  }),
+                )}
               />
             </SettingsSection>
 
@@ -700,19 +868,24 @@ export default function AdminSettings() {
                 label="Show weather on homepage"
                 description="When off, the widget is hidden on web and iOS."
                 checked={weatherSettings.weatherEnabled}
-                onCheckedChange={(value) => handleWeatherChange("weatherEnabled", value)}
+                onCheckedChange={(value) =>
+                  handleWeatherChange("weatherEnabled", value)
+                }
               />
               <div className="space-y-2">
                 <Label htmlFor="weatherLocation">Location</Label>
                 <Input
                   id="weatherLocation"
                   value={weatherSettings.weatherLocation}
-                  onChange={(e) => handleWeatherChange("weatherLocation", e.target.value)}
+                  onChange={(e) =>
+                    handleWeatherChange("weatherLocation", e.target.value)
+                  }
                   placeholder={theme?.townName?.trim() || "Clay, Alabama"}
                   disabled={!weatherSettings.weatherEnabled}
                 />
                 <p className="text-xs text-muted-foreground">
-                  City name, optionally with state. Falls back to town name when blank.
+                  City name, optionally with state. Falls back to town name when
+                  blank.
                 </p>
               </div>
               {weatherSettings.weatherEnabled ? (
@@ -734,7 +907,12 @@ export default function AdminSettings() {
           <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto flex max-w-3xl items-center justify-between gap-3 rounded-[1.25rem] border-0 bg-card/95 px-4 py-3 shadow-[0_8px_40px_-12px_rgba(15,23,42,0.28)] backdrop-blur-md md:left-auto md:right-10">
             <p className="text-sm text-muted-foreground">Unsaved changes</p>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="rounded-full" onClick={handleResetAll}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+                onClick={handleResetAll}
+              >
                 <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
                 Reset
               </Button>
