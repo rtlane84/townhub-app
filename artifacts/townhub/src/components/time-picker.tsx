@@ -58,7 +58,7 @@ export function TimePicker({
         max={max}
         disabled={disabled}
         className={cn(
-          "h-9 text-sm",
+          "h-9 w-full min-w-0 max-w-full text-sm",
           displayError && "border-destructive focus-visible:ring-destructive",
           className,
         )}

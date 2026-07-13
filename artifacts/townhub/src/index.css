@@ -346,6 +346,16 @@ html.native-app .native-scroll-root {
   touch-action: pan-x pan-y;
 }
 
+/* iOS WebView date/time inputs have a large intrinsic min-width */
+html.native-app input[type="date"],
+html.native-app input[type="time"],
+html.native-app input[type="datetime-local"] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
 /* Opaque header so status-bar region matches the app canvas */
 html.native-app .native-site-header {
   flex-shrink: 0;

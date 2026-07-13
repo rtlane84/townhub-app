@@ -215,7 +215,7 @@ export default function Events() {
       {formOpen ? (
         <form
           onSubmit={handleSubmit}
-          className="relative mb-8 space-y-4 rounded-[1.5rem] border border-black/[0.08] bg-muted/40 p-5 shadow-sm sm:p-6"
+          className="relative mb-8 min-w-0 space-y-4 overflow-x-hidden rounded-[1.5rem] border border-black/[0.08] bg-muted/40 p-4 shadow-sm sm:p-6"
           noValidate
         >
           <div>
@@ -227,8 +227,8 @@ export default function Events() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="col-span-1 sm:col-span-2">
+          <div className="min-w-0 space-y-3">
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium">Event title *</label>
               <Input
                 value={form.title}
@@ -238,71 +238,76 @@ export default function Events() {
                 className="h-11"
               />
             </div>
+
+            <div className="min-w-0 space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
+              <div className="min-w-0">
+                <label className="mb-1 block text-sm font-medium">Start date *</label>
+                <Input
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
+                  required
+                  className="h-11"
+                />
+              </div>
+              <div className="min-w-0">
+                <label className="mb-1 block text-sm font-medium">End date</label>
+                <Input
+                  type="date"
+                  value={form.endDate ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
+                  min={form.date || undefined}
+                  className="h-11"
+                />
+              </div>
+            </div>
+
+            <TimeRangePicker
+              startValue={form.startTime ?? ""}
+              endValue={form.endTime ?? ""}
+              onStartChange={(startTime) => setForm((p) => ({ ...p, startTime }))}
+              onEndChange={(endTime) => setForm((p) => ({ ...p, endTime }))}
+              startLabel="Start time"
+              endLabel="End time"
+              showFriendlyHint={false}
+            />
+
+            <div className="min-w-0 space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
+              <div className="min-w-0">
+                <label className="mb-1 block text-sm font-medium">Type</label>
+                <Select
+                  value={form.eventType ?? "COMMUNITY"}
+                  onValueChange={(v) =>
+                    setForm((p) => ({
+                      ...p,
+                      eventType: v as EventSubmitInput["eventType"],
+                    }))
+                  }
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EVENT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-0">
+                <label className="mb-1 block text-sm font-medium">Location</label>
+                <Input
+                  value={form.location ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                  placeholder="Town Square"
+                  className="h-11"
+                />
+              </div>
+            </div>
+
             <div className="min-w-0">
-              <label className="mb-1 block text-sm font-medium">Start date *</label>
-              <Input
-                type="date"
-                value={form.date}
-                onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
-                required
-                className="h-11 w-full min-w-0 max-w-full"
-              />
-            </div>
-            <div className="min-w-0">
-              <label className="mb-1 block text-sm font-medium">End date</label>
-              <Input
-                type="date"
-                value={form.endDate ?? ""}
-                onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
-                min={form.date || undefined}
-                className="h-11 w-full min-w-0 max-w-full"
-              />
-            </div>
-            <div className="col-span-1 sm:col-span-2">
-              <TimeRangePicker
-                startValue={form.startTime ?? ""}
-                endValue={form.endTime ?? ""}
-                onStartChange={(startTime) => setForm((p) => ({ ...p, startTime }))}
-                onEndChange={(endTime) => setForm((p) => ({ ...p, endTime }))}
-                startLabel="Start time"
-                endLabel="End time"
-                alwaysTwoColumns
-                showFriendlyHint={false}
-              />
-            </div>
-            <div className="min-w-0">
-              <label className="mb-1 block text-sm font-medium">Type</label>
-              <Select
-                value={form.eventType ?? "COMMUNITY"}
-                onValueChange={(v) =>
-                  setForm((p) => ({
-                    ...p,
-                    eventType: v as EventSubmitInput["eventType"],
-                  }))
-                }
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EVENT_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="min-w-0">
-              <label className="mb-1 block text-sm font-medium">Location</label>
-              <Input
-                value={form.location ?? ""}
-                onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
-                placeholder="Town Square"
-                className="h-11"
-              />
-            </div>
-            <div className="col-span-1 min-w-0 sm:col-span-2">
               <label className="mb-1 block text-sm font-medium">Description</label>
               <Textarea
                 value={form.description ?? ""}
@@ -312,22 +317,25 @@ export default function Events() {
                 className="min-h-[4.5rem]"
               />
             </div>
-            <div className="min-w-0">
-              <label className="mb-1 block text-sm font-medium">Your name</label>
-              <Input
-                value={form.submitterName ?? ""}
-                onChange={(e) => setForm((p) => ({ ...p, submitterName: e.target.value }))}
-                className="h-11"
-              />
-            </div>
-            <div className="min-w-0">
-              <label className="mb-1 block text-sm font-medium">Your email</label>
-              <Input
-                type="email"
-                value={form.submitterEmail ?? ""}
-                onChange={(e) => setForm((p) => ({ ...p, submitterEmail: e.target.value }))}
-                className="h-11"
-              />
+
+            <div className="min-w-0 space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
+              <div className="min-w-0">
+                <label className="mb-1 block text-sm font-medium">Your name</label>
+                <Input
+                  value={form.submitterName ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, submitterName: e.target.value }))}
+                  className="h-11"
+                />
+              </div>
+              <div className="min-w-0">
+                <label className="mb-1 block text-sm font-medium">Your email</label>
+                <Input
+                  type="email"
+                  value={form.submitterEmail ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, submitterEmail: e.target.value }))}
+                  className="h-11"
+                />
+              </div>
             </div>
           </div>
 
@@ -378,7 +386,7 @@ export default function Events() {
         />
       ) : viewMode === "calendar" ? (
         <div className="space-y-5" data-testid="events-calendar-view">
-          <div className="overflow-hidden rounded-[1.25rem] border border-black/[0.06] bg-card p-2 shadow-sm sm:p-3">
+          <div className="shrink-0 rounded-[1.25rem] border border-black/[0.06] bg-card p-3 shadow-sm sm:p-4">
             <Calendar
               mode="single"
               selected={selectedDay}
@@ -390,7 +398,7 @@ export default function Events() {
                 hasEvent:
                   "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
               }}
-              className="mx-auto w-full max-w-md [--cell-size:2.5rem]"
+              className="mx-auto w-full max-w-none shrink-0 [--cell-size:2.35rem] sm:[--cell-size:2.5rem]"
             />
           </div>
           <section aria-labelledby="events-on-day-heading">
