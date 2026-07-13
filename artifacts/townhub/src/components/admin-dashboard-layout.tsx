@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  DASHBOARD_MOBILE_MAIN_BOTTOM_CLASS,
   DASHBOARD_MOBILE_MAIN_TOP_CLASS,
   DASHBOARD_MOBILE_NAV_TOP_CLASS,
 } from "@/lib/platform-branding";
@@ -87,7 +88,7 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
     )?.label ?? "Platform Admin";
 
   return (
-    <div className="flex min-h-[calc(100vh-var(--site-header-height,4rem))]">
+    <div className="flex min-h-0 md:min-h-[calc(100vh-var(--site-header-height,4rem))]">
       <aside className={DASHBOARD_SIDEBAR}>
         <div className="p-5 md:p-6">
           <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/75">
@@ -119,11 +120,14 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
               <Menu className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 border-0 bg-card p-0">
+          <SheetContent
+            side="left"
+            className="flex h-dvh max-h-dvh w-72 flex-col overflow-y-auto border-0 bg-card p-0"
+          >
             <SheetHeader className="px-6 pb-4 pt-[calc(1.5rem+var(--safe-area-top,0px))]">
               <SheetTitle className="text-left font-serif text-platform-heading">Platform Admin</SheetTitle>
             </SheetHeader>
-            <nav className="space-y-1 px-3 pb-6">
+            <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-[calc(1.5rem+var(--safe-area-bottom,0px))]">
               <NavLinks items={navItems} location={location} onNavigate={() => setOpen(false)} />
             </nav>
           </SheetContent>
@@ -131,7 +135,14 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
         <span className="text-sm font-semibold text-platform-heading">{activeLabel}</span>
       </div>
 
-      <main className={cn(DASHBOARD_MAIN, "p-4 md:p-8 lg:p-10", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
+      <main
+        className={cn(
+          DASHBOARD_MAIN,
+          "p-4 md:p-8 lg:p-10",
+          DASHBOARD_MOBILE_MAIN_TOP_CLASS,
+          DASHBOARD_MOBILE_MAIN_BOTTOM_CLASS,
+        )}
+      >
         {children}
       </main>
     </div>

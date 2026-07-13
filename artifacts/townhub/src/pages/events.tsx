@@ -159,7 +159,7 @@ export default function Events() {
 
   return (
     <div className={cn(PAGE_CONTAINER, "bg-background py-6 md:py-8 native-animate-in")}>
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-5 space-y-3">
         <SectionHeader
           title="Community events"
           description={
@@ -168,9 +168,9 @@ export default function Events() {
               : "Upcoming local events around town"
           }
           size="lg"
-          className="mb-0 min-w-0 flex-1"
+          className="mb-0"
         />
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div
             className="inline-flex rounded-full border border-black/[0.08] bg-muted/50 p-0.5"
             role="group"
@@ -204,7 +204,7 @@ export default function Events() {
           <Button
             type="button"
             variant="outline"
-            className="shrink-0"
+            className="shrink-0 rounded-full"
             onClick={() => setFormOpen((v) => !v)}
           >
             {formOpen ? "Hide form" : "Submit an event"}
@@ -396,9 +396,9 @@ export default function Events() {
               modifiers={{ hasEvent: eventDays }}
               modifiersClassNames={{
                 hasEvent:
-                  "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
+                  "relative after:pointer-events-none after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-primary data-[selected-single=true]:after:bg-primary-foreground",
               }}
-              className="mx-auto w-full max-w-none shrink-0 [--cell-size:2.35rem] sm:[--cell-size:2.5rem]"
+              className="mx-auto w-full shrink-0"
             />
           </div>
           <section aria-labelledby="events-on-day-heading">

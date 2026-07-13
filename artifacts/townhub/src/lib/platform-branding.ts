@@ -56,9 +56,12 @@ export const DASHBOARD_MOBILE_NAV_TOP_CLASS =
  * Web: header is in-flow/sticky in the same scroll context, so clear header + safe area + subnav.
  * Native: header sits outside `.native-scroll-root`, so only clear the Sections bar height.
  */
-export const DASHBOARD_MOBILE_SUBNAV_HEIGHT = "3.5rem";
+export const DASHBOARD_MOBILE_SUBNAV_HEIGHT = "3.75rem";
 export const DASHBOARD_MOBILE_MAIN_TOP_CLASS =
-  "dashboard-mobile-main-top pt-[calc(var(--site-header-height,4rem)+var(--safe-area-top,env(safe-area-inset-top,0px))+var(--dashboard-mobile-subnav-height,3.5rem))] md:pt-0";
+  "dashboard-mobile-main-top pt-[calc(var(--site-header-height,4rem)+var(--safe-area-top,env(safe-area-inset-top,0px))+var(--dashboard-mobile-subnav-height,3.75rem))] md:pt-0";
+
+/** Extra bottom space so hub pages clear sticky actions and scroll fully. */
+export const DASHBOARD_MOBILE_MAIN_BOTTOM_CLASS = "pb-24 md:pb-10";
 
 /** Native bottom tab bar height (excluding safe area) — floating pill + padding */
 export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 64;

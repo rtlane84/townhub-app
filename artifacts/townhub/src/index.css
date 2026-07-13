@@ -290,7 +290,7 @@ html.native-app {
   --safe-area-right: max(env(safe-area-inset-right, 0px), constant(safe-area-inset-right, 0px));
   --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), constant(safe-area-inset-bottom, 0px));
   --safe-area-left: max(env(safe-area-inset-left, 0px), constant(safe-area-inset-left, 0px));
-  --dashboard-mobile-subnav-height: 3.5rem;
+  --dashboard-mobile-subnav-height: 3.75rem;
   height: 100%;
   overflow: hidden;
   /* Solid canvas behind status bar + home indicator */
@@ -430,13 +430,26 @@ html.native-app select {
   font-size: 16px;
 }
 
-html.native-app [data-slot="dialog-content"],
-html.native-app [data-slot="sheet-content"] {
+html.native-app [data-slot="dialog-content"] {
   max-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
 }
 
+/* Bottom sheets only — side sheets must stay full viewport height */
+html.native-app [data-slot="sheet-content"][data-side="bottom"] {
+  max-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+}
+
+html.native-app [data-slot="sheet-content"][data-side="left"],
+html.native-app [data-slot="sheet-content"][data-side="right"] {
+  top: 0;
+  bottom: 0;
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
 html.native-app.native-ios .native-scroll-root {
-  scroll-padding-bottom: 0.5rem;
+  scroll-padding-top: 0.5rem;
+  scroll-padding-bottom: 1.25rem;
 }
 
 /* Business Hub / Admin mobile “Sections” bar — must clear status bar + site header */
@@ -448,9 +461,9 @@ html.native-app .dashboard-mobile-subnav {
   backdrop-filter: none;
 }
 
-/* Header sits outside the scroll root on native — clear the full Sections bar height */
+/* Header sits outside the scroll root on native — clear the Sections bar height */
 html.native-app .dashboard-mobile-main-top {
-  padding-top: var(--dashboard-mobile-subnav-height, 3.5rem);
+  padding-top: var(--dashboard-mobile-subnav-height, 3.75rem);
 }
 
 @keyframes native-fade-up {

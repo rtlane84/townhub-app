@@ -47,6 +47,7 @@ import { isKitchenDisplayRoute } from "@/lib/kitchen-display-mode";
 import { cn } from "@/lib/utils";
 import { FeatureLockedPage, StorefrontModeRestrictedPage } from "@/components/locked-feature-modal";
 import {
+  DASHBOARD_MOBILE_MAIN_BOTTOM_CLASS,
   DASHBOARD_MOBILE_MAIN_TOP_CLASS,
   DASHBOARD_MOBILE_NAV_TOP_CLASS,
 } from "@/lib/platform-branding";
@@ -248,7 +249,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   return (
     <div
       className={cn(
-        "flex min-h-[calc(100vh-var(--site-header-height,4rem))] print:block print:min-h-0",
+        "flex min-h-0 md:min-h-[calc(100vh-var(--site-header-height,4rem))] print:block print:min-h-0",
         kitchenModeActive && "min-h-[100dvh]",
       )}
     >
@@ -296,14 +297,17 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
               <Menu className="h-4 w-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 border-0 bg-card p-0">
-            <SheetHeader className="px-6 pb-4 pt-[calc(1.5rem+var(--safe-area-top,0px))]">
+          <SheetContent
+            side="left"
+            className="flex h-dvh max-h-dvh w-72 flex-col overflow-hidden border-0 bg-card p-0"
+          >
+            <SheetHeader className="shrink-0 px-6 pb-4 pt-[calc(1.5rem+var(--safe-area-top,0px))]">
               <SheetTitle className="text-left font-serif text-platform-heading">Business Hub</SheetTitle>
             </SheetHeader>
-            <div className="px-6 pb-4">
+            <div className="shrink-0 px-6 pb-4">
               <BusinessSwitcher compact onNavigate={() => setOpen(false)} />
             </div>
-            <nav className="px-3 pb-6">
+            <nav className="min-h-0 flex-1 overflow-y-auto px-3 pb-[calc(1.5rem+var(--safe-area-bottom,0px))]">
               <BusinessNavSections
                 location={location}
                 navItems={visibleNavItems}
@@ -329,6 +333,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
                 "p-4 md:p-8 lg:p-10",
                 onKitchenRoute ? "md:p-5 lg:p-6" : null,
                 DASHBOARD_MOBILE_MAIN_TOP_CLASS,
+                DASHBOARD_MOBILE_MAIN_BOTTOM_CLASS,
               ),
           "print:p-0",
         )}
