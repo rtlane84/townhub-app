@@ -1,27 +1,26 @@
 import { Link } from "wouter";
-import { ArrowLeft, Heart, Share } from "lucide-react";
+import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { PlatformBrandMark } from "@/components/platform-brand-mark";
 import { usePlatformBranding } from "@/components/theme-provider";
+import { useCart } from "@/components/cart-context";
+import { Badge } from "@/components/ui/badge";
 import { resolveNativeHeaderLogoPx } from "@/lib/platform-branding";
 import { useNativePlatform } from "@/hooks/use-native-platform";
 import { cn } from "@/lib/utils";
 import { Store } from "lucide-react";
 
 type StorefrontDetailHeaderProps = {
-  favorited: boolean;
-  onShare: () => void;
-  onToggleFavorite: () => void;
+  hideCart?: boolean;
   className?: string;
 };
 
 export function StorefrontDetailHeader({
-  favorited,
-  onShare,
-  onToggleFavorite,
+  hideCart = false,
   className,
 }: StorefrontDetailHeaderProps) {
   const { platformName, logoUrl, logoSizePx } = usePlatformBranding();
   const { isNative } = useNativePlatform();
+  const { itemCount } = useCart();
   const logoPx = isNative
     ? resolveNativeHeaderLogoPx(logoSizePx)
     : Math.min(logoSizePx, 28);
@@ -67,31 +66,21 @@ export function StorefrontDetailHeader({
           <PlatformBrandMark name={platformName} compact className="truncate" />
         </Link>
 
-        <div className="flex items-center justify-end gap-0.5">
-          <button
-            type="button"
-            onClick={onShare}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted active:scale-[0.97]"
-            aria-label="Share business"
-          >
-            <Share className="h-[18px] w-[18px]" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={onToggleFavorite}
-            className={cn(
-              "inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-muted active:scale-[0.97]",
-              favorited ? "text-rose-500" : "text-foreground",
-            )}
-            aria-label={favorited ? "Remove from favorites" : "Save to favorites"}
-            aria-pressed={favorited}
-          >
-            <Heart
-              className="h-[18px] w-[18px]"
-              fill={favorited ? "currentColor" : "none"}
-              aria-hidden
-            />
-          </button>
+        <div className="flex items-center justify-end">
+          {!hideCart ? (
+            <Link
+              href="/cart"
+              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted active:scale-[0.97]"
+              aria-label="Cart"
+            >
+              <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.9} aria-hidden />
+              {itemCount > 0 ? (
+                <Badge className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px]">
+                  {itemCount}
+                </Badge>
+              ) : null}
+            </Link>
+          ) : null}
         </div>
       </div>
     </header>

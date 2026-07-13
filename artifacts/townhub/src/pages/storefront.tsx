@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useRoute } from "wouter";
 import {
   useGetBusinessBySlug,
@@ -36,6 +36,7 @@ import {
   formatTimeRange12h,
   normalizeWebsiteUrl,
   formatBusinessTypeLabel,
+  hidesStorefrontCart,
 } from "@workspace/api-zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,10 +55,9 @@ import { resolveBusinessHours } from "@/lib/business-hours";
 import { getStorefrontStatusLine } from "@/lib/business-listing";
 import {
   googleMapsDirectionsUrl,
-  isBusinessFavorited,
+  locationDirectionsUrl,
   resolveStorefrontPresence,
   shareStorefrontPage,
-  toggleFavoriteBusiness,
 } from "@/lib/storefront-presence";
 import { cn } from "@/lib/utils";
 import { triggerNativeHaptic } from "@/lib/native-haptics";
@@ -154,14 +154,7 @@ export default function Storefront() {
   const [appointmentProductId, setAppointmentProductId] = useState<number | null>(null);
   const [addingProductId, setAddingProductId] = useState<number | null>(null);
   const [optionsProduct, setOptionsProduct] = useState<Product | null>(null);
-  const [favorited, setFavorited] = useState(false);
   const addToCartLockRef = useRef(false);
-
-  useEffect(() => {
-    if (business?.id) {
-      setFavorited(isBusinessFavorited(business.id));
-    }
-  }, [business?.id]);
 
   if (isLoading) {
     return (
@@ -383,19 +376,9 @@ export default function Storefront() {
     }
   }
 
-  function handleToggleFavorite() {
-    const next = toggleFavoriteBusiness(b.id);
-    setFavorited(next);
-    if (isNativeApp()) triggerNativeHaptic("light");
-  }
-
   return (
     <BusinessThemeScope business={b} className="min-h-0 bg-[hsl(220_16%_94%)] pb-8">
-      <StorefrontDetailHeader
-        favorited={favorited}
-        onShare={() => void handleShare()}
-        onToggleFavorite={handleToggleFavorite}
-      />
+      <StorefrontDetailHeader hideCart={hidesStorefrontCart(b)} />
 
       {bannerText?.trim() ? (
         <div className="relative overflow-hidden border-b border-primary/10 bg-gradient-to-r from-primary via-primary to-primary/90">
@@ -647,15 +630,17 @@ export default function Storefront() {
               </h2>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {upcomingLocations.map((loc) => (
+              {upcomingLocations.map((loc) => {
+                const directionsHref = locationDirectionsUrl(loc);
+                return (
                 <div
                   key={loc.id}
-                  className="min-w-0 rounded-[1.1rem] border border-black/[0.05] bg-card px-3 py-3 text-sm shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
+                  className="flex min-w-0 flex-col gap-1.5 rounded-[1.1rem] border border-black/[0.05] bg-card px-3 py-3 text-sm shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
                 >
                   <p className="line-clamp-2 font-semibold text-foreground">
                     {loc.locationName}
                   </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {loc.locationDate === today ? (
                       <span className="font-medium text-primary">Today</span>
                     ) : (
@@ -666,18 +651,32 @@ export default function Storefront() {
                       : ""}
                   </p>
                   {loc.address ? (
-                    <p className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
+                    <p className="flex items-start gap-1 text-xs text-muted-foreground">
                       <MapPin className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
                       <span className="line-clamp-2">{loc.address}</span>
                     </p>
                   ) : null}
                   {loc.locationNotes ? (
-                    <p className="mt-1 line-clamp-2 text-xs italic text-muted-foreground">
+                    <p className="line-clamp-2 text-xs italic text-muted-foreground">
                       {loc.locationNotes}
                     </p>
                   ) : null}
+                  {directionsHref ? (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="mt-auto h-8 w-full rounded-full px-2.5 text-[11px]"
+                    >
+                      <a href={directionsHref} target="_blank" rel="noopener noreferrer">
+                        <Navigation className="mr-1 h-3 w-3" aria-hidden />
+                        Directions
+                      </a>
+                    </Button>
+                  ) : null}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         ) : null}

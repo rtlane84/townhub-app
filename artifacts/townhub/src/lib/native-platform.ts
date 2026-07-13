@@ -51,11 +51,11 @@ export function isDashboardRoute(location: string): boolean {
 }
 
 /**
- * Show the bottom tab bar on all marketplace screens, including storefront
- * detail and cart — so navigation never “disappears.” Hide only on dashboards.
+ * Show the bottom tab bar on marketplace and hub screens so navigation
+ * never disappears. Always true for a given path (any non-special case).
  */
-export function isNativeTabRoute(location: string): boolean {
-  return !isDashboardRoute(location);
+export function isNativeTabRoute(_location: string): boolean {
+  return true;
 }
 
 export function isAccountRoute(location: string): boolean {

@@ -146,8 +146,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const listYourBusinessActive = isNavActive("/list-your-business");
   /** Account lives in the native bottom tab sheet — hide duplicate header auth. */
   const hideHeaderAccount = isNative && showNativeTabs;
-  /** Native dashboards hide bottom tabs; show an obvious exit control. */
-  const showNativeDashboardBack = isNative && inDashboard;
 
   return (
     <div
@@ -179,21 +177,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <>
               {/* 3-column native header: sides balance so logo+title stay centered */}
               <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
-                <div className="flex min-w-0 items-center justify-start">
-                  {showNativeDashboardBack ? (
-                    <Link
-                      href="/"
-                      className={cn(
-                        returnToMarketplaceClass(),
-                        "shrink-0 gap-1.5 px-1.5 py-1.5 -ml-1 min-h-10",
-                      )}
-                      aria-label="Back to app"
-                    >
-                      <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden />
-                      <span className="text-sm font-semibold text-foreground">Back</span>
-                    </Link>
-                  ) : null}
-                </div>
+                <div className="flex min-w-0 items-center justify-start" />
 
                 <Link
                   href="/"

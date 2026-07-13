@@ -110,9 +110,13 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
       >
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="min-h-10 shrink-0 gap-1.5 rounded-2xl px-3">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 shrink-0 rounded-2xl"
+              aria-label="Open sections menu"
+            >
               <Menu className="h-4 w-4" />
-              <span className="text-xs font-medium">Sections</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72 border-0 bg-card p-0">

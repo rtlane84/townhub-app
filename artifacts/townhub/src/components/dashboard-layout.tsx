@@ -286,14 +286,14 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
           <SheetTrigger asChild>
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
               className={cn(
-                "shrink-0 gap-1.5 rounded-2xl px-3",
-                onKitchenRoute ? "min-h-9" : "min-h-10",
+                "shrink-0 rounded-2xl",
+                onKitchenRoute ? "h-9 w-9" : "h-10 w-10",
               )}
+              aria-label="Open sections menu"
             >
               <Menu className="h-4 w-4" />
-              <span className="text-xs font-medium">Sections</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72 border-0 bg-card p-0">

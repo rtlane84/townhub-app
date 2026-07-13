@@ -16,7 +16,7 @@ describe("native-platform", () => {
     assert.equal(isDashboardRoute("/businesses"), false);
   });
 
-  it("shows native tabs on browse, storefront, and cart", () => {
+  it("shows native tabs on browse, storefront, cart, and dashboards", () => {
     assert.equal(isNativeTabRoute("/"), true);
     assert.equal(isNativeTabRoute("/businesses"), true);
     assert.equal(isNativeTabRoute("/businesses/acme-bakery"), true);
@@ -25,12 +25,15 @@ describe("native-platform", () => {
     assert.equal(isNativeTabRoute("/cart"), true);
     assert.equal(isNativeTabRoute("/my-orders"), true);
     assert.equal(isNativeTabRoute("/order/abc"), true);
+    assert.equal(isNativeTabRoute("/dashboard/business"), true);
+    assert.equal(isNativeTabRoute("/dashboard/admin"), true);
+    assert.equal(isNativeTabRoute("/dashboard/admin/settings"), true);
   });
 
-  it("hides native tabs only on dashboards", () => {
-    assert.equal(isNativeTabRoute("/dashboard/business"), false);
-    assert.equal(isNativeTabRoute("/dashboard/admin"), false);
-    assert.equal(isNativeTabRoute("/dashboard/admin/settings"), false);
+  it("keeps dashboard route detection for hub-only chrome", () => {
+    assert.equal(isDashboardRoute("/dashboard/business"), true);
+    assert.equal(isDashboardRoute("/dashboard/admin/settings"), true);
+    assert.equal(isDashboardRoute("/businesses"), false);
   });
 
   it("marks account routes", () => {

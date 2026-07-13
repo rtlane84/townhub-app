@@ -821,7 +821,7 @@ export default function BusinessSettings() {
       </div>
 
       {isDirty ? (
-        <div className="fixed bottom-4 left-4 right-4 z-50 mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-[1.25rem] border-0 bg-card/95 px-4 py-3 shadow-[0_8px_40px_-12px_rgba(15,23,42,0.28)] backdrop-blur-md md:left-auto md:right-10">
+        <div className="fixed bottom-[calc(1rem+var(--native-bottom-tab-height,0px)+env(safe-area-inset-bottom,0px))] left-4 right-4 z-50 mx-auto flex max-w-2xl items-center justify-between gap-3 rounded-[1.25rem] border-0 bg-card/95 px-4 py-3 shadow-[0_8px_40px_-12px_rgba(15,23,42,0.28)] backdrop-blur-md md:bottom-4 md:left-auto md:right-10">
           <p className="text-sm text-muted-foreground">Unsaved changes</p>
           <div className="flex items-center gap-2">
             <Button

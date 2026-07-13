@@ -32,6 +32,22 @@ export function googleMapsDirectionsUrl(destination: string): string {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
 }
 
+/** Directions URL for a stop — prefers coordinates, then address, then name. */
+export function locationDirectionsUrl(loc: {
+  address?: string | null;
+  locationName?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+}): string | null {
+  const lat = loc.latitude?.trim();
+  const lng = loc.longitude?.trim();
+  if (lat && lng) {
+    return googleMapsDirectionsUrl(`${lat},${lng}`);
+  }
+  const query = loc.address?.trim() || loc.locationName?.trim();
+  return query ? googleMapsDirectionsUrl(query) : null;
+}
+
 const FAVORITES_KEY = "townhub:favorite-business-ids";
 
 export function readFavoriteBusinessIds(): number[] {
