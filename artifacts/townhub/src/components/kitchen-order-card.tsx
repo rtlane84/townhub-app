@@ -60,39 +60,32 @@ export function KitchenOrderCard({ order, updating, onAdvance }: Props) {
     setLocation(businessOrderDetailPath(order.id));
   }
 
-  function handleCardKeyDown(event: React.KeyboardEvent<HTMLElement>) {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openOrderDetail();
-    }
-  }
-
   return (
     <article
       className={cn(
-        "rounded-lg border bg-card p-3 shadow-sm space-y-2.5 cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+        "touch-pan-y space-y-2.5 rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         overdue && "border-l-4 border-l-destructive bg-destructive/[0.03]",
         !overdue && highlight === "new" && "border-primary ring-2 ring-primary/30",
         !overdue && highlight === "updated" && "border-amber-400/60",
         orderStatusHighlightClass(highlight),
       )}
       data-testid={`kitchen-order-${order.id}`}
-      onClick={openOrderDetail}
-      onKeyDown={handleCardKeyDown}
-      tabIndex={0}
-      role="link"
-      aria-label={`Open ${ticketLabel} details`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-bold text-lg leading-tight truncate tracking-tight">{ticketLabel}</p>
+        <button
+          type="button"
+          className="min-w-0 flex-1 touch-manipulation text-left"
+          onClick={openOrderDetail}
+          aria-label={`Open ${ticketLabel} details`}
+        >
+          <p className="truncate text-lg font-bold leading-tight tracking-tight">{ticketLabel}</p>
           {referenceLabel ? (
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">{referenceLabel}</p>
+            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{referenceLabel}</p>
           ) : null}
           {timeLabel ? (
-            <p className="text-xs text-muted-foreground mt-0.5">{timeLabel}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{timeLabel}</p>
           ) : null}
-        </div>
+        </button>
         <div className="flex flex-col items-end gap-1 shrink-0">
           {overdue ? (
             <span

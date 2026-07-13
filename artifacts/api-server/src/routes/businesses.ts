@@ -8,7 +8,7 @@ import {
   usersTable,
   foodTruckLocationsTable,
 } from "@workspace/db";
-import { eq, and, ilike, count, isNull } from "drizzle-orm";
+import { eq, and, ilike, count, isNull, sum, inArray } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import {
   CreateBusinessBody,
@@ -24,6 +24,7 @@ import {
   resolveOrderingAvailabilityMode,
   resolveOrderClosingBufferMinutes,
   defaultStorefrontModeForBusinessType,
+  resolveStorefrontMode,
   normalizeWebsiteUrl,
   normalizeLegacyBusinessType,
   type FoodTruckLocationWindow,
@@ -122,7 +123,10 @@ export function serializeBusiness(
     ntfyLastTestAt: b.ntfyLastTestAt,
     ntfySubscriptionUrl: b.ntfyTopic ? buildNtfySubscriptionUrl(b.ntfyTopic) : null,
     isMobileBusiness: b.isMobileBusiness || normalizedType.isMobileBusiness,
-    storefrontMode: b.storefrontMode,
+    storefrontMode: resolveStorefrontMode({
+      type: normalizedType.type,
+      storefrontMode: b.storefrontMode,
+    }),
     orderingAvailabilityMode: resolveOrderingAvailabilityMode(b),
     orderingEnabled: b.orderingEnabled ?? true,
     orderingAvailable: availability.available,
@@ -221,7 +225,47 @@ router.get("/businesses", async (req, res): Promise<void> => {
     .where(and(...conditions))
     .orderBy(businessesTable.featured, businessesTable.name);
 
-  res.json(businesses.map((business) => serializePublicBusiness(business)));
+  const mobileBusinessIds = businesses
+    .filter((business) => business.isMobileBusiness)
+    .map((business) => business.id);
+
+  const mobileLocationsByBusiness = new Map<number, FoodTruckLocationWindow[]>();
+  if (mobileBusinessIds.length > 0) {
+    const locs = await db
+      .select({
+        businessId: foodTruckLocationsTable.businessId,
+        locationDate: foodTruckLocationsTable.locationDate,
+        startTime: foodTruckLocationsTable.startTime,
+        endTime: foodTruckLocationsTable.endTime,
+        isActive: foodTruckLocationsTable.isActive,
+      })
+      .from(foodTruckLocationsTable)
+      .where(
+        and(
+          inArray(foodTruckLocationsTable.businessId, mobileBusinessIds),
+          eq(foodTruckLocationsTable.isActive, true),
+        ),
+      );
+
+    for (const loc of locs) {
+      const list = mobileLocationsByBusiness.get(loc.businessId) ?? [];
+      list.push({
+        locationDate: loc.locationDate,
+        startTime: loc.startTime,
+        endTime: loc.endTime,
+        isActive: loc.isActive,
+      });
+      mobileLocationsByBusiness.set(loc.businessId, list);
+    }
+  }
+
+  res.json(
+    businesses.map((business) =>
+      serializePublicBusiness(business, {
+        mobileLocations: mobileLocationsByBusiness.get(business.id),
+      }),
+    ),
+  );
 });
 
 // POST /api/businesses/register — admin-only direct business creation
@@ -354,16 +398,28 @@ router.get("/marketplace/stats", async (_req, res): Promise<void> => {
 
 // GET /api/businesses/stats — platform stats (admin only)
 router.get("/businesses/stats", requireAdmin, async (req, res): Promise<void> => {
-  const businesses = await db.select().from(businessesTable);
-  const orders = await db.select().from(ordersTable);
+  const [totalBusinessesResult, activeBusinessesResult, orderStatsResult] =
+    await Promise.all([
+      db.select({ value: count() }).from(businessesTable),
+      db
+        .select({ value: count() })
+        .from(businessesTable)
+        .where(eq(businessesTable.active, true)),
+      db
+        .select({ totalOrders: count(), totalRevenue: sum(ordersTable.total) })
+        .from(ordersTable),
+    ]);
 
-  const totalRevenue = orders.reduce((sum, o) => sum + parseFloat(o.total), 0);
+  const totalBusinesses = totalBusinessesResult[0]?.value ?? 0;
+  const activeBusinesses = activeBusinessesResult[0]?.value ?? 0;
+  const totalOrders = orderStatsResult[0]?.totalOrders ?? 0;
+  const parsedRevenue = Number.parseFloat(orderStatsResult[0]?.totalRevenue ?? "0");
 
   res.json({
-    totalBusinesses: businesses.length,
-    activeBusinesses: businesses.filter((b) => b.active).length,
-    totalOrders: orders.length,
-    totalRevenue,
+    totalBusinesses,
+    activeBusinesses,
+    totalOrders,
+    totalRevenue: Number.isFinite(parsedRevenue) ? parsedRevenue : 0,
     recentOrders: [],
   });
 });

@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const schemaDir = new URL("../../../../lib/db/src/schema/", import.meta.url);
 const dbDir = new URL("../../../../lib/db/src/", import.meta.url);
+const routesDir = new URL("../routes/", import.meta.url);
 
 describe("database performance indexes", () => {
   it("defines hot-path indexes on orders and related tables", async () => {
@@ -83,5 +84,17 @@ describe("database pool configuration", () => {
     assert.match(source, /resolveDatabasePoolConfig/);
     assert.match(source, /pool\.on\("error"/);
     assert.match(source, /statement_timeout/);
+  });
+
+  it("aggregates platform overview stats in SQL instead of loading full tables", async () => {
+    const source = await readFile(new URL("businesses.ts", routesDir), "utf8");
+    const statsRoute = source.slice(
+      source.indexOf('router.get("/businesses/stats"'),
+      source.indexOf('// GET /api/businesses/checkout'),
+    );
+
+    assert.match(statsRoute, /count\(\)/);
+    assert.match(statsRoute, /sum\(ordersTable\.total\)/);
+    assert.doesNotMatch(statsRoute, /db\.select\(\)\.from\((businesses|orders)Table\)/);
   });
 });

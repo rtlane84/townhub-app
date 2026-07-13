@@ -47,6 +47,7 @@ import type {
   DeviceRegistration,
   Event,
   EventInput,
+  EventSubmitInput,
   FoodTruckLocation,
   FoodTruckLocationInput,
   FoodTruckLocationWithBusiness,
@@ -56,6 +57,7 @@ import type {
   HealthStatus,
   Highlight,
   HighlightInput,
+  ListAdminEventsParams,
   ListAllOrdersParams,
   ListBusinessOrdersParams,
   ListBusinessesParams,
@@ -89,6 +91,7 @@ import type {
   ProductUpdate,
   PublicPricingPlan,
   RegisterDeviceInput,
+  RejectEventBody,
   StripeConnectStartInput,
   StripeConnectStartResult,
   StripeConnectStatus,
@@ -4499,7 +4502,7 @@ export const getListEventsUrl = (params?: ListEventsParams,) => {
 }
 
 /**
- * @summary List active events
+ * @summary List active approved events
  */
 export const listEvents = async (params?: ListEventsParams, options?: RequestInit): Promise<Event[]> => {
 
@@ -4546,7 +4549,7 @@ export type ListEventsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List active events
+ * @summary List active approved events
  */
 
 export function useListEvents<TData = Awaited<ReturnType<typeof listEvents>>, TError = ErrorType<unknown>>(
@@ -4638,6 +4641,77 @@ export const useCreateEvent = <TError = ErrorType<void>,
       return useMutation(getCreateEventMutationOptions(options));
     }
 
+export const getSubmitEventUrl = () => {
+
+
+
+
+  return `/api/events/submit`
+}
+
+/**
+ * @summary Submit a community event for admin review
+ */
+export const submitEvent = async (eventSubmitInput: EventSubmitInput, options?: RequestInit): Promise<Event> => {
+
+  return customFetch<Event>(getSubmitEventUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      eventSubmitInput,)
+  }
+);}
+
+
+
+
+export const getSubmitEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitEvent>>, TError,{data: BodyType<EventSubmitInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitEvent>>, TError,{data: BodyType<EventSubmitInput>}, TContext> => {
+
+const mutationKey = ['submitEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitEvent>>, {data: BodyType<EventSubmitInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitEvent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitEventMutationResult = NonNullable<Awaited<ReturnType<typeof submitEvent>>>
+    export type SubmitEventMutationBody = BodyType<EventSubmitInput>
+    export type SubmitEventMutationError = ErrorType<void>
+
+    /**
+ * @summary Submit a community event for admin review
+ */
+export const useSubmitEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitEvent>>, TError,{data: BodyType<EventSubmitInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitEvent>>,
+        TError,
+        {data: BodyType<EventSubmitInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitEventMutationOptions(options));
+    }
+
 export const getGetEventUrl = (id: number,) => {
 
 
@@ -4647,7 +4721,7 @@ export const getGetEventUrl = (id: number,) => {
 }
 
 /**
- * @summary Get a single event
+ * @summary Get a single approved active event
  */
 export const getEvent = async (id: number, options?: RequestInit): Promise<Event> => {
 
@@ -4671,7 +4745,7 @@ export const getGetEventQueryKey = (id: number,) => {
     }
 
 
-export const getGetEventQueryOptions = <TData = Awaited<ReturnType<typeof getEvent>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetEventQueryOptions = <TData = Awaited<ReturnType<typeof getEvent>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -4690,14 +4764,14 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type GetEventQueryResult = NonNullable<Awaited<ReturnType<typeof getEvent>>>
-export type GetEventQueryError = ErrorType<unknown>
+export type GetEventQueryError = ErrorType<void>
 
 
 /**
- * @summary Get a single event
+ * @summary Get a single approved active event
  */
 
-export function useGetEvent<TData = Awaited<ReturnType<typeof getEvent>>, TError = ErrorType<unknown>>(
+export function useGetEvent<TData = Awaited<ReturnType<typeof getEvent>>, TError = ErrorType<void>>(
  id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEvent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -4855,6 +4929,232 @@ export const useDeleteEvent = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteEventMutationOptions(options));
+    }
+
+export const getListAdminEventsUrl = (params?: ListAdminEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/events?${stringifiedParams}` : `/api/admin/events`
+}
+
+/**
+ * @summary List events for admin review (all statuses)
+ */
+export const listAdminEvents = async (params?: ListAdminEventsParams, options?: RequestInit): Promise<Event[]> => {
+
+  return customFetch<Event[]>(getListAdminEventsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminEventsQueryKey = (params?: ListAdminEventsParams,) => {
+    return [
+    `/api/admin/events`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminEventsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminEvents>>, TError = ErrorType<void>>(params?: ListAdminEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminEventsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminEvents>>> = ({ signal }) => listAdminEvents(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminEvents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminEvents>>>
+export type ListAdminEventsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List events for admin review (all statuses)
+ */
+
+export function useListAdminEvents<TData = Awaited<ReturnType<typeof listAdminEvents>>, TError = ErrorType<void>>(
+ params?: ListAdminEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminEventsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getApproveEventUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/events/${id}/approve`
+}
+
+/**
+ * @summary Approve a pending event submission
+ */
+export const approveEvent = async (id: number, options?: RequestInit): Promise<Event> => {
+
+  return customFetch<Event>(getApproveEventUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getApproveEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveEvent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof approveEvent>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['approveEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveEvent>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  approveEvent(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveEventMutationResult = NonNullable<Awaited<ReturnType<typeof approveEvent>>>
+
+    export type ApproveEventMutationError = ErrorType<void>
+
+    /**
+ * @summary Approve a pending event submission
+ */
+export const useApproveEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveEvent>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof approveEvent>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getApproveEventMutationOptions(options));
+    }
+
+export const getRejectEventUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/events/${id}/reject`
+}
+
+/**
+ * @summary Reject a pending event submission
+ */
+export const rejectEvent = async (id: number,
+    rejectEventBody?: RejectEventBody, options?: RequestInit): Promise<Event> => {
+
+  return customFetch<Event>(getRejectEventUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      rejectEventBody,)
+  }
+);}
+
+
+
+
+export const getRejectEventMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectEvent>>, TError,{id: number;data?: BodyType<RejectEventBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rejectEvent>>, TError,{id: number;data?: BodyType<RejectEventBody>}, TContext> => {
+
+const mutationKey = ['rejectEvent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectEvent>>, {id: number;data?: BodyType<RejectEventBody>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  rejectEvent(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectEventMutationResult = NonNullable<Awaited<ReturnType<typeof rejectEvent>>>
+    export type RejectEventMutationBody = BodyType<RejectEventBody> | undefined
+    export type RejectEventMutationError = ErrorType<void>
+
+    /**
+ * @summary Reject a pending event submission
+ */
+export const useRejectEvent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectEvent>>, TError,{id: number;data?: BodyType<RejectEventBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof rejectEvent>>,
+        TError,
+        {id: number;data?: BodyType<RejectEventBody>},
+        TContext
+      > => {
+      return useMutation(getRejectEventMutationOptions(options));
     }
 
 export const getListHighlightsUrl = () => {

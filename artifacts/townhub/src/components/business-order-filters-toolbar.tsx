@@ -65,6 +65,8 @@ type SharedFilterProps = {
   onClearFilters: () => void;
   testIdPrefix: string;
   className?: string;
+  /** Tighter chrome for kitchen display density. */
+  density?: "default" | "compact";
 };
 
 type BusinessOrderFiltersToolbarProps =
@@ -113,7 +115,10 @@ export function BusinessOrderFiltersToolbar(props: BusinessOrderFiltersToolbarPr
     onClearFilters,
     testIdPrefix,
     className,
+    density = "default",
   } = props;
+
+  const compact = density === "compact";
 
   const statusValue =
     variant === "orders"
@@ -124,19 +129,23 @@ export function BusinessOrderFiltersToolbar(props: BusinessOrderFiltersToolbarPr
 
   return (
     <div
-      className={cn("rounded-xl border bg-card p-3 md:p-4 space-y-3", className)}
+      className={cn(
+        "rounded-xl border bg-card",
+        compact ? "space-y-2 p-2 md:p-2.5" : "space-y-3 p-3 md:p-4",
+        className,
+      )}
       data-testid={`${testIdPrefix}-toolbar`}
     >
       <div className="relative">
         <Search
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
           aria-hidden
         />
         <Input
           value={searchQuery}
           onChange={(event) => onSearchQueryChange(event.target.value)}
           placeholder={searchPlaceholder}
-          className="pl-9"
+          className={cn("pl-9", compact && "h-10")}
           data-testid={`${testIdPrefix}-search-input`}
           aria-label={searchPlaceholder}
         />
@@ -147,7 +156,7 @@ export function BusinessOrderFiltersToolbar(props: BusinessOrderFiltersToolbarPr
           <Button
             type="button"
             variant="outline"
-            className="w-full justify-between h-10"
+            className={cn("w-full justify-between", compact ? "h-9" : "h-10")}
             aria-expanded={filtersExpanded}
             data-testid={`${testIdPrefix}-filters-toggle`}
           >

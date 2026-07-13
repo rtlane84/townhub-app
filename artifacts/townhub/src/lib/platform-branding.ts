@@ -51,9 +51,14 @@ export const SITE_HEADER_HEIGHT_CSS_VAR = "--site-header-height";
 export const DASHBOARD_MOBILE_NAV_TOP_CLASS =
   "dashboard-mobile-subnav top-[calc(var(--site-header-height,4rem)+var(--safe-area-top,env(safe-area-inset-top,0px)))]";
 
-/** Main content offset: site header + safe area + mobile dashboard sub-nav (~3rem) */
+/**
+ * Main content offset under the fixed mobile Sections bar.
+ * Web: header is in-flow/sticky in the same scroll context, so clear header + safe area + subnav.
+ * Native: header sits outside `.native-scroll-root`, so only clear the Sections bar height.
+ */
+export const DASHBOARD_MOBILE_SUBNAV_HEIGHT = "3.5rem";
 export const DASHBOARD_MOBILE_MAIN_TOP_CLASS =
-  "pt-[calc(var(--site-header-height,4rem)+var(--safe-area-top,env(safe-area-inset-top,0px))+3rem)] md:pt-0";
+  "dashboard-mobile-main-top pt-[calc(var(--site-header-height,4rem)+var(--safe-area-top,env(safe-area-inset-top,0px))+var(--dashboard-mobile-subnav-height,3.5rem))] md:pt-0";
 
 /** Native bottom tab bar height (excluding safe area) — floating pill + padding */
 export const NATIVE_BOTTOM_TAB_HEIGHT_PX = 64;

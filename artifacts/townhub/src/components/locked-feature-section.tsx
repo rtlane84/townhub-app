@@ -15,7 +15,7 @@ export function LockedFeatureSection({ featureKey, children, className }: Locked
   const locked = !hasFeature(featureKey);
 
   if (!locked) {
-    return <div className={className}>{children}</div>;
+    return <div className={cn("space-y-8", className)}>{children}</div>;
   }
 
   return (

@@ -78,7 +78,7 @@ Subscribe to these events (in addition to existing Connect/order events):
 
 The handler routes by session `mode` and metadata:
 
-- **Order checkout**: `mode: payment` + `metadata.orderId` → marks order paid (Connect)
+- **Order checkout**: `mode: payment` + `metadata.pendingCheckoutId` → materializes the paid order (Connect); legacy in-flight sessions may still carry `metadata.orderId`
 - **Subscription checkout**: `mode: subscription` + `metadata.type: platform_subscription` → updates `business_subscriptions`
 
 Subscription webhooks never modify orders. Order webhooks never modify subscription status.
@@ -171,7 +171,7 @@ After returning from the Customer Portal, the subscription page auto-refreshes.
 
 Webhook sync also triggers TownHub subscription lifecycle emails (welcome, payment failed, etc.). See [SUBSCRIPTION_NOTIFICATIONS.md](./SUBSCRIPTION_NOTIFICATIONS.md).
 
-Order payment webhooks (`checkout.session.completed` with `metadata.orderId`) are never mixed with subscription events.
+Order payment webhooks (`checkout.session.completed` with `metadata.pendingCheckoutId`, or legacy `metadata.orderId`) are never mixed with subscription events.
 
 ---
 
@@ -252,7 +252,7 @@ Complimentary/founding plans keep access except when `SUSPENDED`.
 |---------|--------|
 | Checkout returns 400 “missing Stripe price ID” | Plan has `stripeMonthlyPriceId` / `stripeYearlyPriceId` in admin |
 | Status stuck on `INCOMPLETE` | Webhook secret, endpoint URL, and event subscriptions |
-| Order marked paid incorrectly | Session must have `metadata.orderId`; subscription sessions must not |
+| Order materialized incorrectly | Current order sessions must have `metadata.pendingCheckoutId`; subscription sessions must have `metadata.type: platform_subscription` instead |
 | Portal changes not reflected | Return URL includes `?portal=return`; use Refresh or refocus the tab |
 
 For Connect order payments, see `docs/STRIPE_SETUP.md`.

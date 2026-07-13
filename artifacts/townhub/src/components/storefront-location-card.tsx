@@ -27,7 +27,7 @@ export function StorefrontLocationCard({
 
   return (
     <section
-      className="min-w-0 rounded-[1.15rem] border border-black/[0.05] bg-background/60 p-3 shadow-none sm:p-4"
+      className="min-w-0 rounded-[1.15rem] border border-black/[0.05] bg-card p-3 shadow-sm sm:p-4"
       aria-labelledby="storefront-location-heading"
     >
       <h2
@@ -40,18 +40,13 @@ export function StorefrontLocationCard({
 
       {presence === "mobile" ? (
         <div className="space-y-3">
-          <div>
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-              <Truck className="h-4 w-4 text-primary" aria-hidden />
-              Mobile business
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              This business moves around town. Check upcoming stops instead of a
-              permanent storefront map.
-            </p>
-          </div>
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+            <Truck className="h-4 w-4 text-primary" aria-hidden />
+            Mobile business
+          </p>
           {upcomingLocations.length > 0 ? (
             <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground">Next stop</p>
               {upcomingLocations.slice(0, 3).map((loc) => (
                 <div
                   key={loc.id}

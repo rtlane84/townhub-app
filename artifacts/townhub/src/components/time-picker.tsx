@@ -84,6 +84,10 @@ type TimeRangePickerProps = {
   endId?: string;
   startTestId?: string;
   endTestId?: string;
+  /** Always two columns (good for compact mobile forms). */
+  alwaysTwoColumns?: boolean;
+  showFriendlyHint?: boolean;
+  className?: string;
 };
 
 export function TimeRangePicker({
@@ -98,6 +102,9 @@ export function TimeRangePicker({
   endId,
   startTestId,
   endTestId,
+  alwaysTwoColumns = false,
+  showFriendlyHint = true,
+  className,
 }: TimeRangePickerProps) {
   const start = normalizeOptionalTime(startValue);
   const end = normalizeOptionalTime(endValue);
@@ -107,8 +114,14 @@ export function TimeRangePicker({
       : undefined;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <div className="space-y-1.5">
+    <div
+      className={cn(
+        "grid gap-3",
+        alwaysTwoColumns ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 sm:gap-4",
+        className,
+      )}
+    >
+      <div className="min-w-0 space-y-1.5">
         <Label htmlFor={startId} className="text-sm font-medium">
           {startLabel}
         </Label>
@@ -117,10 +130,12 @@ export function TimeRangePicker({
           value={startValue}
           onChange={onStartChange}
           optional={optional}
+          className="h-11"
+          showFriendlyHint={showFriendlyHint}
           data-testid={startTestId}
         />
       </div>
-      <div className="space-y-1.5">
+      <div className="min-w-0 space-y-1.5">
         <Label htmlFor={endId} className="text-sm font-medium">
           {endLabel}
         </Label>
@@ -131,6 +146,8 @@ export function TimeRangePicker({
           optional={optional}
           min={start || undefined}
           error={endError}
+          className="h-11"
+          showFriendlyHint={showFriendlyHint}
           data-testid={endTestId}
         />
       </div>

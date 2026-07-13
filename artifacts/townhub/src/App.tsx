@@ -26,18 +26,17 @@ import { clearNativeOAuthPending } from "@/lib/native-oauth-resume";
 import { consumePostAuthRedirect } from "@/lib/native-post-auth-redirect";
 
 import NotFound from "@/pages/not-found";
-import Home from "@/pages/home";
-import Events from "@/pages/events";
-import Businesses from "@/pages/businesses";
-import Storefront from "@/pages/storefront";
-import Cart from "@/pages/cart";
-import OrderConfirmation from "@/pages/order-confirmation";
-import CheckoutReturnPage from "@/pages/checkout-return";
-import MyOrders from "@/pages/my-orders";
-import MyOrderDetail from "@/pages/my-order-detail";
-import Help from "@/pages/help";
-import Pricing from "@/pages/pricing";
-
+const Home = lazy(() => import("@/pages/home"));
+const Events = lazy(() => import("@/pages/events"));
+const Businesses = lazy(() => import("@/pages/businesses"));
+const Storefront = lazy(() => import("@/pages/storefront"));
+const Cart = lazy(() => import("@/pages/cart"));
+const OrderConfirmation = lazy(() => import("@/pages/order-confirmation"));
+const CheckoutReturnPage = lazy(() => import("@/pages/checkout-return"));
+const MyOrders = lazy(() => import("@/pages/my-orders"));
+const MyOrderDetail = lazy(() => import("@/pages/my-order-detail"));
+const Help = lazy(() => import("@/pages/help"));
+const Pricing = lazy(() => import("@/pages/pricing"));
 const FoodTrucks = lazy(() => import("@/pages/food-trucks"));
 const Setup = lazy(() => import("@/pages/setup"));
 const ListYourBusiness = lazy(() => import("@/pages/list-your-business"));
@@ -70,6 +69,7 @@ const AdminSettings = lazy(() => import("@/pages/dashboard/admin/settings"));
 const AdminSystemStatus = lazy(() => import("@/pages/dashboard/admin/system-status"));
 import { SelectedBusinessProvider } from "@/hooks/selected-business-context";
 import { BusinessFeatureAccessProvider } from "@/hooks/business-feature-access";
+import { KitchenDisplayModeProvider } from "@/hooks/kitchen-display-mode";
 import { BusinessHubGate } from "@/components/business-hub-gate";
 import { AccountDisabledGate } from "@/components/account-disabled-gate";
 import { NativePushRegistration } from "@/components/native-push-registration";
@@ -426,21 +426,18 @@ function ClerkProviderWithRoutes() {
         <AnimatedSplash />
         <CartProvider>
           <TooltipProvider>
+            <KitchenDisplayModeProvider>
             <Layout>
               <Switch>
                 {/* Public routes */}
-                <Route path="/" component={Home} />
-                <Route path="/events" component={Events} />
-                <Route path="/food-trucks">
-                  <Suspense fallback={<RoutePageLoader />}>
-                    <FoodTrucks />
-                  </Suspense>
-                </Route>
-                <Route path="/businesses" component={Businesses} />
-                <Route path="/businesses/:slug" component={Storefront} />
-                <Route path="/cart" component={Cart} />
-                <Route path="/checkout/return/:pendingCheckoutId" component={CheckoutReturnPage} />
-                <Route path="/order/:id" component={OrderConfirmation} />
+                <SuspenseRoute path="/" component={Home} />
+                <SuspenseRoute path="/events" component={Events} />
+                <SuspenseRoute path="/food-trucks" component={FoodTrucks} />
+                <SuspenseRoute path="/businesses" component={Businesses} />
+                <SuspenseRoute path="/businesses/:slug" component={Storefront} />
+                <SuspenseRoute path="/cart" component={Cart} />
+                <SuspenseRoute path="/checkout/return/:pendingCheckoutId" component={CheckoutReturnPage} />
+                <SuspenseRoute path="/order/:id" component={OrderConfirmation} />
                 <ProtectedRoute path="/my-orders/:id" component={MyOrderDetail} />
                 <ProtectedRoute path="/my-orders" component={MyOrders} />
 
@@ -451,8 +448,8 @@ function ClerkProviderWithRoutes() {
                 <Route path="/sso-callback/*?" component={SsoCallbackPage} />
                 <SuspenseRoute path="/setup" component={Setup} />
                 <SuspenseRoute path="/list-your-business" component={ListYourBusiness} />
-                <Route path="/help" component={Help} />
-                <Route path="/pricing" component={Pricing} />
+                <SuspenseRoute path="/help" component={Help} />
+                <SuspenseRoute path="/pricing" component={Pricing} />
                 {import.meta.env.DEV ? (
                   <SuspenseRoute path="/debug/sentry" component={DebugSentryPage} />
                 ) : null}
@@ -491,6 +488,7 @@ function ClerkProviderWithRoutes() {
                 <Route component={NotFound} />
               </Switch>
             </Layout>
+            </KitchenDisplayModeProvider>
             <Toaster />
           </TooltipProvider>
         </CartProvider>

@@ -71,7 +71,7 @@ Become the default digital front door for local commerce in a town or county.
 
 ### Initial market
 
-Independent businesses and residents in one launch town or county, operated by a local TownHub administrator.
+Independent businesses and residents in Clay, the first pilot locality, operated by a local TownHub administrator.
 
 ### Initial business segments
 
@@ -86,7 +86,7 @@ Independent businesses and residents in one launch town or county, operated by a
 
 ### Expansion model
 
-TownHub should first demonstrate repeatable onboarding and retention in one locality. Geographic expansion is a post-validation strategy, not a beta requirement.
+TownHub should first demonstrate repeatable onboarding and retention in Clay. The long-term product is intended for many localities, but geographic expansion and locality-level tenancy are post-validation work, not beta requirements.
 
 ---
 
@@ -602,7 +602,7 @@ All gates must pass against the release candidate or have a documented, time-lim
 
 The product owner must resolve these before general availability:
 
-1. What exact town/county and first business cohort define the launch market?
+1. Which Clay businesses make up the first pilot cohort?
 2. What are the public plan names, prices, trial terms, setup fees, and transaction-fee policy?
 3. Who is responsible for refunds, disputes, fulfillment failures, and customer support: TownHub, the business, or both?
 4. What merchant verification is required before activation?
@@ -644,4 +644,3 @@ A feature is ready for implementation when it can be delivered as a coherent ver
 - [Stripe Billing setup](./STRIPE_BILLING_SETUP.md)
 - [Database backup and recovery](./DATABASE_BACKUP_AND_RECOVERY.md)
 - [iOS application](./IOS_APP.md)
-

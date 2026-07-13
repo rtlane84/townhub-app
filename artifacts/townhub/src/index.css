@@ -255,6 +255,21 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  /* Horizontal rails: allow pan-x inside native pages that use touch-action: pan-y */
+  .th-h-scroll {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+  .th-h-scroll > * {
+    scroll-snap-align: start;
+  }
 }
 
 @keyframes th-fade-up {
@@ -275,6 +290,7 @@ html.native-app {
   --safe-area-right: max(env(safe-area-inset-right, 0px), constant(safe-area-inset-right, 0px));
   --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), constant(safe-area-inset-bottom, 0px));
   --safe-area-left: max(env(safe-area-inset-left, 0px), constant(safe-area-inset-left, 0px));
+  --dashboard-mobile-subnav-height: 3.5rem;
   height: 100%;
   overflow: hidden;
   /* Solid canvas behind status bar + home indicator */
@@ -326,7 +342,8 @@ html.native-app .native-scroll-root {
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   background-color: hsl(220 16% 94%);
-  touch-action: pan-y;
+  /* pan-x pan-y so nested featured rails can scroll horizontally */
+  touch-action: pan-x pan-y;
 }
 
 /* Opaque header so status-bar region matches the app canvas */
@@ -419,6 +436,11 @@ html.native-app .dashboard-mobile-subnav {
   background-color: hsl(var(--background));
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+}
+
+/* Header sits outside the scroll root on native — clear the full Sections bar height */
+html.native-app .dashboard-mobile-main-top {
+  padding-top: var(--dashboard-mobile-subnav-height, 3.5rem);
 }
 
 @keyframes native-fade-up {
@@ -713,4 +735,10 @@ html.native-app .native-pressable:active {
 
 .kitchen-display-board[data-fullscreen="true"] [data-kitchen-column-scroll] {
   max-height: calc(100vh - 6rem);
+}
+
+/* Prefer page scroll over nested scroll regions on kitchen (native + mobile) */
+[data-testid="kitchen-mobile-board"],
+[data-testid="kitchen-display-board"]:not([data-fullscreen="true"]) {
+  touch-action: pan-y;
 }

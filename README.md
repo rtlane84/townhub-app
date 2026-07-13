@@ -26,11 +26,11 @@ TownHub (LocalOrderHub) is a multi-tenant local marketplace platform. Customers 
 |-------|------------|
 | Runtime | Node.js, TypeScript 5.9 |
 | Monorepo | pnpm workspaces |
-| Frontend | React 18, Vite, Tailwind, shadcn/ui, wouter, TanStack Query |
+| Frontend | React 19, Vite, Tailwind, shadcn/ui, wouter, TanStack Query |
 | Auth | Clerk (`@clerk/react` + `@clerk/express`) |
 | API | Express 5 |
 | Database | PostgreSQL + Drizzle ORM |
-| Validation | Zod v4, Orval-generated schemas from OpenAPI |
+| Validation | Zod 3, Orval-generated schemas from OpenAPI |
 | Payments | Stripe Connect (orders) + Stripe Billing (subscriptions) |
 | Media | Supabase Storage (default) or local filesystem (dev) |
 
@@ -62,11 +62,12 @@ Set `APP_BASE_URL=http://localhost:23032` and `VITE_CLERK_PROXY_URL=http://local
 
 ## Guest Order Access Tokens
 
-Guest users can place orders without signing in. To protect customer PII:
+Guest users can place pay-at-pickup or card orders without signing in. To protect customer PII:
 
-1. `POST /api/orders` returns an `accessToken` in the response.
-2. The confirmation page loads the order at `/order/:id?token=…`.
-3. Stripe checkout sends `accessToken` in the `POST /api/checkout/session` body.
+1. Pay-at-pickup uses `POST /api/orders`, which creates the order and returns an order `accessToken`.
+2. Card checkout uses `POST /api/checkout/intents`, which creates a pending checkout—not an order—and returns `pendingCheckoutId`, a pending-checkout `accessToken`, and the Stripe URL.
+3. After Stripe returns, `POST /api/checkout/confirm` receives the pending ID and token, verifies payment, materializes the paid order idempotently, and returns its order token.
+4. The confirmation page loads the order at `/order/:id?token=…`.
 
 Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 characters). See [SECURITY.md](SECURITY.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
@@ -77,6 +78,7 @@ Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 cha
 | Document | Purpose |
 |----------|---------|
 | [docs/PRD.md](docs/PRD.md) | Product vision, launch scope, requirements, metrics, and acceptance criteria |
+| [docs/CODEBASE_HEALTH_AUDIT.md](docs/CODEBASE_HEALTH_AUDIT.md) | Architecture, maintainability, bloat, documentation, and performance audit |
 | [docs/SETUP.md](docs/SETUP.md) | Full local setup, env vars, providers, troubleshooting |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design for developers |
 | [SECURITY.md](SECURITY.md) | Auth, authorization, and security model |
@@ -119,7 +121,7 @@ pnpm --filter @workspace/api-spec run codegen
 
 - Cart state is `localStorage` only (no server-side cart)
 - List endpoints return full result sets (no pagination)
-- Guest notification email/SMS links do not yet include access tokens (see [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md))
-- Food-truck location mutations verify auth but not per-business ownership
+- Business Hub live events use an in-process event bus and therefore require a
+  single API instance until shared pub/sub is added
 
 Active development is tracked in **Linear** — see [PROJECT_TRACKER.md](PROJECT_TRACKER.md).

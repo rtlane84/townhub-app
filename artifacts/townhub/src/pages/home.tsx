@@ -4,6 +4,7 @@ import {
   useListEvents,
   useListHighlights,
   useListTodayFoodTrucks,
+  useListUpcomingFoodTrucks,
   useGetWeather,
   getGetWeatherQueryKey,
   useGetMarketplaceStats,
@@ -11,6 +12,7 @@ import {
   getListEventsQueryKey,
   getListHighlightsQueryKey,
   getListTodayFoodTrucksQueryKey,
+  getListUpcomingFoodTrucksQueryKey,
   getGetMarketplaceStatsQueryKey,
 } from "@workspace/api-client-react";
 import { Link } from "wouter";
@@ -152,6 +154,14 @@ export default function Home() {
     },
   );
 
+  const { data: allBusinesses = [] } = useListBusinesses(undefined, {
+    query: {
+      queryKey: getListBusinessesQueryKey(),
+      placeholderData: keepPreviousData,
+      staleTime: 60_000,
+    },
+  });
+
   const { data: featuredEventsRaw = [], isPending: featuredEventsPending } =
     useListEvents(
       { upcoming: true, featured: true },
@@ -188,6 +198,14 @@ export default function Home() {
         placeholderData: keepPreviousData,
       },
     });
+
+  const { data: upcomingTrucks = [] } = useListUpcomingFoodTrucks({
+    query: {
+      queryKey: getListUpcomingFoodTrucksQueryKey(),
+      placeholderData: keepPreviousData,
+      staleTime: 60_000,
+    },
+  });
 
   const { data: marketplaceStats, isPending: marketplaceStatsPending } =
     useGetMarketplaceStats({
@@ -233,10 +251,12 @@ export default function Home() {
           placeLabel={placeLabel}
           todayTrucks={todayTrucks}
           todayTrucksLoading={todayTrucksPending && todayTrucks.length === 0}
+          upcomingTrucks={upcomingTrucks}
           upcomingEvents={allUpcomingEvents}
           upcomingEventsLoading={
             upcomingEventsPending && allUpcomingEvents.length === 0
           }
+          businesses={allBusinesses}
           marketplaceStats={marketplaceStats}
           marketplaceStatsLoading={marketplaceStatsPending && !marketplaceStats}
         />

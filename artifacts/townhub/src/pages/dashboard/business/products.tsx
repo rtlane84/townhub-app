@@ -409,7 +409,7 @@ export default function BusinessProducts() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="right" className="w-full overflow-y-auto p-0 sm:max-w-2xl">
           <div className="flex min-h-full flex-col">
-            <SheetHeader className="border-b px-6 pb-4 pt-6">
+            <SheetHeader className="border-b px-6 pb-4 pt-[calc(1.5rem+var(--safe-area-top,0px))]">
               <SheetTitle className="font-serif text-2xl">
                 {editingId ? "Edit Item" : "Add Item"}
               </SheetTitle>

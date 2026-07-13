@@ -5,6 +5,7 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { EventStatus } from './eventStatus';
 import type { EventType } from './eventType';
 
 export interface Event {
@@ -28,5 +29,14 @@ export interface Event {
   eventType: EventType;
   featured: boolean;
   active: boolean;
+  status: EventStatus;
+  /** @nullable */
+  submitterName?: string | null;
+  /** @nullable */
+  submitterEmail?: string | null;
+  /** @nullable */
+  reviewNote?: string | null;
+  /** @nullable */
+  reviewedAt?: Date | null;
   createdAt?: Date;
 }

@@ -95,7 +95,10 @@ describe("help page wiring", () => {
       fs.readFile(new URL("../App.tsx", import.meta.url), "utf8"),
     );
     assert.match(appSource, /path="\/help"/);
-    assert.match(appSource, /from "@\/pages\/help"/);
+    assert.match(
+      appSource,
+      /const Help = lazy\(\(\) => import\("@\/pages\/help"\)\)/,
+    );
   });
 
   it("links Help from layout navigation and footer", async () => {

@@ -103,12 +103,18 @@ export function getStorefrontStatusLine(
   }
 
   for (let offset = 1; offset <= 7; offset += 1) {
-    const day = parsed[(now.getDay() + offset) % 7];
+    const dayIndex = (now.getDay() + offset) % 7;
+    const day = parsed[dayIndex];
     if (!day?.isClosed && day?.openTime) {
+      const weekday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + offset,
+      ).toLocaleDateString(undefined, { weekday: "short" });
       return {
         isOpen: false,
         statusLabel: "Closed",
-        scheduleLabel: `Opens at ${formatTime12h(day.openTime)}`,
+        scheduleLabel: `Opens ${weekday} ${formatTime12h(day.openTime)}`,
       };
     }
   }
@@ -175,6 +181,7 @@ export function getBusinessCapabilityBadges(
 /**
  * Storefront capability label for photo badges / list meta.
  * Prefers "Order online" / "Book online" over mobile tags.
+ * Advertise capability from storefront mode — don't gate on live windows or toggles.
  */
 export function getBusinessStorefrontBadge(
   business: Pick<Business, "type"> & {
@@ -183,11 +190,7 @@ export function getBusinessStorefrontBadge(
     orderingAvailable?: boolean | null;
   },
 ): "Order online" | "Book online" | null {
-  if (
-    isOrderingStorefrontMode(business) &&
-    business.orderingEnabled !== false &&
-    business.orderingAvailable !== false
-  ) {
+  if (isOrderingStorefrontMode(business)) {
     return "Order online";
   }
   if (isAppointmentStorefrontMode(business)) {

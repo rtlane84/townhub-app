@@ -14,6 +14,7 @@ import {
   FeaturedBusinessesSkeleton,
 } from "@/components/business-directory";
 import { NativeEmptyState } from "@/components/native-empty-state";
+import { PeekCarousel } from "@/components/peek-carousel";
 import { SectionHeader } from "@/components/section-header";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
@@ -247,14 +248,17 @@ export default function Businesses() {
                   View all
                 </button>
               </div>
-              <div className=" -mx-1 flex gap-3 overflow-x-auto px-1 pb-1 snap-x snap-mandatory hide-scrollbar">
+              <PeekCarousel
+                label="Featured businesses"
+                itemClassName="basis-[72%] sm:basis-[40%] lg:basis-[28%]"
+              >
                 {featuredBusinesses.map((business) => (
                   <FeaturedBusinessCard
                     key={business.id}
                     business={business}
                   />
                 ))}
-              </div>
+              </PeekCarousel>
             </section>
           ) : null}
 

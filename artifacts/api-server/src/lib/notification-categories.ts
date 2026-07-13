@@ -190,6 +190,12 @@ export function getNotificationCategory(
   return NOTIFICATION_CATEGORIES[key as NotificationCategoryKey];
 }
 
+export function isNotificationCategoryToggleable(
+  category: NotificationCategoryDefinition,
+): boolean {
+  return category.userToggleable !== false;
+}
+
 export function listNotificationCategories(options?: {
   audience?: NotificationAudience;
   implementedOnly?: boolean;
@@ -201,7 +207,7 @@ export function listNotificationCategories(options?: {
     (cat) => {
       if (options?.audience && cat.audience !== options.audience) return false;
       if (options?.implementedOnly && !cat.implemented) return false;
-      if (toggleableOnly && cat.userToggleable === false) return false;
+      if (toggleableOnly && !isNotificationCategoryToggleable(cat)) return false;
       return true;
     },
   );

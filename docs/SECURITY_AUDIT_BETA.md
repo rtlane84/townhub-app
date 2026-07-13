@@ -1,5 +1,9 @@
 # TownHub Production Security Verification
 
+> Verification snapshot from July 11, 2026. Use [SECURITY.md](../SECURITY.md)
+> for the canonical current security model and rerun the documented checks
+> before each release.
+
 Audit of the existing implementation against 10 security categories. **All recommended fixes from the audit have been applied** across two passes.
 
 ---

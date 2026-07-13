@@ -167,7 +167,8 @@ When Connect becomes unhealthy (or a refund fails with a server error), TownHub 
 Customer → POST /api/checkout/intents (pending_checkouts row, no order yet)
        → Stripe Checkout on business connected account
        → payment succeeds
-       → platform webhook (signed) checkout.session.completed
+       → connected-account webhook (signed) checkout.session.completed
+         or server-side /api/checkout/confirm retrieves the paid session
        → create Order + items with paymentStatus = PAID, status = NEW
        → notify business owner + customer
 ```
@@ -204,8 +205,8 @@ Safety measures:
 1. Ensure business payment mode allows online payment and Connect is **Connected**.
 2. Start checkout with **Pay with Card** (creates a pending checkout, not an order).
 3. Pay with test card `**4242 4242 4242 4242`**, any future expiry, any CVC.
-4. Stripe Dashboard → **Webhooks** → confirm `checkout.session.completed` returned **200**.
-5. Business Hub → a **new PAID** order should appear only after webhook delivery (not while the customer is still on Stripe).
+4. Stripe Dashboard → **Webhooks** → confirm `checkout.session.completed` returned **200**. If the browser confirmation wins the race, a later webhook is an idempotent duplicate.
+5. Business Hub → a **new PAID** order should appear only after Stripe reports payment through the verified webhook or server-side confirmation—not merely while the customer is redirected back.
 
 ### Test scenarios
 
@@ -215,7 +216,7 @@ Safety measures:
 | Business not connected, customer tries card | Checkout intent rejected — online unavailable                   |
 | Pay at pickup                               | Order created immediately, no Stripe, stays `PENDING`           |
 | Card checkout before payment                | No order in business dashboard                                  |
-| Duplicate webhook                           | Single PAID order, no duplicate side effects                    |
+| Duplicate webhook or confirmation retry     | Single PAID order, no duplicate side effects                    |
 | Invalid webhook signature                   | `400`, no order created                                         |
 | Mock mode (no platform key, dev only)       | Pending checkout materialized to PAID order immediately         |
 
@@ -248,4 +249,3 @@ Check API logs for `[operational] stripe_webhook_failed`. Logs never include sec
 - [TWILIO_SETUP.md](./TWILIO_SETUP.md) — SMS notifications
 - [PRODUCTION.md](../PRODUCTION.md) — full production checklist
 - [PRODUCTION_MONITORING.md](./PRODUCTION_MONITORING.md) — health checks and operational logging
-

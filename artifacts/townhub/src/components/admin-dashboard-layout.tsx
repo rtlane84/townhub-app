@@ -104,7 +104,7 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
 
       <div
         className={cn(
-          "md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 border-b border-black/[0.04] bg-card/95 px-4 py-2 shadow-[0_1px_12px_-4px_rgba(15,23,42,0.08)] backdrop-blur-md",
+          "md:hidden fixed left-0 right-0 z-40 flex min-h-[3.5rem] items-center gap-3 border-b border-black/[0.04] bg-card/95 px-4 py-2 shadow-[0_1px_12px_-4px_rgba(15,23,42,0.08)] backdrop-blur-md",
           DASHBOARD_MOBILE_NAV_TOP_CLASS,
         )}
       >
@@ -116,7 +116,7 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72 border-0 bg-card p-0">
-            <SheetHeader className="p-6 pb-4">
+            <SheetHeader className="px-6 pb-4 pt-[calc(1.5rem+var(--safe-area-top,0px))]">
               <SheetTitle className="text-left font-serif text-platform-heading">Platform Admin</SheetTitle>
             </SheetHeader>
             <nav className="space-y-1 px-3 pb-6">

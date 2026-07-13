@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FoodTruckScheduleItem, FoodTruckTodayCard } from "@/components/food-truck-card";
 import { FoodTruckMapSection } from "@/components/food-truck-map";
 import { NativeEmptyState } from "@/components/native-empty-state";
+import { PeekCarousel } from "@/components/peek-carousel";
 import { SectionHeader } from "@/components/section-header";
 import { formatFoodTruckDateHeading, groupFoodTrucksByDate } from "@/lib/food-truck-utils";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
@@ -33,17 +34,16 @@ export default function FoodTrucks() {
   const isLoading = todayLoading || upcomingLoading;
 
   return (
-    <div className={cn(PAGE_CONTAINER, "py-8 md:py-10 native-animate-in")}>
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+    <div className={cn(PAGE_CONTAINER, "bg-background py-6 md:py-8 native-animate-in")}>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <SectionHeader
           title="On the move"
           description="Food trucks, mobile markets, and other traveling businesses around town."
           size="lg"
-          className="mb-0"
-          icon={<Truck className="h-4 w-4" />}
+          className="mb-0 min-w-0 flex-1"
         />
         {!isLoading && todayTrucks.length > 0 ? (
-          <Badge variant="soft" className="gap-1.5">
+          <Badge variant="soft" className="gap-1.5 shrink-0">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
             {todayTrucks.length} live today
           </Badge>
@@ -60,15 +60,35 @@ export default function FoodTrucks() {
           <Skeleton className="h-64 w-full rounded-[1.75rem]" />
         </div>
       ) : (
-        <div className="space-y-12">
-          <section>
-            <SectionHeader title="Today's trucks" size="sm" className="mb-5" />
+        <div className="space-y-8">
+          <section aria-labelledby="today-trucks-heading">
+            <div className="mb-3 flex items-end justify-between gap-3">
+              <h2
+                id="today-trucks-heading"
+                className="text-[17px] font-bold tracking-tight text-platform-heading"
+              >
+                Today’s trucks
+              </h2>
+              {upcomingByDate.length > 0 ? (
+                <button
+                  type="button"
+                  className="shrink-0 text-[13px] font-semibold text-primary"
+                  onClick={() => {
+                    document
+                      .getElementById("upcoming-trucks-heading")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  View all
+                </button>
+              ) : null}
+            </div>
             {todayTrucks.length > 0 ? (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+              <PeekCarousel label="Today’s trucks">
                 {todayTrucks.map((truck) => (
                   <FoodTruckTodayCard key={truck.id} truck={truck} />
                 ))}
-              </div>
+              </PeekCarousel>
             ) : (
               <NativeEmptyState
                 icon={Truck}
@@ -80,14 +100,19 @@ export default function FoodTrucks() {
 
           <FoodTruckMapSection todayTrucks={todayTrucks} />
 
-          <section>
-            <SectionHeader title="Upcoming schedule" size="sm" className="mb-5" />
+          <section aria-labelledby="upcoming-trucks-heading">
+            <h2
+              id="upcoming-trucks-heading"
+              className="mb-3 text-[17px] font-bold tracking-tight text-platform-heading"
+            >
+              All upcoming
+            </h2>
             {upcomingByDate.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {upcomingByDate.map(([date, locations]) => (
-                  <Card key={date} className="overflow-hidden rounded-[1.5rem]">
-                    <CardContent className="p-5 md:p-6">
-                      <div className="mb-3 flex items-center gap-2">
+                  <Card key={date} className="overflow-hidden rounded-2xl border border-black/[0.05] shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="mb-2 flex items-center gap-2">
                         <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                           {formatFoodTruckDateHeading(date)}
                         </span>

@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  useListEvents,
+  useListAdminEvents,
   useCreateEvent,
   useUpdateEvent,
   useDeleteEvent,
-  getListEventsQueryKey,
+  useApproveEvent,
+  useRejectEvent,
 } from "@workspace/api-client-react";
-import type { Event, EventInput } from "@workspace/api-client-react";
+import type { Event, EventInput, EventStatus } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
@@ -19,11 +20,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar, Check, X } from "lucide-react";
 import { formatEventSchedule } from "@/lib/event-dates";
 import { ImageField } from "@/components/image-field";
 import { TimeRangePicker, coerceFormTime } from "@/components/time-picker";
 import { isEndTimeAfterStart, normalizeOptionalTime } from "@workspace/api-zod";
+import { cn } from "@/lib/utils";
 
 const EVENT_TYPES = [
   { value: "COMMUNITY", label: "Community" },
@@ -36,6 +38,19 @@ const EVENT_TYPES = [
 ] as const;
 
 type EventTypeValue = (typeof EVENT_TYPES)[number]["value"];
+
+const STATUS_FILTERS: Array<{ value: "ALL" | EventStatus; label: string }> = [
+  { value: "PENDING", label: "Pending" },
+  { value: "APPROVED", label: "Approved" },
+  { value: "REJECTED", label: "Rejected" },
+  { value: "ALL", label: "All" },
+];
+
+const STATUS_BADGE: Record<EventStatus, string> = {
+  PENDING: "bg-amber-100 text-amber-800 border-amber-200",
+  APPROVED: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  REJECTED: "bg-red-100 text-red-800 border-red-200",
+};
 
 const BLANK: EventInput = {
   title: "",
@@ -52,7 +67,9 @@ const BLANK: EventInput = {
 };
 
 export default function AdminEvents() {
-  const { data: events = [], isLoading } = useListEvents({});
+  const [statusFilter, setStatusFilter] = useState<"ALL" | EventStatus>("PENDING");
+  const listParams = statusFilter === "ALL" ? undefined : { status: statusFilter };
+  const { data: events = [], isLoading } = useListAdminEvents(listParams);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -60,29 +77,73 @@ export default function AdminEvents() {
   const [editing, setEditing] = useState<Event | null>(null);
   const [form, setForm] = useState<EventInput>({ ...BLANK });
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<Event | null>(null);
+  const [rejectNote, setRejectNote] = useState("");
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ["/api/admin/events"] });
+    void queryClient.invalidateQueries({ queryKey: ["/api/events"] });
+  };
 
   const createEvent = useCreateEvent({
     mutation: {
-      onSuccess: () => { invalidate(); toast({ title: "Event created" }); setOpen(false); },
+      onSuccess: () => {
+        invalidate();
+        toast({ title: "Event created" });
+        setOpen(false);
+      },
       onError: () => toast({ title: "Failed to create event", variant: "destructive" }),
     },
   });
 
   const updateEvent = useUpdateEvent({
     mutation: {
-      onSuccess: () => { invalidate(); toast({ title: "Event updated" }); setOpen(false); },
+      onSuccess: () => {
+        invalidate();
+        toast({ title: "Event updated" });
+        setOpen(false);
+      },
       onError: () => toast({ title: "Failed to update event", variant: "destructive" }),
     },
   });
 
   const deleteEvent = useDeleteEvent({
     mutation: {
-      onSuccess: () => { invalidate(); toast({ title: "Event deleted" }); setDeleteId(null); },
+      onSuccess: () => {
+        invalidate();
+        toast({ title: "Event deleted" });
+        setDeleteId(null);
+      },
       onError: () => toast({ title: "Failed to delete event", variant: "destructive" }),
     },
   });
+
+  const approveEvent = useApproveEvent({
+    mutation: {
+      onSuccess: () => {
+        invalidate();
+        toast({ title: "Event approved" });
+      },
+      onError: () => toast({ title: "Failed to approve event", variant: "destructive" }),
+    },
+  });
+
+  const rejectEvent = useRejectEvent({
+    mutation: {
+      onSuccess: () => {
+        invalidate();
+        toast({ title: "Event rejected" });
+        setRejectTarget(null);
+        setRejectNote("");
+      },
+      onError: () => toast({ title: "Failed to reject event", variant: "destructive" }),
+    },
+  });
+
+  const pendingCount = useMemo(
+    () => events.filter((ev) => ev.status === "PENDING").length,
+    [events],
+  );
 
   function openCreate() {
     setEditing(null);
@@ -148,19 +209,39 @@ export default function AdminEvents() {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
   }
 
-  const pending = createEvent.isPending || updateEvent.isPending;
+  const saving = createEvent.isPending || updateEvent.isPending;
 
   return (
     <AdminDashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-serif text-3xl font-bold">Events</h1>
-            <p className="text-muted-foreground mt-1">Manage the community events calendar</p>
+            <p className="mt-1 text-muted-foreground">
+              Review community submissions and manage the events calendar
+            </p>
           </div>
           <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-2" /> Add Event
+            <Plus className="mr-2 h-4 w-4" /> Add Event
           </Button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((filter) => (
+            <Button
+              key={filter.value}
+              type="button"
+              size="sm"
+              variant={statusFilter === filter.value ? "default" : "outline"}
+              className="rounded-full"
+              onClick={() => setStatusFilter(filter.value)}
+            >
+              {filter.label}
+              {filter.value === "PENDING" && statusFilter === "PENDING" && pendingCount > 0
+                ? ` (${pendingCount})`
+                : ""}
+            </Button>
+          ))}
         </div>
 
         <Card>
@@ -169,27 +250,75 @@ export default function AdminEvents() {
               <div className="p-8 text-center text-muted-foreground">Loading…</div>
             ) : events.length === 0 ? (
               <div className="p-12 text-center text-muted-foreground">
-                <Calendar className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                <p>No events yet. Create one to get started.</p>
+                <Calendar className="mx-auto mb-3 h-10 w-10 opacity-40" />
+                <p>
+                  {statusFilter === "PENDING"
+                    ? "No pending event submissions."
+                    : "No events in this filter."}
+                </p>
               </div>
             ) : (
               <div className="divide-y">
                 {events.map((ev) => (
-                  <div key={ev.id} className="flex items-center justify-between px-6 py-4 hover:bg-muted/30">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
+                  <div
+                    key={ev.id}
+                    className="flex flex-col gap-3 px-6 py-4 hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-0.5 flex flex-wrap items-center gap-2">
                         <span className="font-medium">{ev.title}</span>
-                        {ev.featured && <Badge variant="secondary">Featured</Badge>}
-                        {!ev.active && <Badge variant="outline" className="text-muted-foreground">Inactive</Badge>}
+                        <Badge variant="outline" className={cn("border", STATUS_BADGE[ev.status])}>
+                          {ev.status}
+                        </Badge>
+                        {ev.featured ? <Badge variant="secondary">Featured</Badge> : null}
+                        {!ev.active ? (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Inactive
+                          </Badge>
+                        ) : null}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {formatEventSchedule(ev)}
                         {ev.location ? ` · ${ev.location}` : ""}
                       </p>
+                      {ev.submitterName || ev.submitterEmail ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Submitted by {[ev.submitterName, ev.submitterEmail].filter(Boolean).join(" · ")}
+                        </p>
+                      ) : null}
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(ev)}><Pencil className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(ev.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <div className="flex flex-wrap items-center gap-2 sm:ml-4">
+                      {ev.status === "PENDING" ? (
+                        <>
+                          <LoadingButton
+                            size="sm"
+                            className="gap-1.5"
+                            loading={approveEvent.isPending}
+                            onClick={() => approveEvent.mutate({ id: ev.id })}
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            Approve
+                          </LoadingButton>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5"
+                            onClick={() => {
+                              setRejectTarget(ev);
+                              setRejectNote("");
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            Reject
+                          </Button>
+                        </>
+                      ) : null}
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(ev)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteId(ev.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -199,35 +328,48 @@ export default function AdminEvents() {
         </Card>
       </div>
 
-      {/* Create/Edit dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Event" : "Add Event"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Title *</label>
+              <label className="mb-1.5 block text-sm font-medium">Title *</label>
               <Input value={form.title} onChange={f("title")} placeholder="Summer Farmers Market" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Start Date *</label>
+                <label className="mb-1.5 block text-sm font-medium">Start Date *</label>
                 <Input type="date" value={form.date} onChange={f("date")} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">End Date</label>
-                <Input type="date" value={form.endDate ?? ""} onChange={f("endDate")} min={form.date || undefined} />
-                <p className="text-xs text-muted-foreground mt-1">Optional — leave blank for single-day events</p>
+                <label className="mb-1.5 block text-sm font-medium">End Date</label>
+                <Input
+                  type="date"
+                  value={form.endDate ?? ""}
+                  onChange={f("endDate")}
+                  min={form.date || undefined}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Optional — leave blank for single-day events
+                </p>
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Type</label>
-              <Select value={form.eventType} onValueChange={(v) => setForm((p) => ({ ...p, eventType: v as EventTypeValue }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <label className="mb-1.5 block text-sm font-medium">Type</label>
+              <Select
+                value={form.eventType}
+                onValueChange={(v) => setForm((p) => ({ ...p, eventType: v as EventTypeValue }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {EVENT_TYPES.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -241,11 +383,11 @@ export default function AdminEvents() {
               endTestId="input-event-end-time"
             />
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Location</label>
+              <label className="mb-1.5 block text-sm font-medium">Location</label>
               <Input value={form.location} onChange={f("location")} placeholder="Town Square" />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Description</label>
+              <label className="mb-1.5 block text-sm font-medium">Description</label>
               <Textarea value={form.description} onChange={f("description")} rows={3} />
             </div>
             <ImageField
@@ -256,29 +398,45 @@ export default function AdminEvents() {
             />
             <div className="flex items-center justify-between py-1">
               <label className="text-sm font-medium">Featured on homepage</label>
-              <Switch checked={!!form.featured} onCheckedChange={(v) => setForm((p) => ({ ...p, featured: v }))} />
+              <Switch
+                checked={!!form.featured}
+                onCheckedChange={(v) => setForm((p) => ({ ...p, featured: v }))}
+              />
             </div>
             <div className="flex items-center justify-between py-1">
               <label className="text-sm font-medium">Active</label>
-              <Switch checked={!!form.active} onCheckedChange={(v) => setForm((p) => ({ ...p, active: v }))} />
+              <Switch
+                checked={!!form.active}
+                onCheckedChange={(v) => setForm((p) => ({ ...p, active: v }))}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <LoadingButton onClick={handleSave} disabled={!form.title || !form.date} loading={pending} loadingText="Saving…">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <LoadingButton
+              onClick={handleSave}
+              disabled={!form.title || !form.date}
+              loading={saving}
+              loadingText="Saving…"
+            >
               Save
             </LoadingButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete confirm */}
       <Dialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Delete this event?</DialogTitle></DialogHeader>
-          <p className="text-muted-foreground text-sm">This action cannot be undone.</p>
+          <DialogHeader>
+            <DialogTitle>Delete this event?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>
+              Cancel
+            </Button>
             <LoadingButton
               variant="destructive"
               onClick={() => deleteId !== null && deleteEvent.mutate({ id: deleteId })}
@@ -286,6 +444,50 @@ export default function AdminEvents() {
               loadingText="Deleting…"
             >
               Delete
+            </LoadingButton>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={rejectTarget !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setRejectTarget(null);
+            setRejectNote("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reject “{rejectTarget?.title}”?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Note (optional)</label>
+            <Textarea
+              value={rejectNote}
+              onChange={(e) => setRejectNote(e.target.value)}
+              rows={3}
+              placeholder="Reason for rejection"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectTarget(null)}>
+              Cancel
+            </Button>
+            <LoadingButton
+              variant="destructive"
+              loading={rejectEvent.isPending}
+              loadingText="Rejecting…"
+              onClick={() => {
+                if (!rejectTarget) return;
+                rejectEvent.mutate({
+                  id: rejectTarget.id,
+                  data: rejectNote.trim() ? { note: rejectNote.trim() } : {},
+                });
+              }}
+            >
+              Reject
             </LoadingButton>
           </DialogFooter>
         </DialogContent>

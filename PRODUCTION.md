@@ -332,12 +332,13 @@ git checkout v1.0.0-beta1
 - [ ] Guest can add to cart and place a pay-at-pickup order
 - [ ] Order response includes `accessToken`
 - [ ] `/order/:id?token=…` loads confirmation (without token → 404)
-- [ ] `POST /api/checkout/session` without token → 404; with `accessToken` → Stripe URL
+- [ ] `POST /api/checkout/intents` returns `pendingCheckoutId`, pending `accessToken`, and a Stripe URL without creating an order
+- [ ] `POST /api/checkout/confirm` with a missing/invalid pending token → 404; with a valid token after payment → one `PAID` order and order `accessToken`
 
 ### Stripe Connect
 
 - [ ] Business completes Connect onboarding
-- [ ] Card checkout completes; webhook marks order `PAID`
+- [ ] Card checkout completes; verified webhook or confirmation materializes exactly one `PAID` order
 - [ ] Pay-at-pickup order stays `PENDING` (no Stripe)
 
 ### Stripe Billing

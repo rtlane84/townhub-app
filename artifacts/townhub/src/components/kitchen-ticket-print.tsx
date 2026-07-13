@@ -7,6 +7,7 @@ import {
   parseKitchenSpecialFields,
 } from "@/lib/kitchen-ticket-format";
 import { resolveDisplayedOrderTotals } from "@/lib/order-totals-display";
+import { isNativeApp } from "@/lib/native-platform";
 
 type Props = {
   order: Order;
@@ -127,6 +128,86 @@ export function KitchenTicketPrint({ order }: Props) {
   );
 }
 
+const TICKET_PRINT_STYLES = `
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    color: #111;
+    background: #fff;
+    padding: 16px;
+  }
+  .kitchen-ticket { max-width: 320px; margin: 0 auto; }
+  .kitchen-ticket-header { text-align: center; margin-bottom: 8px; }
+  .kitchen-ticket-business { font-size: 16px; font-weight: 700; }
+  .kitchen-ticket-kitchen-label { font-size: 11px; letter-spacing: 0.08em; margin-top: 4px; }
+  .kitchen-ticket-rule { border-top: 1px dashed #999; margin: 10px 0; }
+  .kitchen-ticket-section { margin: 0; }
+  .kitchen-ticket-order-number { font-size: 18px; font-weight: 700; }
+  .kitchen-ticket-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .kitchen-ticket-meta { font-size: 12px; color: #444; margin-top: 2px; }
+  .kitchen-ticket-value { font-size: 14px; margin-top: 2px; }
+  .kitchen-ticket-items { list-style: none; }
+  .kitchen-ticket-item { margin: 6px 0; }
+  .kitchen-ticket-item-row { display: flex; gap: 8px; }
+  .kitchen-ticket-qty { font-weight: 700; min-width: 2ch; }
+  .kitchen-ticket-item-name { flex: 1; }
+  .kitchen-ticket-notes { font-size: 13px; margin-top: 4px; white-space: pre-wrap; }
+  .kitchen-ticket-subtotal-row,
+  .kitchen-ticket-total-row-main { display: flex; justify-content: space-between; margin-top: 4px; font-size: 13px; }
+  .kitchen-ticket-total-row-main { font-size: 15px; font-weight: 700; margin-top: 8px; }
+  .kitchen-ticket-payment { font-size: 12px; margin-top: 8px; }
+  @media print {
+    body { padding: 0; }
+  }
+`;
+
+/**
+ * Web: standard window.print().
+ * Native (WKWebView): print via a temporary iframe so AirPrint / share sheet can appear.
+ */
 export function printKitchenTicket(): void {
-  window.print();
+  if (!isNativeApp()) {
+    window.print();
+    return;
+  }
+
+  const source = document.querySelector<HTMLElement>("[data-testid='kitchen-ticket-print']");
+  const ticketHtml = source?.querySelector(".kitchen-ticket")?.outerHTML;
+  if (!ticketHtml) {
+    window.print();
+    return;
+  }
+
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.style.cssText =
+    "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;";
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument;
+  const win = iframe.contentWindow;
+  if (!doc || !win) {
+    iframe.remove();
+    window.print();
+    return;
+  }
+
+  doc.open();
+  doc.write(
+    `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Kitchen Ticket</title><style>${TICKET_PRINT_STYLES}</style></head><body>${ticketHtml}</body></html>`,
+  );
+  doc.close();
+
+  const cleanup = () => {
+    window.setTimeout(() => iframe.remove(), 500);
+  };
+
+  win.focus();
+  try {
+    win.addEventListener("afterprint", cleanup, { once: true });
+    win.print();
+  } catch {
+    cleanup();
+    window.print();
+  }
 }

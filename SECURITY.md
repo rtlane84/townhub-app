@@ -66,13 +66,14 @@ TownHub stores an app-level account status on each user:
 
 ## Guest Order Access Tokens
 
-Guest checkout does **not** require Clerk authentication to place an order. Guest orders have `customerUserId = null`.
+Guest checkout does **not** require Clerk authentication. Guest orders and pending checkouts have `customerUserId = null`.
 
-To prevent PII leakage, guest order viewing and Stripe checkout require a **signed HMAC access token**:
+To prevent PII leakage, guest order and pending-checkout access use resource-specific **signed HMAC access tokens**:
 
-1. `POST /api/orders` returns `accessToken` in the response body (guest and signed-in orders).
-2. `GET /api/orders/:id` accepts the token via `?token=` query param or `X-Order-Access-Token` header.
-3. `POST /api/checkout/session` accepts `accessToken` in the JSON body for guest Stripe checkout.
+1. Pay-at-pickup `POST /api/orders` creates an order and returns its `accessToken`.
+2. Card `POST /api/checkout/intents` creates `pending_checkouts` state and returns `pendingCheckoutId`, its `accessToken`, and the connected-account Stripe Checkout URL. It does not create an order.
+3. `POST /api/checkout/confirm` accepts `pendingCheckoutId` and the pending token, verifies the bound Stripe session, and materializes or returns the paid order idempotently.
+4. `GET /api/orders/:id` accepts the resulting order token via `?token=` or `X-Order-Access-Token`.
 
 Tokens are HMAC-SHA256 signed with `SESSION_SECRET` (≥ 32 characters). New tokens use **v2** format:
 
@@ -92,7 +93,7 @@ In production, missing `SESSION_SECRET` throws at startup.
 
 All other callers receive **403**.
 
-Stripe success URLs include `?token=…` so the confirmation page can load the order.
+Stripe success URLs carry the pending-checkout token to the checkout-return page. After confirmation/materialization, the frontend uses the returned order token for `/order/:id`.
 
 Customer order email and SMS links use `customerOrderUrlForNotification()` — guest orders include `?token=…`; signed-in customer orders omit it because account login grants access.
 
@@ -133,7 +134,8 @@ Configure preview/staging frontends via `CORS_ALLOWED_ORIGINS` — see `.env.exa
 | `GET /api/pricing/plans`, `GET /api/subscription-plans` | Public plan listing |
 | `GET /api/admin/settings/theme`, `GET /api/platform/theme` | Brand colors |
 | `GET /api/admin/bootstrap-status` | Setup UI probe |
-| `POST /api/orders` | Guest and signed-in checkout |
+| `POST /api/orders` | Guest and signed-in pay-at-pickup order creation |
+| `POST /api/checkout/intents` | Guest and signed-in card intent creation; no durable order yet |
 | `POST /api/orders/prep-estimate` | Cart prep-time preview |
 | `POST /api/appointment-requests` | Public appointment requests (feature-gated) |
 | `POST /api/businesses/apply` | Business application submission |
@@ -144,7 +146,7 @@ Configure preview/staging frontends via `CORS_ALLOWED_ORIGINS` — see `.env.exa
 | Endpoint | Rule |
 |----------|------|
 | `GET /api/orders/:id` | Guest token, admin, owner, or linked customer |
-| `POST /api/checkout/session` | Same access rules as order view |
+| `POST /api/checkout/confirm` | Pending-checkout token or linked signed-in customer |
 
 ### Authenticated (any signed-in user)
 
@@ -187,7 +189,7 @@ Server-side enforcement (not frontend-only):
 
 | Guard | Applies to | Behavior |
 |-------|------------|----------|
-| `requireOnlineOrderingFeature` | `POST /api/orders` | 403 when plan lacks `online_ordering` |
+| `requireOnlineOrderingFeature` | `POST /api/orders`, `POST /api/checkout/intents` | 403 when plan lacks `online_ordering` |
 | `requireAppointmentRequestsFeature` | `POST /api/appointment-requests` | 403 when plan lacks `appointment_requests` |
 | `isBusinessOpenForPublicCommerce` | Orders and appointments | 400 when business is inactive or archived |
 
@@ -216,7 +218,7 @@ Admins may upload to a specific business or to platform scope (no `businessId`).
 
 ## Stripe Webhook Security
 
-`POST /api/checkout/webhook` verifies Stripe signatures on the raw request body. Forged or unsigned requests return **400**. Order payment status is updated only from verified `checkout.session.completed` events — not from browser redirects.
+`POST /api/checkout/webhook` verifies Stripe signatures on the raw request body. Forged or unsigned requests return **400**. A paid order is materialized only after a verified `checkout.session.completed` event or after `/api/checkout/confirm` retrieves the bound Checkout Session from Stripe and confirms it is paid. The browser redirect alone is never payment proof.
 
 ---
 

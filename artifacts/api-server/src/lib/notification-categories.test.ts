@@ -4,6 +4,7 @@ import {
   ALL_NOTIFICATION_CATEGORY_KEYS,
   categoryForEventType,
   getNotificationCategory,
+  isNotificationCategoryToggleable,
   listNotificationCategories,
 } from "./notification-categories.ts";
 import {
@@ -43,6 +44,14 @@ describe("notification-categories", () => {
     assert.equal(categoryForEventType("REFUND_FAILED"), "OWNER_STRIPE_ISSUE");
     assert.equal(categoryForEventType("STRIPE_CONNECT_ISSUE"), "OWNER_STRIPE_ISSUE");
     assert.equal(getNotificationCategory("OWNER_STRIPE_ISSUE")?.userToggleable, false);
+    assert.equal(
+      isNotificationCategoryToggleable(getNotificationCategory("OWNER_STRIPE_ISSUE")!),
+      false,
+    );
+    assert.equal(
+      isNotificationCategoryToggleable(getNotificationCategory("OWNER_NEW_ORDER")!),
+      true,
+    );
   });
 
   it("has definitions for every registry key", () => {

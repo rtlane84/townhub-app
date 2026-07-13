@@ -54,20 +54,22 @@ export function WeeklyHoursPicker({ value, onChange, className }: WeeklyHoursPic
           </div>
 
           {!day.isClosed && (
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3">
+              <div className="min-w-0 space-y-1">
                 <Label className="text-xs text-muted-foreground">Opens</Label>
                 <TimePicker
                   value={day.openTime ?? "09:00"}
                   onChange={(openTime) => updateDay(day.dayOfWeek, { openTime })}
+                  className="h-11"
                   data-testid={`hours-open-time-${day.dayOfWeek}`}
                 />
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <Label className="text-xs text-muted-foreground">Closes</Label>
                 <TimePicker
                   value={day.closeTime ?? "17:00"}
                   onChange={(closeTime) => updateDay(day.dayOfWeek, { closeTime })}
+                  className="h-11"
                   min={day.openTime ?? undefined}
                   error={
                     day.openTime && day.closeTime && !isEndTimeAfterStart(day.openTime, day.closeTime)

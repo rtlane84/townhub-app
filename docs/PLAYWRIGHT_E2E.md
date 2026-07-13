@@ -168,7 +168,7 @@ Stripe card checkout and refund workflows run only when `E2E_STRIPE_CHECKOUT=1` 
 
 - Online payments enabled
 - Stripe Connect connected (test mode)
-- Webhook forwarding so orders reach `paymentStatus: PAID` (e.g. Stripe CLI `stripe listen --forward-to localhost:8080/api/stripe/webhook`)
+- Webhook forwarding so paid pending checkouts materialize as `paymentStatus: PAID` orders (e.g. Stripe CLI `stripe listen --forward-to localhost:8080/api/checkout/webhook`)
 
 Without that, pay-at-pickup smoke tests still run; Stripe workflow specs skip with a clear message.
 
@@ -244,4 +244,3 @@ Add Clerk auth secrets and storage-state upload only when you enable owner/admin
 - Email/SMS notification delivery (appointment status emails, etc.)
 - File uploads, kitchen display, subscriptions billing UI
 - Mobile viewports (desktop Chromium only for now)
-

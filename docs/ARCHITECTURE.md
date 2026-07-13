@@ -288,7 +288,8 @@ Fire-and-forget delivery via `notification-service.ts` (and related orchestrator
 
 Guide: [NOTIFICATIONS.md](NOTIFICATIONS.md). Live Hub toasts/SSE: [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](BUSINESS_HUB_LIVE_NOTIFICATIONS.md).
 
-**Known gap:** guest notification links use `/order/{id}` without `?token=` — guests may need the token from the confirmation email flow.
+Guest customer email and SMS links include a signed `?token=` generated for the
+order. Signed-in customer links omit the token and rely on Clerk authorization.
 
 ---
 
@@ -319,7 +320,7 @@ Subscription plans map to features via `plan_features` → `subscription_feature
 
 | Feature key | Gates |
 |-------------|-------|
-| `online_ordering` | `POST /api/orders` |
+| `online_ordering` | `POST /api/orders` (pay at pickup), `POST /api/checkout/intents` (card) |
 | `appointment_requests` | `POST /api/appointment-requests` |
 
 `GET /api/businesses/:id/feature-access` returns the owner-facing report. Frontend `BusinessFeatureAccessProvider` reads this for UI gating; API enforces independently.

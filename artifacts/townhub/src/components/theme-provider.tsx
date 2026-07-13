@@ -28,6 +28,7 @@ import {
   type HeroOverlaySize,
 } from "@/lib/platform-branding";
 import { applyPlatformThemeToRoot } from "@/lib/theme-colors";
+import { syncNativeStatusBar } from "@/lib/capacitor-shell";
 
 export type PlatformBranding = {
   theme: PlatformTheme | undefined;
@@ -127,9 +128,7 @@ export function PlatformThemeProvider({
   useEffect(() => {
     applyPlatformThemeToRoot(theme);
     // Keep Android status bar / native chrome matched to the live canvas color.
-    void import("@/lib/capacitor-shell").then((mod) => {
-      void mod.syncNativeStatusBar();
-    });
+    void syncNativeStatusBar();
   }, [theme]);
 
   useEffect(() => {

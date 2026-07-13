@@ -33,13 +33,14 @@ describe("frontend load performance wiring", () => {
     );
   });
 
-  it("keeps the public home page eagerly loaded", async () => {
+  it("lazy-loads the public home page", async () => {
     const source = await readFile(
       new URL("../App.tsx", import.meta.url),
       "utf8",
     );
-    assert.match(source, /import Home from "@\/pages\/home"/);
-    assert.match(source, /<Route path="\/" component=\{Home\}/);
+    assert.match(source, /const Home = lazy\(\(\) => import\("@\/pages\/home"\)\)/);
+    assert.match(source, /<SuspenseRoute path="\/" component=\{Home\}/);
+    assert.doesNotMatch(source, /import Home from "@\/pages\/home"/);
   });
 
   it("loads Leaflet only from the map canvas chunk", async () => {

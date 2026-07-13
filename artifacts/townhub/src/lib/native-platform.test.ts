@@ -48,11 +48,13 @@ describe("native-platform", () => {
     assert.equal(isNavActive("/businesses/acme", "/businesses"), true);
   });
 
-  it("enables pull to refresh only on public listing routes", () => {
+  it("enables pull to refresh on public listing routes and kitchen display", () => {
     assert.equal(isPullToRefreshRoute("/"), true);
     assert.equal(isPullToRefreshRoute("/events"), true);
     assert.equal(isPullToRefreshRoute("/cart"), false);
     assert.equal(isPullToRefreshRoute("/businesses/acme"), false);
     assert.equal(isPullToRefreshRoute("/dashboard/admin"), false);
+    assert.equal(isPullToRefreshRoute("/dashboard/business/kitchen"), true);
+    assert.equal(isPullToRefreshRoute("/dashboard/business/orders"), false);
   });
 });

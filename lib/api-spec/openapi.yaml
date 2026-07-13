@@ -1361,7 +1361,7 @@ paths:
     get:
       operationId: listEvents
       tags: [events]
-      summary: List active events
+      summary: List active approved events
       parameters:
         - in: query
           name: featured
@@ -1402,11 +1402,32 @@ paths:
         "403":
           description: Forbidden — admin access required
 
+  /events/submit:
+    post:
+      operationId: submitEvent
+      tags: [events]
+      summary: Submit a community event for admin review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventSubmitInput"
+      responses:
+        "201":
+          description: Submitted event (pending review)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "400":
+          description: Invalid input
+
   /events/{id}:
     get:
       operationId: getEvent
       tags: [events]
-      summary: Get a single event
+      summary: Get a single approved active event
       parameters:
         - in: path
           name: id
@@ -1420,6 +1441,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Event"
+        "404":
+          description: Not found
     put:
       operationId: updateEvent
       tags: [events]
@@ -1464,6 +1487,85 @@ paths:
           description: Unauthorized
         "403":
           description: Forbidden — admin access required
+
+  /admin/events:
+    get:
+      operationId: listAdminEvents
+      tags: [events]
+      summary: List events for admin review (all statuses)
+      parameters:
+        - in: query
+          name: status
+          schema:
+            $ref: "#/components/schemas/EventStatus"
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+
+  /admin/events/{id}/approve:
+    post:
+      operationId: approveEvent
+      tags: [events]
+      summary: Approve a pending event submission
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "404":
+          description: Not found
+        "409":
+          description: Event is not pending
+
+  /admin/events/{id}/reject:
+    post:
+      operationId: rejectEvent
+      tags: [events]
+      summary: Reject a pending event submission
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type: string
+                  maxLength: 2000
+      responses:
+        "200":
+          description: Rejected event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "404":
+          description: Not found
+        "409":
+          description: Event is not pending
 
   # ─── Highlights ────────────────────────────────────────────────
   /highlights:
@@ -3919,9 +4021,16 @@ components:
         - MARKET
         - OTHER
 
+    EventStatus:
+      type: string
+      enum:
+        - PENDING
+        - APPROVED
+        - REJECTED
+
     Event:
       type: object
-      required: [id, title, date, eventType, featured, active]
+      required: [id, title, date, eventType, featured, active, status]
       properties:
         id:
           type: integer
@@ -3949,6 +4058,17 @@ components:
           type: boolean
         active:
           type: boolean
+        status:
+          $ref: "#/components/schemas/EventStatus"
+        submitterName:
+          type: ["string", "null"]
+        submitterEmail:
+          type: ["string", "null"]
+        reviewNote:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
         createdAt:
           type: string
           format: date-time
@@ -3981,6 +4101,36 @@ components:
           type: boolean
         active:
           type: boolean
+
+    EventSubmitInput:
+      type: object
+      required: [title, date]
+      properties:
+        title:
+          type: string
+        date:
+          type: string
+        endDate:
+          type: ["string", "null"]
+        startTime:
+          type: string
+        endTime:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        imageUrl:
+          type: string
+        eventType:
+          $ref: "#/components/schemas/EventType"
+        submitterName:
+          type: string
+        submitterEmail:
+          type: string
+        website:
+          type: string
+          description: Honeypot field — must be empty
 
     # ─── Highlights ───────────────────────────────────────────────
     Highlight:

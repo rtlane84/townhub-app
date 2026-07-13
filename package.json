@@ -8,6 +8,8 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "audit:health": "pnpm --filter @workspace/scripts run health",
+    "audit:health:bundle": "pnpm --filter @workspace/townhub run build && pnpm --filter @workspace/scripts run health -- --bundle",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug"

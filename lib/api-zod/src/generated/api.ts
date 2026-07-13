@@ -2386,7 +2386,7 @@ export const ListAdminBusinessesResponse = zod.array(ListAdminBusinessesResponse
 
 
 /**
- * @summary List active events
+ * @summary List active approved events
  */
 export const ListEventsQueryParams = zod.object({
   "featured": zod.coerce.boolean().optional(),
@@ -2407,6 +2407,11 @@ export const ListEventsResponseItem = zod.object({
   "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
   "featured": zod.boolean(),
   "active": zod.boolean(),
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  "submitterName": zod.string().nullish(),
+  "submitterEmail": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date().optional()
 })
 export const ListEventsResponse = zod.array(ListEventsResponseItem)
@@ -2432,7 +2437,26 @@ export const CreateEventBody = zod.object({
 
 
 /**
- * @summary Get a single event
+ * @summary Submit a community event for admin review
+ */
+export const SubmitEventBody = zod.object({
+  "title": zod.string(),
+  "date": zod.string(),
+  "endDate": zod.string().nullish(),
+  "startTime": zod.string().optional(),
+  "endTime": zod.string().optional(),
+  "location": zod.string().optional(),
+  "description": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']).optional(),
+  "submitterName": zod.string().optional(),
+  "submitterEmail": zod.string().optional(),
+  "website": zod.string().optional().describe('Honeypot field — must be empty')
+})
+
+
+/**
+ * @summary Get a single approved active event
  */
 export const GetEventParams = zod.object({
   "id": zod.coerce.number()
@@ -2452,6 +2476,11 @@ export const GetEventResponse = zod.object({
   "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
   "featured": zod.boolean(),
   "active": zod.boolean(),
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  "submitterName": zod.string().nullish(),
+  "submitterEmail": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -2492,6 +2521,11 @@ export const UpdateEventResponse = zod.object({
   "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
   "featured": zod.boolean(),
   "active": zod.boolean(),
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  "submitterName": zod.string().nullish(),
+  "submitterEmail": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date().optional()
 })
 
@@ -2501,6 +2535,105 @@ export const UpdateEventResponse = zod.object({
  */
 export const DeleteEventParams = zod.object({
   "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List events for admin review (all statuses)
+ */
+export const ListAdminEventsQueryParams = zod.object({
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']).optional()
+})
+
+export const ListAdminEventsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "date": zod.string(),
+  "endDate": zod.string().nullish(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "relatedBusinessId": zod.number().nullish(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
+  "featured": zod.boolean(),
+  "active": zod.boolean(),
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  "submitterName": zod.string().nullish(),
+  "submitterEmail": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional()
+})
+export const ListAdminEventsResponse = zod.array(ListAdminEventsResponseItem)
+
+
+/**
+ * @summary Approve a pending event submission
+ */
+export const ApproveEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveEventResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "date": zod.string(),
+  "endDate": zod.string().nullish(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "relatedBusinessId": zod.number().nullish(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
+  "featured": zod.boolean(),
+  "active": zod.boolean(),
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  "submitterName": zod.string().nullish(),
+  "submitterEmail": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional()
+})
+
+
+/**
+ * @summary Reject a pending event submission
+ */
+export const RejectEventParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const rejectEventBodyNoteMax = 2000;
+
+
+
+export const RejectEventBody = zod.object({
+  "note": zod.string().max(rejectEventBodyNoteMax).optional()
+})
+
+export const RejectEventResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "date": zod.string(),
+  "endDate": zod.string().nullish(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "relatedBusinessId": zod.number().nullish(),
+  "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']),
+  "featured": zod.boolean(),
+  "active": zod.boolean(),
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  "submitterName": zod.string().nullish(),
+  "submitterEmail": zod.string().nullish(),
+  "reviewNote": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date().optional()
 })
 
 

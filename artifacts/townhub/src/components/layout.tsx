@@ -24,6 +24,7 @@ import { useNativeBottomTabs, useNativePlatform, useNativePullToRefresh } from "
 import { NativeBottomTabBar } from "@/components/native-bottom-tab-bar";
 import { NativePullToRefresh } from "@/components/native-pull-to-refresh";
 import { triggerTabChangeHaptic } from "@/lib/native-haptics";
+import { useKitchenDisplayMode } from "@/hooks/kitchen-display-mode";
 
 function PlatformLogo({ className, sizePx }: { className?: string; sizePx?: number }) {
   const { logoUrl, platformName, logoSizePx } = usePlatformBranding();
@@ -68,6 +69,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const showNativeTabs = useNativeBottomTabs();
   const showNativePullToRefresh = useNativePullToRefresh();
+  const { active: kitchenModeActive } = useKitchenDisplayMode();
 
   const { data: bootstrapStatus, isPending: bootstrapPending } = useGetAdminBootstrapStatus({
     query: { queryKey: getGetAdminBootstrapStatusQueryKey() },
@@ -79,15 +81,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
     },
   });
   const hideCart = !!storefrontSlug && hidesStorefrontCart(storefrontData?.business ?? {});
-  /** Business detail uses its own compact header chrome. */
-  const hideSiteHeader = !!storefrontSlug;
+  /** Business detail uses its own compact header chrome. Kitchen Mode hides marketplace chrome. */
+  const hideSiteHeader = !!storefrontSlug || kitchenModeActive;
+
+  const inDashboard = isDashboardRoute(location);
 
   const hideFooter =
     location === "/dashboard/admin/system-status" ||
     location.startsWith("/dashboard/admin/system-status/") ||
-    showNativeTabs;
+    showNativeTabs ||
+    (isNative && inDashboard);
 
-  const inDashboard = isDashboardRoute(location);
   const setupAvailable = authResolved && !bootstrapPending && bootstrapStatus?.setupComplete === false;
   const dashboardHref = isAdmin ? "/dashboard/admin" : "/dashboard/business";
   const dashboardLabel = isAdmin ? "Admin Dashboard" : "Business Hub";

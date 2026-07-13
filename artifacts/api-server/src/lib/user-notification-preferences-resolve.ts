@@ -1,5 +1,6 @@
 import {
   ALL_NOTIFICATION_CATEGORY_KEYS,
+  isNotificationCategoryToggleable,
   NOTIFICATION_CATEGORIES,
   type NotificationAudience,
   type NotificationCategoryKey,
@@ -37,7 +38,7 @@ export function resolvePreferencesFromRows(
     const def = NOTIFICATION_CATEGORIES[key];
     if (options?.audience && def.audience !== options.audience) return false;
     if (options?.implementedOnly && !def.implemented) return false;
-    if (toggleableOnly && def.userToggleable === false) return false;
+    if (toggleableOnly && !isNotificationCategoryToggleable(def)) return false;
     return true;
   }).map((key) => {
     const def = NOTIFICATION_CATEGORIES[key];

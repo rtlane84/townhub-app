@@ -3,7 +3,7 @@ import { Calendar, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatEventSchedule } from "@/lib/event-dates";
-import { CARD_INTERACTIVE } from "@/lib/design-tokens";
+import { CARD_ELEVATION } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
 export const EVENT_TYPE_COLORS: Record<string, string> = {
@@ -26,7 +26,7 @@ export function EventCard({ event, showFeaturedBadge = false }: EventCardProps) 
   const datePill = schedule.split("·")[0]?.trim() || schedule;
 
   return (
-    <Card className={cn("h-full overflow-hidden rounded-[1.75rem]", CARD_INTERACTIVE)}>
+    <Card className={cn("h-full overflow-hidden rounded-[1.75rem]", CARD_ELEVATION)}>
       {event.imageUrl ? (
         <div className="relative aspect-[16/10] overflow-hidden">
           <img
@@ -34,7 +34,7 @@ export function EventCard({ event, showFeaturedBadge = false }: EventCardProps) 
             alt={event.title}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover"
           />
           <div className="absolute left-3 top-3">
             <span className="inline-flex items-center rounded-full bg-card/95 px-3 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm">

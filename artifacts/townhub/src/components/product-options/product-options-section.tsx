@@ -57,7 +57,7 @@ export function ProductOptionsSection({
   }
 
   return (
-    <section className="space-y-4 rounded-xl border bg-muted/10 p-5">
+    <section className="space-y-4 rounded-xl border border-black/[0.06] bg-card p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-serif text-lg font-semibold">Item Options</h3>
@@ -71,7 +71,7 @@ export function ProductOptionsSection({
       </div>
 
       {assignedGroups.length === 0 ? (
-        <div className="rounded-lg border border-dashed bg-background px-4 py-8 text-center">
+        <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-8 text-center">
           <p className="text-sm text-muted-foreground">
             No options attached yet.
           </p>
@@ -88,7 +88,7 @@ export function ProductOptionsSection({
           {assignedGroups.map((group) => (
             <li
               key={group.id}
-              className="flex items-start justify-between gap-2 rounded-lg border bg-background px-3 py-3"
+              className="flex items-start justify-between gap-2 rounded-xl bg-card px-3 py-3 shadow-sm ring-1 ring-black/[0.04]"
               data-testid={`assigned-option-group-${group.id}`}
             >
               <div className="min-w-0 space-y-1">
@@ -120,7 +120,7 @@ export function ProductOptionsSection({
 
       <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-          <SheetHeader>
+          <SheetHeader className="pt-[calc(1rem+var(--safe-area-top,0px))]">
             <SheetTitle className="font-serif">Attach item options</SheetTitle>
           </SheetHeader>
           <div className="space-y-2 py-4">

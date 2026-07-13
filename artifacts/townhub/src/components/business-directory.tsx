@@ -4,9 +4,8 @@ import { Store } from "lucide-react";
 import {
   getBusinessCategoryLine,
   getBusinessListingCta,
-  getBusinessOpenShortLabel,
-  getBusinessOpenStatus,
   getBusinessStorefrontBadge,
+  getStorefrontStatusLine,
   type BusinessListingCta,
 } from "@/lib/business-listing";
 import {
@@ -102,14 +101,14 @@ function ListingCtaButton({
 
 export function FeaturedBusinessCard({ business }: { business: Business }) {
   const categoryLine = getBusinessCategoryLine(business);
-  const openStatus = getBusinessOpenStatus(business);
+  const statusLine = getStorefrontStatusLine(business);
   const imageBadge = getBusinessStorefrontBadge(business);
   const cta = getBusinessListingCta(business);
   const hero = business.heroImageUrl || business.logoUrl;
   const storefrontHref = `/businesses/${business.slug}`;
 
   return (
-    <article className="flex w-[12rem] shrink-0 snap-start flex-col overflow-hidden rounded-[1.25rem] border border-black/[0.05] bg-card shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)] sm:w-[13.5rem]">
+    <article className="flex w-full flex-col overflow-hidden rounded-[1.25rem] border border-black/[0.05] bg-card shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]">
       <Link href={storefrontHref} className="block min-w-0">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {hero ? (
@@ -138,22 +137,34 @@ export function FeaturedBusinessCard({ business }: { business: Business }) {
             </span>
           ) : null}
         </div>
-        <div className="space-y-1 px-3 pt-2.5">
+        <div className="space-y-1 px-3 pt-2.5 pb-1">
           <h3 className="truncate text-[14px] font-semibold tracking-tight text-platform-heading">
             {business.name}
           </h3>
           <p className="truncate text-[11px] text-muted-foreground">
             {categoryLine}
           </p>
-          {openStatus ? (
-            <p
-              className={cn(
-                "truncate text-[11px] font-semibold",
-                openStatusClass(openStatus.isOpen),
-              )}
-            >
-              {openStatus.label}
-            </p>
+          {statusLine ? (
+            <div className="space-y-0.5">
+              <p
+                className={cn(
+                  "text-[11px] font-semibold leading-snug",
+                  openStatusClass(statusLine.isOpen),
+                )}
+              >
+                {statusLine.statusLabel}
+              </p>
+              {statusLine.scheduleLabel ? (
+                <p
+                  className={cn(
+                    "text-[10px] font-medium leading-snug",
+                    openStatusClass(statusLine.isOpen),
+                  )}
+                >
+                  {statusLine.scheduleLabel}
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </Link>
@@ -185,7 +196,7 @@ export function FeaturedBusinessesSkeleton({ count = 3 }: { count?: number }) {
 
 export function BusinessDirectoryRow({ business }: { business: Business }) {
   const categoryLine = getBusinessCategoryLine(business);
-  const openStatus = getBusinessOpenShortLabel(business);
+  const statusLine = getStorefrontStatusLine(business);
   const storefrontBadge = getBusinessStorefrontBadge(business);
   const cta = getBusinessListingCta(business);
   const storefrontHref = `/businesses/${business.slug}`;
@@ -208,25 +219,25 @@ export function BusinessDirectoryRow({ business }: { business: Business }) {
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {categoryLine}
           </p>
-          {(openStatus || storefrontBadge) ? (
-            <p className="mt-1 truncate text-xs">
-              {openStatus ? (
-                <span
+          {(statusLine || storefrontBadge) ? (
+            <div className="mt-1 space-y-0.5 text-xs">
+              {statusLine ? (
+                <p
                   className={cn(
-                    "font-semibold",
-                    openStatusClass(openStatus.isOpen),
+                    "font-semibold leading-snug",
+                    openStatusClass(statusLine.isOpen),
                   )}
                 >
-                  {openStatus.label}
-                </span>
-              ) : null}
-              {openStatus && storefrontBadge ? (
-                <span className="text-muted-foreground"> · </span>
+                  {statusLine.statusLabel}
+                  {statusLine.scheduleLabel
+                    ? ` · ${statusLine.scheduleLabel}`
+                    : ""}
+                </p>
               ) : null}
               {storefrontBadge ? (
-                <span className="font-medium text-primary">{storefrontBadge}</span>
+                <p className="font-medium text-primary">{storefrontBadge}</p>
               ) : null}
-            </p>
+            </div>
           ) : null}
         </Link>
 

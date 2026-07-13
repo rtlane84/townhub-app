@@ -16,6 +16,7 @@ import {
   ExternalLink,
   LogOut,
   ChevronRight,
+  UserRound,
 } from "lucide-react";
 import { SignInButton, useClerk, useUser } from "@clerk/react";
 import { useUnregisterDevice } from "@workspace/api-client-react";
@@ -53,7 +54,7 @@ export function NativeBottomTabBar() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const { isSignedIn, isLoaded: clerkLoaded, user } = useUser();
-  const { signOut } = useClerk();
+  const { signOut, openUserProfile } = useClerk();
   const queryClient = useQueryClient();
   const unregisterDevice = useUnregisterDevice();
   const {
@@ -157,7 +158,17 @@ export function NativeBottomTabBar() {
     const active = isNavActive(location, href);
     return cn(
       "flex min-h-12 items-center gap-3 px-4 py-3.5 rounded-2xl text-[15px] font-medium transition-colors w-full native-pressable",
-      active ? "bg-primary/10 text-primary" : "text-foreground active:bg-muted/80",
+      active
+        ? "bg-primary/10 text-primary ring-1 ring-primary/15"
+        : "bg-card text-foreground shadow-sm ring-1 ring-black/[0.04] active:bg-muted/60",
+    );
+  }
+
+  function accountIconClass(activeHref: string) {
+    const active = isNavActive(location, activeHref);
+    return cn(
+      "h-5 w-5 shrink-0",
+      active ? "text-primary" : "text-primary/80",
     );
   }
 
@@ -257,11 +268,26 @@ export function NativeBottomTabBar() {
             )}
           </div>
 
-          <nav className="mt-2 space-y-0.5 px-3" aria-label="Account navigation">
+          <nav className="mt-2 flex flex-col gap-2 px-3" aria-label="Account navigation">
+            {clerkLoaded && isSignedIn ? (
+              <button
+                type="button"
+                className={accountRowClass("/account")}
+                onClick={() => {
+                  closeAccount();
+                  openUserProfile();
+                }}
+              >
+                <UserRound className={accountIconClass("/account")} />
+                <span className="flex-1 text-left">Manage account</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
+              </button>
+            ) : null}
+
             {showMyOrdersNav && (
               <Link href="/my-orders" onClick={closeAccount}>
                 <span className={accountRowClass("/my-orders")}>
-                  <Package className="h-5 w-5 shrink-0 opacity-80" />
+                  <Package className={accountIconClass("/my-orders")} />
                   <span className="flex-1 text-left">My Orders</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
                 </span>
@@ -271,7 +297,7 @@ export function NativeBottomTabBar() {
             {showBusinessHubNav && (
               <Link href={dashboardHref} onClick={closeAccount}>
                 <span className={accountRowClass(dashboardHref)}>
-                  <DashboardIcon className="h-5 w-5 shrink-0 opacity-80" />
+                  <DashboardIcon className={accountIconClass(dashboardHref)} />
                   <span className="flex-1 text-left">{dashboardLabel}</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
                 </span>
@@ -281,7 +307,7 @@ export function NativeBottomTabBar() {
             {showListYourBusinessNav && (
               <Link href="/list-your-business" onClick={closeAccount}>
                 <span className={accountRowClass("/list-your-business")}>
-                  <PlusCircle className="h-5 w-5 shrink-0 opacity-80" />
+                  <PlusCircle className={accountIconClass("/list-your-business")} />
                   <span className="flex-1 text-left">List Your Business</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
                 </span>
@@ -290,7 +316,7 @@ export function NativeBottomTabBar() {
 
             <Link href="/help" onClick={closeAccount}>
               <span className={accountRowClass("/help")}>
-                <HelpCircle className="h-5 w-5 shrink-0 opacity-80" />
+                <HelpCircle className={accountIconClass("/help")} />
                 <span className="flex-1 text-left">Help</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
               </span>
@@ -299,7 +325,7 @@ export function NativeBottomTabBar() {
             {setupAvailable && (isLoggedOut || isCustomer) && (
               <Link href="/setup" onClick={closeAccount}>
                 <span className={accountRowClass("/setup")}>
-                  <Wrench className="h-5 w-5 shrink-0 opacity-80" />
+                  <Wrench className={accountIconClass("/setup")} />
                   <span className="flex-1 text-left">Admin Setup</span>
                   <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
                 </span>

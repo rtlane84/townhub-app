@@ -52,7 +52,7 @@ export function SettingsToggleRow({
   "data-testid"?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl bg-muted/35 px-4 py-3.5">
+    <div className="flex items-center justify-between gap-4 rounded-2xl bg-card px-4 py-3.5 shadow-sm ring-1 ring-black/[0.04]">
       <div className="min-w-0">
         <p className="text-sm font-medium text-foreground">{label}</p>
         {description ? (

@@ -174,6 +174,12 @@ function applyNativeDocumentClass(): void {
 }
 
 function openExternalUrl(url: string): void {
+  // System schemes must leave the WebView directly. Browser.open is for http(s)
+  // and often no-ops for tel:/mailto: on iOS.
+  if (/^(tel|mailto|sms|maps|geo):/i.test(url)) {
+    window.location.assign(url);
+    return;
+  }
   void Browser.open({ url });
 }
 

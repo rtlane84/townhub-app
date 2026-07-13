@@ -6,6 +6,7 @@ import {
 } from "@workspace/db";
 import {
   getNotificationCategory,
+  isNotificationCategoryToggleable,
   NOTIFICATION_CATEGORIES,
   type NotificationAudience,
   type NotificationCategoryKey,
@@ -42,7 +43,7 @@ export async function isCategoryEnabledForUser(
   const def = getNotificationCategory(category);
   if (!def) return true;
   // Mandatory categories cannot be disabled.
-  if (def.userToggleable === false) return true;
+  if (!isNotificationCategoryToggleable(def)) return true;
 
   const [row] = await db
     .select()
@@ -65,7 +66,7 @@ export async function upsertUserNotificationPreferences(
 ): Promise<ResolvedPreference[]> {
   const valid = updates.filter((u) => {
     const def = getNotificationCategory(u.category);
-    return Boolean(def) && def!.userToggleable !== false;
+    return Boolean(def) && isNotificationCategoryToggleable(def!);
   });
   if (valid.length === 0) {
     return getUserNotificationPreferences(userId);
@@ -115,7 +116,7 @@ export async function filterEnabledCategoriesForUser(
   const enabled = new Set<NotificationCategoryKey>();
   for (const key of categories) {
     const def = NOTIFICATION_CATEGORIES[key];
-    if (def.userToggleable === false) {
+    if (!isNotificationCategoryToggleable(def)) {
       enabled.add(key);
       continue;
     }

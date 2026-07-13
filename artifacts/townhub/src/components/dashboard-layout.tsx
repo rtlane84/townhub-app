@@ -42,6 +42,8 @@ import {
   resolveBusinessHubNavItem,
   type BusinessHubNavItem,
 } from "@/lib/business-hub-features";
+import { useKitchenDisplayMode } from "@/hooks/kitchen-display-mode";
+import { isKitchenDisplayRoute } from "@/lib/kitchen-display-mode";
 import { cn } from "@/lib/utils";
 import { FeatureLockedPage, StorefrontModeRestrictedPage } from "@/components/locked-feature-modal";
 import {
@@ -200,6 +202,8 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   const { selectedBusinessId, business } = useSelectedBusiness();
   const businessId = selectedBusinessId ?? undefined;
   const { hasFeature, getFeature, planName, isLoading: featureLoading } = useBusinessFeatureAccess();
+  const { active: kitchenModeActive } = useKitchenDisplayMode();
+  const onKitchenRoute = isKitchenDisplayRoute(location);
 
   const storefrontMode = resolveStorefrontMode(business ?? {});
   const visibleNavItems = useMemo(
@@ -211,14 +215,14 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   const orderingEnabled =
     hasFeature("online_ordering") && isOrderingStorefrontMode(business ?? {});
 
-  const showLiveStatus = isBusinessHubLiveEventsRoute(location);
+  const showLiveStatus = isBusinessHubLiveEventsRoute(location) && !onKitchenRoute;
   const { status: liveStatus, usePollingFallback } = useBusinessLiveEvents(businessId);
   const liveIndicatorStatus = resolveLiveIndicatorStatus(liveStatus, usePollingFallback);
 
   const showOrderNotificationBanner =
-    orderingEnabled && !isBusinessHubOrderLivePage(location);
+    orderingEnabled && !isBusinessHubOrderLivePage(location) && !kitchenModeActive;
   const showAppointmentNotificationBanner =
-    appointmentsEnabled && !isBusinessHubAppointmentLivePage(location);
+    appointmentsEnabled && !isBusinessHubAppointmentLivePage(location) && !kitchenModeActive;
 
   useLiveOrderAlerts(orderingEnabled ? businessId : undefined);
   useLiveAppointmentAlerts(businessId, appointmentsEnabled);
@@ -242,8 +246,13 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
     "Business Hub";
 
   return (
-    <div className="flex min-h-[calc(100vh-var(--site-header-height,4rem))] print:block print:min-h-0">
-      <aside className={cn(DASHBOARD_SIDEBAR, "print:hidden")}>
+    <div
+      className={cn(
+        "flex min-h-[calc(100vh-var(--site-header-height,4rem))] print:block print:min-h-0",
+        kitchenModeActive && "min-h-[100dvh]",
+      )}
+    >
+      <aside className={cn(DASHBOARD_SIDEBAR, "print:hidden", kitchenModeActive && "hidden")}>
         <div className="p-5 md:p-6">
           <div className="mb-4 flex items-start justify-between gap-2">
             <div>
@@ -267,19 +276,28 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
 
       <div
         className={cn(
-          "md:hidden fixed left-0 right-0 z-40 flex items-center gap-3 border-b border-black/[0.04] bg-card/95 px-4 py-2 shadow-[0_1px_12px_-4px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
+          "md:hidden fixed left-0 right-0 z-40 flex items-center gap-2 border-b border-black/[0.04] bg-card/95 px-3 shadow-[0_1px_12px_-4px_rgba(15,23,42,0.08)] backdrop-blur-md print:hidden",
+          onKitchenRoute ? "min-h-11 py-1.5" : "min-h-[3.5rem] px-4 py-2",
           DASHBOARD_MOBILE_NAV_TOP_CLASS,
+          kitchenModeActive && "hidden",
         )}
       >
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="min-h-10 shrink-0 gap-1.5 rounded-2xl px-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "shrink-0 gap-1.5 rounded-2xl px-3",
+                onKitchenRoute ? "min-h-9" : "min-h-10",
+              )}
+            >
               <Menu className="h-4 w-4" />
               <span className="text-xs font-medium">Sections</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72 border-0 bg-card p-0">
-            <SheetHeader className="p-6 pb-4">
+            <SheetHeader className="px-6 pb-4 pt-[calc(1.5rem+var(--safe-area-top,0px))]">
               <SheetTitle className="text-left font-serif text-platform-heading">Business Hub</SheetTitle>
             </SheetHeader>
             <div className="px-6 pb-4">
@@ -302,7 +320,19 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
         ) : null}
       </div>
 
-      <main className={cn(DASHBOARD_MAIN, "p-4 md:p-8 lg:p-10 print:p-0", DASHBOARD_MOBILE_MAIN_TOP_CLASS)}>
+      <main
+        className={cn(
+          DASHBOARD_MAIN,
+          kitchenModeActive
+            ? "p-2 pt-[max(0.5rem,var(--safe-area-top,0px))] md:p-3 lg:p-4"
+            : cn(
+                "p-4 md:p-8 lg:p-10",
+                onKitchenRoute ? "md:p-5 lg:p-6" : null,
+                DASHBOARD_MOBILE_MAIN_TOP_CLASS,
+              ),
+          "print:p-0",
+        )}
+      >
         <div className="print:hidden">
           <StripeConnectAlertBanner />
           {showOrderNotificationBanner ? <NewOrderAlertBanner /> : null}

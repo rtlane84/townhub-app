@@ -21,8 +21,8 @@ describe("kitchen-order-card navigation", () => {
   it("opens business order detail when the card is activated", () => {
     assert.match(kitchenCardSource, /businessOrderDetailPath\(order\.id\)/);
     assert.match(kitchenCardSource, /onClick=\{openOrderDetail\}/);
-    assert.match(kitchenCardSource, /role="link"/);
-    assert.match(kitchenCardSource, /focus-visible:ring-2/);
+    assert.match(kitchenCardSource, /aria-label=\{`Open \$\{ticketLabel\} details`\}/);
+    assert.match(kitchenCardSource, /touch-pan-y/);
   });
 
   it("stops propagation on status action buttons so card navigation does not fire", () => {

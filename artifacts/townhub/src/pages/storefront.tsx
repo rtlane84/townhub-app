@@ -90,7 +90,7 @@ function QuickAction({
 }) {
   const className = "flex w-[3.35rem] flex-col items-center gap-1 text-center";
   const circleClass =
-    "flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.1] bg-background text-foreground shadow-[0_1px_4px_rgba(15,23,42,0.04)] transition-colors hover:bg-muted active:scale-[0.96]";
+    "flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.06] bg-card text-foreground shadow-sm ring-1 ring-black/[0.04] transition-colors hover:bg-muted active:scale-[0.96]";
 
   const inner = (
     <>
@@ -412,9 +412,9 @@ export default function Storefront() {
       ) : null}
 
       <div className="mx-auto max-w-3xl px-3 pt-3 pb-2 sm:px-4">
-        <div className="overflow-hidden rounded-[1.5rem] bg-card shadow-[0_8px_32px_-12px_rgba(15,23,42,0.16)] ring-1 ring-black/[0.04]">
-          {/* Hero */}
-          <div className="relative aspect-[16/10] overflow-hidden bg-muted sm:aspect-[2/1]">
+        <div className="rounded-[1.5rem] bg-card shadow-[0_8px_32px_-12px_rgba(15,23,42,0.16)] ring-1 ring-black/[0.04]">
+          {/* Hero — overflow clipped here so the logo can hang over the content seam */}
+          <div className="relative aspect-[16/10] overflow-hidden rounded-t-[1.5rem] bg-muted sm:aspect-[2/1]">
             {b.heroImageUrl ? (
               <img
                 src={b.heroImageUrl}
@@ -430,24 +430,25 @@ export default function Storefront() {
               </div>
             )}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+          </div>
 
-            <div className="absolute -bottom-6 left-4 z-10 sm:left-5">
-              <div className="flex h-[4rem] w-[4rem] items-center justify-center overflow-hidden rounded-[1rem] border-[3px] border-card bg-card shadow-[0_4px_16px_-4px_rgba(15,23,42,0.25)] sm:h-[4.5rem] sm:w-[4.5rem]">
-                {b.logoUrl ? (
-                  <img
-                    src={b.logoUrl}
-                    alt={`${b.name} logo`}
-                    className="h-full w-full object-contain p-1"
-                  />
-                ) : (
-                  <Store className="h-7 w-7 text-primary/40" aria-hidden />
-                )}
-              </div>
+          {/* Logo overlaps hero → white sheet seam */}
+          <div className="relative z-10 -mt-7 ml-4 sm:-mt-8 sm:ml-5">
+            <div className="flex h-[4rem] w-[4rem] items-center justify-center overflow-hidden rounded-[1rem] border-[3px] border-card bg-card shadow-[0_4px_16px_-4px_rgba(15,23,42,0.25)] sm:h-[4.5rem] sm:w-[4.5rem]">
+              {b.logoUrl ? (
+                <img
+                  src={b.logoUrl}
+                  alt={`${b.name} logo`}
+                  className="h-full w-full object-contain p-1"
+                />
+              ) : (
+                <Store className="h-7 w-7 text-primary/40" aria-hidden />
+              )}
             </div>
           </div>
 
           {/* Content sheet */}
-          <div className="px-4 pb-6 pt-9 sm:px-5 sm:pt-10">
+          <div className="px-4 pb-6 pt-3 sm:px-5 sm:pt-3.5">
             {/* Name + primary CTA / quick actions column */}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -600,7 +601,7 @@ export default function Storefront() {
           deliveryRadiusMiles) ? (
           <div className="mt-4 space-y-2">
             {pickupInstructions ? (
-              <div className="flex items-start gap-2 rounded-[1.1rem] bg-primary/5 p-3 text-xs text-muted-foreground">
+              <div className="flex items-start gap-2 rounded-[1.15rem] border border-black/[0.05] bg-card p-3 text-xs text-muted-foreground shadow-sm">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <div>
                   <span className="mb-0.5 block font-medium text-foreground">
@@ -614,8 +615,8 @@ export default function Storefront() {
               deliveryNotes ||
               minimumOrderForDelivery ||
               deliveryRadiusMiles) && (
-              <div className="flex items-start gap-2 rounded-[1.1rem] bg-sky-50 p-3 text-xs text-muted-foreground">
-                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-500" />
+              <div className="flex items-start gap-2 rounded-[1.15rem] border border-black/[0.05] bg-card p-3 text-xs text-muted-foreground shadow-sm">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 <div className="space-y-1">
                   <span className="block font-medium text-foreground">
                     Delivery

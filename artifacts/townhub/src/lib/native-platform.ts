@@ -1,4 +1,7 @@
 import { Capacitor } from "@capacitor/core";
+import { isKitchenDisplayRoute } from "./kitchen-display-mode.ts";
+
+export { isKitchenDisplayRoute };
 
 /** True when running inside a Capacitor native shell (iOS or Android). */
 export function isNativeApp(): boolean {
@@ -57,7 +60,7 @@ export function isNativeTabRoute(location: string): boolean {
 
 export function isAccountRoute(location: string): boolean {
   return ACCOUNT_ROUTE_PREFIXES.some(
-    (prefix) => location === prefix || location.startsWith(prefix),
+    (prefix) => location === prefix || location.startsWith(`${prefix}/`),
   );
 }
 
@@ -66,20 +69,24 @@ export function shouldShowNativeBottomTabs(location: string): boolean {
 }
 
 export function isPullToRefreshRoute(location: string): boolean {
+  // Kitchen display uses PTR instead of a dedicated Refresh button.
+  if (isKitchenDisplayRoute(location)) return true;
   if (isDashboardRoute(location)) return false;
   if (location.startsWith("/businesses/")) return false;
   if (location === "/cart" || location.startsWith("/cart/")) return false;
   if (location.startsWith("/order/")) return false;
   return NATIVE_PULL_TO_REFRESH_ROUTES.some(
-    (route) => location === route || (route !== "/" && location.startsWith(route + "/")),
+    (route) => location === route || (route !== "/" && location.startsWith(`${route}/`)),
   );
 }
 
 export function shouldEnableNativePullToRefresh(location: string): boolean {
+  // Kitchen PTR also for touch web (iPad Safari) — not Capacitor-only.
+  if (isKitchenDisplayRoute(location)) return true;
   return isNativeApp() && isPullToRefreshRoute(location);
 }
 
 export function isNavActive(location: string, href: string): boolean {
   if (href === "/") return location === "/";
-  return location === href || location.startsWith(href + "/");
+  return location === href || location.startsWith(`${href}/`);
 }

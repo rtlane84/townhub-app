@@ -375,7 +375,7 @@ export default function BusinessNotifications() {
 
   return (
     <BusinessDashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6" data-testid="business-notifications-page">
+      <div className="max-w-2xl mx-auto space-y-6 pb-28" data-testid="business-notifications-page">
         <div>
           <h1 className="text-2xl font-serif font-bold">Notifications</h1>
           <p className="text-muted-foreground text-sm mt-1">

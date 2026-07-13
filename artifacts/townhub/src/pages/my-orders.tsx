@@ -54,9 +54,9 @@ export default function MyOrders() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-4">
           {orders.map((order) => (
-            <Link key={order.id} href={`/my-orders/${order.id}`}>
+            <Link key={order.id} href={`/my-orders/${order.id}`} className="block">
               <Card className="hover:border-primary/30 transition-colors cursor-pointer">
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="flex-1 min-w-0">

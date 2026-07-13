@@ -28,7 +28,7 @@ Storefront modes: ordering, appointment requests, information-only, food truck s
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 18, Vite, Tailwind, shadcn/ui, wouter, TanStack Query, Clerk |
+| Frontend | React 19, Vite, Tailwind, shadcn/ui, wouter, TanStack Query, Clerk |
 | Backend | Express 5, TypeScript, Drizzle ORM, PostgreSQL |
 | API contract | OpenAPI 3 → Orval codegen |
 | Payments | Stripe Connect (orders) + Stripe Billing (subscriptions) |

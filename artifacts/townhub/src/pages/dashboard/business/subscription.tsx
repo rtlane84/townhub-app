@@ -258,7 +258,7 @@ export default function BusinessSubscription() {
 
   return (
     <BusinessDashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6 pb-28">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="font-serif text-3xl font-bold">Subscription</h1>

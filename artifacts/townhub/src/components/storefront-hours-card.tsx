@@ -37,7 +37,7 @@ export function StorefrontHoursCard({
 
   return (
     <section
-      className="min-w-0 rounded-[1.15rem] border border-black/[0.05] bg-background/60 p-3 shadow-none sm:p-4"
+      className="min-w-0 rounded-[1.15rem] border border-black/[0.05] bg-card p-3 shadow-sm sm:p-4"
       aria-labelledby="storefront-hours-heading"
     >
       <div className="mb-2 flex items-center justify-between gap-1 sm:mb-3 sm:gap-2">

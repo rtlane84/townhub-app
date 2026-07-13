@@ -1074,6 +1074,15 @@ export const EventType = {
   OTHER: 'OTHER',
 } as const;
 
+export type EventStatus = typeof EventStatus[keyof typeof EventStatus];
+
+
+export const EventStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
 export interface Event {
   id: number;
   title: string;
@@ -1095,6 +1104,15 @@ export interface Event {
   eventType: EventType;
   featured: boolean;
   active: boolean;
+  status: EventStatus;
+  /** @nullable */
+  submitterName?: string | null;
+  /** @nullable */
+  submitterEmail?: string | null;
+  /** @nullable */
+  reviewNote?: string | null;
+  /** @nullable */
+  reviewedAt?: string | null;
   createdAt?: string;
 }
 
@@ -1112,6 +1130,23 @@ export interface EventInput {
   eventType: EventType;
   featured?: boolean;
   active?: boolean;
+}
+
+export interface EventSubmitInput {
+  title: string;
+  date: string;
+  /** @nullable */
+  endDate?: string | null;
+  startTime?: string;
+  endTime?: string;
+  location?: string;
+  description?: string;
+  imageUrl?: string;
+  eventType?: EventType;
+  submitterName?: string;
+  submitterEmail?: string;
+  /** Honeypot field — must be empty */
+  website?: string;
 }
 
 export interface Highlight {
@@ -1980,6 +2015,15 @@ date?: string;
 export type ListEventsParams = {
 featured?: boolean;
 upcoming?: boolean;
+};
+
+export type ListAdminEventsParams = {
+status?: EventStatus;
+};
+
+export type RejectEventBody = {
+  /** @maxLength 2000 */
+  note?: string;
 };
 
 export type ListNotificationLogsParams = {

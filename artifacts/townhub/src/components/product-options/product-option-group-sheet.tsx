@@ -105,7 +105,7 @@ export function ProductOptionGroupSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-        <SheetHeader className="pb-4">
+        <SheetHeader className="pb-4 pt-[calc(1.5rem+var(--safe-area-top,0px))]">
           <SheetTitle className="font-serif text-2xl">{title}</SheetTitle>
         </SheetHeader>
 

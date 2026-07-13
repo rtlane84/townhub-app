@@ -259,16 +259,17 @@ Customer checkout
        │
        ├─ Pay at pickup ──► ORDER_RECEIVED (customer) + NEW_ORDER (owner)
        │
-       └─ Card (Stripe) ──► payment webhook marks PAID
-                              ├── ORDER_RECEIVED (customer)
-                              └── NEW_ORDER (owner)  ← not before payment
+       └─ Card (Stripe) ──► verified webhook or server confirmation
+                              materializes PAID order
+                                ├── ORDER_RECEIVED (customer)
+                                └── NEW_ORDER (owner)  ← not before payment
 
 Business updates status ──► lifecycle email + SMS + customer push
 ```
 
 | Order status | Customer event |
 | ------------ | -------------- |
-| *(checkout / webhook)* | `ORDER_RECEIVED` |
+| *(pay-at-pickup checkout / paid card materialization)* | `ORDER_RECEIVED` |
 | `CONFIRMED` | `ORDER_ACCEPTED` |
 | `PREPARING` | `ORDER_PREPARING` |
 | `READY_FOR_PICKUP` | `ORDER_READY_FOR_PICKUP` |
@@ -353,7 +354,7 @@ Checklist:
 
 - [ ] Schema pushed (`device_tokens`, `user_notification_preferences`, `recipient_user_id`)
 - [ ] Pay at pickup — customer email/SMS (+ push if signed in)
-- [ ] Stripe card — `ORDER_RECEIVED` only after webhook `PAID`
+- [ ] Stripe card — `ORDER_RECEIVED` only after verified paid-order materialization
 - [ ] Owner new order — existing channels + push to `business.ownerId` devices
 - [ ] Status changes map to the correct customer events / categories
 - [ ] Preference disable — category does not send PUSH for that user
