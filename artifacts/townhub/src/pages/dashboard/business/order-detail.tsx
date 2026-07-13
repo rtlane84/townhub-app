@@ -33,17 +33,9 @@ import {
   formatOrderStatusForDisplay,
   orderStatusNeedsConfirmation,
 } from "@/lib/order-status-safety";
-const STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
+import { orderStatusBadgeClass } from "@/lib/order-status-colors";
 
-const STATUS_COLORS: Record<string, string> = {
-  NEW: "bg-blue-100 text-blue-700",
-  CONFIRMED: "bg-indigo-100 text-indigo-700",
-  PREPARING: "bg-amber-100 text-amber-700",
-  READY_FOR_PICKUP: "bg-green-100 text-green-700",
-  OUT_FOR_DELIVERY: "bg-cyan-100 text-cyan-700",
-  COMPLETED: "bg-emerald-100 text-emerald-700",
-  CANCELED: "bg-red-100 text-red-700",
-};
+const STATUSES = ["NEW", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELED"];
 
 interface Props {
   params: { id: string };
@@ -144,7 +136,7 @@ export default function BusinessOrderDetail({ params }: Props) {
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
-                <span className={`text-sm px-3 py-1.5 rounded-full font-medium ${STATUS_COLORS[order.status] ?? "bg-muted"}`}>
+                <span className={`text-sm px-3 py-1.5 rounded-full font-medium ${orderStatusBadgeClass(order.status)}`}>
                   {order.status.replace(/_/g, " ")}
                 </span>
                 <Button

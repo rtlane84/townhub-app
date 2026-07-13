@@ -41,17 +41,8 @@ import {
   ordersWorkspaceHasActiveFilters,
 } from "@/lib/business-order-workspace";
 import { useBusinessOrdersWorkspace } from "@/hooks/use-business-orders-workspace";
+import { orderStatusBadgeClass } from "@/lib/order-status-colors";
 import { cn } from "@/lib/utils";
-
-const STATUS_COLORS: Record<string, string> = {
-  NEW: "bg-blue-100 text-blue-700",
-  CONFIRMED: "bg-indigo-100 text-indigo-700",
-  PREPARING: "bg-amber-100 text-amber-700",
-  READY_FOR_PICKUP: "bg-green-100 text-green-700",
-  OUT_FOR_DELIVERY: "bg-purple-100 text-purple-700",
-  COMPLETED: "bg-emerald-100 text-emerald-700",
-  CANCELED: "bg-red-100 text-red-700",
-};
 
 function statusLabel(s: string) {
   return s.replace(/_/g, " ");
@@ -63,7 +54,7 @@ function OrderStatusBadge({ orderId, status }: { orderId: number; status: string
     <span
       className={cn(
         "text-xs px-2 py-0.5 rounded-full font-medium",
-        STATUS_COLORS[status] ?? "bg-muted",
+        orderStatusBadgeClass(status),
         orderStatusHighlightClass(highlight),
       )}
     >

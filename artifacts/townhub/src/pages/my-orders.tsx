@@ -6,16 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Package } from "lucide-react";
 import { formatOrderPaymentLabel } from "@/lib/stripe-checkout-return";
 import { formatOrderTicketNumber, formatOrderReferenceLabel } from "@workspace/api-zod";
-
-const STATUS_COLORS: Record<string, string> = {
-  NEW: "bg-blue-100 text-blue-700",
-  CONFIRMED: "bg-indigo-100 text-indigo-700",
-  PREPARING: "bg-amber-100 text-amber-700",
-  READY_FOR_PICKUP: "bg-green-100 text-green-700",
-  OUT_FOR_DELIVERY: "bg-cyan-100 text-cyan-700",
-  COMPLETED: "bg-emerald-100 text-emerald-700",
-  CANCELED: "bg-red-100 text-red-700",
-};
+import { orderStatusBadgeClass } from "@/lib/order-status-colors";
 
 function statusLabel(status: string): string {
   return status.replace(/_/g, " ");
@@ -63,7 +54,7 @@ export default function MyOrders() {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h2 className="font-serif font-semibold text-lg truncate">{order.businessName}</h2>
                       <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[order.status] ?? "bg-muted"}`}
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${orderStatusBadgeClass(order.status)}`}
                       >
                         {statusLabel(order.status)}
                       </span>

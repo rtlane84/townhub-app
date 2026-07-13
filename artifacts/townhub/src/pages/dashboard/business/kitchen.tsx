@@ -48,6 +48,7 @@ import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { changeOrderStatusCopy } from "@/lib/confirm-action-copy";
 import { safeCancelQueries, safeInvalidateQueries } from "@/lib/query-cancellation";
 import { orderStatusNeedsConfirmation } from "@/lib/order-status-safety";
+import { KITCHEN_COLUMN_STATUS_HEADER_CLASS, ORDER_STATUS_DOT_CLASS } from "@/lib/order-status-colors";
 import { useLocation } from "wouter";
 import {
   ChefHat,
@@ -65,17 +66,16 @@ import { resolveLiveIndicatorStatus } from "@/lib/business-live-indicator-status
 import { useKitchenDisplayMode } from "@/hooks/kitchen-display-mode";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const COLUMN_HEADER_CLASS: Record<KitchenColumnId, string> = {
-  NEW: "bg-blue-100 text-blue-800 border-blue-200",
-  CONFIRMED: "bg-indigo-100 text-indigo-800 border-indigo-200",
-  PREPARING: "bg-amber-100 text-amber-900 border-amber-200",
-  READY: "bg-green-100 text-green-900 border-green-200",
-};
+const COLUMN_HEADER_CLASS = KITCHEN_COLUMN_STATUS_HEADER_CLASS;
 
 function shortMobileLabel(columnId: KitchenMobileColumnId, label: string): string {
   if (columnId === "OUT_FOR_DELIVERY") return "Out";
   if (columnId === "READY_FOR_PICKUP") return "Ready";
   return label;
+}
+
+function mobileColumnDotClass(columnId: KitchenMobileColumnId): string {
+  return ORDER_STATUS_DOT_CLASS[columnId];
 }
 
 function KitchenColumnBody({
@@ -549,8 +549,14 @@ export default function BusinessKitchen() {
                         )}
                         data-testid={`kitchen-mobile-tab-${column.id}`}
                       >
-                        <span className="text-sm font-bold tabular-nums leading-none">
-                          {count}
+                        <span className="inline-flex items-center gap-1">
+                          <span
+                            className={cn("h-1.5 w-1.5 rounded-full", mobileColumnDotClass(column.id))}
+                            aria-hidden
+                          />
+                          <span className="text-sm font-bold tabular-nums leading-none">
+                            {count}
+                          </span>
                         </span>
                         <span className="whitespace-nowrap text-[10px] font-medium leading-none">
                           {shortLabel}

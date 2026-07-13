@@ -17,6 +17,7 @@ import {
   type KitchenPaymentFilter,
 } from "@/lib/kitchen-display";
 import { cn } from "@/lib/utils";
+import { ORDER_STATUS_BADGE_CLASS } from "@/lib/order-status-colors";
 
 const DATE_PRESETS: OrderDateFilterPreset[] = ["today", "last7", "month", "custom", "all"];
 
@@ -43,6 +44,16 @@ const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
   OUT_FOR_DELIVERY: "Out for delivery",
   COMPLETED: "Completed",
   CANCELED: "Canceled",
+};
+
+const STATUS_FILTER_ACTIVE_CLASS: Partial<Record<StatusFilter, string>> = {
+  NEW: ORDER_STATUS_BADGE_CLASS.NEW,
+  CONFIRMED: ORDER_STATUS_BADGE_CLASS.CONFIRMED,
+  PREPARING: ORDER_STATUS_BADGE_CLASS.PREPARING,
+  READY_FOR_PICKUP: ORDER_STATUS_BADGE_CLASS.READY_FOR_PICKUP,
+  OUT_FOR_DELIVERY: ORDER_STATUS_BADGE_CLASS.OUT_FOR_DELIVERY,
+  COMPLETED: ORDER_STATUS_BADGE_CLASS.COMPLETED,
+  CANCELED: ORDER_STATUS_BADGE_CLASS.CANCELED,
 };
 
 type SharedFilterProps = {
@@ -220,6 +231,7 @@ export function BusinessOrderFiltersToolbar(props: BusinessOrderFiltersToolbarPr
                 value={statusValue}
                 onChange={props.onStatusFilterChange}
                 testIdPrefix={`${testIdPrefix}-status-filter`}
+                activeClassByOption={STATUS_FILTER_ACTIVE_CLASS}
               />
             ) : null}
 
