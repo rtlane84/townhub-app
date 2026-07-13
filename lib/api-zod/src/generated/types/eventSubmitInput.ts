@@ -12,14 +12,14 @@ export interface EventSubmitInput {
   date: string;
   /** @nullable */
   endDate?: string | null;
-  startTime?: string;
+  startTime: string;
   endTime?: string;
   location?: string;
   description?: string;
   imageUrl?: string;
   eventType?: EventType;
-  submitterName?: string;
-  submitterEmail?: string;
+  submitterName: string;
+  submitterEmail: string;
   /** Honeypot field — must be empty */
   website?: string;
 }

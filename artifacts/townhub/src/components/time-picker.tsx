@@ -52,8 +52,14 @@ export function TimePicker({
         type="time"
         step={TIME_INPUT_STEP_SECONDS}
         value={normalized}
-        onChange={(e) => onChange(e.target.value)}
-        required={required && !optional}
+        onChange={(e) => {
+          // Normalize immediately so Safari/iOS HH:mm:ss values stick in controlled state.
+          const next = normalizeOptionalTime(e.target.value);
+          onChange(next);
+        }}
+        // Prefer form-level field errors over browser-native tooltips.
+        required={false}
+        aria-required={required && !optional}
         min={min}
         max={max}
         disabled={disabled}

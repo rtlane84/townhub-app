@@ -2443,14 +2443,14 @@ export const SubmitEventBody = zod.object({
   "title": zod.string(),
   "date": zod.string(),
   "endDate": zod.string().nullish(),
-  "startTime": zod.string().optional(),
+  "startTime": zod.string(),
   "endTime": zod.string().optional(),
   "location": zod.string().optional(),
   "description": zod.string().optional(),
   "imageUrl": zod.string().optional(),
   "eventType": zod.enum(['COMMUNITY', 'FOOD_TRUCK', 'SEASONAL', 'SALE', 'HOLIDAY', 'MARKET', 'OTHER']).optional(),
-  "submitterName": zod.string().optional(),
-  "submitterEmail": zod.string().optional(),
+  "submitterName": zod.string(),
+  "submitterEmail": zod.string(),
   "website": zod.string().optional().describe('Honeypot field — must be empty')
 })
 

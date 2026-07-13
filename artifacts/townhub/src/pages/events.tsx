@@ -1,59 +1,22 @@
 import { useMemo, useState } from "react";
 import { useSearch } from "wouter";
 import { format, parseISO } from "date-fns";
-import { useSubmitEvent, useListEvents } from "@workspace/api-client-react";
-import type { EventSubmitInput } from "@workspace/api-client-react";
+import { useListEvents } from "@workspace/api-client-react";
 import { Calendar as CalendarIcon, CalendarDays, List } from "lucide-react";
 import { EventCard } from "@/components/event-card";
+import { EventSubmitForm } from "@/components/event-submit-form";
 import { NativeEmptyState } from "@/components/native-empty-state";
 import { SectionHeader } from "@/components/section-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { LoadingButton } from "@/components/ui/loading-button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
 import { eventOccursOnDate, toLocalIsoDate } from "@/lib/event-dates";
 import { cn } from "@/lib/utils";
-import { TimeRangePicker } from "@/components/time-picker";
 import { PeekCarousel } from "@/components/peek-carousel";
-
-const EVENT_TYPES = [
-  { value: "COMMUNITY", label: "Community" },
-  { value: "FOOD_TRUCK", label: "Food Truck" },
-  { value: "SEASONAL", label: "Seasonal" },
-  { value: "SALE", label: "Sale" },
-  { value: "HOLIDAY", label: "Holiday" },
-  { value: "MARKET", label: "Market" },
-  { value: "OTHER", label: "Other" },
-] as const;
-
-const BLANK_SUBMIT: EventSubmitInput = {
-  title: "",
-  date: "",
-  endDate: "",
-  startTime: "",
-  endTime: "",
-  location: "",
-  description: "",
-  eventType: "COMMUNITY",
-  submitterName: "",
-  submitterEmail: "",
-  website: "",
-};
 
 export default function Events() {
   const searchString = useSearch();
-  const { toast } = useToast();
   const query = useMemo(() => {
     const params = new URLSearchParams(
       searchString.startsWith("?") ? searchString.slice(1) : searchString,
@@ -63,28 +26,8 @@ export default function Events() {
 
   const { data: events = [], isLoading } = useListEvents({ upcoming: true });
   const [formOpen, setFormOpen] = useState(false);
-  const [form, setForm] = useState<EventSubmitInput>({ ...BLANK_SUBMIT });
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
-
-  const submitEvent = useSubmitEvent({
-    mutation: {
-      onSuccess: () => {
-        toast({
-          title: "Event submitted",
-          description: "Thanks! An admin will review it before it appears on the calendar.",
-        });
-        setForm({ ...BLANK_SUBMIT });
-        setFormOpen(false);
-      },
-      onError: () =>
-        toast({
-          title: "Couldn’t submit event",
-          description: "Please check the form and try again.",
-          variant: "destructive",
-        }),
-    },
-  });
 
   const sortedEvents = useMemo(() => {
     const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));
@@ -125,37 +68,6 @@ export default function Events() {
     () => sortedEvents.filter((event) => eventOccursOnDate(event, selectedDayIso)),
     [sortedEvents, selectedDayIso],
   );
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.title?.trim() || !form.date) {
-      toast({ title: "Title and date are required", variant: "destructive" });
-      return;
-    }
-    if (form.endDate && form.endDate < form.date) {
-      toast({
-        title: "End date must be on or after the start date",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    submitEvent.mutate({
-      data: {
-        title: form.title.trim(),
-        date: form.date,
-        endDate: form.endDate || undefined,
-        startTime: form.startTime || undefined,
-        endTime: form.endTime || undefined,
-        location: form.location?.trim() || undefined,
-        description: form.description?.trim() || undefined,
-        eventType: form.eventType || "COMMUNITY",
-        submitterName: form.submitterName?.trim() || undefined,
-        submitterEmail: form.submitterEmail?.trim() || undefined,
-        website: form.website || "",
-      },
-    });
-  }
 
   return (
     <div className={cn(PAGE_CONTAINER, "bg-background py-6 md:py-8 native-animate-in")}>
@@ -213,154 +125,10 @@ export default function Events() {
       </div>
 
       {formOpen ? (
-        <form
-          onSubmit={handleSubmit}
-          className="relative mb-8 min-w-0 space-y-4 overflow-x-hidden rounded-[1.5rem] border border-black/[0.08] bg-muted/40 p-4 shadow-sm sm:p-6"
-          noValidate
-        >
-          <div>
-            <h2 className="font-serif text-xl font-semibold text-platform-heading">
-              Submit an event
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Share a community happening. Submissions are reviewed before they appear publicly.
-            </p>
-          </div>
-
-          <div className="min-w-0 space-y-3">
-            <div className="min-w-0">
-              <label className="mb-1 block text-sm font-medium">Event title *</label>
-              <Input
-                value={form.title}
-                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-                placeholder="Farmers Market"
-                required
-                className="h-11"
-              />
-            </div>
-
-            <div className="min-w-0 space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
-              <div className="min-w-0">
-                <label className="mb-1 block text-sm font-medium">Start date *</label>
-                <Input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
-                  required
-                  className="h-11"
-                />
-              </div>
-              <div className="min-w-0">
-                <label className="mb-1 block text-sm font-medium">End date</label>
-                <Input
-                  type="date"
-                  value={form.endDate ?? ""}
-                  onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
-                  min={form.date || undefined}
-                  className="h-11"
-                />
-              </div>
-            </div>
-
-            <TimeRangePicker
-              startValue={form.startTime ?? ""}
-              endValue={form.endTime ?? ""}
-              onStartChange={(startTime) => setForm((p) => ({ ...p, startTime }))}
-              onEndChange={(endTime) => setForm((p) => ({ ...p, endTime }))}
-              startLabel="Start time"
-              endLabel="End time"
-              showFriendlyHint={false}
-            />
-
-            <div className="min-w-0 space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
-              <div className="min-w-0">
-                <label className="mb-1 block text-sm font-medium">Type</label>
-                <Select
-                  value={form.eventType ?? "COMMUNITY"}
-                  onValueChange={(v) =>
-                    setForm((p) => ({
-                      ...p,
-                      eventType: v as EventSubmitInput["eventType"],
-                    }))
-                  }
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EVENT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        {t.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="min-w-0">
-                <label className="mb-1 block text-sm font-medium">Location</label>
-                <Input
-                  value={form.location ?? ""}
-                  onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
-                  placeholder="Town Square"
-                  className="h-11"
-                />
-              </div>
-            </div>
-
-            <div className="min-w-0">
-              <label className="mb-1 block text-sm font-medium">Description</label>
-              <Textarea
-                value={form.description ?? ""}
-                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-                rows={2}
-                placeholder="What should people know?"
-                className="min-h-[4.5rem]"
-              />
-            </div>
-
-            <div className="min-w-0 space-y-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
-              <div className="min-w-0">
-                <label className="mb-1 block text-sm font-medium">Your name</label>
-                <Input
-                  value={form.submitterName ?? ""}
-                  onChange={(e) => setForm((p) => ({ ...p, submitterName: e.target.value }))}
-                  className="h-11"
-                />
-              </div>
-              <div className="min-w-0">
-                <label className="mb-1 block text-sm font-medium">Your email</label>
-                <Input
-                  type="email"
-                  value={form.submitterEmail ?? ""}
-                  onChange={(e) => setForm((p) => ({ ...p, submitterEmail: e.target.value }))}
-                  className="h-11"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Honeypot — hidden from people, filled by some bots */}
-          <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0">
-            <label>
-              Website
-              <input
-                tabIndex={-1}
-                autoComplete="off"
-                value={form.website ?? ""}
-                onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
-              />
-            </label>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-1">
-            <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>
-              Cancel
-            </Button>
-            <LoadingButton type="submit" loading={submitEvent.isPending} loadingText="Submitting…">
-              Submit for review
-            </LoadingButton>
-          </div>
-        </form>
+        <EventSubmitForm
+          onCancel={() => setFormOpen(false)}
+          onSubmitted={() => setFormOpen(false)}
+        />
       ) : null}
 
       {isLoading ? (

@@ -6,7 +6,7 @@ import {
   isEndTimeAfterStart,
   parseTimeToHHmm,
   snapTimeToIncrement,
-} from "@workspace/api-zod";
+} from "../../../../lib/api-zod/src/time.ts";
 
 describe("time utilities", () => {
   it("parses HH:mm and snaps to 15-minute increments", () => {
@@ -14,6 +14,13 @@ describe("time utilities", () => {
     assert.equal(parseTimeToHHmm("14:30"), "14:30");
     assert.equal(parseTimeToHHmm("09:07"), "09:00");
     assert.equal(parseTimeToHHmm("09:08"), "09:15");
+  });
+
+  it("parses HH:mm:ss from native mobile time inputs", () => {
+    assert.equal(parseTimeToHHmm("09:00:00"), "09:00");
+    assert.equal(parseTimeToHHmm("14:30:00"), "14:30");
+    assert.equal(parseTimeToHHmm("09:08:00"), "09:15");
+    assert.equal(parseTimeToHHmm("09:00:00.000"), "09:00");
   });
 
   it("parses 12-hour times for backwards compatibility", () => {

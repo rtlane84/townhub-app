@@ -4104,7 +4104,7 @@ components:
 
     EventSubmitInput:
       type: object
-      required: [title, date]
+      required: [title, date, startTime, submitterName, submitterEmail]
       properties:
         title:
           type: string

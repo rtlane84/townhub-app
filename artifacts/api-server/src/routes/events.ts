@@ -39,25 +39,64 @@ const eventFieldsSchema = z.object({
 const eventSubmitSchema = z.object({
   title: z.string().min(1).max(200),
   date: z.string().min(1),
-  endDate: z.string().optional().nullable(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
+  endDate: z
+    .union([z.string(), z.null(), z.literal("")])
+    .optional()
+    .transform((value) => {
+      if (value == null) return null;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }),
+  startTime: z
+    .string()
+    .min(1, "Start time is required")
+    .transform((value, ctx) => {
+      const normalized = value.trim();
+      // Accept HH:mm and HH:mm:ss from native pickers.
+      const withoutSeconds = normalized.replace(/^(\d{1,2}:\d{2}):\d{2}(?:\.\d+)?$/, "$1");
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(withoutSeconds)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Start time must be a valid time",
+        });
+        return z.NEVER;
+      }
+      return withoutSeconds;
+    }),
+  endTime: z
+    .union([z.string(), z.literal("")])
+    .optional()
+    .transform((value) => {
+      if (value == null || value === "") return undefined;
+      const withoutSeconds = value.trim().replace(/^(\d{1,2}:\d{2}):\d{2}(?:\.\d+)?$/, "$1");
+      return withoutSeconds || undefined;
+    }),
   location: z.string().max(500).optional(),
   description: z.string().max(5000).optional(),
   imageUrl: z.string().max(2000).optional(),
   eventType: eventTypeSchema.optional().default("COMMUNITY"),
-  submitterName: z.string().max(200).optional(),
-  submitterEmail: z.string().email().max(320).optional().or(z.literal("")),
+  submitterName: z.string().min(1, "Name is required").max(200),
+  submitterEmail: z.string().trim().email("Valid email is required").max(320),
   /** Honeypot — bots fill this; humans leave empty. */
   website: z.string().max(500).optional(),
 });
 
-function validateEventDates(data: { date: string; endDate?: string | null }, ctx: z.RefinementCtx) {
+function validateEventDates(
+  data: { date: string; endDate?: string | null; startTime?: string; endTime?: string },
+  ctx: z.RefinementCtx,
+) {
   if (data.endDate && data.endDate < data.date) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "End date must be on or after the start date",
       path: ["endDate"],
+    });
+  }
+  if (data.startTime && data.endTime && data.endTime <= data.startTime) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "End time must be after the start time",
+      path: ["endTime"],
     });
   }
 }

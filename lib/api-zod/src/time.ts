@@ -36,28 +36,32 @@ function parse12hMatch(match: RegExpMatchArray): string | null {
 
 /**
  * Parses common time strings to HH:mm. Returns null for empty/invalid input.
- * Supports HH:mm, 12-hour with AM/PM, and legacy free-text containing a time.
+ * Supports HH:mm, HH:mm:ss (Safari/iOS time inputs), 12-hour with AM/PM,
+ * and legacy free-text containing a time.
  */
 export function parseTimeToHHmm(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  if (TIME_HHMM_PATTERN.test(trimmed)) {
-    return snapTimeToIncrement(trimmed);
+  // Strip seconds / fractional seconds from native time inputs before matching.
+  const withoutSeconds = trimmed.replace(/^(\d{1,2}:\d{2}):\d{2}(?:\.\d+)?$/, "$1");
+
+  if (TIME_HHMM_PATTERN.test(withoutSeconds)) {
+    return snapTimeToIncrement(withoutSeconds);
   }
 
-  const h12Strict = trimmed.match(/^(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)\.?$/i);
+  const h12Strict = withoutSeconds.match(/^(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)\.?$/i);
   if (h12Strict) {
     return parse12hMatch(h12Strict);
   }
 
-  const embedded = trimmed.match(/(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)/i);
+  const embedded = withoutSeconds.match(/(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)/i);
   if (embedded) {
     return parse12hMatch(embedded);
   }
 
-  const h24 = trimmed.match(/^(\d{1,2}):(\d{2})$/);
+  const h24 = withoutSeconds.match(/^(\d{1,2}):(\d{2})$/);
   if (h24) {
     return toHHmm(Number(h24[1]), Number(h24[2]));
   }
