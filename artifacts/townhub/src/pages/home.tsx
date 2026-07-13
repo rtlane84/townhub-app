@@ -58,7 +58,7 @@ import { cn } from "@/lib/utils";
  * 6. Explore {town}
  * 7. Featured events (when any)
  * 8. On the move today (when trucks exist)
- * 9. Popular businesses
+ * 9. Featured businesses
  */
 
 const EXPLORE_ICONS: Record<string, { icon: LucideIcon; tint: string }> = {

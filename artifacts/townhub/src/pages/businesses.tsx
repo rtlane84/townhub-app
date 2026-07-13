@@ -1,33 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearch } from "wouter";
-import { Search, MapPin, Store } from "lucide-react";
+import { Search, SlidersHorizontal, Star, Store } from "lucide-react";
 import { useListBusinesses } from "@workspace/api-client-react";
 import {
   isOrderingStorefrontMode,
   PUBLIC_BUSINESS_FILTERS,
 } from "@workspace/api-zod";
-import {
-  businessHeroPlaceholderStyle,
-  businessIconAccentStyle,
-  businessListingCardVars,
-} from "@/lib/theme-colors";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { BusinessListingCardMedia } from "@/components/business-logo-badge";
-import { BusinessTags } from "@/components/business-tags";
+import {
+  BusinessDirectoryRow,
+  BusinessDirectoryRowsSkeleton,
+  FeaturedBusinessCard,
+  FeaturedBusinessesSkeleton,
+} from "@/components/business-directory";
 import { NativeEmptyState } from "@/components/native-empty-state";
 import { SectionHeader } from "@/components/section-header";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { LISTING_CARD_CLASS, PAGE_CONTAINER } from "@/lib/design-tokens";
+import { PAGE_CONTAINER } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 export default function Businesses() {
   const searchString = useSearch();
+  const categoryRowRef = useRef<HTMLDivElement>(null);
+
   const { typeFromUrl, orderingOnly, searchFromUrl } = useMemo(() => {
     const params = new URLSearchParams(
       searchString.startsWith("?") ? searchString.slice(1) : searchString,
@@ -72,10 +69,33 @@ export default function Businesses() {
     );
   }, [businesses, orderingOnly]);
 
+  const featuredBusinesses = useMemo(
+    () => visibleBusinesses.filter((business) => business.featured),
+    [visibleBusinesses],
+  );
+
   const categories = PUBLIC_BUSINESS_FILTERS;
+  const hasActiveFilters = Boolean(searchInput.trim()) || selectedType !== "ALL";
+
+  function clearFilters() {
+    setSearchInput("");
+    setSelectedType("ALL");
+  }
+
+  function focusCategories() {
+    categoryRowRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }
 
   return (
-    <div className={cn(PAGE_CONTAINER, "py-8 md:py-10 native-animate-in")}>
+    <div
+      className={cn(
+        PAGE_CONTAINER,
+        "bg-background py-6 md:py-8 native-animate-in",
+      )}
+    >
       <SectionHeader
         title={orderingOnly ? "Order Local" : "Local businesses"}
         description={
@@ -84,39 +104,61 @@ export default function Businesses() {
             : "Discover and support the best of our community."
         }
         size="lg"
-        className="mb-8"
+        className="mb-5"
       />
 
-      {/* Search + filters */}
-      <div className="mb-8 space-y-4">
-        <div className="relative max-w-xl">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search businesses..."
-            className="h-12 pl-11 text-base"
+      <div className="mb-5 space-y-3">
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            type="search"
+            placeholder="Search businesses, cuisine, products, or services..."
+            className="h-11 w-full rounded-full border border-black/[0.08] bg-card pl-10 pr-11 text-[14px] text-foreground shadow-[0_1px_4px_rgba(15,23,42,0.04)] outline-none placeholder:text-muted-foreground/80 focus:border-primary/30 focus:ring-2 focus:ring-primary/15"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             aria-label="Search businesses"
           />
+          <button
+            type="button"
+            onClick={focusCategories}
+            className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Filter by category"
+          >
+            <SlidersHorizontal className="h-4 w-4" aria-hidden />
+          </button>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+
+        <div
+          ref={categoryRowRef}
+          className="flex gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar"
+          role="listbox"
+          aria-label="Business categories"
+        >
           {categories.map((cat) => {
             const active = selectedType === cat.value;
             return (
-              <Button
+              <button
                 key={cat.value}
-                variant={active ? "default" : "outline"}
+                type="button"
+                role="option"
+                aria-selected={active}
                 onClick={() => setSelectedType(cat.value)}
                 className={cn(
-                  "shrink-0 rounded-full whitespace-nowrap",
-                  !active && "bg-card",
+                  "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap transition-colors",
+                  active
+                    ? "bg-[var(--platform-heading,#1e3a5f)] text-white"
+                    : "border border-black/[0.08] bg-card text-foreground/80 hover:bg-muted/60",
                 )}
               >
                 {cat.label}
-              </Button>
+              </button>
             );
           })}
         </div>
+
         {orderingOnly ? (
           <p className="text-sm text-muted-foreground">
             Showing online-ordering businesses only.{" "}
@@ -128,25 +170,36 @@ export default function Businesses() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="flex flex-col space-y-3">
-              <Skeleton className="aspect-[16/10] w-full rounded-[1.75rem]" />
-              <Skeleton className="h-4 w-[70%]" />
-              <Skeleton className="h-4 w-[50%]" />
+        <div className="space-y-8">
+          <section>
+            <div className="mb-3 flex items-center gap-2">
+              <SkeletonHeading />
             </div>
-          ))}
+            <FeaturedBusinessesSkeleton />
+          </section>
+          <section>
+            <SkeletonHeading />
+            <div className="mt-3">
+              <BusinessDirectoryRowsSkeleton />
+            </div>
+          </section>
         </div>
       ) : visibleBusinesses.length === 0 ? (
         <NativeEmptyState
           icon={Store}
           title={
-            orderingOnly ? "No online ordering yet" : "No businesses found"
+            orderingOnly
+              ? "No online ordering yet"
+              : hasActiveFilters
+                ? "No businesses found"
+                : "No businesses yet"
           }
           description={
             orderingOnly
               ? "None of the local shops accept online orders right now. Browse the full directory instead."
-              : "Try adjusting your filters or search term."
+              : hasActiveFilters
+                ? "Try adjusting your filters or search term."
+                : "Check back soon for local shops and makers."
           }
           action={
             orderingOnly ? (
@@ -155,81 +208,83 @@ export default function Businesses() {
                   Browse all businesses
                 </Button>
               </Link>
-            ) : (
+            ) : hasActiveFilters ? (
               <Button
                 variant="outline"
                 className="w-full min-h-11"
-                onClick={() => {
-                  setSearchInput("");
-                  setSelectedType("ALL");
-                }}
+                onClick={clearFilters}
               >
                 Clear all filters
               </Button>
-            )
+            ) : undefined
           }
         />
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {visibleBusinesses.map((business) => (
-            <Link key={business.id} href={`/businesses/${business.slug}`}>
-              <Card
-                className={LISTING_CARD_CLASS}
-                style={businessListingCardVars(business.accentColor)}
-              >
-                <BusinessListingCardMedia
-                  heroImageUrl={business.heroImageUrl}
-                  heroAlt={business.name}
-                  logoUrl={business.logoUrl}
-                  businessName={business.name}
-                  placeholder={
-                    <div
-                      className="flex h-full w-full items-center justify-center bg-primary/5 text-primary/40"
-                      style={businessHeroPlaceholderStyle(business.accentColor)}
-                    >
-                      <Store
-                        className="h-12 w-12"
-                        style={businessIconAccentStyle(business.accentColor)}
-                      />
-                    </div>
-                  }
-                />
-                <CardContent className="flex h-[calc(100%-56.25%)] flex-col px-5 pb-5 pt-9">
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <h3 className="line-clamp-1 font-serif text-xl font-bold text-foreground">
-                      {business.name}
-                    </h3>
-                    {!business.active && (
-                      <Badge variant="secondary">Closed</Badge>
-                    )}
-                  </div>
-
-                  <div className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <MapPin
-                      className="h-3.5 w-3.5 shrink-0"
-                      style={businessIconAccentStyle(business.accentColor)}
-                    />
-                    <span className="line-clamp-1">
-                      {business.address || "Online"}
-                    </span>
-                  </div>
-
-                  <p className="mb-4 line-clamp-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-                    {business.description ||
-                      "A local favorite in our community."}
-                  </p>
-
-                  <BusinessTags
-                    business={business}
-                    accentColor={business.accentColor}
-                    variant="listing"
+        <div className="space-y-8">
+          {featuredBusinesses.length > 0 ? (
+            <section aria-labelledby="featured-businesses-heading">
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <h2
+                  id="featured-businesses-heading"
+                  className="flex items-center gap-1.5 text-[17px] font-bold tracking-tight text-platform-heading"
+                >
+                  <Star
+                    className="h-4 w-4 text-amber-500"
+                    fill="currentColor"
+                    aria-hidden
                   />
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  Featured businesses
+                </h2>
+                <button
+                  type="button"
+                  className="shrink-0 text-[13px] font-semibold text-primary"
+                  onClick={() => {
+                    document
+                      .getElementById("all-businesses-heading")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  View all
+                </button>
+              </div>
+              <div className=" -mx-1 flex gap-3 overflow-x-auto px-1 pb-1 snap-x snap-mandatory hide-scrollbar">
+                {featuredBusinesses.map((business) => (
+                  <FeaturedBusinessCard
+                    key={business.id}
+                    business={business}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section aria-labelledby="all-businesses-heading">
+            <h2
+              id="all-businesses-heading"
+              className="mb-3 text-[17px] font-bold tracking-tight text-platform-heading"
+            >
+              All businesses
+            </h2>
+            <ul className="space-y-2.5">
+              {visibleBusinesses.map((business) => (
+                <BusinessDirectoryRow
+                  key={business.id}
+                  business={business}
+                />
+              ))}
+            </ul>
+          </section>
         </div>
       )}
     </div>
+  );
+}
+
+function SkeletonHeading() {
+  return (
+    <div
+      className="mb-3 h-5 w-40 animate-pulse rounded bg-muted"
+      aria-hidden
+    />
   );
 }

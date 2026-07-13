@@ -39,15 +39,15 @@ function SummaryCard({
       href={href}
       className={cn(
         "flex min-w-0 flex-1 flex-col overflow-hidden",
-        "min-h-[10.75rem] rounded-[1.15rem] border border-black/[0.06] bg-card p-3",
-        "shadow-[0_1px_4px_rgba(15,23,42,0.04)] transition-colors hover:bg-muted/30 active:scale-[0.985] sm:p-3.5",
+        "min-h-[10.5rem] rounded-[1.1rem] border border-black/[0.06] bg-card p-2.5",
+        "shadow-[0_1px_4px_rgba(15,23,42,0.04)] transition-colors hover:bg-muted/30 active:scale-[0.985] sm:p-3",
       )}
     >
       <article className="flex min-h-0 flex-1 flex-col">
-        <div className="mb-2.5 flex min-w-0 items-center gap-1.5">
+        <div className="mb-2 flex min-w-0 items-center gap-1.5">
           <span
             className={cn(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
+              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
               iconTint,
             )}
             aria-hidden
@@ -56,7 +56,7 @@ function SummaryCard({
           </span>
           <p
             className={cn(
-              "min-w-0 truncate text-[9px] font-bold uppercase leading-none tracking-[0.04em] sm:text-[10px]",
+              "min-w-0 whitespace-nowrap text-[8px] font-bold uppercase leading-none tracking-[0.02em] sm:text-[9px]",
               tagClassName,
             )}
           >
@@ -74,10 +74,10 @@ function SummaryCard({
 function CardSkeleton() {
   return (
     <div
-      className="min-h-[10.75rem] min-w-0 flex-1 animate-pulse rounded-[1.15rem] border border-black/[0.04] bg-muted/50 p-3"
+      className="min-h-[10.5rem] min-w-0 flex-1 animate-pulse rounded-[1.1rem] border border-black/[0.04] bg-muted/50 p-2.5"
       aria-hidden
     >
-      <div className="mb-3 h-8 w-8 rounded-full bg-muted" />
+      <div className="mb-2 h-6 w-6 rounded-full bg-muted" />
       <div className="mb-2 h-3 w-16 rounded bg-muted" />
       <div className="h-10 w-full rounded bg-muted" />
     </div>
@@ -142,14 +142,14 @@ export function TodayInTownSection({
         Today in {placeLabel}
       </h2>
 
-      <div className="flex gap-2 sm:gap-3">
+      <div className="flex gap-1.5 sm:gap-2.5">
         {todayTrucksLoading ? (
           <CardSkeleton />
         ) : (
           <SummaryCard
             tag="On the move"
             tagClassName="text-sky-600"
-            icon={<Truck className="h-3.5 w-3.5" />}
+            icon={<Truck className="h-3 w-3" />}
             iconTint="bg-sky-500/12 text-sky-600"
             href="/food-trucks"
           >
@@ -181,7 +181,7 @@ export function TodayInTownSection({
           <SummaryCard
             tag="Events"
             tagClassName="text-emerald-600"
-            icon={<CalendarDays className="h-3.5 w-3.5" />}
+            icon={<CalendarDays className="h-3 w-3" />}
             iconTint="bg-emerald-500/12 text-emerald-600"
             href="/events"
           >
@@ -206,7 +206,7 @@ export function TodayInTownSection({
           <SummaryCard
             tag="Marketplace"
             tagClassName="text-orange-600"
-            icon={<Store className="h-3.5 w-3.5" />}
+            icon={<Store className="h-3 w-3" />}
             iconTint="bg-orange-500/12 text-orange-600"
             href="/businesses"
           >
@@ -216,10 +216,10 @@ export function TodayInTownSection({
                   {totalShops} {totalShops === 1 ? "shop" : "shops"}
                 </p>
                 <p className="text-muted-foreground">
-                  {openShops} open
+                  {openShops} open now
                 </p>
                 <p className="text-muted-foreground">
-                  {items} {items === 1 ? "item" : "items"}
+                  {items} total {items === 1 ? "item" : "items"}
                 </p>
               </div>
             ) : (

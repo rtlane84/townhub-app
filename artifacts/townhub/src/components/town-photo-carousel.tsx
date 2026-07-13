@@ -55,7 +55,6 @@ export function TownPhotoCarousel({
   className,
 }: TownPhotoCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const pauseUntilRef = useRef(0);
@@ -82,21 +81,6 @@ export function TownPhotoCarousel({
   const pauseAutoAdvance = useCallback(() => {
     pauseUntilRef.current = Date.now() + AUTO_ADVANCE_MS;
   }, []);
-
-  useEffect(() => {
-    if (!api) return;
-
-    const onSelect = () => {
-      setSelectedIndex(api.selectedScrollSnap());
-    };
-    onSelect();
-    api.on("select", onSelect);
-    api.on("reInit", onSelect);
-    return () => {
-      api.off("select", onSelect);
-      api.off("reInit", onSelect);
-    };
-  }, [api]);
 
   useEffect(() => {
     if (!api || !multi || prefersReducedMotion) return;
@@ -175,7 +159,7 @@ export function TownPhotoCarousel({
                 {overlayImageUrl ? (
                   <div
                     className={cn(
-                      "pointer-events-none absolute inset-0 z-[1] flex items-center px-4 pb-14 pt-5 md:px-6 md:pb-16",
+                      "pointer-events-none absolute inset-0 z-[1] flex items-center px-4 pb-12 pt-5 md:px-6 md:pb-14",
                       heroHorizontalJustifyClass(overlayAlign),
                     )}
                   >
@@ -202,44 +186,9 @@ export function TownPhotoCarousel({
         </CarouselContent>
       </Carousel>
 
-      {footer || showControls ? (
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-x-0 bottom-0 z-[3] flex flex-col items-center gap-2 px-3 pb-2.5 sm:px-4 sm:pb-3",
-          )}
-        >
-          {showControls ? (
-            <div
-              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 shadow-sm backdrop-blur-[2px] ring-1 ring-white/25"
-              role="tablist"
-              aria-label={`Image ${selectedIndex + 1} of ${visibleSlides.length}`}
-            >
-              {visibleSlides.map((slide, index) => {
-                const selected = index === selectedIndex;
-                return (
-                  <button
-                    key={slide.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    aria-label={`Image ${index + 1} of ${visibleSlides.length}`}
-                    className={cn(
-                      "h-1.5 rounded-full transition-all",
-                      prefersReducedMotion ? "duration-0" : "duration-300",
-                      selected
-                        ? "w-5 bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.15)]"
-                        : "w-1.5 bg-white/55 hover:bg-white/85",
-                    )}
-                    onClick={() => {
-                      pauseAutoAdvance();
-                      api?.scrollTo(index);
-                    }}
-                  />
-                );
-              })}
-            </div>
-          ) : null}
-          {footer ? <div className="w-full">{footer}</div> : null}
+      {footer ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] flex flex-col items-center px-3 pb-2.5 sm:px-4 sm:pb-3">
+          <div className="w-full">{footer}</div>
         </div>
       ) : null}
     </section>

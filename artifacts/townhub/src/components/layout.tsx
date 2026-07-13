@@ -79,6 +79,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     },
   });
   const hideCart = !!storefrontSlug && hidesStorefrontCart(storefrontData?.business ?? {});
+  /** Business detail uses its own compact header chrome. */
+  const hideSiteHeader = !!storefrontSlug;
 
   const hideFooter =
     location === "/dashboard/admin/system-status" ||
@@ -159,6 +161,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           "sticky top-0 z-50 w-full border-b border-border/30 bg-background print:hidden native-site-header",
           !isNative && "bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60",
           isNative && "!sticky relative top-auto",
+          hideSiteHeader && "hidden",
         )}
       >
         <div

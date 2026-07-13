@@ -3,23 +3,34 @@ import { describe, it } from "node:test";
 import { readFile } from "node:fs/promises";
 
 describe("storefront hero layout", () => {
-  it("uses a full-bleed mobile hero and large rounded desktop stage", async () => {
-    const source = await readFile(new URL("../pages/storefront.tsx", import.meta.url), "utf8");
-    assert.match(source, /w-full rounded-none/);
-    assert.match(source, /md:mx-auto md:rounded-\[2rem\]/);
-    assert.match(source, /md:-mt-\[7\.125rem\]/);
-    assert.match(source, /-mt-16 px-5 md:-mt-\[7\.125rem\]/);
+  it("uses a rounded hero with overlapping logo treatment", async () => {
+    const source = await readFile(
+      new URL("../pages/storefront.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /rounded-\[1\.5rem\]/);
+    assert.match(source, /absolute -bottom-6 left-4/);
+    assert.match(source, /StorefrontDetailHeader/);
+    assert.match(source, /overflow-hidden rounded-\[1\.5rem\] bg-card/);
   });
 
-  it("reduces mobile logo overlap while preserving desktop overlap", async () => {
-    const source = await readFile(new URL("../pages/storefront.tsx", import.meta.url), "utf8");
-    assert.match(source, /-mt-12 md:-mt-\[4\.5rem\]/);
-    assert.match(source, /pt-10 text-center md:pt-12/);
+  it("renders hours and location cards with presence-aware placeholders", async () => {
+    const source = await readFile(
+      new URL("../pages/storefront.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /StorefrontHoursCard/);
+    assert.match(source, /StorefrontLocationCard/);
+    assert.match(source, /resolveStorefrontPresence/);
   });
 
-  it("keeps the business info card full width on mobile", async () => {
-    const source = await readFile(new URL("../pages/storefront.tsx", import.meta.url), "utf8");
-    assert.match(source, /"order-1 w-full"/);
-    assert.match(source, /informationCatalogEmpty && "md:mx-auto md:max-w-md"/);
+  it("keeps mode-aware commerce empty states", async () => {
+    const source = await readFile(
+      new URL("../pages/storefront.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(source, /Menu not posted yet/);
+    assert.match(source, /Services not posted yet/);
+    assert.match(source, /button-call-empty-shop/);
   });
 });

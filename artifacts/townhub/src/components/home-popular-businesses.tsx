@@ -1,18 +1,13 @@
 import { Link } from "wouter";
 import type { Business } from "@workspace/api-client-react";
-import {
-  formatBusinessTypeLabel,
-  formatTime12h,
-  hasOpenHours,
-  isOpenNow,
-  isOrderingStorefrontMode,
-  normalizeWeeklyHours,
-  parseStructuredHours,
-} from "@workspace/api-zod";
 import { Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeEmptyState } from "@/components/native-empty-state";
-import { resolveBusinessHours } from "@/lib/business-hours";
+import {
+  getBusinessCategoryLine,
+  getBusinessListingCta,
+  getBusinessOpenStatus,
+} from "@/lib/business-listing";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -42,86 +37,73 @@ function PopularBusinessesSkeleton({ count = 3 }: { count?: number }) {
   );
 }
 
-function openStatusLabel(business: Business): string | null {
-  const hours = resolveBusinessHours(business);
-  if (!hours.hasHours || !hours.structuredHours) {
-    if (business.active === false) return "Closed";
-    return null;
-  }
-  const parsed = Array.isArray(hours.structuredHours)
-    ? normalizeWeeklyHours(hours.structuredHours)
-    : parseStructuredHours(hours.structuredHours);
-  if (!parsed || !hasOpenHours(parsed)) return null;
-
-  const open = isOpenNow(parsed);
-  const today = parsed[new Date().getDay()];
-  if (open && today?.closeTime) {
-    return `Open · Closes ${formatTime12h(today.closeTime)}`;
-  }
-  if (!open) return "Closed";
-  return "Open";
-}
-
-function ctaLabelForBusiness(business: Business): string {
-  if (isOrderingStorefrontMode(business)) return "Order Now";
-  return "View";
-}
-
 function BusinessRow({ business }: { business: Business }) {
-  const status = openStatusLabel(business);
-  const typeLabel = formatBusinessTypeLabel(business.type);
+  const status = getBusinessOpenStatus(business);
+  const categoryLine = getBusinessCategoryLine(business);
   const thumb = business.logoUrl || business.heroImageUrl;
-  const cta = ctaLabelForBusiness(business);
+  const cta = getBusinessListingCta(business);
+  const storefrontHref = `/businesses/${business.slug}`;
 
   return (
     <li>
-      <Link
-        href={`/businesses/${business.slug}`}
-        className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-card p-2.5 transition-colors hover:bg-muted/30 active:scale-[0.995]"
-      >
-        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-muted">
-          {thumb ? (
-            <img
-              src={thumb}
-              alt=""
-              className="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-primary/40">
-              <Store className="h-6 w-6" aria-hidden />
-            </div>
-          )}
-        </div>
+      <div className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-card p-2.5 transition-colors hover:bg-muted/30">
+        <Link href={storefrontHref} className="shrink-0">
+          <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-muted">
+            {thumb ? (
+              <img
+                src={thumb}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-primary/40">
+                <Store className="h-6 w-6" aria-hidden />
+              </div>
+            )}
+          </div>
+        </Link>
 
-        <div className="min-w-0 flex-1">
+        <Link href={storefrontHref} className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-semibold tracking-tight text-platform-heading">
             {business.name}
           </p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {typeLabel}
+            {categoryLine}
           </p>
           {status ? (
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span
-                className={cn(
-                  "h-1.5 w-1.5 rounded-full",
-                  status.startsWith("Open")
-                    ? "bg-emerald-500"
-                    : "bg-muted-foreground/50",
-                )}
-                aria-hidden
-              />
-              {status}
+            <p
+              className={cn(
+                "mt-1 text-xs font-semibold",
+                status.isOpen ? "text-emerald-600" : "text-red-600",
+              )}
+            >
+              {status.label}
             </p>
           ) : null}
-        </div>
+        </Link>
 
-        <span className="shrink-0 rounded-full border border-primary/25 px-3 py-1.5 text-xs font-semibold text-primary">
-          {cta}
-        </span>
-      </Link>
+        {cta ? (
+          cta.external ? (
+            <a
+              href={cta.href}
+              className="shrink-0 rounded-full border border-primary/25 px-3 py-1.5 text-xs font-semibold text-primary"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {cta.label}
+            </a>
+          ) : (
+            <Link
+              href={cta.href}
+              className="shrink-0 rounded-full border border-primary/25 px-3 py-1.5 text-xs font-semibold text-primary"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {cta.label}
+            </Link>
+          )
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -134,14 +116,14 @@ export function HomePopularBusinesses({
   return (
     <section
       className="th-fade-up"
-      aria-labelledby="popular-businesses-heading"
+      aria-labelledby="featured-businesses-heading"
     >
       <div className="mb-3 flex items-end justify-between gap-3">
         <h2
-          id="popular-businesses-heading"
+          id="featured-businesses-heading"
           className="text-lg font-bold tracking-tight text-platform-heading"
         >
-          Popular Businesses
+          Featured Businesses
         </h2>
         <Link
           href="/businesses"
