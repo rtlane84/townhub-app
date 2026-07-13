@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useSearch } from "wouter";
+import { format, parseISO } from "date-fns";
 import { useSubmitEvent, useListEvents } from "@workspace/api-client-react";
 import type { EventSubmitInput } from "@workspace/api-client-react";
-import { Calendar } from "lucide-react";
+import { Calendar as CalendarIcon, CalendarDays, List } from "lucide-react";
 import { EventCard } from "@/components/event-card";
 import { NativeEmptyState } from "@/components/native-empty-state";
 import { SectionHeader } from "@/components/section-header";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Select,
   SelectContent,
@@ -20,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
+import { eventOccursOnDate, toLocalIsoDate } from "@/lib/event-dates";
 import { cn } from "@/lib/utils";
 import { TimeRangePicker } from "@/components/time-picker";
 import { PeekCarousel } from "@/components/peek-carousel";
@@ -61,6 +64,8 @@ export default function Events() {
   const { data: events = [], isLoading } = useListEvents({ upcoming: true });
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<EventSubmitInput>({ ...BLANK_SUBMIT });
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
 
   const submitEvent = useSubmitEvent({
     mutation: {
@@ -99,6 +104,27 @@ export default function Events() {
   }, [events, query]);
 
   const featured = sortedEvents.filter((e) => e.featured);
+
+  const eventDays = useMemo(() => {
+    const days: Date[] = [];
+    for (const event of sortedEvents) {
+      const endIso = event.endDate?.trim() || event.date;
+      let cursor = parseISO(event.date);
+      const end = parseISO(endIso);
+      while (cursor <= end) {
+        days.push(new Date(cursor));
+        cursor = new Date(cursor);
+        cursor.setDate(cursor.getDate() + 1);
+      }
+    }
+    return days;
+  }, [sortedEvents]);
+
+  const selectedDayIso = toLocalIsoDate(selectedDay);
+  const eventsOnSelectedDay = useMemo(
+    () => sortedEvents.filter((event) => eventOccursOnDate(event, selectedDayIso)),
+    [sortedEvents, selectedDayIso],
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -144,14 +170,46 @@ export default function Events() {
           size="lg"
           className="mb-0 min-w-0 flex-1"
         />
-        <Button
-          type="button"
-          variant="outline"
-          className="shrink-0"
-          onClick={() => setFormOpen((v) => !v)}
-        >
-          {formOpen ? "Hide form" : "Submit an event"}
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div
+            className="inline-flex rounded-full border border-black/[0.08] bg-muted/50 p-0.5"
+            role="group"
+            aria-label="Events view"
+          >
+            <Button
+              type="button"
+              size="sm"
+              variant={viewMode === "list" ? "default" : "ghost"}
+              className="h-9 rounded-full px-3"
+              onClick={() => setViewMode("list")}
+              aria-pressed={viewMode === "list"}
+              data-testid="button-events-view-list"
+            >
+              <List className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              List
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={viewMode === "calendar" ? "default" : "ghost"}
+              className="h-9 rounded-full px-3"
+              onClick={() => setViewMode("calendar")}
+              aria-pressed={viewMode === "calendar"}
+              data-testid="button-events-view-calendar"
+            >
+              <CalendarDays className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              Calendar
+            </Button>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0"
+            onClick={() => setFormOpen((v) => !v)}
+          >
+            {formOpen ? "Hide form" : "Submit an event"}
+          </Button>
+        </div>
       </div>
 
       {formOpen ? (
@@ -169,8 +227,8 @@ export default function Events() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className="mb-1 block text-sm font-medium">Event title *</label>
               <Input
                 value={form.title}
@@ -180,27 +238,27 @@ export default function Events() {
                 className="h-11"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium">Start date *</label>
               <Input
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
                 required
-                className="h-11"
+                className="h-11 w-full min-w-0 max-w-full"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium">End date</label>
               <Input
                 type="date"
                 value={form.endDate ?? ""}
                 onChange={(e) => setForm((p) => ({ ...p, endDate: e.target.value }))}
                 min={form.date || undefined}
-                className="h-11"
+                className="h-11 w-full min-w-0 max-w-full"
               />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <TimeRangePicker
                 startValue={form.startTime ?? ""}
                 endValue={form.endTime ?? ""}
@@ -212,7 +270,7 @@ export default function Events() {
                 showFriendlyHint={false}
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium">Type</label>
               <Select
                 value={form.eventType ?? "COMMUNITY"}
@@ -235,7 +293,7 @@ export default function Events() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium">Location</label>
               <Input
                 value={form.location ?? ""}
@@ -244,7 +302,7 @@ export default function Events() {
                 className="h-11"
               />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 min-w-0 sm:col-span-2">
               <label className="mb-1 block text-sm font-medium">Description</label>
               <Textarea
                 value={form.description ?? ""}
@@ -254,7 +312,7 @@ export default function Events() {
                 className="min-h-[4.5rem]"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium">Your name</label>
               <Input
                 value={form.submitterName ?? ""}
@@ -262,7 +320,7 @@ export default function Events() {
                 className="h-11"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-sm font-medium">Your email</label>
               <Input
                 type="email"
@@ -309,7 +367,7 @@ export default function Events() {
         </div>
       ) : sortedEvents.length === 0 ? (
         <NativeEmptyState
-          icon={Calendar}
+          icon={CalendarIcon}
           title={query ? "No matching events" : "No upcoming events"}
           description={
             query
@@ -318,6 +376,43 @@ export default function Events() {
           }
           centered
         />
+      ) : viewMode === "calendar" ? (
+        <div className="space-y-5" data-testid="events-calendar-view">
+          <div className="overflow-hidden rounded-[1.25rem] border border-black/[0.06] bg-card p-2 shadow-sm sm:p-3">
+            <Calendar
+              mode="single"
+              selected={selectedDay}
+              onSelect={(day) => {
+                if (day) setSelectedDay(day);
+              }}
+              modifiers={{ hasEvent: eventDays }}
+              modifiersClassNames={{
+                hasEvent:
+                  "relative after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-primary",
+              }}
+              className="mx-auto w-full max-w-md [--cell-size:2.5rem]"
+            />
+          </div>
+          <section aria-labelledby="events-on-day-heading">
+            <h2
+              id="events-on-day-heading"
+              className="mb-3 text-[17px] font-bold tracking-tight text-platform-heading"
+            >
+              {format(selectedDay, "EEEE, MMM d")}
+            </h2>
+            {eventsOnSelectedDay.length === 0 ? (
+              <p className="rounded-xl border border-dashed bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
+                No events on this day.
+              </p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {eventsOnSelectedDay.map((event) => (
+                  <EventCard key={event.id} event={event} showFeaturedBadge />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       ) : (
         <div className="space-y-8">
           {featured.length > 0 ? (

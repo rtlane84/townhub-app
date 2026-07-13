@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Navigation } from "lucide-react";
+import { LocateFixed, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   foodTruckDirectionsUrl,
@@ -22,23 +22,45 @@ const truckMarkerIcon = L.divIcon({
   popupAnchor: [0, -26],
 });
 
-function FitMapToMarkers({ points }: { points: FoodTruckMapPoint[] }) {
+function fitMapToPoints(map: L.Map, positions: [number, number][]) {
+  if (positions.length === 0) return;
+  if (positions.length === 1) {
+    map.setView(positions[0], 14);
+    return;
+  }
+  map.fitBounds(L.latLngBounds(positions), { padding: [40, 40], maxZoom: 14 });
+}
+
+function MapViewportControls({ points }: { points: FoodTruckMapPoint[] }) {
   const map = useMap();
   const positions = useMemo(
     () => points.map((point) => [point.lat, point.lng] as [number, number]),
     [points],
   );
 
-  useEffect(() => {
-    if (positions.length === 0) return;
-    if (positions.length === 1) {
-      map.setView(positions[0], 14);
-      return;
-    }
-    map.fitBounds(L.latLngBounds(positions), { padding: [40, 40], maxZoom: 14 });
+  const recenter = useCallback(() => {
+    fitMapToPoints(map, positions);
   }, [map, positions]);
 
-  return null;
+  useEffect(() => {
+    recenter();
+  }, [recenter]);
+
+  return (
+    <div className="absolute bottom-3 right-3 z-[1000]">
+      <Button
+        type="button"
+        size="icon"
+        variant="secondary"
+        className="h-10 w-10 rounded-full border border-black/10 bg-card shadow-md"
+        onClick={recenter}
+        aria-label="Recenter map on trucks"
+        data-testid="button-food-truck-map-recenter"
+      >
+        <LocateFixed className="h-4 w-4" aria-hidden />
+      </Button>
+    </div>
+  );
 }
 
 function FoodTruckMapPopup({ truck }: { truck: FoodTruckMapPoint }) {
@@ -78,7 +100,7 @@ export default function FoodTruckMapCanvas({ trucks }: { trucks: FoodTruckMapPoi
   const initialZoom = trucks.length === 1 ? 14 : DEFAULT_ZOOM;
 
   return (
-    <div className="food-truck-map h-[min(420px,60vh)] w-full overflow-hidden rounded-[1.25rem] border-0">
+    <div className="food-truck-map relative h-[min(420px,60vh)] w-full overflow-hidden rounded-[1.25rem] border-0">
       <MapContainer
         center={initialCenter}
         zoom={initialZoom}
@@ -90,7 +112,7 @@ export default function FoodTruckMapCanvas({ trucks }: { trucks: FoodTruckMapPoi
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitMapToMarkers points={trucks} />
+        <MapViewportControls points={trucks} />
         {trucks.map((truck) => (
           <Marker key={truck.id} position={[truck.lat, truck.lng]} icon={truckMarkerIcon}>
             <Popup className="food-truck-map-popup" minWidth={220}>

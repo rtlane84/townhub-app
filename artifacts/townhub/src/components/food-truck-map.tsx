@@ -1,12 +1,13 @@
-import { lazy, Suspense, useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import type { FoodTruckLocationWithBusiness } from "@workspace/api-client-react";
 import { Loader2, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { NativeEmptyState } from "@/components/native-empty-state";
 import { getMappableFoodTrucks } from "@/lib/food-truck-utils";
 import { getFoodTruckMapEmptyMessage } from "@/lib/food-truck-location-form";
+import { lazyWithRetry } from "@/lib/lazy-with-retry";
 
-const FoodTruckMapCanvas = lazy(() => import("./food-truck-map-canvas"));
+const FoodTruckMapCanvas = lazyWithRetry(() => import("./food-truck-map-canvas"));
 
 function MapLoadingFallback() {
   return (

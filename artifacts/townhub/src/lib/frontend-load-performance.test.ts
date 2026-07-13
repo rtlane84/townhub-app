@@ -8,20 +8,21 @@ describe("frontend load performance wiring", () => {
       new URL("../App.tsx", import.meta.url),
       "utf8",
     );
-    assert.match(source, /lazy\(\(\) => import\("@\/pages\/food-trucks"\)\)/);
+    assert.match(source, /lazyWithRetry\(\(\) => import\("@\/pages\/food-trucks"\)\)/);
     assert.match(
       source,
-      /lazy\(\(\) => import\("@\/pages\/dashboard\/business\/kitchen"\)\)/,
+      /lazyWithRetry\(\(\) => import\("@\/pages\/dashboard\/business\/kitchen"\)\)/,
     );
     assert.match(
       source,
-      /lazy\(\(\) => import\("@\/pages\/dashboard\/business\/billing"\)\)/,
+      /lazyWithRetry\(\(\) => import\("@\/pages\/dashboard\/business\/billing"\)\)/,
     );
     assert.match(
       source,
-      /lazy\(\(\) => import\("@\/pages\/dashboard\/admin\/overview"\)\)/,
+      /lazyWithRetry\(\(\) => import\("@\/pages\/dashboard\/admin\/overview"\)\)/,
     );
-    assert.match(source, /lazy\(\(\) => import\("@\/pages\/setup"\)\)/);
+    assert.match(source, /lazyWithRetry\(\(\) => import\("@\/pages\/setup"\)\)/);
+    assert.match(source, /from "@\/lib\/lazy-with-retry"/);
     assert.match(source, /<Suspense fallback=\{<RoutePageLoader/);
     assert.doesNotMatch(
       source,
@@ -38,7 +39,10 @@ describe("frontend load performance wiring", () => {
       new URL("../App.tsx", import.meta.url),
       "utf8",
     );
-    assert.match(source, /const Home = lazy\(\(\) => import\("@\/pages\/home"\)\)/);
+    assert.match(
+      source,
+      /const Home = lazyWithRetry\(\(\) => import\("@\/pages\/home"\)\)/,
+    );
     assert.match(source, /<SuspenseRoute path="\/" component=\{Home\}/);
     assert.doesNotMatch(source, /import Home from "@\/pages\/home"/);
   });
@@ -54,7 +58,7 @@ describe("frontend load performance wiring", () => {
     );
     assert.match(
       mapSection,
-      /lazy\(\(\) => import\("\.\/food-truck-map-canvas"\)\)/,
+      /lazyWithRetry\(\(\) => import\("\.\/food-truck-map-canvas"\)\)/,
     );
     assert.doesNotMatch(mapSection, /react-leaflet/);
     assert.match(mapCanvas, /react-leaflet/);

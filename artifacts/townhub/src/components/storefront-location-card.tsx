@@ -47,7 +47,7 @@ export function StorefrontLocationCard({
           {upcomingLocations.length > 0 ? (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground">Next stop</p>
-              {upcomingLocations.slice(0, 3).map((loc) => (
+              {upcomingLocations.slice(0, 1).map((loc) => (
                 <div
                   key={loc.id}
                   className="rounded-xl border border-black/[0.05] bg-muted/40 px-3 py-2.5 text-xs"

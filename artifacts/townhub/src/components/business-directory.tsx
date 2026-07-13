@@ -13,6 +13,7 @@ import {
   businessIconAccentStyle,
 } from "@/lib/theme-colors";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const OPEN_STATUS_CLASS = "text-emerald-600";
@@ -71,31 +72,24 @@ function ListingCtaButton({
   cta: BusinessListingCta;
   className?: string;
 }) {
-  const classes = cn(
-    "inline-flex shrink-0 items-center justify-center rounded-full border border-primary/30 px-3.5 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 active:scale-[0.97]",
-    className,
-  );
+  const classes = cn("h-9 rounded-full px-4 text-xs", className);
 
   if (cta.external) {
     return (
-      <a
-        href={cta.href}
-        className={classes}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {cta.label}
-      </a>
+      <Button asChild size="sm" className={classes}>
+        <a href={cta.href} onClick={(e) => e.stopPropagation()}>
+          {cta.label}
+        </a>
+      </Button>
     );
   }
 
   return (
-    <Link
-      href={cta.href}
-      className={classes}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {cta.label}
-    </Link>
+    <Button asChild size="sm" className={classes}>
+      <Link href={cta.href} onClick={(e) => e.stopPropagation()}>
+        {cta.label}
+      </Link>
+    </Button>
   );
 }
 

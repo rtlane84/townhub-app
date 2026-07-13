@@ -338,18 +338,19 @@ export default function AdminEvents() {
               <label className="mb-1.5 block text-sm font-medium">Title *</label>
               <Input value={form.title} onChange={f("title")} placeholder="Summer Farmers Market" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="min-w-0">
                 <label className="mb-1.5 block text-sm font-medium">Start Date *</label>
-                <Input type="date" value={form.date} onChange={f("date")} />
+                <Input type="date" value={form.date} onChange={f("date")} className="w-full min-w-0 max-w-full" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="mb-1.5 block text-sm font-medium">End Date</label>
                 <Input
                   type="date"
                   value={form.endDate ?? ""}
                   onChange={f("endDate")}
                   min={form.date || undefined}
+                  className="w-full min-w-0 max-w-full"
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
                   Optional — leave blank for single-day events

@@ -646,13 +646,13 @@ export default function Storefront() {
                 Upcoming stops
               </h2>
             </div>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
               {upcomingLocations.map((loc) => (
                 <div
                   key={loc.id}
-                  className="rounded-[1.1rem] border border-black/[0.05] bg-card px-3.5 py-3 text-sm shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
+                  className="min-w-0 rounded-[1.1rem] border border-black/[0.05] bg-card px-3 py-3 text-sm shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
                 >
-                  <p className="font-semibold text-foreground">
+                  <p className="line-clamp-2 font-semibold text-foreground">
                     {loc.locationName}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
@@ -668,11 +668,11 @@ export default function Storefront() {
                   {loc.address ? (
                     <p className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
                       <MapPin className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-                      {loc.address}
+                      <span className="line-clamp-2">{loc.address}</span>
                     </p>
                   ) : null}
                   {loc.locationNotes ? (
-                    <p className="mt-1 text-xs italic text-muted-foreground">
+                    <p className="mt-1 line-clamp-2 text-xs italic text-muted-foreground">
                       {loc.locationNotes}
                     </p>
                   ) : null}

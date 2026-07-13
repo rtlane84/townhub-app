@@ -30,3 +30,14 @@ export function formatEventSchedule(event: EventDates): string {
   const timePart = formatTimeRange12h(event.startTime, event.endTime);
   return timePart ? `${datePart} · ${timePart}` : datePart;
 }
+
+/** Local calendar day as YYYY-MM-DD */
+export function toLocalIsoDate(date: Date): string {
+  return format(date, "yyyy-MM-dd");
+}
+
+/** True when the calendar day falls within the event's start/end range (inclusive). */
+export function eventOccursOnDate(event: EventDates, dayIso: string): boolean {
+  const endIso = event.endDate?.trim() || event.date;
+  return dayIso >= event.date && dayIso <= endIso;
+}

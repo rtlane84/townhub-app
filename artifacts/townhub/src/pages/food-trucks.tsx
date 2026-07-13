@@ -84,7 +84,10 @@ export default function FoodTrucks() {
               ) : null}
             </div>
             {todayTrucks.length > 0 ? (
-              <PeekCarousel label="Today’s trucks">
+              <PeekCarousel
+                label="Today’s trucks"
+                itemClassName="basis-[72%] sm:basis-[40%] lg:basis-[28%]"
+              >
                 {todayTrucks.map((truck) => (
                   <FoodTruckTodayCard key={truck.id} truck={truck} />
                 ))}
