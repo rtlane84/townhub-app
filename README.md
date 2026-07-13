@@ -76,6 +76,7 @@ Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 cha
 
 | Document | Purpose |
 |----------|---------|
+| [docs/PRD.md](docs/PRD.md) | Product vision, launch scope, requirements, metrics, and acceptance criteria |
 | [docs/SETUP.md](docs/SETUP.md) | Full local setup, env vars, providers, troubleshooting |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design for developers |
 | [SECURITY.md](SECURITY.md) | Auth, authorization, and security model |
