@@ -21,7 +21,7 @@ export const productOptionGroupsTable = pgTable("product_option_groups", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export const productOptionsTable = pgTable("product_options", {
   id: serial("id").primaryKey(),
@@ -35,7 +35,7 @@ export const productOptionsTable = pgTable("product_options", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export type ProductOptionGroup = typeof productOptionGroupsTable.$inferSelect;
 export type ProductOption = typeof productOptionsTable.$inferSelect;

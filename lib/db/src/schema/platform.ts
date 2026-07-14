@@ -61,6 +61,6 @@ export const platformSettingsTable = pgTable("platform_settings", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export type PlatformSettings = typeof platformSettingsTable.$inferSelect;

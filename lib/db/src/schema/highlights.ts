@@ -24,6 +24,6 @@ export const highlightsTable = pgTable("highlights", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export type Highlight = typeof highlightsTable.$inferSelect;

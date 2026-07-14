@@ -56,7 +56,7 @@ export const eventsTable = pgTable(
   (table) => [
     index("events_status_created_at_idx").on(table.status, table.createdAt),
   ],
-);
+).enableRLS();
 
 export type Event = typeof eventsTable.$inferSelect;
 export type InsertEvent = typeof eventsTable.$inferInsert;

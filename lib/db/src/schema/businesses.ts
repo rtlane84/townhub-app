@@ -170,7 +170,7 @@ export const businessesTable = pgTable("businesses", {
   index("businesses_active_archived_at_idx").on(table.active, table.archivedAt),
   // Category browse filter on directory
   index("businesses_type_idx").on(table.type),
-]);
+]).enableRLS();
 
 // Food truck location schedule entries
 export const foodTruckLocationsTable = pgTable("food_truck_locations", {
@@ -201,7 +201,7 @@ export const foodTruckLocationsTable = pgTable("food_truck_locations", {
     table.locationDate,
     table.isActive,
   ),
-]);
+]).enableRLS();
 
 export const insertBusinessSchema = createInsertSchema(businessesTable).omit({
   id: true,

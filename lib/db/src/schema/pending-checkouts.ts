@@ -55,7 +55,7 @@ export const pendingCheckoutsTable = pgTable(
     index("pending_checkouts_business_status_idx").on(table.businessId, table.status),
     index("pending_checkouts_expires_at_idx").on(table.expiresAt),
   ],
-);
+).enableRLS();
 
 export type PendingCheckout = typeof pendingCheckoutsTable.$inferSelect;
 export type InsertPendingCheckout = typeof pendingCheckoutsTable.$inferInsert;

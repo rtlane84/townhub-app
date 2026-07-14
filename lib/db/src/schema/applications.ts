@@ -54,6 +54,6 @@ export const businessApplicationsTable = pgTable("business_applications", {
     table.status,
     table.createdAt,
   ),
-]);
+]).enableRLS();
 
 export type BusinessApplication = typeof businessApplicationsTable.$inferSelect;

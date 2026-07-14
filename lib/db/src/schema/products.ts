@@ -23,7 +23,7 @@ export const categoriesTable = pgTable("categories", {
 }, (table) => [
   // Storefront/menu categories: WHERE business_id = ? ORDER BY sort_order, name
   index("categories_business_sort_order_idx").on(table.businessId, table.sortOrder),
-]);
+]).enableRLS();
 
 export const insertCategorySchema = createInsertSchema(categoriesTable).omit({
   id: true,
@@ -65,7 +65,7 @@ export const productsTable = pgTable("products", {
     table.available,
     table.categoryId,
   ),
-]);
+]).enableRLS();
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({
   id: true,

@@ -21,6 +21,6 @@ export const appointmentRequestsTable = pgTable("appointment_requests", {
     table.businessId,
     table.createdAt,
   ),
-]);
+]).enableRLS();
 
 export type AppointmentRequest = typeof appointmentRequestsTable.$inferSelect;

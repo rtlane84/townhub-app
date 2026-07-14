@@ -45,7 +45,7 @@ export const orderRefundsTable = pgTable("order_refunds", {
   uniqueIndex("order_refunds_one_pending_per_order_idx")
     .on(table.orderId)
     .where(sql`${table.status} = 'PENDING'`),
-]);
+]).enableRLS();
 
 export const insertOrderRefundSchema = createInsertSchema(orderRefundsTable).omit({
   id: true,

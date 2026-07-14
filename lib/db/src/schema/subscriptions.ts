@@ -51,7 +51,7 @@ export const subscriptionPlansTable = pgTable("subscription_plans", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 /** Catalog of platform capabilities assignable to plans. */
 export const subscriptionFeaturesTable = pgTable("subscription_features", {
@@ -67,7 +67,7 @@ export const subscriptionFeaturesTable = pgTable("subscription_features", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 /** Which features each plan enables — no feature lists stored on the plan row. */
 export const planFeaturesTable = pgTable(
@@ -77,7 +77,7 @@ export const planFeaturesTable = pgTable(
     featureId: integer("feature_id").notNull(),
   },
   (table) => [primaryKey({ columns: [table.planId, table.featureId] })],
-);
+).enableRLS();
 
 export const businessSubscriptionsTable = pgTable("business_subscriptions", {
   id: serial("id").primaryKey(),
@@ -107,7 +107,7 @@ export const businessSubscriptionsTable = pgTable("business_subscriptions", {
   ),
   // Platform metrics status counts: WHERE status IN (...)
   index("business_subscriptions_status_idx").on(table.status),
-]);
+]).enableRLS();
 
 export type SubscriptionPlan = typeof subscriptionPlansTable.$inferSelect;
 export type SubscriptionFeature = typeof subscriptionFeaturesTable.$inferSelect;

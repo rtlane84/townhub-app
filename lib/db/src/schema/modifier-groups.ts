@@ -31,7 +31,7 @@ export const modifierGroupsTable = pgTable("modifier_groups", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export const modifierChoicesTable = pgTable("modifier_choices", {
   id: serial("id").primaryKey(),
@@ -45,7 +45,7 @@ export const modifierChoicesTable = pgTable("modifier_choices", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 /** Assigns modifier groups to products. overrideConfig reserved for future per-product overrides. */
 export const productModifierGroupsTable = pgTable("product_modifier_groups", {
@@ -59,7 +59,7 @@ export const productModifierGroupsTable = pgTable("product_modifier_groups", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export type ModifierGroup = typeof modifierGroupsTable.$inferSelect;
 export type ModifierChoice = typeof modifierChoicesTable.$inferSelect;

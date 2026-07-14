@@ -9,6 +9,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { refundStatusEnum } from "./order-refunds";
@@ -90,7 +91,11 @@ export const ordersTable = pgTable("orders", {
     table.businessId,
     table.businessOrderNumber,
   ),
-]);
+  // Stripe Checkout retries must never materialize more than one durable order.
+  uniqueIndex("orders_stripe_session_id_uidx")
+    .on(table.stripeSessionId)
+    .where(sql`${table.stripeSessionId} is not null`),
+]).enableRLS();
 
 export const orderItemsTable = pgTable("order_items", {
   id: serial("id").primaryKey(),
@@ -103,7 +108,7 @@ export const orderItemsTable = pgTable("order_items", {
 }, (table) => [
   // Batched order hydration: WHERE order_id IN (...)
   index("order_items_order_id_idx").on(table.orderId),
-]);
+]).enableRLS();
 
 /** Snapshot of selected options at order time. */
 export const orderItemOptionsTable = pgTable("order_item_options", {
@@ -116,7 +121,7 @@ export const orderItemOptionsTable = pgTable("order_item_options", {
 }, (table) => [
   // Batched option hydration: WHERE order_item_id IN (...)
   index("order_item_options_order_item_id_idx").on(table.orderItemId),
-]);
+]).enableRLS();
 
 export const insertOrderSchema = createInsertSchema(ordersTable).omit({
   id: true,

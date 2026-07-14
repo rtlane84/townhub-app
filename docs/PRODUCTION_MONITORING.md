@@ -36,7 +36,7 @@ For the production beta, create these monitors in both staging and production:
 | Monitor | Check | Interval | Alert condition |
 |---|---|---|---|
 | API process | `GET https://api…/health` | 1 minute | Two failures, non-200, or 10-second timeout |
-| Frontend | `GET https://app…/` | 1–5 minutes | Two failures, non-200, or 10-second timeout |
+| Frontend | `GET https://townhub.io/` in production; `GET https://staging.townhub.io/` in staging | 1–5 minutes | Two failures, non-200, or 10-second timeout |
 | TLS/domain | Frontend and API certificates | Daily | Expiry within 21 days or certificate error |
 
 Route production alerts to the platform owner and one backup contact. Staging alerts may be lower urgency but must still reach an actively reviewed channel.

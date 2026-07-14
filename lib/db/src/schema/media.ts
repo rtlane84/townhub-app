@@ -24,7 +24,7 @@ export const mediaAssetsTable = pgTable("media_assets", {
 }, (table) => [
   // Media library list: WHERE business_id IS NULL | = ? ORDER BY created_at DESC
   index("media_assets_business_created_at_idx").on(table.businessId, table.createdAt),
-]);
+]).enableRLS();
 
 export type MediaAsset = typeof mediaAssetsTable.$inferSelect;
 export type InsertMediaAsset = typeof mediaAssetsTable.$inferInsert;

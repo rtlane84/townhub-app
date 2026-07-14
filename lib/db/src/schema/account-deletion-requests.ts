@@ -26,6 +26,6 @@ export const accountDeletionRequestsTable = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [uniqueIndex("account_deletion_requests_user_id_unique").on(table.userId)],
-);
+).enableRLS();
 
 export type AccountDeletionRequest = typeof accountDeletionRequestsTable.$inferSelect;

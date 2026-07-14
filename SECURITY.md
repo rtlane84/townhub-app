@@ -106,6 +106,14 @@ Optional future hardening:
 1. Shorten TTL after most in-flight links have expired.
 2. Optionally store revocation nonces for cancelled orders.
 
+## Supabase database boundary
+
+TownHub does not expose application tables directly to browser or mobile clients. Every table in the Supabase `public` schema has PostgreSQL row-level security enabled with no `anon` or `authenticated` policies, so PostgREST access is intentionally deny-all.
+
+The API server is the only application data boundary. It connects to PostgreSQL with the protected server-side database role and enforces Clerk authentication, roles, ownership, subscription features, and business status in API routes. The Supabase service-role credential is used server-side for scoped Storage operations only and must never be shipped to a client.
+
+Adding direct Supabase table access requires an explicit architecture and security review, business-scoped RLS policies, negative tenant-boundary tests, and an update to this document. Do not add permissive public policies merely to silence the Supabase `rls_enabled_no_policy` informational advisory.
+
 ## CORS
 
 The API enables `credentials: true` for Clerk iframe and cross-origin preview contexts.

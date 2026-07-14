@@ -41,7 +41,7 @@ export const userNotificationPreferencesTable = pgTable(
     ),
     index("user_notification_preferences_user_id_idx").on(table.userId),
   ],
-);
+).enableRLS();
 
 export const insertUserNotificationPreferenceSchema = createInsertSchema(
   userNotificationPreferencesTable,

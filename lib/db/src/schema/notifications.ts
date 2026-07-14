@@ -27,6 +27,6 @@ export const notificationLogsTable = pgTable("notification_logs", {
     table.businessId,
     table.eventType,
   ),
-]);
+]).enableRLS();
 
 export type NotificationLog = typeof notificationLogsTable.$inferSelect;

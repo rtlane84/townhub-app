@@ -4,15 +4,14 @@ TownHub uses two isolated deployed environments. The existing Cloudflare fronten
 
 ## Canonical topology
 
-Replace `<townhub-domain>` with the final domain before DNS and provider setup.
-
 | Surface | Staging | Production |
 |---|---|---|
-| Frontend | `https://staging.<townhub-domain>` | `https://app.<townhub-domain>` |
-| API | `https://api-staging.<townhub-domain>` | `https://api.<townhub-domain>` |
+| Frontend | `https://staging.townhub.io` | `https://townhub.io` |
+| Frontend alias | None | `https://www.townhub.io` redirects to `https://townhub.io` |
+| API | `https://api-staging.townhub.io` | `https://api.townhub.io` |
 | Cloudflare | Existing Worker, renamed/labeled staging | Separate Worker and deploy environment |
 | Railway | Existing API service, labeled staging | Separate project/service |
-| PostgreSQL | Existing test database | New managed database with backups |
+| PostgreSQL | Existing Supabase TownHub project (`eajzpwkodnglonzxocep`, `ca-central-1`) | TownHub Production Supabase project (`ubntmzbkxyqsvihojcfp`, `us-east-1`) |
 | Clerk | Development/staging instance | Production instance |
 | Stripe | Test mode; staging webhook destinations | Live mode; production webhook destinations |
 | Supabase storage | Staging project/bucket | Separate production project/bucket |
@@ -26,7 +25,7 @@ No database URL, secret key, webhook secret, storage service-role key, Clerk sec
 
 1. Record the current Cloudflare Worker, Railway service, database, domains, Clerk instance, Stripe mode/webhooks, Supabase bucket, notification providers, Sentry projects, and all build/runtime variables. Record names and last four characters or provider IDs—never copy secret values into documentation.
 2. Label or rename the existing Cloudflare and Railway resources as staging.
-3. Attach `staging.<townhub-domain>` and `api-staging.<townhub-domain>`.
+3. Attach `staging.townhub.io` and `api-staging.townhub.io`.
 4. Set `DEPLOYMENT_ENVIRONMENT=staging` and `NODE_ENV=production` on the API. “Staging” describes data/provider isolation; Express still uses production runtime safeguards.
 5. Set API `APP_BASE_URL` to the staging frontend and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost`. Allow only the staging browser origin plus explicitly approved preview origins.
 6. Set frontend `VITE_API_BASE_URL` to the staging API, `VITE_DISTRIBUTION_CHANNEL=web`, the staging Clerk publishable key, and staging Sentry DSN.
@@ -43,13 +42,22 @@ No database URL, secret key, webhook secret, storage service-role key, Clerk sec
 
 Existing test data may remain in staging. Do not copy it into production unless a specific, reviewed pilot-data import is approved.
 
+### Staging database status — July 14, 2026
+
+- A validated custom-format logical backup was created before the schema rollout.
+- The reviewed Drizzle schema was applied to the staging project.
+- All 31 application tables have RLS enabled with no `anon` or `authenticated` policies. Direct PostgREST table access is intentionally deny-all; the API server remains the sole application database boundary.
+- Role-simulation checks confirmed that `anon` and `authenticated` read zero rows from representative identity, order, and device-token tables.
+- The API database role retains the server access required by the current architecture, and the full API test suite passes.
+- The production project is provisioned but remains empty. Applying schema or data to it requires a backup/recovery plan, reviewed Drizzle output, and explicit production authorization.
+
 ## Create production
 
-1. Create a new Railway project/service and managed PostgreSQL database. Enable automated backups before accepting orders.
-2. Create a separate Cloudflare Worker/deploy environment and attach the production frontend domain.
+1. Create a new Railway project/service for the production API and connect it only to the TownHub Production Supabase PostgreSQL database.
+2. Create a separate Cloudflare Worker/deploy environment, attach `townhub.io`, and redirect `www.townhub.io` to the apex domain.
 3. Create or select the Clerk production instance. Configure only production origins, redirects, native application details, Apple connection, and authorized support/admin accounts.
 4. Configure Stripe live mode. Create separate Connect and platform Billing webhook destinations pointing to the production API. Never reuse staging webhook secrets.
-5. Create separate production Supabase storage and provider credentials. Verify bucket access and deletion procedures.
+5. Apply the reviewed schema and access controls to the TownHub Production Supabase project, enable managed database backups, and create separate production storage and provider credentials. Verify bucket access and deletion procedures.
 6. Configure verified production email/SMS identities, Sentry projects/releases, uptime monitors, log drain, alert recipients, job scheduler, and APNs credentials.
 7. Set `DEPLOYMENT_ENVIRONMENT=production`, production URLs, secrets, and build metadata.
 8. Run the production environment gates for the API and frontend before deployment.

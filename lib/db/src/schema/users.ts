@@ -23,7 +23,7 @@ export const usersTable = pgTable("users", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}).enableRLS();
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({
   createdAt: true,

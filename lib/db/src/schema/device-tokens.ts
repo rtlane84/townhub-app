@@ -48,7 +48,7 @@ export const deviceTokensTable = pgTable(
     index("device_tokens_user_id_idx").on(table.userId),
     index("device_tokens_platform_idx").on(table.platform),
   ],
-);
+).enableRLS();
 
 export const insertDeviceTokenSchema = createInsertSchema(deviceTokensTable).omit({
   id: true,

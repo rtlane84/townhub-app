@@ -15,7 +15,7 @@ closed only when its implementation and required validation are complete.
 | Repository health | Pass | `pnpm run audit:health` |
 | Typecheck | Pass | `pnpm run typecheck` |
 | Frontend tests | Pass | 298/298 across 90 suites |
-| API tests | Pass | 445/446 pass in the restricted sandbox; the remaining rate-limit test passes separately (8/8) when permitted to open its localhost listener |
+| API tests | Pass | 448/448 across 146 suites when permitted to open the temporary localhost listener used by the rate-limit test |
 | Production build | Pass | Bundled Vite production build and unsigned iPhone-simulator Release build |
 | Provider E2E | Not run | Requires isolated staging credentials and accounts |
 | Physical iPhone | Not run | Required before internal TestFlight |
@@ -25,11 +25,12 @@ closed only when its implementation and required validation are complete.
 | ID | Priority | Area | Finding | Required outcome | Status |
 |---|---|---|---|---|---|
 | IOS-001 | P0 | Native packaging | Capacitor `server.url` loads remotely deployed executable web code | TestFlight/App Store builds bundle reviewed Vite assets and call only the selected remote API | Complete |
-| IOS-002 | P0 | Account lifecycle | No in-app account-deletion workflow or API exists | Authenticated, idempotent deletion request and audited anonymization/provider cleanup flow | In progress: contract, API, UI, schema, and runbook complete; staging schema rollout and provider-cleanup rehearsal remain |
+| IOS-002 | P0 | Account lifecycle | No in-app account-deletion workflow or API exists | Authenticated, idempotent deletion request and audited anonymization/provider cleanup flow | In progress: contract, API, UI, schema, staging rollout, and runbook complete; provider-cleanup rehearsal remains |
 | IOS-003 | P0 | Authentication | iOS offers Google social login without Sign in with Apple | Equivalent Sign in with Apple path configured through Clerk and native return flow | In progress: app flow and entitlement complete; Apple/Clerk configuration and device validation remain |
 | IOS-004 | P0 | Privacy | No app privacy manifest, legal routes, or verified App Store privacy inventory | Privacy manifest, privacy/terms/support pages, retention policy, and accurate disclosures | In progress: implementation complete; owner/legal review and App Store Connect questionnaire remain |
 | IOS-005 | P0 | Store billing | Owner Stripe Billing subscribe/change/portal flows are reachable from the shared app | Store builds retain plan status but suppress owner SaaS purchase and billing-management calls to action | Complete |
-| ENV-001 | P0 | Environments | Staging and production isolation is not implemented or verified | Separate domains, data, credentials, webhooks, storage, identity, payments, push, and monitoring | In progress: topology, variable contract, and validator complete; external production resources remain |
+| ENV-001 | P0 | Environments | Staging and production isolation is not implemented or verified | Separate domains, data, credentials, webhooks, storage, identity, payments, push, and monitoring | In progress: topology, variable contract, production Supabase project, and active Cloudflare zone are provisioned; isolated deploy routes and remaining provider resources remain |
+| DB-001 | P0 | Database security | Supabase reported RLS disabled and broad `anon`/`authenticated` access on the staging public schema | Remove public PostgREST access or enable reviewed RLS policies in staging, verify direct API access, and apply the locked-down posture to production | In progress: staging backup, schema rollout, deny-all RLS posture, role simulation, and regression tests complete; production application remains |
 | OPS-001 | P0 | Recovery | Production backup history and restore drill are not verified | Managed backups enabled and a restore drill recorded before real orders | Open |
 | OPS-002 | P1 | Monitoring | Sentry/health/Pino exist, but external uptime, log drain, alert routing, and release verification are unconfirmed | End-to-end staging and production monitoring with tested alerts and runbook | In progress: monitoring and alert matrix documented; external setup and alert tests remain |
 | CI-001 | P1 | Release gates | Repository had no checked-in CI workflow | CI enforces health, typecheck, tests, build, and CodeQL | Complete |
@@ -47,8 +48,10 @@ closed only when its implementation and required validation are complete.
 - Help content remains bundled; changes to its code or copy require a native
   app update even though the website can deploy independently.
 - The existing Cloudflare/Railway deployment and test data become staging.
-- Production uses dedicated subdomains and isolated provider resources.
-- Apple Developer enrollment will initially be individual; Android follows iOS.
+- Production uses `townhub.io`, with `www.townhub.io` redirected to the apex; staging uses `staging.townhub.io`.
+- The API uses `api.townhub.io` in production and `api-staging.townhub.io` in staging.
+- Production uses isolated provider resources, including a separate Supabase project in `us-east-1`.
+- Apple Developer enrollment is complete as an individual membership; Android follows iOS.
 
 ## Go/no-go rule
 
