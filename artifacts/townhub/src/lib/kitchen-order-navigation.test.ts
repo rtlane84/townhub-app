@@ -54,6 +54,7 @@ describe("kitchen ticket print", () => {
     assert.match(kitchenTicketPrintSource, /printViaIframe/);
     assert.match(kitchenTicketPrintSource, /KitchenPrinter\.printHtml/);
     assert.match(kitchenTicketPrintSource, /printViaNativeAirPrint/);
+    assert.match(kitchenTicketPrintSource, /Rebuild the iOS app/);
     assert.doesNotMatch(kitchenTicketPrintSource, /@capacitor\/share/);
     assert.doesNotMatch(kitchenTicketPrintSource, /navigator\.share/);
     assert.doesNotMatch(kitchenTicketPrintSource, /kitchen-ticket\.html/);

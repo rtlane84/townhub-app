@@ -253,6 +253,13 @@ async function printViaNativeAirPrint(html: string): Promise<KitchenTicketPrintR
     if (/cancel|dismiss|abort/i.test(message)) {
       return { ok: false, cancelled: true, message: "Print canceled." };
     }
+    if (/UNIMPLEMENTED|not implemented/i.test(message)) {
+      return {
+        ok: false,
+        message:
+          "Print is unavailable in this app build. Rebuild the iOS app so KitchenPrinter is included.",
+      };
+    }
     return {
       ok: false,
       message: "Could not open the print dialog. Try again from this order.",

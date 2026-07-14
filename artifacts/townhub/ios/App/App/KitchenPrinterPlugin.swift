@@ -51,7 +51,10 @@ public class KitchenPrinterPlugin: CAPPlugin, CAPBridgedPlugin {
             if UIDevice.current.userInterfaceIdiom == .pad {
                 controller.present(from: presenter.view.bounds, in: presenter.view, animated: true, completionHandler: completion)
             } else {
-                controller.present(animated: true, completionHandler: completion)
+                let presented = controller.present(animated: true, completionHandler: completion)
+                if !presented {
+                    call.reject("Print UI is not available.")
+                }
             }
         }
     }
