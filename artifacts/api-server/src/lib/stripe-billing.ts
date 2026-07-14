@@ -10,6 +10,7 @@ import {
 import { getAppBaseUrl } from "./app-base-url";
 import { logger } from "./logger";
 import { stripe } from "./stripe";
+import { isMockCheckoutAllowed } from "./stripe-config";
 import { findPlanById } from "./subscription-plans";
 import {
   buildSubscriptionSyncFromStripe,
@@ -141,6 +142,9 @@ export async function ensureStripeCustomerForBusiness(
   }
 
   if (!stripe) {
+    if (!isMockCheckoutAllowed()) {
+      throw new Error("Stripe is not configured for production billing");
+    }
     if (!subscription) {
       throw new Error("Subscription record required before mock billing");
     }
@@ -201,15 +205,22 @@ export async function createSubscriptionCheckoutSession(input: {
   const successUrl = `${appBaseUrl}/dashboard/business/subscription?checkout=success`;
   const cancelUrl = `${appBaseUrl}/dashboard/business/subscription?checkout=canceled`;
 
-  const { customerId, mockMode } = await ensureStripeCustomerForBusiness(input.businessId);
-
-  if (mockMode || !stripe) {
+  if (!stripe) {
+    if (!isMockCheckoutAllowed()) {
+      return {
+        ok: false,
+        status: 503,
+        error: "Stripe is not configured for production billing",
+      };
+    }
     return {
       ok: true,
       url: `${successUrl}&mock=1&planId=${input.planId}&interval=${input.interval}`,
       mockMode: true,
     };
   }
+
+  const { customerId } = await ensureStripeCustomerForBusiness(input.businessId);
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -259,6 +270,13 @@ export async function createCustomerPortalSession(businessId: number): Promise<C
   const returnUrl = `${getAppBaseUrl()}/dashboard/business/subscription?portal=return`;
 
   if (!stripe || subscription.stripeCustomerId.startsWith("cus_mock_")) {
+    if (!isMockCheckoutAllowed()) {
+      return {
+        ok: false,
+        status: 503,
+        error: "Stripe is not configured for production billing",
+      };
+    }
     return { ok: true, url: `${returnUrl}?portal=mock`, mockMode: true };
   }
 
@@ -392,6 +410,7 @@ export async function refreshBusinessSubscriptionFromStripe(
 
   if (!stripe) {
     if (
+      isMockCheckoutAllowed() &&
       options?.mockComplete &&
       options.mockPlanId != null &&
       options.mockInterval
@@ -576,6 +595,13 @@ export async function changeBusinessSubscriptionPlan(input: {
   }
 
   if (!stripe || subscription.stripeSubscriptionId.startsWith("sub_mock")) {
+    if (!isMockCheckoutAllowed()) {
+      return {
+        ok: false,
+        status: 503,
+        error: "Stripe is not configured for production billing",
+      };
+    }
     await db
       .update(businessSubscriptionsTable)
       .set({

@@ -39,9 +39,10 @@ export async function createStripeCheckoutSession(
     };
   }
 
+  // Omit payment_method_types so Stripe dynamic payment methods apply
+  // (Dashboard-configured methods). Do not hardcode ["card"].
   const session = await stripe.checkout.sessions.create(
     {
-      payment_method_types: ["card"],
       mode: "payment",
       line_items: lineItems.map((item) => ({
         price_data: {

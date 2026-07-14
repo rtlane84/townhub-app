@@ -114,4 +114,10 @@ describe("isMockCheckoutAllowed", () => {
     assert.equal(isMockCheckoutAllowed("development"), true);
     assert.equal(isMockCheckoutAllowed("production"), false);
   });
+
+  it("blocks subscription mock billing in production the same way as order mock", () => {
+    // Billing paths call isMockCheckoutAllowed() before returning mock checkout/portal URLs.
+    assert.equal(isMockCheckoutAllowed("production"), false);
+    assert.equal(isMockCheckoutAllowed("test"), true);
+  });
 });

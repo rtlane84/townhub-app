@@ -30,7 +30,7 @@ STRIPE_CONNECT_WEBHOOK_SECRET=whsec_connect_...
 APP_BASE_URL=http://localhost:23032
 ```
 
-If `STRIPE_SECRET_KEY` is unset, the API runs in mock mode (development only).
+If `STRIPE_SECRET_KEY` is unset, the API runs in mock mode (**development only**). **Mock billing is blocked in production** — subscription checkout, portal, and mock plan changes return 503 until a live/test key is configured.
 
 ---
 
