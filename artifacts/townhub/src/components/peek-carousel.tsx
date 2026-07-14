@@ -60,10 +60,10 @@ export function PeekCarousel({
   if (children.length === 1) {
     return (
       <div className={cn("w-full", className)} aria-label={label}>
-        <div className="-ml-3 flex">
+        <div className="-ml-3 flex items-stretch">
           <div
             className={cn(
-              "min-w-0 shrink-0 grow-0 basis-[82%] pl-3 sm:basis-[48%] lg:basis-[32%]",
+              "flex min-w-0 shrink-0 grow-0 basis-[82%] pl-3 sm:basis-[48%] lg:basis-[32%]",
               itemClassName,
             )}
           >
@@ -86,12 +86,12 @@ export function PeekCarousel({
       className={cn("w-full", className)}
       aria-label={label}
     >
-      <CarouselContent className="-ml-3">
+      <CarouselContent className="-ml-3 items-stretch">
         {children.map((child, index) => (
           <CarouselItem
             key={index}
             className={cn(
-              "basis-[82%] pl-3 sm:basis-[48%] lg:basis-[32%]",
+              "flex basis-[82%] pl-3 sm:basis-[48%] lg:basis-[32%]",
               itemClassName,
             )}
           >

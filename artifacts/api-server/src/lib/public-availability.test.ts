@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { evaluatePublicAvailability } from "../../../../lib/api-zod/src/public-availability.ts";
+import { evaluatePublicAvailability, filterCurrentOrUpcomingMobileStops } from "../../../../lib/api-zod/src/public-availability.ts";
 import { getZonedParts } from "../../../../lib/api-zod/src/timezone.ts";
 
 const TZ = "America/New_York";
@@ -406,5 +406,47 @@ describe("evaluatePublicAvailability — mobile", () => {
     );
     assert.equal(result.isOpen, true);
     assert.equal(result.locationName, "Night Market");
+  });
+});
+
+describe("filterCurrentOrUpcomingMobileStops", () => {
+  it("hides today's stop after endTime while keeping later days", () => {
+    const stops = [
+      {
+        locationDate: "2026-07-13",
+        startTime: "18:00",
+        endTime: "23:45",
+        isActive: true,
+        locationName: "Location secret",
+      },
+      {
+        locationDate: "2026-07-14",
+        startTime: "11:00",
+        endTime: "14:00",
+        isActive: true,
+        locationName: "downtown",
+      },
+    ];
+    const afterEnd = atZone("2026-07-13", "23:50");
+    const filtered = filterCurrentOrUpcomingMobileStops(stops, afterEnd, TZ);
+    assert.deepEqual(
+      filtered.map((s) => s.locationName),
+      ["downtown"],
+    );
+  });
+
+  it("keeps today's stop before it ends", () => {
+    const stops = [
+      {
+        locationDate: "2026-07-13",
+        startTime: "18:00",
+        endTime: "23:45",
+        isActive: true,
+        locationName: "Location secret",
+      },
+    ];
+    const during = atZone("2026-07-13", "20:00");
+    const filtered = filterCurrentOrUpcomingMobileStops(stops, during, TZ);
+    assert.equal(filtered.length, 1);
   });
 });

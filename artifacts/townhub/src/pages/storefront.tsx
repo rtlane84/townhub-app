@@ -38,6 +38,7 @@ import {
   formatBusinessTypeLabel,
   hidesStorefrontCart,
   formatCivilDateInTimeZone,
+  filterCurrentOrUpcomingMobileStops,
 } from "@workspace/api-zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,7 +70,7 @@ const categoryPillActiveClass =
   "rounded-full whitespace-nowrap bg-platform-button text-white border-0 !shadow-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-platform-button hover:text-white hover:!shadow-none active:!shadow-none";
 
 const storefrontPrimaryButtonClass =
-  "rounded-full bg-[var(--platform-heading,#1e3a5f)] text-white border-0 shadow-[0_2px_12px_-2px_rgba(30,58,138,0.35)] hover:opacity-90 hover:text-white";
+  "rounded-full bg-platform-button text-white border-0 shadow-[0_2px_12px_-2px_rgba(30,58,138,0.35)] hover:bg-platform-button/90 hover:text-white";
 
 const storefrontAddButtonClass =
   "h-9 min-w-[4.75rem] gap-1 rounded-full bg-platform-button px-3.5 text-[12px] font-semibold tracking-tight text-white border-0 shadow-[0_4px_14px_-4px_rgba(30,58,138,0.45)] transition-all duration-200 hover:bg-platform-button/90 hover:text-white active:scale-[0.96] disabled:opacity-45";
@@ -197,10 +198,6 @@ export default function Storefront() {
   const b = business!;
   const bx = b as unknown as Record<string, unknown>;
   const businessHours = resolveBusinessHours(b);
-  const statusLine = getStorefrontStatusLine(b, {
-    timeZone: timezone,
-    mobileLocations: foodTruckLocations,
-  });
   const presence = resolveStorefrontPresence({
     address: b.address,
     isMobileBusiness,
@@ -226,10 +223,19 @@ export default function Storefront() {
     ? (bx.deliveryRadiusMiles as number | undefined)
     : undefined;
 
-  const today = formatCivilDateInTimeZone(new Date(), timezone);
-  const upcomingLocations = foodTruckLocations
-    .filter((l) => l.isActive && l.locationDate >= today)
-    .slice(0, 5);
+  const now = new Date();
+  const today = formatCivilDateInTimeZone(now, timezone);
+  const activeOrUpcomingLocations = filterCurrentOrUpcomingMobileStops(
+    foodTruckLocations,
+    now,
+    timezone,
+  );
+  const upcomingLocations = activeOrUpcomingLocations.slice(0, 5);
+  const statusLine = getStorefrontStatusLine(b, {
+    timeZone: timezone,
+    now,
+    mobileLocations: activeOrUpcomingLocations,
+  });
 
   const specials = products.filter((p) => p.featured && p.available !== false);
   const paymentNote = paymentModeStorefrontNote(resolvePaymentMode(b));
@@ -578,7 +584,7 @@ export default function Storefront() {
                 phone={b.phone}
                 isMobileBusiness={isMobileBusiness}
                 availability={statusLine}
-                mobileStops={foodTruckLocations}
+                mobileStops={activeOrUpcomingLocations}
                 todayIso={today}
               />
               <StorefrontLocationCard

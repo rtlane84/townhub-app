@@ -102,9 +102,9 @@ export function FeaturedBusinessCard({ business }: { business: Business }) {
   const storefrontHref = `/businesses/${business.slug}`;
 
   return (
-    <article className="flex w-full flex-col overflow-hidden rounded-[1.25rem] border border-black/[0.05] bg-card shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]">
-      <Link href={storefrontHref} className="block min-w-0">
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+    <article className="flex h-full w-full flex-col overflow-hidden rounded-[1.25rem] border border-black/[0.05] bg-card shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]">
+      <Link href={storefrontHref} className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted">
           {hero ? (
             <img
               src={hero}
@@ -131,35 +131,38 @@ export function FeaturedBusinessCard({ business }: { business: Business }) {
             </span>
           ) : null}
         </div>
-        <div className="space-y-1 px-3 pt-2.5 pb-1">
+        <div className="flex flex-1 flex-col space-y-1 px-3 pt-2.5 pb-1">
           <h3 className="truncate text-[14px] font-semibold tracking-tight text-platform-heading">
             {business.name}
           </h3>
           <p className="truncate text-[11px] text-muted-foreground">
             {categoryLine}
           </p>
-          {statusLine ? (
-            <div className="space-y-0.5">
-              <p
-                className={cn(
-                  "text-[11px] font-semibold leading-snug",
-                  openStatusClass(statusLine.isOpen),
-                )}
-              >
-                {statusLine.statusLabel}
-              </p>
-              {statusLine.scheduleLabel ? (
+          {/* Reserve two status lines so featured cards share height when schedule is absent. */}
+          <div className="min-h-[2.75rem] space-y-0.5">
+            {statusLine ? (
+              <>
                 <p
                   className={cn(
-                    "text-[10px] font-medium leading-snug",
+                    "text-[11px] font-semibold leading-snug",
                     openStatusClass(statusLine.isOpen),
                   )}
                 >
-                  {statusLine.scheduleLabel}
+                  {statusLine.statusLabel}
                 </p>
-              ) : null}
-            </div>
-          ) : null}
+                {statusLine.scheduleLabel ? (
+                  <p
+                    className={cn(
+                      "text-[10px] font-medium leading-snug",
+                      openStatusClass(statusLine.isOpen),
+                    )}
+                  >
+                    {statusLine.scheduleLabel}
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+          </div>
         </div>
       </Link>
       {cta ? (

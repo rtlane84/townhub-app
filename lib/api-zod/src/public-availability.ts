@@ -54,7 +54,8 @@ function formatPublicTime(hhmm: string): string {
 
 function parseHmToMinutes(value: string | null | undefined): number | null {
   if (!value) return null;
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  // Accept HH:MM or HH:MM:SS from stored stop times.
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(value.trim());
   if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
@@ -65,6 +66,40 @@ function parseHmToMinutes(value: string | null | undefined): number | null {
 
 function isUsableStop(stop: PublicMobileStop): boolean {
   return stop.isActive !== false && typeof stop.locationDate === "string" && !!stop.locationDate;
+}
+
+/**
+ * True when a stop is still relevant for public listing (active now or not yet ended).
+ * Past civil days and today’s stops past endTime are excluded.
+ */
+export function isMobileStopCurrentOrUpcoming(
+  stop: PublicMobileStop,
+  now: Date,
+  timeZone: string,
+): boolean {
+  if (!isUsableStop(stop)) return false;
+  const tz = resolvePlatformTimeZone(timeZone);
+  const today = formatCivilDateInTimeZone(now, tz);
+  const cmp = compareCivilDates(stop.locationDate, today);
+  if (cmp > 0) return true;
+  if (cmp < 0) return false;
+
+  const currentMinutes = getZonedMinutesOfDay(now, tz);
+  const start = parseHmToMinutes(stop.startTime);
+  const end = parseHmToMinutes(stop.endTime);
+  // Overnight unsupported — treat as not listable.
+  if (start != null && end != null && end <= start) return false;
+  // Whole-day / open-ended: stays current for the rest of the civil day.
+  if (end == null) return true;
+  return currentMinutes < end;
+}
+
+export function filterCurrentOrUpcomingMobileStops<T extends PublicMobileStop>(
+  stops: readonly T[],
+  now: Date,
+  timeZone: string,
+): T[] {
+  return stops.filter((stop) => isMobileStopCurrentOrUpcoming(stop, now, timeZone));
 }
 
 function stopContainsNow(
