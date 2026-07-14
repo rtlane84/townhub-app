@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Maximize2, Navigation } from "lucide-react";
+import { Crosshair, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   foodTruckDirectionsUrl,
@@ -62,7 +62,7 @@ function MapViewportControls({ points }: { points: FoodTruckMapPoint[] }) {
         title="Show all stops"
         data-testid="button-food-truck-map-fit-stops"
       >
-        <Maximize2 className="h-4 w-4 text-foreground" strokeWidth={2.25} aria-hidden />
+        <Crosshair className="h-4 w-4 text-foreground" strokeWidth={2.25} aria-hidden />
       </Button>
     </div>
   );

@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, UserPlus, Star, Layers } from "lucide-react";
 import { WeeklyHoursPicker } from "@/components/weekly-hours-picker";
+import { StreetAddressFields } from "@/components/street-address-fields";
 import {
   defaultWeeklyHours,
   normalizeWeeklyHours,
@@ -368,15 +369,18 @@ export default function AdminBusinesses() {
               <label className="text-sm font-medium mb-1.5 block">Description</label>
               <Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={2} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Address</label>
-                <Input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Phone</label>
-                <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
-              </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Address</label>
+              <StreetAddressFields
+                value={form.address}
+                onChange={(address) => setForm((f) => ({ ...f, address }))}
+                streetPlaceholder="123 Main St"
+                data-testid="admin-business-address"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Phone</label>
+              <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Business Hours</label>

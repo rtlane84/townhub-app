@@ -14,6 +14,7 @@ import applicationsRouter from "./applications";
 import foodTruckRouter from "./food-truck";
 import platformRouter from "./platform";
 import weatherRouter from "./weather";
+import geoRouter from "./geo";
 import appointmentRequestsRouter from "./appointment-requests";
 import notificationTestsRouter from "./notification-tests";
 import devicesRouter from "./devices";
@@ -42,6 +43,7 @@ router.use("/admin", (req, res, next) => {
 // requireAdmin to all /admin/* paths (e.g. subscriptions).
 router.use(platformRouter);
 router.use(weatherRouter);
+router.use(geoRouter);
 
 router.use(healthRouter);
 router.use(authRouter);

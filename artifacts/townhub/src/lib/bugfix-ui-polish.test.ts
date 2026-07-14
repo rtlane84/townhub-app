@@ -50,6 +50,8 @@ describe("food truck map fit control", () => {
     assert.match(mapCanvasSource, /button-food-truck-map-fit-stops/);
     assert.match(mapCanvasSource, /disabled=\{!hasStops\}/);
     assert.match(mapCanvasSource, /text-foreground/);
+    assert.match(mapCanvasSource, /Crosshair/);
+    assert.doesNotMatch(mapCanvasSource, /Maximize2/);
     assert.doesNotMatch(mapCanvasSource, /LocateFixed/);
     assert.doesNotMatch(mapCanvasSource, /variant="secondary"/);
   });

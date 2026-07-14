@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { WeeklyHoursPicker } from "@/components/weekly-hours-picker";
+import { StreetAddressFields } from "@/components/street-address-fields";
 import {
   defaultWeeklyHours,
   normalizeWeeklyHours,
@@ -425,7 +426,14 @@ export default function BusinessSettings() {
                 multiline: true,
                 placeholder: "Tell customers what makes your business special",
               })}
-              {textField("Address", "address", { placeholder: "123 Main St, Anytown, MN 55101" })}
+              <Field label="Address" hint="Street and ZIP — city and state fill in automatically.">
+                <StreetAddressFields
+                  value={form.address}
+                  onChange={(address) => setForm((f) => ({ ...f, address }))}
+                  streetPlaceholder="123 Main St"
+                  data-testid="settings-address"
+                />
+              </Field>
               {textField("Phone", "phone", { placeholder: "(555) 555-0100" })}
               <Field
                 label="Business hours"

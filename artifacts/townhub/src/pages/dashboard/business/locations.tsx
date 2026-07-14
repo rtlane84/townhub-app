@@ -31,6 +31,7 @@ import {
   type FoodTruckLocationFormValues,
 } from "@/lib/food-truck-location-form";
 import { TimeRangePicker } from "@/components/time-picker";
+import { StreetAddressFields } from "@/components/street-address-fields";
 import { formatTimeRange12h, formatCivilDateInTimeZone } from "@workspace/api-zod";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { deleteLocationCopy } from "@/lib/confirm-action-copy";
@@ -275,7 +276,12 @@ export default function BusinessLocations() {
             />
             <div>
               <label className="text-sm font-medium mb-1.5 block">Address</label>
-              <Input value={form.address} onChange={f("address")} placeholder="123 Main St" />
+              <StreetAddressFields
+                value={form.address}
+                onChange={(address) => setForm((prev) => ({ ...prev, address }))}
+                streetPlaceholder="123 Main St"
+                data-testid="location-address"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

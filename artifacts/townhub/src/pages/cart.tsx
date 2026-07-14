@@ -18,7 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Info } from "lucide-react";
+import { ArrowLeft, Trash2, Minus, Plus, ShoppingBag, Store, CreditCard, Info } from "lucide-react";
 import { useAsyncAction } from "@/hooks/use-async-action";
 import { createCheckoutIntent, orderConfirmationPath } from "@/lib/order-access";
 import { BusinessLogoBadge } from "@/components/business-logo-badge";
@@ -38,9 +38,11 @@ import { triggerCheckoutHaptic, triggerOrderPlacedHaptic } from "@/lib/native-ha
 import { getCheckoutAsapLabel } from "@/lib/order-prep-timing";
 import { CheckoutTotalsSummary } from "@/components/order-totals-summary";
 import { NativeEmptyState } from "@/components/native-empty-state";
+import { StreetAddressFields } from "@/components/street-address-fields";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 import { cartItemUnavailableMessage } from "@/lib/product-availability-copy";
+import { isCompleteStreetAddress, parseStreetAddress } from "@workspace/api-zod";
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
@@ -304,8 +306,12 @@ export default function Cart() {
       toast({ title: "Missing details", description: "Please provide a phone number so the business can reach you.", variant: "destructive" });
       return;
     }
-    if (fulfillmentType === "DELIVERY" && !deliveryAddress.trim()) {
-      toast({ title: "Missing details", description: "Please provide a delivery address.", variant: "destructive" });
+    if (fulfillmentType === "DELIVERY" && !isCompleteStreetAddress(parseStreetAddress(deliveryAddress))) {
+      toast({
+        title: "Missing details",
+        description: "Enter a street address and a valid ZIP for delivery.",
+        variant: "destructive",
+      });
       return;
     }
     if (fulfillmentType === "DELIVERY" && !meetsDeliveryMinimum) {
@@ -320,9 +326,23 @@ export default function Cart() {
     });
   };
 
+  const continueShoppingHref = business?.slug
+    ? `/businesses/${business.slug}`
+    : "/businesses";
+  const continueShoppingLabel = business?.name
+    ? `Back to ${business.name}`
+    : "Back to businesses";
+
   if (!cart.businessId || cart.items.length === 0) {
     return (
       <div className={cn(PAGE_CONTAINER, "max-w-lg py-10 native-animate-in")}>
+        <Link
+          href="/businesses"
+          className="mb-6 inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted active:scale-[0.97]"
+          aria-label="Back to businesses"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden />
+        </Link>
         <NativeEmptyState
           icon={ShoppingBag}
           title="Your cart is empty"
@@ -354,7 +374,19 @@ export default function Cart() {
 
   return (
     <div className={cn(PAGE_CONTAINER, "max-w-6xl py-6 md:py-10 native-animate-in")}>
-      <h1 className="mb-1 font-serif text-3xl font-bold tracking-tight text-platform-heading">Checkout</h1>
+      <div className="mb-1 flex items-center gap-2">
+        <Link
+          href={continueShoppingHref}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted active:scale-[0.97]"
+          aria-label={continueShoppingLabel}
+          data-testid="button-cart-back"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden />
+        </Link>
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-platform-heading">
+          Checkout
+        </h1>
+      </div>
       <p className="mb-6 text-muted-foreground">
         {user
           ? "Your account details are prefilled below. You can edit them before placing your order."
@@ -464,11 +496,13 @@ export default function Cart() {
                     <Label className="text-lg font-serif">
                       Delivery Address <span className="text-destructive">*</span>
                     </Label>
-                    <Textarea
-                      placeholder="123 Main St, Apt 4B..."
+                    <StreetAddressFields
                       value={deliveryAddress}
-                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      onChange={setDeliveryAddress}
                       required
+                      streetLabel="Street"
+                      streetPlaceholder="123 Main St, Apt 4"
+                      data-testid="delivery-address"
                     />
                   </div>
                 </>

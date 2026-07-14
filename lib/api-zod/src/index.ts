@@ -12,6 +12,8 @@ export * from "./order-tax";
 export * from "./order-ticket-display";
 export * from "./timezone";
 export * from "./public-availability";
+export * from "./us-states";
+export * from "./street-address";
 export {
   ORDERING_AVAILABILITY_MODES,
   DEFAULT_ORDERING_AVAILABILITY_MODE,

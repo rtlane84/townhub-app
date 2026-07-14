@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { isComplimentaryPricingPlan } from "@/lib/subscription-display";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { WeeklyHoursPicker } from "@/components/weekly-hours-picker";
+import { StreetAddressFields } from "@/components/street-address-fields";
 import {
   defaultWeeklyHours,
   normalizeWeeklyHours,
@@ -629,16 +630,15 @@ export default function ListYourBusiness() {
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="address" className="flex items-center gap-1.5">
+                <Label className="flex items-center gap-1.5">
                   <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                   Street address
                 </Label>
-                <Input
-                  id="address"
-                  placeholder="123 Main St, Your Town"
+                <StreetAddressFields
                   value={form.address}
-                  onChange={(e) => set("address", e.target.value)}
-                  autoComplete="street-address"
+                  onChange={(address) => set("address", address)}
+                  streetPlaceholder="123 Main St"
+                  data-testid="apply-address"
                 />
               </div>
 

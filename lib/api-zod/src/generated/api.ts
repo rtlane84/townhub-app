@@ -3886,6 +3886,25 @@ export const GetWeatherResponse = zod.object({
 
 
 /**
+ * @summary Resolve a US ZIP code to city and state
+ */
+export const LookupUsZipParams = zod.object({
+  "zip": zod.coerce.string().describe('US ZIP code (5 digits, optional +4)')
+})
+
+export const lookupUsZipResponseStateMin = 2;
+export const lookupUsZipResponseStateMax = 2;
+
+
+
+export const LookupUsZipResponse = zod.object({
+  "zip": zod.string().describe('Normalized 5-digit US ZIP'),
+  "city": zod.string(),
+  "state": zod.string().min(lookupUsZipResponseStateMin).max(lookupUsZipResponseStateMax).describe('Two-letter US state abbreviation')
+})
+
+
+/**
  * @summary List notification logs for dev inspection (admin only)
  */
 export const ListNotificationLogsQueryParams = zod.object({

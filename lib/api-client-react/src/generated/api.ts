@@ -64,6 +64,8 @@ import type {
   ListEventsParams,
   ListMediaAssetsParams,
   ListNotificationLogsParams,
+  LookupUsZip400,
+  LookupUsZip404,
   MarketplaceStats,
   MediaAsset,
   MediaUploadForm,
@@ -107,6 +109,7 @@ import type {
   UnregisterDeviceInput,
   UpdateNotificationPreferencesInput,
   UploadMediaAssetParams,
+  UsZipLookup,
   UserProfile,
   UserRoleUpdate,
   UserStatusUpdate,
@@ -7929,6 +7932,83 @@ export function useGetWeather<TData = Awaited<ReturnType<typeof getWeather>>, TE
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetWeatherQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getLookupUsZipUrl = (zip: string,) => {
+
+
+
+
+  return `/api/geo/zip/${zip}`
+}
+
+/**
+ * @summary Resolve a US ZIP code to city and state
+ */
+export const lookupUsZip = async (zip: string, options?: RequestInit): Promise<UsZipLookup> => {
+
+  return customFetch<UsZipLookup>(getLookupUsZipUrl(zip),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getLookupUsZipQueryKey = (zip: string,) => {
+    return [
+    `/api/geo/zip/${zip}`
+    ] as const;
+    }
+
+
+export const getLookupUsZipQueryOptions = <TData = Awaited<ReturnType<typeof lookupUsZip>>, TError = ErrorType<LookupUsZip400 | LookupUsZip404>>(zip: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof lookupUsZip>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getLookupUsZipQueryKey(zip);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof lookupUsZip>>> = ({ signal }) => lookupUsZip(zip, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(zip), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof lookupUsZip>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type LookupUsZipQueryResult = NonNullable<Awaited<ReturnType<typeof lookupUsZip>>>
+export type LookupUsZipQueryError = ErrorType<LookupUsZip400 | LookupUsZip404>
+
+
+/**
+ * @summary Resolve a US ZIP code to city and state
+ */
+
+export function useLookupUsZip<TData = Awaited<ReturnType<typeof lookupUsZip>>, TError = ErrorType<LookupUsZip400 | LookupUsZip404>>(
+ zip: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof lookupUsZip>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getLookupUsZipQueryOptions(zip,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

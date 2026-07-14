@@ -9,17 +9,17 @@ import {
 } from "../../../../lib/api-zod/src/time.ts";
 
 describe("time utilities", () => {
-  it("parses HH:mm and snaps to 15-minute increments", () => {
+  it("parses HH:mm and preserves per-minute values", () => {
     assert.equal(parseTimeToHHmm("09:00"), "09:00");
     assert.equal(parseTimeToHHmm("14:30"), "14:30");
-    assert.equal(parseTimeToHHmm("09:07"), "09:00");
-    assert.equal(parseTimeToHHmm("09:08"), "09:15");
+    assert.equal(parseTimeToHHmm("09:07"), "09:07");
+    assert.equal(parseTimeToHHmm("09:08"), "09:08");
   });
 
   it("parses HH:mm:ss from native mobile time inputs", () => {
     assert.equal(parseTimeToHHmm("09:00:00"), "09:00");
     assert.equal(parseTimeToHHmm("14:30:00"), "14:30");
-    assert.equal(parseTimeToHHmm("09:08:00"), "09:15");
+    assert.equal(parseTimeToHHmm("09:08:00"), "09:08");
     assert.equal(parseTimeToHHmm("09:00:00.000"), "09:00");
   });
 
@@ -47,7 +47,8 @@ describe("time utilities", () => {
     assert.equal(isEndTimeAfterStart("09:00", "09:00"), false);
   });
 
-  it("snaps times to increments", () => {
-    assert.equal(snapTimeToIncrement("23:50"), "23:45");
+  it("clamps snap results to the end of day", () => {
+    assert.equal(snapTimeToIncrement("23:59"), "23:59");
+    assert.equal(snapTimeToIncrement("23:50"), "23:50");
   });
 });

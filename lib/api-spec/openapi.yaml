@@ -2349,6 +2349,47 @@ paths:
               schema:
                 $ref: "#/components/schemas/WeatherForecast"
 
+  # ─── Geo / ZIP lookup ─────────────────────────────────────────────
+  /geo/zip/{zip}:
+    get:
+      operationId: lookupUsZip
+      tags: [platform]
+      summary: Resolve a US ZIP code to city and state
+      parameters:
+        - in: path
+          name: zip
+          required: true
+          schema:
+            type: string
+          description: US ZIP code (5 digits, optional +4)
+      responses:
+        "200":
+          description: City and state for the ZIP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsZipLookup"
+        "400":
+          description: Invalid ZIP format
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+        "404":
+          description: ZIP not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error:
+                    type: string
+
   # ─── Notification Logs ────────────────────────────────────────────
   /admin/notification-logs:
     get:
@@ -4942,6 +4983,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WeatherDaily"
+
+    UsZipLookup:
+      type: object
+      required: [zip, city, state]
+      properties:
+        zip:
+          type: string
+          description: Normalized 5-digit US ZIP
+        city:
+          type: string
+        state:
+          type: string
+          description: Two-letter US state abbreviation
+          minLength: 2
+          maxLength: 2
 
     # ─── Media Library ─────────────────────────────────────────────
     MediaAsset:

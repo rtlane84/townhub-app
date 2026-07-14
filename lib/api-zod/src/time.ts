@@ -1,7 +1,8 @@
 /** 24-hour time in HH:mm (00:00–23:59). */
 export const TIME_HHMM_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-export const TIME_INCREMENT_MINUTES = 15;
+/** Native time inputs and parsers accept every minute (HH:mm). */
+export const TIME_INCREMENT_MINUTES = 1;
 export const TIME_INPUT_STEP_SECONDS = TIME_INCREMENT_MINUTES * 60;
 
 export function isValidTimeHHmm(value: string): boolean {
@@ -12,7 +13,9 @@ export function snapTimeToIncrement(hhmm: string): string {
   const [h, m] = hhmm.split(":").map(Number);
   const totalMinutes = h * 60 + m;
   const snapped = Math.round(totalMinutes / TIME_INCREMENT_MINUTES) * TIME_INCREMENT_MINUTES;
-  const clamped = Math.min(snapped, 23 * 60 + 45);
+  const maxMinutes =
+    Math.floor((23 * 60 + 59) / TIME_INCREMENT_MINUTES) * TIME_INCREMENT_MINUTES;
+  const clamped = Math.min(Math.max(snapped, 0), maxMinutes);
   const hours = Math.floor(clamped / 60);
   const minutes = clamped % 60;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;

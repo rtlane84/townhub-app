@@ -1821,6 +1821,18 @@ export interface WeatherForecast {
   daily?: WeatherDaily[];
 }
 
+export interface UsZipLookup {
+  /** Normalized 5-digit US ZIP */
+  zip: string;
+  city: string;
+  /**
+     * Two-letter US state abbreviation
+     * @minLength 2
+     * @maxLength 2
+     */
+  state: string;
+}
+
 export interface MediaAsset {
   id: number;
   /** @nullable */
@@ -2047,6 +2059,14 @@ status?: EventStatus;
 export type RejectEventBody = {
   /** @maxLength 2000 */
   note?: string;
+};
+
+export type LookupUsZip400 = {
+  error: string;
+};
+
+export type LookupUsZip404 = {
+  error: string;
 };
 
 export type ListNotificationLogsParams = {
