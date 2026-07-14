@@ -50,10 +50,12 @@ describe("kitchen ticket print", () => {
     assert.match(kitchenTicketPrintSource, /formatOrderReferenceLabel\(order\.orderNumber\)/);
   });
 
-  it("uses Capacitor Share on native instead of relying on window.print alone", () => {
-    assert.match(kitchenTicketPrintSource, /@capacitor\/share/);
-    assert.match(kitchenTicketPrintSource, /@capacitor\/filesystem/);
-    assert.match(kitchenTicketPrintSource, /shareTicketOnNative/);
-    assert.match(kitchenTicketPrintSource, /cancelled/);
+  it("opens a real print dialog instead of sharing an HTML file", () => {
+    assert.match(kitchenTicketPrintSource, /printViaIframe/);
+    assert.match(kitchenTicketPrintSource, /KitchenPrinter\.printHtml/);
+    assert.match(kitchenTicketPrintSource, /printViaNativeAirPrint/);
+    assert.doesNotMatch(kitchenTicketPrintSource, /@capacitor\/share/);
+    assert.doesNotMatch(kitchenTicketPrintSource, /navigator\.share/);
+    assert.doesNotMatch(kitchenTicketPrintSource, /kitchen-ticket\.html/);
   });
 });

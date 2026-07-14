@@ -237,6 +237,9 @@ export function TodayInTownSection({
                 <p className="text-muted-foreground">
                   {activeMobileNow} active now
                 </p>
+                <p className="text-muted-foreground">
+                  {truckCount} {truckCount === 1 ? "stop" : "stops"} today
+                </p>
               </div>
             ) : (
               <>

@@ -8,6 +8,7 @@ import {
 } from "@/lib/kitchen-ticket-format";
 import { resolveDisplayedOrderTotals } from "@/lib/order-totals-display";
 import { isNativeApp } from "@/lib/native-platform";
+import { KitchenPrinter } from "@/plugins/kitchen-printer";
 
 type Props = {
   order: Order;
@@ -162,7 +163,7 @@ const TICKET_PRINT_STYLES = `
 `;
 
 export type KitchenTicketPrintResult =
-  | { ok: true; method: "print" | "share" }
+  | { ok: true; method: "print" }
   | { ok: false; cancelled?: boolean; message: string };
 
 let printInFlight = false;
@@ -171,65 +172,97 @@ function getTicketHtmlDocument(): string | null {
   const source = document.querySelector<HTMLElement>("[data-testid='kitchen-ticket-print']");
   const ticketHtml = source?.querySelector(".kitchen-ticket")?.outerHTML;
   if (!ticketHtml) return null;
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Kitchen Ticket</title><style>${TICKET_PRINT_STYLES}</style></head><body>${ticketHtml}</body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Kitchen Ticket</title><style>${TICKET_PRINT_STYLES}</style></head><body>${ticketHtml}</body></html>`;
 }
 
-function utf8ToBase64(value: string): string {
-  const bytes = new TextEncoder().encode(value);
-  let binary = "";
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary);
-}
-
-async function shareTicketOnNative(html: string): Promise<KitchenTicketPrintResult> {
-  const { Directory, Filesystem } = await import("@capacitor/filesystem");
-  const { Share } = await import("@capacitor/share");
-
-  const fileName = `townhub-kitchen-ticket-${Date.now()}.html`;
-  await Filesystem.writeFile({
-    path: fileName,
-    data: utf8ToBase64(html),
-    directory: Directory.Cache,
-  });
-
-  const { uri } = await Filesystem.getUri({
-    path: fileName,
-    directory: Directory.Cache,
-  });
-
-  try {
-    await Share.share({
-      title: "Kitchen Ticket",
-      dialogTitle: "Print or share kitchen ticket",
-      files: [uri],
+/**
+ * Isolated iframe print so the dialog only contains the ticket (not the dashboard chrome).
+ * Preferred over Web Share of an HTML file, which never shows a real print sheet.
+ */
+function printViaIframe(html: string): Promise<KitchenTicketPrintResult> {
+  return new Promise((resolve) => {
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("title", "Kitchen Ticket Print");
+    iframe.setAttribute("aria-hidden", "true");
+    Object.assign(iframe.style, {
+      position: "fixed",
+      right: "0",
+      bottom: "0",
+      width: "0",
+      height: "0",
+      border: "0",
+      opacity: "0",
+      pointerEvents: "none",
     });
-    return { ok: true, method: "share" };
+    document.body.appendChild(iframe);
+
+    let settled = false;
+    const finish = (result: KitchenTicketPrintResult) => {
+      if (settled) return;
+      settled = true;
+      window.setTimeout(() => iframe.remove(), 1000);
+      resolve(result);
+    };
+
+    const win = iframe.contentWindow;
+    const doc = iframe.contentDocument ?? win?.document;
+    if (!win || !doc) {
+      try {
+        window.print();
+        finish({ ok: true, method: "print" });
+      } catch {
+        finish({ ok: false, message: "Printing is not available in this browser." });
+      }
+      return;
+    }
+
+    const triggerPrint = () => {
+      try {
+        win.focus();
+        win.print();
+        finish({ ok: true, method: "print" });
+      } catch {
+        try {
+          window.print();
+          finish({ ok: true, method: "print" });
+        } catch {
+          finish({ ok: false, message: "Printing is not available in this browser." });
+        }
+      }
+    };
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+    window.setTimeout(triggerPrint, 50);
+  });
+}
+
+async function printViaNativeAirPrint(html: string): Promise<KitchenTicketPrintResult> {
+  try {
+    const result = await KitchenPrinter.printHtml({
+      html,
+      jobName: "Kitchen Ticket",
+    });
+    if (result.cancelled) {
+      return { ok: false, cancelled: true, message: "Print canceled." };
+    }
+    return { ok: true, method: "print" };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (/cancel|dismiss|abort/i.test(message)) {
       return { ok: false, cancelled: true, message: "Print canceled." };
     }
-    throw error;
-  } finally {
-    void Filesystem.deleteFile({
-      path: fileName,
-      directory: Directory.Cache,
-    }).catch(() => undefined);
+    return {
+      ok: false,
+      message: "Could not open the print dialog. Try again from this order.",
+    };
   }
 }
 
-function printViaBrowserWindow(): KitchenTicketPrintResult {
-  window.print();
-  return { ok: true, method: "print" };
-}
-
 /**
- * Desktop web: `window.print()`.
- * Mobile web: browser print / share sheet when available.
- * Native Capacitor: share an HTML ticket file so iOS Print/AirPrint can open from the sheet
- * (does not depend solely on WKWebView `window.print()`).
+ * Desktop / mobile web: print the ticket document in a hidden iframe.
+ * Native Capacitor iOS: AirPrint via UIPrintInteractionController (not the share sheet).
  */
 export async function printKitchenTicket(): Promise<KitchenTicketPrintResult> {
   if (printInFlight) {
@@ -244,45 +277,10 @@ export async function printKitchenTicket(): Promise<KitchenTicketPrintResult> {
     }
 
     if (isNativeApp()) {
-      try {
-        return await shareTicketOnNative(html);
-      } catch {
-        return {
-          ok: false,
-          message: "Could not open print or share. Try again from this order.",
-        };
-      }
+      return await printViaNativeAirPrint(html);
     }
 
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      try {
-        const file = new File([html], "kitchen-ticket.html", { type: "text/html" });
-        const canShareFiles =
-          typeof navigator.canShare === "function" ? navigator.canShare({ files: [file] }) : false;
-        if (canShareFiles) {
-          await navigator.share({
-            title: "Kitchen Ticket",
-            files: [file],
-          });
-          return { ok: true, method: "share" };
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (/abort|cancel/i.test(message) || (error instanceof DOMException && error.name === "AbortError")) {
-          return { ok: false, cancelled: true, message: "Print canceled." };
-        }
-        // Fall through to window.print for browsers that reject file share.
-      }
-    }
-
-    try {
-      return printViaBrowserWindow();
-    } catch {
-      return {
-        ok: false,
-        message: "Printing is not available in this browser.",
-      };
-    }
+    return await printViaIframe(html);
   } finally {
     printInFlight = false;
   }

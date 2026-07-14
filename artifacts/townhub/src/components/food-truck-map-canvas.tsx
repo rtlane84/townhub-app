@@ -16,10 +16,12 @@ const DEFAULT_ZOOM = 4;
 
 const truckMarkerIcon = L.divIcon({
   className: "food-truck-map-marker",
-  html: `<div class="food-truck-map-marker-pin" aria-hidden="true"></div>`,
-  iconSize: [28, 28],
-  iconAnchor: [14, 28],
-  popupAnchor: [0, -26],
+  // Solid SVG pin — avoids Leaflet's default white div-icon box and any
+  // CSS teardrop "white center" hole that reads as a bare circle on the map.
+  html: `<svg class="food-truck-map-marker-svg" viewBox="0 0 24 36" width="28" height="36" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24C24 5.373 18.627 0 12 0z"/></svg>`,
+  iconSize: [28, 36],
+  iconAnchor: [14, 36],
+  popupAnchor: [0, -34],
 });
 
 function fitMapToPoints(map: L.Map, positions: [number, number][]) {

@@ -125,7 +125,7 @@ export default function Events() {
           data-testid="button-events-submit-toggle"
         >
           <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
-          {formOpen ? "Hide" : "Submit"}
+          {formOpen ? "Hide" : "Submit Event"}
         </Button>
       </div>
 

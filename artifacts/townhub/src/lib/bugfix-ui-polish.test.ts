@@ -34,6 +34,14 @@ describe("event submit wording", () => {
     assert.match(eventSubmitSource, />\s*Submit Event\s*</);
     assert.doesNotMatch(eventSubmitSource, /Submit for Review/);
   });
+
+  it("labels the events page open-form control Submit Event", () => {
+    const eventsPage = readFileSync(
+      new URL("../pages/events.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(eventsPage, /formOpen \? "Hide" : "Submit Event"/);
+  });
 });
 
 describe("food truck map fit control", () => {
@@ -42,5 +50,10 @@ describe("food truck map fit control", () => {
     assert.match(mapCanvasSource, /button-food-truck-map-fit-stops/);
     assert.match(mapCanvasSource, /disabled=\{!hasStops\}/);
     assert.doesNotMatch(mapCanvasSource, /LocateFixed/);
+  });
+
+  it("uses a solid SVG pin instead of a white Leaflet div-icon box", () => {
+    assert.match(mapCanvasSource, /food-truck-map-marker-svg/);
+    assert.doesNotMatch(mapCanvasSource, /food-truck-map-marker-pin/);
   });
 });

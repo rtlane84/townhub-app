@@ -551,19 +551,24 @@ html.native-app .native-pressable:active {
   font-family: inherit;
 }
 
+.leaflet-container .leaflet-div-icon.food-truck-map-marker,
+.food-truck-map-marker.leaflet-div-icon,
 .food-truck-map-marker {
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  color: hsl(var(--primary));
 }
 
-.food-truck-map-marker-pin {
+.food-truck-map-marker-svg {
+  display: block;
   width: 28px;
-  height: 28px;
-  border-radius: 9999px 9999px 9999px 0;
-  transform: rotate(-45deg);
-  background: hsl(var(--primary));
-  border: 2px solid hsl(var(--background));
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+  height: 36px;
+  color: inherit;
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.35));
+  pointer-events: none;
 }
 
 .food-truck-map-popup .leaflet-popup-content-wrapper {
