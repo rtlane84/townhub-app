@@ -78,21 +78,17 @@ Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 cha
 | Document | Purpose |
 |----------|---------|
 | [docs/PRD.md](docs/PRD.md) | Product vision, launch scope, requirements, metrics, and acceptance criteria |
-| [docs/CODEBASE_HEALTH_AUDIT.md](docs/CODEBASE_HEALTH_AUDIT.md) | Architecture, maintainability, bloat, documentation, and performance audit |
 | [docs/SETUP.md](docs/SETUP.md) | Full local setup, env vars, providers, troubleshooting |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design for developers |
 | [SECURITY.md](SECURITY.md) | Auth, authorization, and security model |
-| [PRODUCTION.md](PRODUCTION.md) | Deployment checklist |
-| [PROJECT_TRACKER.md](PROJECT_TRACKER.md) | Project status overview |
+| [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) | Current release blockers and validation evidence |
+| [PRODUCTION.md](PRODUCTION.md) | Production deployment and verification checklist |
+| [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md) | Staging and production isolation |
+| [docs/IOS_APP.md](docs/IOS_APP.md) | iOS, TestFlight, and App Store workflow |
 | [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) | Stripe Connect (customer payments) |
 | [docs/STRIPE_BILLING_SETUP.md](docs/STRIPE_BILLING_SETUP.md) | Stripe Billing (business subscriptions) |
-| [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Order and appointment notifications |
-| [docs/RESEND_SETUP.md](docs/RESEND_SETUP.md) | Email provider setup |
-| [docs/TWILIO_SETUP.md](docs/TWILIO_SETUP.md) | SMS provider setup |
-| [docs/SENTRY_SETUP.md](docs/SENTRY_SETUP.md) | Error monitoring |
-| [docs/PRODUCTION_MONITORING.md](docs/PRODUCTION_MONITORING.md) | Health checks and ops logging |
-| [docs/DEV_CLERK_RELINK.md](docs/DEV_CLERK_RELINK.md) | Dev-only Clerk user ID repair |
-| [docs/IOS_APP.md](docs/IOS_APP.md) | iOS app shell (Capacitor) — Xcode, TestFlight |
+| [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Notification delivery, live alerts, push, and subscription events |
+| [docs/PRODUCTION_MONITORING.md](docs/PRODUCTION_MONITORING.md) | Sentry, health checks, logs, and alerts |
 
 ---
 
@@ -124,4 +120,4 @@ pnpm --filter @workspace/api-spec run codegen
 - Business Hub live events use an in-process event bus and therefore require a
   single API instance until shared pub/sub is added
 
-Active development is tracked in **Linear** — see [PROJECT_TRACKER.md](PROJECT_TRACKER.md).
+Active development is tracked in **Linear**. Release blockers and evidence live in [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md).

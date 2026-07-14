@@ -191,7 +191,7 @@ Changes touching checkout, webhooks, order materialization, refunds, tax, totals
 - SSE payloads must stay minimal and exclude PII.
 - The current in-process live-event bus is valid only for a single API instance. Do not claim multi-instance live-update support without shared pub/sub infrastructure.
 
-Read `docs/NOTIFICATIONS.md` and `docs/BUSINESS_HUB_LIVE_NOTIFICATIONS.md` before changing notification or live-update behavior.
+Read `docs/NOTIFICATIONS.md` before changing notification or live-update behavior.
 
 ## Frontend Conventions
 

@@ -8,7 +8,7 @@ This document describes how TownHub protects data and operations in the current 
 
 TownHub uses [Clerk](https://clerk.com) for identity. The API applies `@clerk/express` middleware globally; route handlers read `userId` via `getAuth(req)`.
 
-Because the Replit preview runs inside an iframe (blocking `SameSite=Lax` cookies), authenticated API calls pass the Clerk session JWT as an `Authorization: Bearer <token>` header. The frontend `ClerkApiTokenBridge` wires this into all generated hooks and raw fetches.
+Authenticated API calls pass the Clerk session JWT as an `Authorization: Bearer <token>` header. The frontend `ClerkApiTokenBridge` wires this into all generated hooks and raw fetches, which keeps web and bundled native calls on the same API authorization path.
 
 **Roles** (stored in `users.role`):
 

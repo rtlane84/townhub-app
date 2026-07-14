@@ -114,11 +114,24 @@ Set in deployment for richer Admin System Status:
 - `BUILD_DATE` — ISO build timestamp
 - `GIT_COMMIT_SHA` — git commit (short or full)
 
+## Sentry setup
+
+Create separate Sentry projects for the API (`SENTRY_DSN`) and frontend (`VITE_SENTRY_DSN`) so alerts and releases can be triaged independently. Vite variables must be present at build time.
+
+- API initialization: `artifacts/api-server/src/instrument.ts`
+- Frontend initialization: `artifacts/townhub/src/lib/sentry.ts`
+- Optional release tags: `APP_VERSION`, `GIT_COMMIT_SHA`, `VITE_APP_VERSION`, `VITE_GIT_COMMIT_SHA`
+- Development-only tests: `GET /api/debug/sentry` and `/debug/sentry`; neither route is mounted in production
+
+Verify one event from each staging surface and confirm routing to the primary operator. TownHub scrubs request headers, cookies, bodies, query strings, credentials, payment fields, and common secret keys. Do not add customer PII, tokens, provider identifiers, or secrets to Sentry context manually. A stable signed-in user ID and route/business identifiers may be attached for diagnosis and must be reflected accurately in privacy disclosures.
+
+When a DSN is absent, the app continues without sending events. Admin Operations Center reports only whether Sentry is configured and never exposes the DSN.
+
 ## Recommended tooling
 
 | Tool | Purpose |
 |------|---------|
-| **Sentry** | Error aggregation — see [SENTRY_SETUP.md](SENTRY_SETUP.md) |
+| **Sentry** | API and frontend error aggregation |
 | **UptimeRobot / Better Stack** | External uptime on `/health` |
 | **Managed Postgres backups** | Database disaster recovery — see [DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md) |
 | **Stripe Dashboard → Webhooks** | Delivery logs and retry inspection |

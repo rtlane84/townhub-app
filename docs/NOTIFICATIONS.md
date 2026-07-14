@@ -33,11 +33,7 @@ notification_logs (+ automatic invalid device-token cleanup for PUSH)
 
 **Do not** duplicate notification business logic per platform. Add new event types in orchestrators; add new delivery tech as a push/provider adapter.
 
-Related docs (narrower topics):
-
-- [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](./BUSINESS_HUB_LIVE_NOTIFICATIONS.md) — in-browser SSE/toasts while Business Hub is open
-- [SUBSCRIPTION_NOTIFICATIONS.md](./SUBSCRIPTION_NOTIFICATIONS.md) — subscription lifecycle email details
-- [RESEND_SETUP.md](./RESEND_SETUP.md) / [TWILIO_SETUP.md](./TWILIO_SETUP.md)
+Provider setup: [RESEND_SETUP.md](./RESEND_SETUP.md) and [TWILIO_SETUP.md](./TWILIO_SETUP.md).
 
 ---
 
@@ -278,6 +274,41 @@ Business updates status ──► lifecycle email + SMS + customer push
 | `CANCELED` | `ORDER_CANCELLED` |
 
 Customer PUSH requires a signed-in `customerUserId` on the order. Guests still receive email/SMS when contact info is present.
+
+---
+
+## Business Hub live alerts
+
+Live dashboard alerts complement server-delivered email, SMS, push, Discord, and ntfy; they work only while an authorized owner or admin has Business Hub open for the selected business.
+
+- Overview, Orders, Kitchen, and Appointments use the authenticated SSE stream at `GET /api/businesses/:id/live-events` for near-real-time cache refresh.
+- Other Hub pages poll about every 12 seconds. Live pages fall back to the same polling if SSE cannot connect.
+- New orders and appointment requests show actionable toasts; non-live pages may also retain a banner until it is opened or dismissed.
+- Polling pauses while the tab is hidden. A sleeping device or closed dashboard relies on server-delivered channels instead.
+- Live payloads contain only business-scoped IDs and status—never customer PII, payment identifiers, tokens, or notes.
+- The event bus is process-local. Keep one API instance for beta or add shared pub/sub before scaling horizontally.
+
+The live-page indicator reports **Live**, **Reconnecting**, **Polling**, or **Offline**. If email or push arrives but no toast appears, confirm that Business Hub is open, signed in, and showing the correct business.
+
+---
+
+## Subscription lifecycle email
+
+Business subscriptions pay TownHub and are separate from Stripe Connect customer payments. TownHub sends owner onboarding/account-status emails; Stripe sends official invoices and receipts.
+
+| Event | Trigger |
+|-------|---------|
+| `APPLICATION_APPROVED` | Admin approves the business; paid plans link to the authenticated web subscription page |
+| `SUBSCRIPTION_WELCOME` | Stripe subscription checkout completes |
+| `SUBSCRIPTION_TRIAL_ENDING_7D` / `_1D` | Daily reminder job reaches seven or one calendar day remaining |
+| `SUBSCRIPTION_ACTIVATED` | Trial becomes active |
+| `SUBSCRIPTION_PAYMENT_SUCCEEDED` / `_FAILED` | Recurring invoice result |
+| `SUBSCRIPTION_CANCEL_SCHEDULED` | Cancellation at period end is enabled |
+| `SUBSCRIPTION_CANCELED` / `_EXPIRED` | Paid access ends |
+
+Set `APP_BASE_URL`, email transport, `PLATFORM_ADMIN_EMAIL`, and `JOB_SECRET`. Run `POST /api/internal/jobs/subscription-trial-reminders` once daily with `Authorization: Bearer <JOB_SECRET>` (or `X-Job-Secret`). Reminder delivery is deduplicated in `notification_logs`.
+
+Owner email resolution order is business notification email, order notification email, then the real owner account email. `@user.local` placeholders are never delivery targets. Subscription App Push remains reserved; these lifecycle emails send independently of push preferences.
 
 ---
 

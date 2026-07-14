@@ -634,12 +634,11 @@ A feature is ready for implementation when it can be delivered as a coherent ver
 ## 18. Related Product and Engineering References
 
 - [Project overview](../README.md)
-- [Project status](../PROJECT_TRACKER.md)
+- [Release readiness](./RELEASE_READINESS.md)
 - [Architecture](./ARCHITECTURE.md)
 - [Security model](../SECURITY.md)
 - [Production checklist](../PRODUCTION.md)
 - [Notifications](./NOTIFICATIONS.md)
-- [Business Hub live notifications](./BUSINESS_HUB_LIVE_NOTIFICATIONS.md)
 - [Stripe Connect setup](./STRIPE_SETUP.md)
 - [Stripe Billing setup](./STRIPE_BILLING_SETUP.md)
 - [Database backup and recovery](./DATABASE_BACKUP_AND_RECOVERY.md)

@@ -96,7 +96,7 @@ SMS is only sent when **both** platform Twilio env vars are set **and** the busi
 
 After setting secrets, redeploy or restart the API server.
 
-On Replit: add all three `TWILIO_*` variables under **Secrets**, then republish or restart the workflow.
+Add all three `TWILIO_*` variables to the selected Railway API environment, then redeploy or restart the API.
 
 ---
 

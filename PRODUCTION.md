@@ -22,7 +22,7 @@ Follow these steps before going live. The canonical Cloudflare + Railway staging
 The app can proxy Clerk FAPI through `/api/__clerk` (see `artifacts/api-server` and frontend `ClerkProvider`).
 
 - **Default (custom domain):** set proxy URL in Clerk dashboard to `https://yourdomain.com/api/__clerk`, or remove the proxy entirely (delete middleware from `app.ts` and `proxyUrl` from `ClerkProvider`).
-- **Some hosts** (e.g. Replit) may configure the proxy URL automatically — confirm `VITE_CLERK_PROXY_URL` matches your deployment docs.
+- Confirm `VITE_CLERK_PROXY_URL` matches the Clerk proxy configured for the selected environment.
 
 ---
 
@@ -30,7 +30,7 @@ The app can proxy Clerk FAPI through `/api/__clerk` (see `artifacts/api-server` 
 
 Set all secrets in your **hosting provider's secret manager** (environment variables UI). Never commit production values.
 
-Examples: Railway variables, Render environment, Fly secrets, Replit Secrets.
+Use isolated Railway variables for the API and Cloudflare build variables for the frontend.
 
 ### Required
 
@@ -163,7 +163,7 @@ DATABASE_URL=<production_url> pnpm --filter @workspace/db run push
 3. At least one **restore drill** to a non-production database.
 4. Optional but recommended: monthly encrypted `pg_dump` stored off-host (commands in the backup doc).
 
-For production traffic, use a connection pooler (PgBouncer, Neon pooler, Supabase pooler) in front of PostgreSQL. The API also configures a small server-side `pg` pool (see [docs/OPERATIONS.md](docs/OPERATIONS.md)).
+For production traffic, use a connection pooler (PgBouncer, Neon pooler, Supabase pooler) in front of PostgreSQL. The API also configures the small server-side `pg` pool described below.
 
 ### Connection pool env vars (optional)
 
@@ -388,7 +388,7 @@ Post-beta hardening and scaling items — not blockers for first-town launch aft
 | Guest token TTL / revocation | v2 tokens expire after 90 days (legacy v1 still accepted); shorter TTL or server-side revocation can wait until post-beta |
 | Schema change rollback | Drizzle `push` workflow has no in-repo migrations — run pre-push dumps and restore drills before large schema changes at scale ([DATABASE_BACKUP_AND_RECOVERY.md](docs/DATABASE_BACKUP_AND_RECOVERY.md)) |
 
-Active development tracking: **Linear** (see [PROJECT_TRACKER.md](PROJECT_TRACKER.md)).
+Active development tracking lives in **Linear**. Release blockers and validation evidence live in [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md).
 
 ---
 
@@ -400,4 +400,4 @@ Active development tracking: **Linear** (see [PROJECT_TRACKER.md](PROJECT_TRACKE
 - [docs/PRODUCTION_MONITORING.md](docs/PRODUCTION_MONITORING.md) — health and ops logging
 - [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) — notification flows
 - [docs/PLAYWRIGHT_E2E.md](docs/PLAYWRIGHT_E2E.md) — E2E test setup
-- [docs/SENTRY_SETUP.md](docs/SENTRY_SETUP.md) — error monitoring
+- [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) — current blockers and validation evidence

@@ -8,7 +8,7 @@ Step-by-step guide for running TownHub from a clean clone. For architecture cont
 
 - **Node.js** 22+ (24 recommended)
 - **pnpm** (required — npm/yarn are blocked by `preinstall`)
-- **PostgreSQL** database (local, Supabase, Neon, or Replit-provisioned)
+- **PostgreSQL** database (local or a dedicated development provider database)
 - Accounts as needed: [Clerk](https://clerk.com), optional Stripe / Supabase / Resend / Twilio / Sentry
 
 ---
@@ -43,7 +43,7 @@ All variables live in the **repository root `.env`**. Both the API server and Vi
 | `VITE_CLERK_PUBLISHABLE_KEY` | Same publishable key (frontend build-time) |
 | `SESSION_SECRET` | Random string ≥ 32 chars (`openssl rand -base64 32`) — signs guest order access tokens |
 | `APP_BASE_URL` | `http://localhost:23032` for local dev |
-| `VITE_API_BASE_URL` | Leave empty locally (Vite proxies `/api`). On Netlify set to your Railway API origin (no trailing slash). |
+| `VITE_API_BASE_URL` | Leave empty locally (Vite proxies `/api`). In deployed builds set the matching Railway API origin without a trailing slash. |
 
 ### Required for media uploads
 
@@ -62,9 +62,9 @@ All variables live in the **repository root `.env`**. Both the API server and Vi
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe Connect + Billing | [STRIPE_SETUP.md](STRIPE_SETUP.md), [STRIPE_BILLING_SETUP.md](STRIPE_BILLING_SETUP.md) |
 | `RESEND_API_KEY`, `RESEND_FROM` | Email | [RESEND_SETUP.md](RESEND_SETUP.md) |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | SMS | [TWILIO_SETUP.md](TWILIO_SETUP.md) |
-| `SENTRY_DSN`, `VITE_SENTRY_DSN` | Error monitoring | [SENTRY_SETUP.md](SENTRY_SETUP.md) |
-| `JOB_SECRET` | Internal cron jobs (trial reminders) | [SUBSCRIPTION_NOTIFICATIONS.md](SUBSCRIPTION_NOTIFICATIONS.md) |
-| `PLATFORM_ADMIN_EMAIL` | Subscription operational alerts | [SUBSCRIPTION_NOTIFICATIONS.md](SUBSCRIPTION_NOTIFICATIONS.md) |
+| `SENTRY_DSN`, `VITE_SENTRY_DSN` | Error monitoring | [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry-setup) |
+| `JOB_SECRET` | Internal cron jobs (trial reminders) | [NOTIFICATIONS.md](NOTIFICATIONS.md#subscription-lifecycle-email) |
+| `PLATFORM_ADMIN_EMAIL` | Subscription operational alerts | [NOTIFICATIONS.md](NOTIFICATIONS.md#subscription-lifecycle-email) |
 | `RATE_LIMIT_*` | API rate limiting | [../SECURITY.md](../SECURITY.md) |
 
 ### Local Clerk proxy
@@ -75,7 +75,7 @@ VITE_CLERK_PROXY_URL=http://localhost:8080/api/__clerk
 
 Add `localhost` and `localhost:23032` to **Allowed Origins** in the Clerk dashboard.
 
-In the Replit preview, `VITE_CLERK_PROXY_URL` is intentionally empty so Clerk loads from its CDN directly. Do not hardcode the proxy URL in `App.tsx`.
+Do not hardcode a deployed Clerk proxy URL in `App.tsx`; configure it per environment.
 
 ---
 
@@ -93,7 +93,7 @@ pnpm --filter @workspace/db run push-force
 
 Run `push` after any schema changes under `lib/db/src/schema/`.
 
-**Always review the SQL preview.** Do not confirm destructive changes (drops, column removals) without understanding them. See [docs/OPERATIONS.md](OPERATIONS.md) for pool env vars and schema safety notes.
+**Always review the SQL preview.** Stop if it proposes unexpected drops, column removals, enum changes, or type rewrites. `push-force` is local-development-only. Production pool variables and rollout checks are documented in [PRODUCTION.md](../PRODUCTION.md).
 
 For production backup and restore planning, see [docs/DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md).
 
@@ -190,7 +190,7 @@ SENTRY_DSN=...           # API
 VITE_SENTRY_DSN=...      # Frontend
 ```
 
-Debug test endpoints are **development-only** (not mounted in production). Guide: [SENTRY_SETUP.md](SENTRY_SETUP.md).
+Debug test endpoints are **development-only** (not mounted in production). See [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry-setup).
 
 ---
 
@@ -222,7 +222,7 @@ Splits admin and business-owner test accounts. See [DEV_CLERK_RELINK.md](DEV_CLE
 | Symptom | Fix |
 |---------|-----|
 | `DATABASE_URL must be set` | Create root `.env` with `DATABASE_URL` |
-| Clerk fails to load in Replit preview | Ensure `VITE_CLERK_PROXY_URL` is **empty** in preview (not hardcoded) |
+| Clerk fails to load | Verify the environment's allowed origins, keys, and `VITE_CLERK_PROXY_URL` |
 | Clerk 401 on API calls locally | Set `VITE_CLERK_PROXY_URL=http://localhost:8080/api/__clerk`; use Bearer token pattern (automatic via `ClerkApiTokenBridge`) |
 | Signed in but treated as CUSTOMER | Clerk user ID drift — run [DEV_CLERK_RELINK.md](DEV_CLERK_RELINK.md) |
 | Guest order page 403 | Include `?token=` from order creation response |

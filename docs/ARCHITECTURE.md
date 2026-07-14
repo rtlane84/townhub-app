@@ -71,7 +71,7 @@ GET /api/businesses/:businessId/live-events
 
 **Event bus (beta):** `business-live-events.ts` is an in-process pub/sub map keyed by `businessId`. Order and appointment routes publish after successful mutations; the Stripe webhook publishes `order.paid` / refund events. This is correct for a **single API instance**. Multi-instance production requires a shared bus (Redis pub/sub, Postgres `LISTEN/NOTIFY`, or another message broker) so every instance can fan out to its local SSE connections.
 
-**Frontend fallback:** If SSE is unavailable, returns 401/403, or fails after repeated reconnect attempts, live pages use HTTP polling (~12s). Non-live Business Hub pages always poll. See [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](BUSINESS_HUB_LIVE_NOTIFICATIONS.md) for toast, banner, and tab/visibility behavior. A small status dot shows Live / Reconnecting / Polling / Offline on live pages.
+**Frontend fallback:** If SSE is unavailable, returns 401/403, or fails after repeated reconnect attempts, live pages use HTTP polling (~12s). Non-live Business Hub pages always poll. Toast, banner, tab visibility, and troubleshooting behavior are documented in [NOTIFICATIONS.md](NOTIFICATIONS.md#business-hub-live-alerts). A small status dot shows Live / Reconnecting / Polling / Offline on live pages.
 
 **Security:** Customers and guests cannot subscribe. Events are scoped to one business; payloads exclude customer PII, Stripe IDs, tokens, and notes.
 
@@ -153,7 +153,7 @@ PostgreSQL via Drizzle ORM. Schema push workflow (`pnpm --filter @workspace/db r
 
 Clerk manages identity. On first API call, `ensureDbUser` creates a `users` row with role `CUSTOMER`.
 
-**Clerk proxy:** FAPI calls route through `/api/__clerk` for custom-domain deployments. In Replit preview, `VITE_CLERK_PROXY_URL` is empty so Clerk loads from CDN.
+**Clerk proxy:** FAPI calls may route through `/api/__clerk` for custom-domain deployments. `VITE_CLERK_PROXY_URL` is configured per environment and is never hardcoded in the application.
 
 **Bearer tokens:** Required for authenticated API calls in iframe/cross-site contexts. `setAuthTokenGetter` in `custom-fetch.ts` attaches the JWT.
 
@@ -237,7 +237,7 @@ Webhook events: `customer.subscription.*`, `invoice.paid`, `invoice.payment_fail
 
 Customer Portal: `POST /businesses/:id/subscription/portal`.
 
-Guide: [STRIPE_BILLING_SETUP.md](STRIPE_BILLING_SETUP.md). Owner emails: [SUBSCRIPTION_NOTIFICATIONS.md](SUBSCRIPTION_NOTIFICATIONS.md).
+Guide: [STRIPE_BILLING_SETUP.md](STRIPE_BILLING_SETUP.md). Owner email events and the trial-reminder job are in [NOTIFICATIONS.md](NOTIFICATIONS.md#subscription-lifecycle-email).
 
 ---
 
@@ -286,7 +286,7 @@ Fire-and-forget delivery via `notification-service.ts` (and related orchestrator
 
 **Critical Stripe / payment alerts** (refund failed, Connect unhealthy): always owner email + TownHub app push; never SMS/Discord/ntfy; persistent Hub banner while Connect is `pending`/`restricted`.
 
-Guide: [NOTIFICATIONS.md](NOTIFICATIONS.md). Live Hub toasts/SSE: [BUSINESS_HUB_LIVE_NOTIFICATIONS.md](BUSINESS_HUB_LIVE_NOTIFICATIONS.md).
+Guide: [NOTIFICATIONS.md](NOTIFICATIONS.md), including live Business Hub alerts.
 
 Guest customer email and SMS links include a signed `?token=` generated for the
 order. Signed-in customer links omit the token and rely on Clerk authorization.
@@ -299,7 +299,7 @@ order. Signed-in customer links omit the token and rely on Clerk authorization.
 - Frontend: `@sentry/react` via `main.tsx`
 - Dev-only test routes: `GET /api/debug/sentry`, `/debug/sentry` page
 
-Guide: [SENTRY_SETUP.md](SENTRY_SETUP.md).
+Setup and verification: [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry-setup).
 
 ---
 

@@ -2,7 +2,7 @@
 
 Operational plan for protecting production data before and during first-town launch. This is **operational safety work** — not a customer-facing feature.
 
-**Related:** [PRODUCTION.md](../PRODUCTION.md) (deploy checklist), [OPERATIONS.md](OPERATIONS.md) (schema changes & pool tuning), [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md) (health & alerts).
+**Related:** [PRODUCTION.md](../PRODUCTION.md) (deploy, schema safety, and pool settings) and [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md) (health and alerts).
 
 ---
 
@@ -16,7 +16,7 @@ TownHub’s **system of record** is PostgreSQL (`DATABASE_URL`). The API uses Dr
 | **Supabase Storage** | Uploaded images (logos, hero images, media library) | Separate from Postgres; enable provider backups or periodic export |
 | **Clerk** | Authentication identities | Clerk dashboard / support — not in `DATABASE_URL` |
 | **Stripe** | Payments, Connect accounts, subscriptions | Stripe Dashboard — reconcile orders via `stripeSessionId` / webhooks after DB restore |
-| **Replit / host secrets** | `DATABASE_URL`, API keys | Replit Secrets (or host equivalent); export a secure offline copy for break-glass |
+| **Deployment secret stores** | `DATABASE_URL`, API keys | Railway/Cloudflare secret stores; keep a secure break-glass inventory without copying values into this repository |
 
 **First-town launch minimum:** automated **PostgreSQL** backups with a tested restore path. Media and secrets should not be an afterthought, but order/business data loss is the highest risk.
 
@@ -26,12 +26,12 @@ TownHub’s **system of record** is PostgreSQL (`DATABASE_URL`). The API uses Dr
 
 | Layer | How TownHub uses it |
 |-------|---------------------|
-| **App host** | Replit autoscale deploy (see `.replit` `deploymentTarget = "autoscale"`) |
+| **App hosts** | Cloudflare frontend and Railway API, isolated between staging and production |
 | **Database** | Any PostgreSQL 14+ reachable via `DATABASE_URL` |
-| **Connection pooling** | Optional provider pooler (Neon, Supabase, PgBouncer) + API `pg` pool ([OPERATIONS.md](OPERATIONS.md)) |
+| **Connection pooling** | Optional provider pooler (Neon, Supabase, PgBouncer) plus the API `pg` pool documented in [PRODUCTION.md](../PRODUCTION.md) |
 | **Media** | Supabase Storage by default (`SUPABASE_*` env vars) |
 
-The app does **not** require the database to live on Replit. For production, **use a managed PostgreSQL provider with built-in backups**, and point `DATABASE_URL` at that instance from Replit Secrets.
+Production must use a separate managed PostgreSQL database with verified automated backups. Store its `DATABASE_URL` only in the production Railway environment.
 
 ### Recommended providers (first-town launch)
 
@@ -41,9 +41,9 @@ Choose **one** managed Postgres. All are compatible with TownHub’s `pg` + Driz
 |----------|-------------|---------------------------|
 | **[Neon](https://neon.tech)** | Serverless Postgres, pooler included, simple `DATABASE_URL` | Daily backups on paid tiers; **PITR** on higher tiers |
 | **[Supabase](https://supabase.com)** | Postgres + Storage in one project if you already use Supabase for media | Daily backups; **PITR** on Pro plan |
-| **Replit PostgreSQL module** | Convenient for dev (`postgresql-16` in `.replit`) | **Not recommended as sole production store** without a verified backup/export plan |
+| **Railway PostgreSQL** | Fits the current API host and environment model | Verify backup retention and restore support for the selected plan |
 
-**Practical recommendation for launch:** Neon or Supabase **production** project with automated backups enabled. Keep Replit Postgres for development only unless you have confirmed automated exports for the Replit database.
+**Practical recommendation for launch:** use the managed provider that gives you visible automated backup history and a tested restore path; do not share the staging database.
 
 ---
 
@@ -133,7 +133,7 @@ These assume a single operator following this runbook, not 24/7 on-call.
 ### 5.1 Prerequisites
 
 - Access to database provider dashboard (or backup file)
-- Access to Replit **Secrets** (or host env)
+- Access to Railway production variables
 - Admin Clerk account to verify auth after restore
 - Maintenance window communicated to businesses if possible
 
@@ -156,8 +156,8 @@ Use this when testing or when the current instance is corrupted.
    DATABASE_URL="$NEW_DATABASE_URL" pnpm --filter @workspace/db run push
    ```
    **Read every line of SQL.** Cancel if Drizzle proposes drops or destructive changes.
-4. **Update secrets:** set production `DATABASE_URL` to the new connection string in Replit Secrets.
-5. **Redeploy / restart** the Replit deployment so all instances pick up the new URL.
+4. **Update secrets:** set production `DATABASE_URL` to the new connection string in Railway production variables.
+5. **Redeploy / restart** the Railway API so all instances pick up the new URL.
 6. **Verify:**
    - `GET /health` → 200
    - Admin → System Status → database healthy
@@ -192,7 +192,7 @@ Complete before accepting real customer orders:
 - [ ] **Restore drill completed** once (restore to staging DB, verify app connects)
 - [ ] `DATABASE_URL` documented in secure ops vault (not in git)
 - [ ] Supabase Storage bucket identified; backup/replication understood
-- [ ] Operator knows who can access provider dashboard + Replit Secrets
+- [ ] Operator knows who can access the database provider and Railway production variables
 - [ ] [PRODUCTION.md](../PRODUCTION.md) post-deploy verification completed
 
 ---
@@ -210,11 +210,11 @@ Complete before accepting real customer orders:
 
 ## 8. Environment-specific notes
 
-### Replit deployment
+### Railway deployment
 
-- Set `DATABASE_URL` in **Replit → Secrets** to your managed Postgres connection string (prefer pooler URL if the provider offers one).
-- After changing `DATABASE_URL`, republish or restart so the autoscale deployment reloads env.
-- Dev database from the Replit `postgresql-16` module must **not** be the production URL.
+- Set `DATABASE_URL` in the isolated Railway production environment (prefer the provider pooler URL when recommended).
+- After changing it, redeploy or restart the API so every instance reloads the value.
+- Staging and local databases must never use the production URL.
 
 ### Neon
 
@@ -230,7 +230,7 @@ Complete before accepting real customer orders:
 
 ## 9. References
 
-- Schema changes: [OPERATIONS.md](OPERATIONS.md)
+- Schema changes and pool settings: [PRODUCTION.md](../PRODUCTION.md)
 - Deploy & env vars: [PRODUCTION.md](../PRODUCTION.md)
 - Health monitoring: [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md)
-- Security audit (DB-related hardening): [SECURITY_AUDIT_BETA.md](SECURITY_AUDIT_BETA.md)
+- Security model: [SECURITY.md](../SECURITY.md)

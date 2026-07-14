@@ -169,7 +169,7 @@ After returning from the Customer Portal, the subscription page auto-refreshes.
 | `invoice.paid` | Full subscription resync |
 | `invoice.payment_failed` | Full subscription resync (typically `PAST_DUE`) |
 
-Webhook sync also triggers TownHub subscription lifecycle emails (welcome, payment failed, etc.). See [SUBSCRIPTION_NOTIFICATIONS.md](./SUBSCRIPTION_NOTIFICATIONS.md).
+Webhook sync also triggers TownHub subscription lifecycle emails (welcome, payment failed, etc.). See [NOTIFICATIONS.md](./NOTIFICATIONS.md#subscription-lifecycle-email).
 
 Order payment webhooks (`checkout.session.completed` with `metadata.pendingCheckoutId`, or legacy `metadata.orderId`) are never mixed with subscription events.
 

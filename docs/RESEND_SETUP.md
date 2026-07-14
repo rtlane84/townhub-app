@@ -53,7 +53,7 @@ Production email should come from **your** domain (e.g. `orders@yourtown.com`), 
 3. Use **Sending access** (full access is not required for TownHub).
 4. Copy the key once — it starts with `re_`.
 
-Store the key in your deployment secrets (Replit Secrets, Fly secrets, etc.). **Never commit it to git.**
+Store the key in Railway environment variables. **Never commit it to git.**
 
 ---
 
@@ -85,7 +85,7 @@ If `RESEND_API_KEY` is set but `RESEND_FROM` is missing, email is treated as **n
 
 After setting secrets, redeploy or restart the API server so `process.env` picks up the new values.
 
-On Replit: add both variables under **Secrets**, then republish or restart the workflow.
+Add both variables to the selected Railway API environment, then redeploy or restart the API.
 
 ---
 
