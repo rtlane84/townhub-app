@@ -49,7 +49,9 @@ describe("food truck map fit control", () => {
     assert.match(mapCanvasSource, /aria-label="Show all stops"/);
     assert.match(mapCanvasSource, /button-food-truck-map-fit-stops/);
     assert.match(mapCanvasSource, /disabled=\{!hasStops\}/);
+    assert.match(mapCanvasSource, /text-foreground/);
     assert.doesNotMatch(mapCanvasSource, /LocateFixed/);
+    assert.doesNotMatch(mapCanvasSource, /variant="secondary"/);
   });
 
   it("uses a solid SVG pin instead of a white Leaflet div-icon box", () => {

@@ -54,15 +54,15 @@ function MapViewportControls({ points }: { points: FoodTruckMapPoint[] }) {
       <Button
         type="button"
         size="icon"
-        variant="secondary"
-        className="h-10 w-10 rounded-full border border-black/10 bg-card shadow-md"
+        variant="outline"
+        className="h-10 w-10 rounded-full border border-black/10 bg-card text-foreground shadow-md hover:bg-muted"
         onClick={fitStops}
         disabled={!hasStops}
         aria-label="Show all stops"
         title="Show all stops"
         data-testid="button-food-truck-map-fit-stops"
       >
-        <Maximize2 className="h-4 w-4" aria-hidden />
+        <Maximize2 className="h-4 w-4 text-foreground" strokeWidth={2.25} aria-hidden />
       </Button>
     </div>
   );
