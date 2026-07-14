@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   CreditCard,
-  FileWarning,
   Mail,
   ShoppingBag,
   XCircle,
@@ -121,8 +120,8 @@ export function PlatformSummaryCards({
   if (isLoading) {
     return (
       <div className="space-y-2" data-testid="platform-summary">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-[92px] rounded-lg" />
           ))}
         </div>
@@ -132,7 +131,7 @@ export function PlatformSummaryCards({
 
   return (
     <div className="space-y-2" data-testid="platform-summary">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <button
           type="button"
           onClick={() => onAction({ type: "scroll", targetId: "platform-health-section" })}
@@ -170,15 +169,6 @@ export function PlatformSummaryCards({
           action={{ type: "scroll", targetId: "business-metrics-section" }}
           onAction={onAction}
           testId="summary-past-due"
-        />
-        <AttentionCard
-          label="API Errors"
-          value={formatCount(summary?.apiErrorsLast24h ?? 0)}
-          icon={FileWarning}
-          tone={(summary?.apiErrorsLast24h ?? 0) > 0 ? "warning" : "default"}
-          action={{ type: "scroll", targetId: "api-error-log-panel" }}
-          onAction={onAction}
-          testId="summary-api-errors"
         />
         <AttentionCard
           label="Failed Notices"

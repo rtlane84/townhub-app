@@ -49,31 +49,28 @@ describe("orderClosingBufferMinutes regression", () => {
 
   it("orders and checkout intents share the same availability evaluator call pattern", () => {
     const orders = readFileSync(join(apiServerRoot, "src/routes/orders.ts"), "utf8");
-    const matches = [
-      ...orders.matchAll(
-        /evaluateBusinessOrderingAvailability\(business, \{ mobileLocations \}\)/g,
-      ),
-    ];
+    const callPattern =
+      /evaluateBusinessOrderingAvailability\(business, \{\s*mobileLocations,\s*timeZone: await getPlatformTimeZone\(\),\s*\}\)/g;
+    const matches = [...orders.matchAll(callPattern)];
     assert.equal(matches.length, 2);
 
     const createIdx = orders.indexOf('router.post("/orders"');
     const intentsIdx = orders.indexOf('router.post("/checkout/intents"');
     assert.ok(createIdx > 0 && intentsIdx > createIdx);
 
-    const createCall = orders.indexOf(
-      "evaluateBusinessOrderingAvailability(business, { mobileLocations })",
-      createIdx,
+    const createCall = orders.search(
+      /evaluateBusinessOrderingAvailability\(business, \{\s*mobileLocations,/,
     );
     const intentsCall = orders.indexOf(
-      "evaluateBusinessOrderingAvailability(business, { mobileLocations })",
+      "evaluateBusinessOrderingAvailability(business, {",
       intentsIdx,
     );
     assert.ok(createCall > createIdx && createCall < intentsIdx);
     assert.ok(intentsCall > intentsIdx);
 
     // Availability gate is not branched on pickup vs delivery.
-    const aroundCreate = orders.slice(createCall - 200, createCall + 200);
-    const aroundIntents = orders.slice(intentsCall - 200, intentsCall + 200);
+    const aroundCreate = orders.slice(createCall - 200, createCall + 280);
+    const aroundIntents = orders.slice(intentsCall - 200, intentsCall + 280);
     assert.doesNotMatch(aroundCreate, /fulfillmentType === .*(PICKUP|DELIVERY).*evaluateBusinessOrderingAvailability/);
     assert.doesNotMatch(aroundIntents, /fulfillmentType === .*(PICKUP|DELIVERY).*evaluateBusinessOrderingAvailability/);
   });

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { parseTimeToHHmm, formatTime12h, TIME_HHMM_PATTERN } from "./time";
+import { getZonedParts } from "./timezone";
 
 export { formatTime12h } from "./time";
 
@@ -130,11 +131,26 @@ export function isOpenNow(
    * Overnight windows (close <= open) remain unsupported.
    */
   closingBufferMinutes = 0,
+  /**
+   * When set, weekday and clock time are taken from this IANA timezone instead of
+   * the host/process local zone.
+   */
+  timeZone?: string,
 ): boolean {
-  const today = normalizeWeeklyHours(hours)[now.getDay()];
+  let dayIndex: number;
+  let currentMinutes: number;
+  if (timeZone) {
+    const parts = getZonedParts(now, timeZone);
+    dayIndex = parts.weekday;
+    currentMinutes = parts.hour * 60 + parts.minute;
+  } else {
+    dayIndex = now.getDay();
+    currentMinutes = now.getHours() * 60 + now.getMinutes();
+  }
+
+  const today = normalizeWeeklyHours(hours)[dayIndex];
   if (today.isClosed || !today.openTime || !today.closeTime) return false;
 
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const [openH, openM] = today.openTime.split(":").map(Number);
   const [closeH, closeM] = today.closeTime.split(":").map(Number);
   const openMinutes = openH * 60 + openM;

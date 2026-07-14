@@ -15,9 +15,6 @@ import {
   getLastStripeWebhookReceived,
   getLastWeatherRefresh,
   getProcessStartedAt,
-  listApiErrors,
-  countApiErrorsSince,
-  type ApiErrorLogEntry,
 } from "./system-runtime-state";
 import {
   queryAdminAccountCount,
@@ -38,7 +35,8 @@ import {
 
 export type ServiceHealthStatus =
   | "healthy"
-  | "warning"
+  | "configured"
+  | "degraded"
   | "unavailable"
   | "not_configured";
 
@@ -76,7 +74,6 @@ export interface PlatformHealthSummary {
   ordersToday: number | null;
   emailsSentToday: number | null;
   failedEmailsToday: number | null;
-  apiErrorsLast24h: number;
 }
 
 export interface SystemHealthReport {
@@ -86,7 +83,6 @@ export interface SystemHealthReport {
   summary: PlatformHealthSummary;
   metrics: PlatformMetrics | null;
   services: ServiceHealth[];
-  apiErrors: ApiErrorLogEntry[];
   recentActivity: PlatformActivityEntry[];
 }
 
@@ -113,7 +109,17 @@ const SECRET_SUBSTRINGS = [
   "STRIPE_CONNECT_WEBHOOK_SECRET",
   "STRIPE_PLATFORM_WEBHOOK_SECRET",
   "STRIPE_WEBHOOK_SECRET",
+  "ingest.sentry.io",
 ];
+
+const OPTIONAL_SERVICE_NAMES = new Set([
+  "Email",
+  "SMS",
+  "Stripe",
+  "Weather",
+  "Background Jobs",
+  "Sentry",
+]);
 
 function environmentLabel(nodeEnv: string): string {
   return nodeEnv === "production" ? "Production" : "Development";
@@ -131,7 +137,7 @@ function safeService(name: string, build: () => ServiceHealth | Promise<ServiceH
     .then(build)
     .catch((err: unknown) => ({
       name,
-      status: "warning" as const,
+      status: "degraded" as const,
       message:
         err instanceof Error
           ? `${name} check failed: ${err.message}`
@@ -230,10 +236,10 @@ export async function checkStorageHealth(): Promise<ServiceHealth> {
     const isProduction = process.env.NODE_ENV === "production";
     return {
       name: "Storage",
-      status: isProduction ? "warning" : "not_configured",
+      status: isProduction ? "degraded" : "configured",
       message: isProduction
         ? "Using local filesystem storage (not recommended for production)"
-        : "Local filesystem storage for logos, gallery uploads, and public assets (development mode)",
+        : "Local filesystem storage configured for logos, gallery uploads, and public assets (development)",
       metadata: {
         mode: "local",
         bucket: "local-filesystem",
@@ -274,8 +280,8 @@ export async function checkStorageHealth(): Promise<ServiceHealth> {
 
   return {
     name: "Storage",
-    status: "healthy",
-    message: "Supabase storage configured for logos, gallery uploads, and public assets",
+    status: "configured",
+    message: "Supabase storage credentials are configured (no live bucket check performed)",
     metadata: {
       mode: "supabase",
       supabaseConfigured: true,
@@ -316,8 +322,8 @@ export async function checkEmailHealth(): Promise<ServiceHealth> {
   if (configured) {
     return {
       name: "Email",
-      status: "healthy",
-      message: "Email provider configured",
+      status: "configured",
+      message: "Email provider credentials are configured (delivery outcomes below are from durable logs)",
       metadata: {
         ...baseMetadata,
         resendConfigured: Boolean(process.env.RESEND_API_KEY),
@@ -353,8 +359,8 @@ export async function checkSmsHealth(): Promise<ServiceHealth> {
   if (configured) {
     return {
       name: "SMS",
-      status: "healthy",
-      message: "Twilio SMS configured",
+      status: "configured",
+      message: "Twilio SMS credentials are configured (delivery outcomes below are from durable logs)",
       metadata: baseMetadata,
     };
   }
@@ -379,6 +385,19 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
   const lastWebhook = getLastStripeWebhookReceived();
   const subscriptionCounts = await queryStripeSubscriptionCounts();
 
+  const webhookMetadata = {
+    ...(lastWebhook
+      ? { lastWebhookReceivedAt: lastWebhook.at, lastWebhookEventType: lastWebhook.eventType }
+      : {}),
+    ...(subscriptionCounts
+      ? {
+          activeSubscriptions: subscriptionCounts.active,
+          trialSubscriptions: subscriptionCounts.trial,
+          pastDueSubscriptions: subscriptionCounts.pastDue,
+        }
+      : {}),
+  };
+
   if (mode === "mock") {
     return {
       name: "Stripe",
@@ -392,29 +411,20 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
         connectWebhookConfigured,
         platformWebhookConfigured,
         legacyWebhookConfigured,
-        ...(lastWebhook
-          ? { lastWebhookReceivedAt: lastWebhook.at, lastWebhookEventType: lastWebhook.eventType }
-          : {}),
-        ...(subscriptionCounts
-          ? {
-              activeSubscriptions: subscriptionCounts.active,
-              trialSubscriptions: subscriptionCounts.trial,
-              pastDueSubscriptions: subscriptionCounts.pastDue,
-            }
-          : {}),
+        ...webhookMetadata,
       },
     };
   }
 
-  let status: ServiceHealthStatus = validation.ok ? "healthy" : "warning";
-  if (mode === "unknown") status = "warning";
+  let status: ServiceHealthStatus = validation.ok ? "configured" : "degraded";
+  if (mode === "unknown") status = "degraded";
   if (mode === "live" && !webhookConfigured) status = "unavailable";
 
   return {
     name: "Stripe",
     status,
     message: validation.ok
-      ? `Stripe configured (${mode} mode)`
+      ? `Stripe credentials configured (${mode} mode; no live Stripe API call performed)`
       : validation.issues[0] ?? "Stripe configuration incomplete",
     metadata: {
       mode,
@@ -425,16 +435,7 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
       platformWebhookConfigured,
       legacyWebhookConfigured,
       configIssueCount: validation.issues.length,
-      ...(lastWebhook
-        ? { lastWebhookReceivedAt: lastWebhook.at, lastWebhookEventType: lastWebhook.eventType }
-        : {}),
-      ...(subscriptionCounts
-        ? {
-            activeSubscriptions: subscriptionCounts.active,
-            trialSubscriptions: subscriptionCounts.trial,
-            pastDueSubscriptions: subscriptionCounts.pastDue,
-          }
-        : {}),
+      ...webhookMetadata,
     },
   };
 }
@@ -448,8 +449,8 @@ export async function checkAuthHealth(): Promise<ServiceHealth> {
   if (hasSecret && hasPublishable) {
     return {
       name: "Authentication",
-      status: "healthy",
-      message: "Clerk authentication configured (JWT session tokens)",
+      status: "configured",
+      message: "Clerk authentication credentials are configured (no live Clerk session check performed)",
       metadata: {
         authProvider: "clerk",
         clerkConfigured: true,
@@ -486,7 +487,7 @@ export function checkBackgroundJobsHealth(): ServiceHealth {
   const schedulerRunning = schedulerConfigured && jobSecretConfigured && isSchedulerRecentlyActive();
   const nextRun = estimateNextTrialReminderRun();
 
-  let status: ServiceHealthStatus = "healthy";
+  let status: ServiceHealthStatus = "configured";
   let message = "Background jobs are configured and the trial reminder endpoint is available.";
 
   if (!jobSecretConfigured) {
@@ -500,11 +501,14 @@ export function checkBackgroundJobsHealth(): ServiceHealth {
     message =
       "External cron scheduler is not confirmed. Schedule POST /api/internal/jobs/subscription-trial-reminders daily.";
   } else if (!lastRun) {
-    status = "warning";
+    status = "degraded";
     message = "Scheduler is configured but no job has run yet — the external cron may not have executed yet.";
   } else if (!schedulerRunning) {
-    status = "warning";
+    status = "degraded";
     message = "Scheduler has not run recently — verify the external cron is active.";
+  } else if (lastSuccess) {
+    status = "healthy";
+    message = "Trial reminder job has run successfully and the scheduler remains active.";
   }
 
   const metadata: Record<string, string | number | boolean> = {
@@ -584,35 +588,81 @@ export async function checkWeatherHealth(): Promise<ServiceHealth> {
       : {}),
   };
 
-  if (weatherEnabled && !weatherLocation) {
+  if (!weatherEnabled) {
     return {
       name: "Weather",
-      status: "warning",
+      status: "not_configured",
+      message: "Weather widget disabled in platform settings",
+      metadata: baseMetadata,
+    };
+  }
+
+  if (!weatherLocation) {
+    return {
+      name: "Weather",
+      status: "degraded",
       message: "Weather is enabled in admin settings but no location is configured.",
       metadata: baseMetadata,
     };
   }
 
-  if (!hasUserAgent && isProduction && weatherEnabled) {
+  if (!hasUserAgent && isProduction) {
     return {
       name: "Weather",
-      status: "warning",
+      status: "degraded",
       message: "GEOCODE_USER_AGENT not set (recommended for Nominatim geocoding)",
       metadata: { ...baseMetadata, geocodeUserAgentConfigured: false },
     };
   }
 
+  if (lastRefresh) {
+    return {
+      name: "Weather",
+      status: "healthy",
+      message: "Weather widget enabled; last successful refresh recorded for this process",
+      metadata: baseMetadata,
+    };
+  }
+
   return {
     name: "Weather",
-    status: weatherEnabled ? "healthy" : "not_configured",
-    message: weatherEnabled
-      ? "Weather widget enabled with Open-Meteo and Nominatim"
-      : "Weather widget disabled in platform settings",
+    status: "configured",
+    message: "Weather widget is enabled with location configured (no refresh recorded yet for this process)",
     metadata: baseMetadata,
   };
 }
 
+export function checkSentryHealth(): ServiceHealth {
+  const configured = Boolean(process.env.SENTRY_DSN?.trim());
+
+  if (configured) {
+    return {
+      name: "Sentry",
+      status: "configured",
+      message: "API Sentry DSN is configured (error monitoring only; DSN not exposed)",
+      metadata: {
+        configured: true,
+        tracesEnabled: false,
+      },
+    };
+  }
+
+  return {
+    name: "Sentry",
+    status: "not_configured",
+    message:
+      process.env.NODE_ENV === "production"
+        ? "API Sentry is not configured — errors will not be reported."
+        : "API Sentry is not configured (optional in development).",
+    metadata: {
+      configured: false,
+      tracesEnabled: false,
+    },
+  };
+}
+
 export function deriveOverallStatus(services: ServiceHealth[]): SystemHealthStatus {
+  const isProduction = process.env.NODE_ENV === "production";
   const fatalNames = new Set(["Database", "Authentication"]);
   let hasFatal = false;
   let hasWarning = false;
@@ -620,14 +670,28 @@ export function deriveOverallStatus(services: ServiceHealth[]): SystemHealthStat
   for (const service of services) {
     if (service.status === "unavailable" && (fatalNames.has(service.name) || service.name === "Storage")) {
       hasFatal = true;
+      continue;
     }
-    if (
-      service.status === "warning" ||
-      service.status === "not_configured" ||
-      (service.status === "unavailable" && !fatalNames.has(service.name) && service.name !== "Storage")
-    ) {
+
+    if (service.status === "unavailable") {
       hasWarning = true;
+      continue;
     }
+
+    if (service.status === "degraded") {
+      hasWarning = true;
+      continue;
+    }
+
+    if (service.status === "not_configured") {
+      // Optional services unset in development are expected and should not look critically broken.
+      if (isProduction || !OPTIONAL_SERVICE_NAMES.has(service.name)) {
+        hasWarning = true;
+      }
+      continue;
+    }
+
+    // "configured" and "healthy" do not lower overall status on their own.
   }
 
   if (hasFatal) return "error";
@@ -639,7 +703,6 @@ function buildHealthSummary(
   status: SystemHealthStatus,
   metrics: PlatformMetrics | null,
 ): PlatformHealthSummary {
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
   return {
     overallStatus: status,
     activeBusinesses: metrics?.activeBusinesses ?? null,
@@ -650,7 +713,6 @@ function buildHealthSummary(
     ordersToday: metrics?.ordersToday ?? null,
     emailsSentToday: metrics?.emailsSentToday ?? null,
     failedEmailsToday: metrics?.failedEmailsToday ?? null,
-    apiErrorsLast24h: countApiErrorsSince(since24h),
   };
 }
 
@@ -658,7 +720,7 @@ export function buildFallbackHealthReport(
   reason: string,
   now = new Date(),
 ): SystemHealthReport {
-  const status: SystemHealthStatus = "warning";
+  const status: SystemHealthStatus = "error";
   return {
     status,
     timestamp: now.toISOString(),
@@ -668,16 +730,15 @@ export function buildFallbackHealthReport(
     services: [
       {
         name: "API",
-        status: "healthy",
-        message: "API server is responding",
+        status: "degraded",
+        message: "Health report assembly failed — API process is up but readiness could not be fully verified",
       },
       {
         name: "System Health",
-        status: "warning",
+        status: "unavailable",
         message: reason,
       },
     ],
-    apiErrors: listApiErrors(50),
     recentActivity: [],
   };
 }
@@ -708,6 +769,7 @@ export async function buildSystemHealthReport(
     auth,
     weather,
     await safeService("Background Jobs", () => checkBackgroundJobsHealth()),
+    checkSentryHealth(),
   ];
 
   const [recentActivity] = await Promise.all([
@@ -723,7 +785,6 @@ export async function buildSystemHealthReport(
     summary: buildHealthSummary(status, metrics),
     metrics,
     services,
-    apiErrors: listApiErrors(50),
     recentActivity,
   };
 }
@@ -739,4 +800,4 @@ export function assertHealthPayloadSafe(payload: unknown): void {
 }
 
 // Re-export types used by other modules
-export type { ApiErrorLogEntry, PlatformActivityEntry, PlatformMetrics };
+export type { PlatformActivityEntry, PlatformMetrics };

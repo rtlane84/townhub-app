@@ -47,7 +47,9 @@ testem.log
 .DS_Store
 Thumbs.db
 
-.cursor/rules/nx-rules.mdc
+# Cursor local IDE settings / plugins (not shared)
+.cursor/
+
 .github/instructions/nx.instructions.md
 
 # uploaded media files (local dev / self-hosted storage)

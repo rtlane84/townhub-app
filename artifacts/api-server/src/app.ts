@@ -14,7 +14,6 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import { createApiRateLimitMiddleware } from "./middlewares/rate-limit";
-import { createApiErrorRecorderMiddleware } from "./middlewares/api-error-recorder";
 import { shouldTrustProxyForRateLimit } from "./lib/rate-limit-config";
 import { getFrontendBaseUrl } from "./lib/app-base-url";
 import { buildNativeCheckoutReturnHtml } from "./lib/native-checkout-return-html";
@@ -91,7 +90,6 @@ app.use("/api", (_req, res, next) => {
   next();
 });
 app.use("/api", createApiRateLimitMiddleware());
-app.use("/api", createApiErrorRecorderMiddleware());
 app.use("/api", router);
 
 // Sentry Express error handler must be registered after all routes/controllers

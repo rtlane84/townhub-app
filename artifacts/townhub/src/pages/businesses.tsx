@@ -55,6 +55,18 @@ export default function Businesses() {
     setSearchInput(searchFromUrl);
   }, [searchFromUrl]);
 
+  // Keep the selected category chip in view after selection or URL-driven changes.
+  useEffect(() => {
+    const row = categoryRowRef.current;
+    if (!row) return;
+    const selected = row.querySelector<HTMLElement>('[aria-selected="true"]');
+    selected?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
+  }, [selectedType]);
+
   const { data: businesses, isLoading } = useListBusinesses({
     search: search || undefined,
     type: selectedType === "ALL" ? undefined : selectedType,
@@ -132,32 +144,51 @@ export default function Businesses() {
           </button>
         </div>
 
-        <div
-          ref={categoryRowRef}
-          className="flex gap-1.5 overflow-x-auto pb-0.5 hide-scrollbar"
-          role="listbox"
-          aria-label="Business categories"
-        >
-          {categories.map((cat) => {
-            const active = selectedType === cat.value;
-            return (
-              <button
-                key={cat.value}
-                type="button"
-                role="option"
-                aria-selected={active}
-                onClick={() => setSelectedType(cat.value)}
-                className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap transition-colors",
-                  active
-                    ? "bg-[var(--platform-heading,#1e3a5f)] text-white"
-                    : "border border-black/[0.08] bg-card text-foreground/80 hover:bg-muted/60",
-                )}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
+        <div className="relative min-w-0 max-w-full overflow-x-hidden">
+          <div
+            ref={categoryRowRef}
+            className={cn(
+              "business-category-scroller th-h-scroll hide-scrollbar flex-nowrap gap-1.5",
+              "scroll-px-1 px-1 pb-1",
+            )}
+            role="listbox"
+            aria-label="Business categories"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+              event.preventDefault();
+              const index = categories.findIndex((cat) => cat.value === selectedType);
+              if (index < 0) return;
+              const nextIndex =
+                event.key === "ArrowRight"
+                  ? Math.min(categories.length - 1, index + 1)
+                  : Math.max(0, index - 1);
+              setSelectedType(categories[nextIndex]!.value);
+            }}
+          >
+            {categories.map((cat) => {
+              const active = selectedType === cat.value;
+              return (
+                <button
+                  key={cat.value}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setSelectedType(cat.value)}
+                  className={cn(
+                    "shrink-0 grow-0 basis-auto rounded-full px-3.5 py-1.5 text-[12px] font-semibold whitespace-nowrap transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
+                    active
+                      ? "bg-[var(--platform-heading,#1e3a5f)] text-white"
+                      : "border border-black/[0.08] bg-card text-foreground/80 hover:bg-muted/60",
+                  )}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {orderingOnly ? (

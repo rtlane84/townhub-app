@@ -22,6 +22,7 @@ import {
 import { ntfySettingsForRegenerate } from "../lib/ntfy-business-settings";
 import { isValidNtfyTopic } from "../lib/ntfy-topic";
 import { serializeBusiness } from "./businesses";
+import { getPlatformTimeZone } from "../lib/platform-timezone";
 
 const router: IRouter = Router();
 
@@ -248,7 +249,7 @@ router.post(
         return;
       }
 
-      res.json(serializeBusiness(business));
+      res.json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to regenerate ntfy topic";
       res.status(500).json({ message });

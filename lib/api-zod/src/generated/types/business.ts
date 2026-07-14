@@ -9,6 +9,7 @@ import type { BusinessDayHours } from './businessDayHours';
 import type { BusinessType } from './businessType';
 import type { OrderingAvailabilityMode } from './orderingAvailabilityMode';
 import type { PaymentMode } from './paymentMode';
+import type { PublicAvailabilitySummary } from './publicAvailabilitySummary';
 import type { StorefrontMode } from './storefrontMode';
 import type { StripeConnectPaymentStatus } from './stripeConnectPaymentStatus';
 
@@ -134,6 +135,9 @@ export interface Business {
      * @nullable
      */
   orderingUnavailableReason?: string | null;
+  /** Public directory/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.
+   */
+  publicAvailability?: PublicAvailabilitySummary | null;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */

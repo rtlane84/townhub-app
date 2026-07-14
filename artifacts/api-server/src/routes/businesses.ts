@@ -28,6 +28,9 @@ import {
   normalizeWebsiteUrl,
   normalizeLegacyBusinessType,
   type FoodTruckLocationWindow,
+  evaluatePublicAvailability,
+  resolvePlatformTimeZone,
+  DEFAULT_PLATFORM_TIMEZONE,
 } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../middlewares/requireRole";
 import { resolveStructuredHoursInput, legacyHoursFromStructured } from "../lib/business-hours";
@@ -53,20 +56,44 @@ import {
   slugifyFromBusinessName,
 } from "../lib/business-slug";
 import { evaluateBusinessOrderingAvailability } from "../lib/business-commerce-eligibility";
+import { getPlatformTimeZone } from "../lib/platform-timezone";
 
 const router: IRouter = Router();
 
 export function serializeBusiness(
   b: typeof businessesTable.$inferSelect,
-  options?: { mobileLocations?: FoodTruckLocationWindow[] },
+  options?: {
+    mobileLocations?: FoodTruckLocationWindow[];
+    timeZone?: string;
+    now?: Date;
+  },
 ) {
   const paymentMode = resolvePaymentMode(b);
   const onlinePaymentsAvailable =
     allowsOnlinePayment(paymentMode) && businessHasOnlinePaymentsReady(b);
+  const timeZone = options?.timeZone
+    ? resolvePlatformTimeZone(options.timeZone)
+    : DEFAULT_PLATFORM_TIMEZONE;
+  const now = options?.now ?? new Date();
   const availability = evaluateBusinessOrderingAvailability(b, {
     mobileLocations: options?.mobileLocations,
+    now,
+    timeZone,
   });
   const normalizedType = normalizeLegacyBusinessType(b.type);
+  const isMobileBusiness = b.isMobileBusiness || normalizedType.isMobileBusiness;
+  const publicAvailability = evaluatePublicAvailability(
+    {
+      active: b.active,
+      structuredHours: parseStructuredHours(b.structuredHours),
+      hoursEnabled: b.hoursEnabled !== false,
+      hours: b.hours,
+      isMobileBusiness,
+      mobileLocations: options?.mobileLocations,
+    },
+    now,
+    timeZone,
+  );
 
   return {
     id: b.id,
@@ -122,7 +149,7 @@ export function serializeBusiness(
     ntfyConnectedAt: b.ntfyConnectedAt,
     ntfyLastTestAt: b.ntfyLastTestAt,
     ntfySubscriptionUrl: b.ntfyTopic ? buildNtfySubscriptionUrl(b.ntfyTopic) : null,
-    isMobileBusiness: b.isMobileBusiness || normalizedType.isMobileBusiness,
+    isMobileBusiness,
     storefrontMode: resolveStorefrontMode({
       type: normalizedType.type,
       storefrontMode: b.storefrontMode,
@@ -131,6 +158,7 @@ export function serializeBusiness(
     orderingEnabled: b.orderingEnabled ?? true,
     orderingAvailable: availability.available,
     orderingUnavailableReason: availability.reason,
+    publicAvailability,
     accentColor: b.accentColor,
     buttonColor: b.buttonColor,
     bannerText: b.bannerText,
@@ -142,7 +170,11 @@ export function serializeBusiness(
 /** Public storefront/checkout responses — omits owner PII and internal notification settings. */
 export function serializePublicBusiness(
   b: typeof businessesTable.$inferSelect,
-  options?: { mobileLocations?: FoodTruckLocationWindow[] },
+  options?: {
+    mobileLocations?: FoodTruckLocationWindow[];
+    timeZone?: string;
+    now?: Date;
+  },
 ) {
   const {
     ownerId: _ownerId,
@@ -178,6 +210,7 @@ async function loadMobileLocationsForBusiness(
       startTime: foodTruckLocationsTable.startTime,
       endTime: foodTruckLocationsTable.endTime,
       isActive: foodTruckLocationsTable.isActive,
+      locationName: foodTruckLocationsTable.locationName,
     })
     .from(foodTruckLocationsTable)
     .where(eq(foodTruckLocationsTable.businessId, businessId));
@@ -238,6 +271,7 @@ router.get("/businesses", async (req, res): Promise<void> => {
         startTime: foodTruckLocationsTable.startTime,
         endTime: foodTruckLocationsTable.endTime,
         isActive: foodTruckLocationsTable.isActive,
+        locationName: foodTruckLocationsTable.locationName,
       })
       .from(foodTruckLocationsTable)
       .where(
@@ -254,15 +288,18 @@ router.get("/businesses", async (req, res): Promise<void> => {
         startTime: loc.startTime,
         endTime: loc.endTime,
         isActive: loc.isActive,
+        locationName: loc.locationName,
       });
       mobileLocationsByBusiness.set(loc.businessId, list);
     }
   }
 
+  const timeZone = await getPlatformTimeZone();
   res.json(
     businesses.map((business) =>
       serializePublicBusiness(business, {
         mobileLocations: mobileLocationsByBusiness.get(business.id),
+        timeZone,
       }),
     ),
   );
@@ -358,7 +395,7 @@ router.post("/businesses/register", requireAdmin, async (req, res): Promise<void
     .onConflictDoUpdate({ target: usersTable.id, set: { role: "BUSINESS_OWNER" } });
 
   req.log.info({ adminId: userId, businessId: business.id, slug }, "Business registered by admin");
-  res.status(201).json(serializeBusiness(business));
+  res.status(201).json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
 });
 
 // GET /api/marketplace/stats — public homepage stats
@@ -382,10 +419,11 @@ router.get("/marketplace/stats", async (_req, res): Promise<void> => {
     .from(businessesTable)
     .where(eq(businessesTable.active, true));
 
+  const timeZone = await getPlatformTimeZone();
   const openShopsCount = activeShops.reduce((total, shop) => {
     if (shop.hoursEnabled === false) return total;
     const hours = parseStructuredHours(shop.structuredHours);
-    if (!hours || !isOpenNow(hours)) return total;
+    if (!hours || !isOpenNow(hours, new Date(), 0, timeZone)) return total;
     return total + 1;
   }, 0);
 
@@ -443,10 +481,12 @@ router.get("/businesses/checkout/:businessId", async (req, res): Promise<void> =
   }
 
   const mobileLocations =
+    business.isMobileBusiness ||
     business.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE"
       ? await loadMobileLocationsForBusiness(business.id)
       : undefined;
-  res.json(serializePublicBusiness(business, { mobileLocations }));
+  const timeZone = await getPlatformTimeZone();
+  res.json(serializePublicBusiness(business, { mobileLocations, timeZone }));
 });
 
 // GET /api/businesses/:slug — storefront
@@ -498,12 +538,14 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
   );
 
   const mobileLocations =
+    business.isMobileBusiness ||
     business.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE"
       ? await loadMobileLocationsForBusiness(business.id)
       : undefined;
+  const timeZone = await getPlatformTimeZone();
 
   res.json({
-    business: serializePublicBusiness(business, { mobileLocations }),
+    business: serializePublicBusiness(business, { mobileLocations, timeZone }),
     categories,
     products: products.map((p) =>
       serializeProduct(p, optionGroupsByProduct.get(p.id) ?? []),
@@ -580,7 +622,7 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
     throw err;
   }
 
-  res.status(201).json(serializeBusiness(business));
+  res.status(201).json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
 });
 
 // GET /api/businesses/manage/:id
@@ -598,7 +640,7 @@ router.get("/businesses/manage/:id", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  res.json(serializeBusiness(access.business));
+  res.json(serializeBusiness(access.business, { timeZone: await getPlatformTimeZone() }));
 });
 
 // PATCH /api/businesses/manage/:id
@@ -789,7 +831,7 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
       return;
     }
 
-    res.json(serializeBusiness(business));
+    res.json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     req.log?.error({ err, businessId: params.data.id }, "Failed to update business");

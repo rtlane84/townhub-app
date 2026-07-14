@@ -234,6 +234,12 @@ export const GetMyBusinessResponse = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -345,6 +351,12 @@ export const ListBusinessesResponseItem = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -532,6 +544,12 @@ export const GetBusinessCheckoutResponse = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -624,6 +642,12 @@ export const GetBusinessBySlugResponse = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -830,6 +854,12 @@ export const GetBusinessResponse = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -993,6 +1023,12 @@ export const UpdateBusinessResponse = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -2064,7 +2100,7 @@ export const UpdateBusinessAppointmentRequestStatusResponse = zod.object({
  * @summary Detailed system health (admin only)
  */
 export const GetAdminSystemHealthResponse = zod.object({
-  "status": zod.enum(['healthy', 'warning', 'error']),
+  "status": zod.enum(['healthy', 'warning', 'error']).describe('Overall readiness. warning covers optional gaps and degraded services; error is reserved for required failures (e.g. database unreachable).\n'),
   "timestamp": zod.coerce.date(),
   "application": zod.object({
   "name": zod.string(),
@@ -2080,7 +2116,7 @@ export const GetAdminSystemHealthResponse = zod.object({
   "startTime": zod.coerce.date()
 }),
   "summary": zod.object({
-  "overallStatus": zod.enum(['healthy', 'warning', 'error']),
+  "overallStatus": zod.enum(['healthy', 'warning', 'error']).describe('Overall readiness. warning covers optional gaps and degraded services; error is reserved for required failures (e.g. database unreachable).\n'),
   "activeBusinesses": zod.number().nullish(),
   "pendingApplications": zod.number().nullish(),
   "activeSubscriptions": zod.number().nullish(),
@@ -2088,8 +2124,7 @@ export const GetAdminSystemHealthResponse = zod.object({
   "pastDueSubscriptions": zod.number().nullish(),
   "ordersToday": zod.number().nullish(),
   "emailsSentToday": zod.number().nullish(),
-  "failedEmailsToday": zod.number().nullish(),
-  "apiErrorsLast24h": zod.number()
+  "failedEmailsToday": zod.number().nullish()
 }),
   "metrics": zod.union([zod.object({
   "activeBusinesses": zod.number(),
@@ -2108,24 +2143,10 @@ export const GetAdminSystemHealthResponse = zod.object({
 }),zod.null()]).optional(),
   "services": zod.array(zod.object({
   "name": zod.string(),
-  "status": zod.enum(['healthy', 'warning', 'unavailable', 'not_configured']),
+  "status": zod.enum(['healthy', 'configured', 'degraded', 'unavailable', 'not_configured']).describe('healthy = a real successful connectivity or functional check. configured = only configuration presence was verified (no live ping). degraded = partially working or suboptimal (e.g. production using local storage). unavailable = required\/configured capability is broken or incomplete for use. not_configured = optional capability intentionally unset.\n'),
   "message": zod.string(),
   "responseTimeMs": zod.number().optional(),
   "metadata": zod.record(zod.string(), zod.union([zod.string(),zod.number(),zod.boolean()])).optional()
-})),
-  "apiErrors": zod.array(zod.object({
-  "id": zod.string(),
-  "timestamp": zod.coerce.date(),
-  "endpoint": zod.string(),
-  "httpStatus": zod.number(),
-  "summary": zod.string(),
-  "exceptionMessage": zod.string().optional(),
-  "requestId": zod.string().optional(),
-  "userId": zod.string().optional(),
-  "userLabel": zod.string().optional(),
-  "businessId": zod.number().optional(),
-  "businessName": zod.string().optional(),
-  "stackTrace": zod.string().optional()
 })),
   "recentActivity": zod.array(zod.object({
   "id": zod.string(),
@@ -2289,6 +2310,12 @@ export const AssignBusinessOwnerResponse = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -2376,6 +2403,12 @@ export const ListAdminBusinessesResponseItem = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -3538,6 +3571,12 @@ export const RegenerateBusinessNtfyTopicResponse = zod.object({
   "orderingEnabled": zod.boolean().optional().describe('MANUAL mode toggle — when false, checkout is blocked.'),
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
+  "publicAvailability": zod.object({
+  "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
+  "scheduleLabel": zod.string().nullish().describe('Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).\n'),
+  "isOpen": zod.boolean().describe('True when open now or at an active mobile stop.'),
+  "locationName": zod.string().nullish().describe('Public mobile stop name when a stop is currently active.')
+}).describe('Concise public open\/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.\n').nullish().describe('Public directory\/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.\n'),
   "accentColor": zod.string().nullish(),
   "buttonColor": zod.string().nullish(),
   "bannerText": zod.string().nullish(),
@@ -3720,6 +3759,7 @@ export const GetPlatformThemeResponse = zod.object({
   "logoSizePx": zod.number().min(getPlatformThemeResponseLogoSizePxMin).max(getPlatformThemeResponseLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().nullish(),
+  "timezone": zod.string().optional().describe('IANA timezone used for platform civil dates (\"today\"), public hours, and mobile stop windows (e.g. America\/New_York). Invalid values are rejected on write; reads coerce invalid stored values to America\/New_York.\n'),
   "townPhotos": zod.array(zod.object({
   "id": zod.string().describe('Stable client-generated identifier for the photo slide'),
   "url": zod.string().describe('Public image URL (from media upload or absolute URL)'),
@@ -3765,6 +3805,7 @@ export const UpdatePlatformThemeBody = zod.object({
   "logoSizePx": zod.number().min(updatePlatformThemeBodyLogoSizePxMin).max(updatePlatformThemeBodyLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().optional(),
+  "timezone": zod.string().optional().describe('IANA timezone for platform civil dates and public availability (e.g. America\/New_York). Must be a valid IANA identifier.\n'),
   "townPhotos": zod.array(zod.object({
   "id": zod.string().describe('Stable client-generated identifier for the photo slide'),
   "url": zod.string().describe('Public image URL (from media upload or absolute URL)'),
@@ -3806,6 +3847,7 @@ export const UpdatePlatformThemeResponse = zod.object({
   "logoSizePx": zod.number().min(updatePlatformThemeResponseLogoSizePxMin).max(updatePlatformThemeResponseLogoSizePxMax).optional(),
   "weatherEnabled": zod.boolean().optional(),
   "weatherLocation": zod.string().nullish(),
+  "timezone": zod.string().optional().describe('IANA timezone used for platform civil dates (\"today\"), public hours, and mobile stop windows (e.g. America\/New_York). Invalid values are rejected on write; reads coerce invalid stored values to America\/New_York.\n'),
   "townPhotos": zod.array(zod.object({
   "id": zod.string().describe('Stable client-generated identifier for the photo slide'),
   "url": zod.string().describe('Public image URL (from media upload or absolute URL)'),

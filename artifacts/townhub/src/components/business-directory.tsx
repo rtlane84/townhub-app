@@ -216,17 +216,26 @@ export function BusinessDirectoryRow({ business }: { business: Business }) {
           {(statusLine || storefrontBadge) ? (
             <div className="mt-1 space-y-0.5 text-xs">
               {statusLine ? (
-                <p
-                  className={cn(
-                    "font-semibold leading-snug",
-                    openStatusClass(statusLine.isOpen),
-                  )}
-                >
-                  {statusLine.statusLabel}
-                  {statusLine.scheduleLabel
-                    ? ` · ${statusLine.scheduleLabel}`
-                    : ""}
-                </p>
+                <div className="space-y-0.5">
+                  <p
+                    className={cn(
+                      "font-semibold leading-snug",
+                      openStatusClass(statusLine.isOpen),
+                    )}
+                  >
+                    {statusLine.statusLabel}
+                  </p>
+                  {statusLine.scheduleLabel ? (
+                    <p
+                      className={cn(
+                        "font-medium leading-snug",
+                        openStatusClass(statusLine.isOpen),
+                      )}
+                    >
+                      {statusLine.scheduleLabel}
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
               {storefrontBadge ? (
                 <p className="font-medium text-primary">{storefrontBadge}</p>

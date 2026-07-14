@@ -46,6 +46,9 @@ export interface PlatformThemeInput {
   logoSizePx?: number;
   weatherEnabled?: boolean;
   weatherLocation?: string;
+  /** IANA timezone for platform civil dates and public availability (e.g. America/New_York). Must be a valid IANA identifier.
+   */
+  timezone?: string;
   /** Replace the full town-photo collection (ordered). Pass [] to clear. */
   townPhotos?: TownPhoto[];
 }

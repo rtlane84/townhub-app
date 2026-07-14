@@ -4,6 +4,8 @@ import { eq, and, lte, gte } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
 import { z } from "zod";
 import { requireAdmin } from "../middlewares/requireRole";
+import { getPlatformTimeZone } from "../lib/platform-timezone";
+import { formatCivilDateInTimeZone } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -49,7 +51,7 @@ router.get("/admin/highlights", requireAdmin, async (req, res): Promise<void> =>
 
 // GET /api/highlights — active highlights whose date range includes today
 router.get("/highlights", async (req, res): Promise<void> => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatCivilDateInTimeZone(new Date(), await getPlatformTimeZone());
 
   const rows = await db
     .select()

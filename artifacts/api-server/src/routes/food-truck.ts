@@ -11,6 +11,8 @@ import {
 } from "../lib/food-truck-geocode";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import { authorizeFoodTruckLocationMutation } from "../lib/food-truck-mutation-auth";
+import { getPlatformTimeZone } from "../lib/platform-timezone";
+import { addCivilDays, formatCivilDateInTimeZone } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -231,7 +233,8 @@ const publicLocationSelect = {
 
 // GET /api/food-truck-locations/today (public)
 router.get("/food-truck-locations/today", async (req, res): Promise<void> => {
-  const today = new Date().toISOString().slice(0, 10);
+  const timeZone = await getPlatformTimeZone();
+  const today = formatCivilDateInTimeZone(new Date(), timeZone);
 
   const rows = await db
     .select(publicLocationSelect)
@@ -258,10 +261,9 @@ router.get("/food-truck-locations/today", async (req, res): Promise<void> => {
 
 // GET /api/food-truck-locations/upcoming (public)
 router.get("/food-truck-locations/upcoming", async (req, res): Promise<void> => {
-  const today = new Date().toISOString().slice(0, 10);
-  const horizon = new Date();
-  horizon.setDate(horizon.getDate() + 30);
-  const horizonDate = horizon.toISOString().slice(0, 10);
+  const timeZone = await getPlatformTimeZone();
+  const today = formatCivilDateInTimeZone(new Date(), timeZone);
+  const horizonDate = addCivilDays(today, 30);
 
   const rows = await db
     .select(publicLocationSelect)

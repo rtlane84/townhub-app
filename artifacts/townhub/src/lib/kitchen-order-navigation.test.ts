@@ -49,4 +49,11 @@ describe("kitchen ticket print", () => {
     );
     assert.match(kitchenTicketPrintSource, /formatOrderReferenceLabel\(order\.orderNumber\)/);
   });
+
+  it("uses Capacitor Share on native instead of relying on window.print alone", () => {
+    assert.match(kitchenTicketPrintSource, /@capacitor\/share/);
+    assert.match(kitchenTicketPrintSource, /@capacitor\/filesystem/);
+    assert.match(kitchenTicketPrintSource, /shareTicketOnNative/);
+    assert.match(kitchenTicketPrintSource, /cancelled/);
+  });
 });

@@ -8,12 +8,12 @@ import {
   checkAuthHealth,
   checkBackgroundJobsHealth,
   checkEmailHealth,
+  checkSentryHealth,
   checkStripeHealth,
   checkStorageHealth,
   deriveOverallStatus,
   type ServiceHealth,
 } from "./system-health";
-import { recordApiError } from "./system-runtime-state";
 
 describe("buildPublicHealthResponse", () => {
   it("returns minimal safe fields only", () => {
@@ -33,6 +33,7 @@ describe("buildSystemHealthReport", () => {
     process.env.SUPABASE_SERVICE_ROLE_KEY = "super-secret-service-role";
     process.env.CLERK_SECRET_KEY = "clerk-secret-test";
     process.env.CLERK_PUBLISHABLE_KEY = "pk_test_clerk";
+    process.env.SENTRY_DSN = "https://abc123@o0.ingest.sentry.io/1";
     delete process.env.JOB_SECRET;
 
     const report = await buildSystemHealthReport({
@@ -43,12 +44,13 @@ describe("buildSystemHealthReport", () => {
     assertHealthPayloadSafe(report);
     assert.ok(report.services.some((s) => s.name === "Database"));
     assert.ok(report.services.some((s) => s.name === "Background Jobs"));
+    assert.ok(report.services.some((s) => s.name === "Sentry" && s.status === "configured"));
     assert.equal(typeof report.application.apiVersion, "string");
     assert.equal(typeof report.application.startTime, "string");
-    assert.ok(Array.isArray(report.apiErrors));
     assert.ok(Array.isArray(report.recentActivity));
     assert.ok(report.summary);
-    assert.equal(typeof report.summary.apiErrorsLast24h, "number");
+    assert.equal("apiErrors" in report, false);
+    assert.equal("apiErrorsLast24h" in report.summary, false);
   });
 
   it("marks database failure as unavailable with overall error", async () => {
@@ -67,8 +69,9 @@ describe("buildSystemHealthReport", () => {
     assertHealthPayloadSafe(report);
   });
 
-  it("returns warning overall when optional services are not configured", async () => {
+  it("does not treat optional not_configured as overall error in development", async () => {
     delete process.env.JOB_SECRET;
+    delete process.env.SENTRY_DSN;
     process.env.NODE_ENV = "development";
     process.env.MEDIA_STORAGE = "local";
     delete process.env.RESEND_API_KEY;
@@ -81,64 +84,92 @@ describe("buildSystemHealthReport", () => {
       databasePing: async () => {},
     });
 
-    assert.equal(report.status, "warning");
+    assert.notEqual(report.status, "error");
     assert.ok(report.services.some((s) => s.name === "Background Jobs" && s.status === "not_configured"));
-  });
-
-  it("includes recorded API errors", async () => {
-    recordApiError({
-      endpoint: "GET /api/example",
-      httpStatus: 500,
-      summary: "Example failure",
-    });
-
-    const report = await buildSystemHealthReport({ databasePing: async () => {} });
-    assert.ok(report.apiErrors.some((entry) => entry.endpoint === "GET /api/example"));
+    assert.ok(report.services.some((s) => s.name === "Authentication" && s.status === "configured"));
+    assert.ok(report.services.some((s) => s.name === "Email" && s.status === "not_configured"));
   });
 });
 
 describe("buildFallbackHealthReport", () => {
-  it("returns a warning report without throwing", () => {
+  it("marks overall error and does not claim API is healthy", () => {
     const report = buildFallbackHealthReport("partial failure");
-    assert.equal(report.status, "warning");
+    assert.equal(report.status, "error");
+    const api = report.services.find((s) => s.name === "API");
+    assert.equal(api?.status, "degraded");
     assert.ok(report.services.length > 0);
   });
 });
 
 describe("service health checks", () => {
-  it("checkStripeHealth reports mode without exposing the key", async () => {
+  it("checkStripeHealth reports configured without exposing the key", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_abc123";
+    process.env.STRIPE_CONNECT_WEBHOOK_SECRET = "whsec_connect_test";
+    process.env.STRIPE_PLATFORM_WEBHOOK_SECRET = "whsec_platform_test";
     const health = await checkStripeHealth();
     assert.equal(health.metadata?.mode, "test");
     assert.equal(health.metadata?.billingConfigured, true);
+    assert.equal(health.status, "configured");
     assertHealthPayloadSafe(health);
   });
 
-  it("checkStorageHealth reports supabase metadata without secrets", async () => {
+  it("checkStripeHealth reports degraded when webhook secrets are missing", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_abc123";
+    delete process.env.STRIPE_CONNECT_WEBHOOK_SECRET;
+    delete process.env.STRIPE_PLATFORM_WEBHOOK_SECRET;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    const health = await checkStripeHealth();
+    assert.equal(health.status, "degraded");
+    assertHealthPayloadSafe(health);
+  });
+
+  it("checkStorageHealth reports supabase as configured without secrets", async () => {
     process.env.MEDIA_STORAGE = "supabase";
     process.env.SUPABASE_URL = "https://example.supabase.co";
     process.env.SUPABASE_STORAGE_BUCKET = "media";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "secret-key-value";
 
     const health = await checkStorageHealth();
-    assert.equal(health.status, "healthy");
+    assert.equal(health.status, "configured");
     assert.equal(health.metadata?.bucket, "media");
     assertHealthPayloadSafe(health);
   });
 
-  it("deriveOverallStatus treats optional not_configured as warning", () => {
+  it("deriveOverallStatus treats optional not_configured as warning only in production", () => {
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = "production";
     const services: ServiceHealth[] = [
       { name: "Database", status: "healthy", message: "ok" },
-      { name: "Authentication", status: "healthy", message: "ok" },
+      { name: "Authentication", status: "configured", message: "ok" },
       { name: "Email", status: "not_configured", message: "none" },
     ];
     assert.equal(deriveOverallStatus(services), "warning");
+    process.env.NODE_ENV = previous;
+  });
+
+  it("deriveOverallStatus ignores optional not_configured in development", () => {
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = "development";
+    const services: ServiceHealth[] = [
+      { name: "Database", status: "healthy", message: "ok" },
+      { name: "Authentication", status: "configured", message: "ok" },
+      { name: "Email", status: "not_configured", message: "none" },
+      { name: "Sentry", status: "not_configured", message: "none" },
+    ];
+    assert.equal(deriveOverallStatus(services), "healthy");
+    process.env.NODE_ENV = previous;
   });
 });
 
 describe("assertHealthPayloadSafe", () => {
   it("throws when a secret pattern is present", () => {
     assert.throws(() => assertHealthPayloadSafe({ key: "sk_test_leaked" }));
+  });
+
+  it("throws when a Sentry DSN host leaks", () => {
+    assert.throws(() =>
+      assertHealthPayloadSafe({ dsn: "https://abc@o0.ingest.sentry.io/1" }),
+    );
   });
 });
 
@@ -149,6 +180,29 @@ describe("checkAuthHealth", () => {
     const health = await checkAuthHealth();
     assert.equal(health.status, "unavailable");
     assert.equal(health.name, "Authentication");
+  });
+
+  it("is configured when clerk keys are present", async () => {
+    process.env.CLERK_SECRET_KEY = "clerk-secret-test";
+    process.env.CLERK_PUBLISHABLE_KEY = "pk_test_clerk";
+    const health = await checkAuthHealth();
+    assert.equal(health.status, "configured");
+  });
+});
+
+describe("checkSentryHealth", () => {
+  it("reports configured without exposing the DSN", () => {
+    process.env.SENTRY_DSN = "https://abc123@o0.ingest.sentry.io/99";
+    const health = checkSentryHealth();
+    assert.equal(health.status, "configured");
+    assert.equal(health.metadata?.configured, true);
+    assertHealthPayloadSafe(health);
+  });
+
+  it("reports not_configured when unset", () => {
+    delete process.env.SENTRY_DSN;
+    const health = checkSentryHealth();
+    assert.equal(health.status, "not_configured");
   });
 });
 

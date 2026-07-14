@@ -50,6 +50,11 @@ export const platformSettingsTable = pgTable("platform_settings", {
   logoSizePx: integer("logo_size_px").notNull().default(24),
   weatherEnabled: boolean("weather_enabled").notNull().default(false),
   weatherLocation: text("weather_location"),
+  /**
+   * IANA timezone for platform civil dates ("today"), hours, and mobile stops.
+   * Default America/New_York suits the Clay WV pilot without hardcoding locality.
+   */
+  timezone: text("timezone").notNull().default("America/New_York"),
   /** Ordered homepage town photos for the hero carousel. Empty = fall back to heroImageUrl. */
   townPhotos: jsonb("town_photos").$type<TownPhoto[]>().notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true })

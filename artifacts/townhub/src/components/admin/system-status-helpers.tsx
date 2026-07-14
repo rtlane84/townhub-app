@@ -6,7 +6,8 @@ export type ServiceStatus = ServiceHealth["status"];
 
 export const STATUS_LABEL: Record<ServiceStatus, string> = {
   healthy: "Healthy",
-  warning: "Warning",
+  configured: "Configured",
+  degraded: "Degraded",
   unavailable: "Unavailable",
   not_configured: "Not configured",
 };
@@ -66,13 +67,16 @@ const METADATA_LABELS: Record<string, string> = {
   logosSupported: "Logos supported",
   galleryUploadsSupported: "Gallery uploads supported",
   publicAssetsSupported: "Public assets supported",
+  tracesEnabled: "Performance tracing",
 };
 
 export function statusIcon(status: ServiceStatus) {
   switch (status) {
     case "healthy":
       return CheckCircle2;
-    case "warning":
+    case "configured":
+      return CheckCircle2;
+    case "degraded":
     case "not_configured":
       return AlertTriangle;
     case "unavailable":
@@ -86,7 +90,9 @@ export function statusColor(status: ServiceStatus): string {
   switch (status) {
     case "healthy":
       return "text-green-700 bg-green-50 border-green-200";
-    case "warning":
+    case "configured":
+      return "text-sky-800 bg-sky-50 border-sky-200";
+    case "degraded":
       return "text-amber-800 bg-amber-50 border-amber-200";
     case "not_configured":
       return "text-slate-700 bg-slate-50 border-slate-200";

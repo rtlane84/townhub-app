@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { eq, count, and, sql } from "drizzle-orm";
 import { serializeBusiness } from "./businesses";
+import { getPlatformTimeZone } from "../lib/platform-timezone";
 import {
   getPrimaryOwnedBusiness,
   listOwnedBusinesses,
@@ -129,7 +130,7 @@ router.get("/auth/me/business", async (req, res): Promise<void> => {
   }
 
   res.set("Cache-Control", "no-store");
-  res.json(serializeBusiness(business));
+  res.json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
 });
 
 // GET /api/admin/bootstrap-status

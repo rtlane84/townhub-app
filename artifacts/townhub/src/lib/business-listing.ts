@@ -1,24 +1,22 @@
 import type { Business } from "@workspace/api-client-react";
 import {
+  DEFAULT_PLATFORM_TIMEZONE,
+  evaluatePublicAvailability,
   formatBusinessTypeLabel,
-  formatTime12h,
-  hasOpenHours,
   isAppointmentStorefrontMode,
   isInformationStorefrontMode,
-  isOpenNow,
   isOrderingStorefrontMode,
   mobileBusinessPublicLabel,
-  normalizeWeeklyHours,
-  parseStructuredHours,
+  resolvePlatformTimeZone,
+  type PublicAvailabilityResult,
 } from "@workspace/api-zod";
-import { resolveBusinessHours } from "./business-hours";
 
 export type BusinessOpenStatus = {
   isOpen: boolean;
   label: string;
 };
 
-/** Storefront summary line: "Open now" + "Closes 8:00 PM" / "Closed" + "Opens at 5:00 AM". */
+/** Storefront summary line: status + optional schedule timing. */
 export type StorefrontStatusLine = {
   isOpen: boolean;
   statusLabel: string;
@@ -31,107 +29,114 @@ export type BusinessListingCta = {
   external?: boolean;
 };
 
-/** Open/closed label for directory cards. Omits status when hours are unknown. */
+type AvailabilityBusiness = Pick<
+  Business,
+  | "hours"
+  | "structuredHours"
+  | "hoursEnabled"
+  | "active"
+  | "isMobileBusiness"
+  | "publicAvailability"
+> & {
+  eventLocationEnabled?: boolean | null;
+};
+
+function fromServerSummary(
+  summary: NonNullable<Business["publicAvailability"]>,
+): StorefrontStatusLine {
+  return {
+    isOpen: summary.isOpen,
+    statusLabel: summary.statusLabel,
+    scheduleLabel: summary.scheduleLabel ?? null,
+  };
+}
+
+/**
+ * Prefer server-computed publicAvailability (platform TZ + mobile stops).
+ * Fall back to client evaluation when the field is absent (older payloads).
+ */
+export function getStorefrontStatusLine(
+  business: AvailabilityBusiness,
+  options?: {
+    timeZone?: string | null;
+    now?: Date;
+    mobileLocations?: Array<{
+      locationDate: string;
+      startTime?: string | null;
+      endTime?: string | null;
+      isActive?: boolean | null;
+      locationName?: string | null;
+    }> | null;
+  },
+): StorefrontStatusLine | null {
+  if (business.publicAvailability) {
+    return fromServerSummary(business.publicAvailability);
+  }
+
+  const timeZone = resolvePlatformTimeZone(
+    options?.timeZone ?? DEFAULT_PLATFORM_TIMEZONE,
+  );
+  const result: PublicAvailabilityResult = evaluatePublicAvailability(
+    {
+      active: business.active,
+      structuredHours: business.structuredHours,
+      hoursEnabled: business.hoursEnabled,
+      hours: business.hours,
+      isMobileBusiness: business.isMobileBusiness,
+      eventLocationEnabled: business.eventLocationEnabled,
+      mobileLocations: options?.mobileLocations ?? undefined,
+    },
+    options?.now ?? new Date(),
+    timeZone,
+  );
+
+  // Mirror prior null behavior for fixed-location "hours unknown" only when
+  // the shared utility says hours are missing and business is active.
+  if (
+    result.statusLabel === "Hours not provided" &&
+    business.active !== false &&
+    business.isMobileBusiness !== true &&
+    business.eventLocationEnabled !== true
+  ) {
+    return {
+      isOpen: false,
+      statusLabel: "Hours not provided",
+      scheduleLabel: null,
+    };
+  }
+
+  return {
+    isOpen: result.isOpen,
+    statusLabel: result.statusLabel,
+    scheduleLabel: result.scheduleLabel,
+  };
+}
+
+/** Open/closed label for directory cards. Prefers server publicAvailability. */
 export function getBusinessOpenStatus(
-  business: Pick<
-    Business,
-    "hours" | "structuredHours" | "hoursEnabled" | "active"
-  >,
+  business: AvailabilityBusiness,
+  options?: { timeZone?: string | null; now?: Date },
 ): BusinessOpenStatus | null {
-  const line = getStorefrontStatusLine(business);
+  const line = getStorefrontStatusLine(business, options);
   if (!line) {
     if (business.active === false) {
       return { isOpen: false, label: "Closed" };
     }
     return null;
   }
-  if (line.scheduleLabel) {
-    return {
-      isOpen: line.isOpen,
-      label: `${line.statusLabel} · ${line.scheduleLabel}`,
-    };
-  }
+  // Directory cards show status alone; timing is a separate line in layouts.
   return { isOpen: line.isOpen, label: line.statusLabel };
-}
-
-export function getStorefrontStatusLine(
-  business: Pick<
-    Business,
-    "hours" | "structuredHours" | "hoursEnabled" | "active"
-  >,
-): StorefrontStatusLine | null {
-  if (business.active === false) {
-    return { isOpen: false, statusLabel: "Closed", scheduleLabel: null };
-  }
-
-  const hours = resolveBusinessHours(business);
-  if (!hours.hasHours || !hours.structuredHours) {
-    return null;
-  }
-
-  const parsed = Array.isArray(hours.structuredHours)
-    ? normalizeWeeklyHours(hours.structuredHours)
-    : parseStructuredHours(hours.structuredHours);
-  if (!parsed || !hasOpenHours(parsed)) return null;
-
-  const now = new Date();
-  const open = isOpenNow(parsed, now);
-  const today = parsed[now.getDay()];
-
-  if (open) {
-    return {
-      isOpen: true,
-      statusLabel: "Open now",
-      scheduleLabel: today?.closeTime
-        ? `Closes ${formatTime12h(today.closeTime)}`
-        : null,
-    };
-  }
-
-  // Closed now — find next open time today or a later day
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  if (today && !today.isClosed && today.openTime && today.closeTime) {
-    const [openH, openM] = today.openTime.split(":").map(Number);
-    const openMinutes = openH * 60 + openM;
-    if (currentMinutes < openMinutes) {
-      return {
-        isOpen: false,
-        statusLabel: "Closed",
-        scheduleLabel: `Opens at ${formatTime12h(today.openTime)}`,
-      };
-    }
-  }
-
-  for (let offset = 1; offset <= 7; offset += 1) {
-    const dayIndex = (now.getDay() + offset) % 7;
-    const day = parsed[dayIndex];
-    if (!day?.isClosed && day?.openTime) {
-      const weekday = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() + offset,
-      ).toLocaleDateString(undefined, { weekday: "short" });
-      return {
-        isOpen: false,
-        statusLabel: "Closed",
-        scheduleLabel: `Opens ${weekday} ${formatTime12h(day.openTime)}`,
-      };
-    }
-  }
-
-  return { isOpen: false, statusLabel: "Closed", scheduleLabel: null };
 }
 
 /** Short open label for compact list rows. */
 export function getBusinessOpenShortLabel(
-  business: Pick<
-    Business,
-    "hours" | "structuredHours" | "hoursEnabled" | "active"
-  >,
+  business: AvailabilityBusiness,
+  options?: { timeZone?: string | null; now?: Date },
 ): BusinessOpenStatus | null {
-  const status = getBusinessOpenStatus(business);
+  const status = getBusinessOpenStatus(business, options);
   if (!status) return null;
   if (status.isOpen) return { isOpen: true, label: "Open" };
+  if (status.label === "Hours not provided") return status;
   return { isOpen: false, label: "Closed" };
 }
 

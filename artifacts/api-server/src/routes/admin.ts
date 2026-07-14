@@ -12,6 +12,7 @@ import {
   GetAdminSystemHealthResponse,
 } from "@workspace/api-zod";
 import { serializeBusiness } from "./businesses";
+import { getPlatformTimeZone } from "../lib/platform-timezone";
 import { buildSystemHealthReport, buildFallbackHealthReport } from "../lib/system-health";
 import { logOperationalFailure } from "../lib/operational-log";
 import { countActiveAdmins } from "../lib/user-admin-queries";
@@ -104,7 +105,8 @@ router.get("/admin/businesses", async (_req, res): Promise<void> => {
     .where(isNull(businessesTable.archivedAt))
     .orderBy(businessesTable.name);
 
-  res.json(businesses.map((business) => serializeBusiness(business)));
+  const timeZone = await getPlatformTimeZone();
+  res.json(businesses.map((business) => serializeBusiness(business, { timeZone })));
 });
 
 // PATCH /api/admin/users/:id/role
@@ -289,7 +291,7 @@ router.patch(
       .set({ role: "BUSINESS_OWNER" })
       .where(eq(usersTable.id, parsed.data.ownerId));
 
-    res.json(serializeBusiness(business));
+    res.json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
   },
 );
 

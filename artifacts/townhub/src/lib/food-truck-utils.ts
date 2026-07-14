@@ -1,6 +1,5 @@
 import type { FoodTruckLocationWithBusiness } from "@workspace/api-client-react";
-import { formatTimeRange12h } from "@workspace/api-zod";
-import { format, parseISO } from "date-fns";
+import { formatCivilDateHeading, formatTimeRange12h } from "@workspace/api-zod";
 
 export function formatFoodTruckTimeWindow(
   startTime?: string | null,
@@ -9,8 +8,9 @@ export function formatFoodTruckTimeWindow(
   return formatTimeRange12h(startTime, endTime);
 }
 
+/** Civil YYYY-MM-DD heading without parseISO UTC day-shift. */
 export function formatFoodTruckDateHeading(date: string): string {
-  return format(parseISO(date), "EEEE, MMM d");
+  return formatCivilDateHeading(date);
 }
 
 export function foodTruckDirectionsUrl(truck: FoodTruckLocationWithBusiness): string {

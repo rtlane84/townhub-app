@@ -4,6 +4,8 @@ import { db, eventsTable } from "@workspace/db";
 import { eq, and, gte, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 import { requireAdmin } from "../middlewares/requireRole";
+import { getPlatformTimeZone } from "../lib/platform-timezone";
+import { formatCivilDateInTimeZone } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
@@ -147,7 +149,7 @@ router.get("/events", async (req, res): Promise<void> => {
   ];
   if (featured === "true") conditions.push(eq(eventsTable.featured, true));
   if (upcoming === "true") {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = formatCivilDateInTimeZone(new Date(), await getPlatformTimeZone());
     conditions.push(upcomingCondition(today));
   }
 

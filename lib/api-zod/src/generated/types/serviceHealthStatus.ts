@@ -6,12 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * healthy = a real successful connectivity or functional check. configured = only configuration presence was verified (no live ping). degraded = partially working or suboptimal (e.g. production using local storage). unavailable = required/configured capability is broken or incomplete for use. not_configured = optional capability intentionally unset.
+
+ */
 export type ServiceHealthStatus = typeof ServiceHealthStatus[keyof typeof ServiceHealthStatus];
 
 
 export const ServiceHealthStatus = {
   healthy: 'healthy',
-  warning: 'warning',
+  configured: 'configured',
+  degraded: 'degraded',
   unavailable: 'unavailable',
   not_configured: 'not_configured',
 } as const;

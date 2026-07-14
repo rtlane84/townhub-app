@@ -111,6 +111,7 @@ import {
   loadBusinessNameMap,
 } from "../lib/order-serialization";
 import { loadBusinessOrderSummary } from "../lib/business-order-summary";
+import { getPlatformTimeZone } from "../lib/platform-timezone";
 
 const router: IRouter = Router();
 
@@ -357,7 +358,10 @@ router.post("/orders", async (req, res): Promise<void> => {
       .where(eq(foodTruckLocationsTable.businessId, business.id));
   }
 
-  const availability = evaluateBusinessOrderingAvailability(business, { mobileLocations });
+  const availability = evaluateBusinessOrderingAvailability(business, {
+    mobileLocations,
+    timeZone: await getPlatformTimeZone(),
+  });
   if (!availability.available) {
     res.status(400).json({
       error: availability.reason ?? BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE,
@@ -994,7 +998,10 @@ router.post("/checkout/intents", async (req, res): Promise<void> => {
       .where(eq(foodTruckLocationsTable.businessId, business.id));
   }
 
-  const availability = evaluateBusinessOrderingAvailability(business, { mobileLocations });
+  const availability = evaluateBusinessOrderingAvailability(business, {
+    mobileLocations,
+    timeZone: await getPlatformTimeZone(),
+  });
   if (!availability.available) {
     res.status(400).json({
       error: availability.reason ?? BUSINESS_NOT_ACCEPTING_ORDERS_MESSAGE,

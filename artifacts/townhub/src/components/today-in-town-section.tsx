@@ -6,10 +6,12 @@ import type {
   FoodTruckLocationWithBusiness,
   MarketplaceStats,
 } from "@workspace/api-client-react";
+import { hasActiveMobileLocationNow, formatCivilDateInTimeZone } from "@workspace/api-zod";
 import { CalendarDays, Store, Truck } from "lucide-react";
 import { filterEventsThisWeek } from "@/lib/weather-outlook";
 import { getBusinessOpenShortLabel } from "@/lib/business-listing";
 import { cn } from "@/lib/utils";
+import { usePlatformBranding } from "@/components/theme-provider";
 
 type TodayInTownSectionProps = {
   placeLabel: string;
@@ -88,7 +90,8 @@ function CardSkeleton() {
   );
 }
 
-function localDateKey(d = new Date()) {
+function localDateKey(d = new Date(), timeZone?: string) {
+  if (timeZone) return formatCivilDateInTimeZone(d, timeZone);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -101,8 +104,12 @@ function formatWeekdayLong(dateKey: string): string | null {
   return parsed.toLocaleDateString(undefined, { weekday: "long" });
 }
 
-function nextUpcomingEventName(events: Event[], now = new Date()): string | null {
-  const todayKey = localDateKey(now);
+function nextUpcomingEventName(
+  events: Event[],
+  now = new Date(),
+  timeZone?: string,
+): string | null {
+  const todayKey = localDateKey(now, timeZone);
   const upcoming = events
     .filter((event) => {
       const end = event.endDate?.trim() || event.date;
@@ -115,8 +122,9 @@ function nextUpcomingEventName(events: Event[], now = new Date()): string | null
 function nextStopWeekday(
   upcomingTrucks: FoodTruckLocationWithBusiness[],
   now = new Date(),
+  timeZone?: string,
 ): string | null {
-  const todayKey = localDateKey(now);
+  const todayKey = localDateKey(now, timeZone);
   const next = [...upcomingTrucks]
     .filter((truck) => truck.locationDate > todayKey)
     .sort((a, b) => a.locationDate.localeCompare(b.locationDate))[0];
@@ -131,6 +139,36 @@ function countOpenNow(businesses: Business[]): number {
   }, 0);
 }
 
+function countUniqueMobileBusinesses(
+  trucks: FoodTruckLocationWithBusiness[],
+): number {
+  return new Set(trucks.map((truck) => truck.businessId)).size;
+}
+
+function countActiveMobileBusinessesNow(
+  trucks: FoodTruckLocationWithBusiness[],
+  now = new Date(),
+  timeZone?: string,
+): number {
+  const todayKey = localDateKey(now, timeZone);
+  const activeIds = new Set<number>();
+  for (const truck of trucks) {
+    // todayTrucks are already today's stops; evaluate the time window on the
+    // platform civil date so UTC host drift does not zero out "active now".
+    if (
+      hasActiveMobileLocationNow(
+        [{ ...truck, locationDate: todayKey }],
+        now,
+        0,
+        timeZone,
+      )
+    ) {
+      activeIds.add(truck.businessId);
+    }
+  }
+  return activeIds.size;
+}
+
 export function TodayInTownSection({
   placeLabel,
   todayTrucks,
@@ -142,18 +180,30 @@ export function TodayInTownSection({
   marketplaceStats,
   marketplaceStatsLoading,
 }: TodayInTownSectionProps) {
+  const { timezone } = usePlatformBranding();
   const truckCount = todayTrucks.length;
+  const mobileBusinessCount = countUniqueMobileBusinesses(todayTrucks);
+  const activeMobileNow = countActiveMobileBusinessesNow(
+    todayTrucks,
+    new Date(),
+    timezone,
+  );
   const eventsThisWeek = filterEventsThisWeek(upcomingEvents);
   const weekCount = eventsThisWeek.length;
-  const nextEventName = weekCount > 0 ? nextUpcomingEventName(eventsThisWeek) : null;
+  const nextEventName =
+    weekCount > 0
+      ? nextUpcomingEventName(eventsThisWeek, new Date(), timezone)
+      : null;
   const totalShops = marketplaceStats?.localShopsCount ?? 0;
   const openShops =
     businesses && businesses.length > 0
       ? countOpenNow(businesses)
       : (marketplaceStats?.openShopsCount ?? 0);
   const items = marketplaceStats?.uniqueItemsCount ?? 0;
-  const firstTruck = todayTrucks[0];
-  const nextStopDay = truckCount === 0 ? nextStopWeekday(upcomingTrucks) : null;
+  const nextStopDay =
+    truckCount === 0
+      ? nextStopWeekday(upcomingTrucks, new Date(), timezone)
+      : null;
   const hasMarketplaceStats = totalShops > 0 || openShops > 0 || items > 0;
 
   return (
@@ -177,19 +227,17 @@ export function TodayInTownSection({
             href="/food-trucks"
           >
             {truckCount > 0 ? (
-              <>
+              <div className="space-y-0.5 text-[11px] leading-snug sm:text-[12px]">
                 <p className="font-semibold text-platform-heading">
-                  {truckCount} {truckCount === 1 ? "stop" : "stops"} today
+                  {mobileBusinessCount}{" "}
+                  {mobileBusinessCount === 1
+                    ? "mobile business"
+                    : "mobile businesses"}
                 </p>
-                {firstTruck ? (
-                  <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground sm:text-[12px]">
-                    {firstTruck.businessName}
-                    {firstTruck.locationName
-                      ? ` · ${firstTruck.locationName}`
-                      : ""}
-                  </p>
-                ) : null}
-              </>
+                <p className="text-muted-foreground">
+                  {activeMobileNow} active now
+                </p>
+              </div>
             ) : (
               <>
                 <p className="text-muted-foreground">No mobile stops today</p>
@@ -245,7 +293,8 @@ export function TodayInTownSection({
             {hasMarketplaceStats ? (
               <div className="space-y-0.5 text-[11px] leading-snug sm:text-[12px]">
                 <p className="font-semibold text-platform-heading">
-                  {totalShops} {totalShops === 1 ? "shop" : "shops"}
+                  {totalShops}{" "}
+                  {totalShops === 1 ? "business" : "businesses"}
                 </p>
                 <p className="text-muted-foreground">
                   {openShops} open now
@@ -256,7 +305,7 @@ export function TodayInTownSection({
               </div>
             ) : (
               <p className="text-muted-foreground">
-                Browse local shops and makers.
+                Browse local businesses and makers.
               </p>
             )}
           </SummaryCard>

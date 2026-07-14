@@ -8,7 +8,6 @@
 
 export * from './adminBootstrapResult';
 export * from './adminBootstrapStatus';
-export * from './apiErrorLogEntry';
 export * from './applicationHealth';
 export * from './appointmentRequest';
 export * from './appointmentRequestInput';
@@ -124,6 +123,7 @@ export * from './productOptionGroup';
 export * from './productOptionGroupInput';
 export * from './productOptionInput';
 export * from './productUpdate';
+export * from './publicAvailabilitySummary';
 export * from './publicPricingFeature';
 export * from './publicPricingPlan';
 export * from './refundStatus';

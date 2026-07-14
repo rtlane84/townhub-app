@@ -24,6 +24,18 @@ pnpm --filter @workspace/db run push
 
 See also [docs/SETUP.md](SETUP.md) and [PRODUCTION.md](../PRODUCTION.md).
 
+### Platform timezone column (`platform_settings.timezone`)
+
+Additive column for the platform IANA timezone used for civil “today”, public hours, and mobile stop windows.
+
+| Item | Detail |
+|------|--------|
+| Column | `timezone text NOT NULL DEFAULT 'America/New_York'` |
+| Existing rows | Receive `America/New_York` via the column default (or `COALESCE` if applying SQL by hand) |
+| Rollout | After code ships that reads `timezone`, run `pnpm --filter @workspace/db run push` against the target database and confirm the preview shows only `ADD COLUMN` (no drops). Reject the push if unrelated destructive SQL appears. |
+| Rollback | Safe to stop reading the column in app code; dropping the column is optional and should be a separate reviewed change |
+| Notes | Do not hardcode a locality name into commerce/scheduling logic — keep the value as a configurable IANA zone. Invalid values are rejected on admin write; reads coerce invalid stored values to `America/New_York`. |
+
 ---
 
 ## Connection pool

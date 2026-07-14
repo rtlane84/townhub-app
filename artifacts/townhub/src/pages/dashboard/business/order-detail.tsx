@@ -12,6 +12,7 @@ import { Link } from "wouter";
 import { ArrowLeft, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/ui/loading-button";
 import { KitchenTicketPrint, printKitchenTicket } from "@/components/kitchen-ticket-print";
 import { OrderRefundDialog } from "@/components/order-refund-dialog";
 import { OrderTotalsSummary } from "@/components/order-totals-summary";
@@ -48,6 +49,7 @@ export default function BusinessOrderDetail({ params }: Props) {
   const [refundOpen, setRefundOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [statusConfirm, setStatusConfirm] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
 
   const { data: order, isLoading } = useGetOrder(orderId, {
     query: { enabled: !!orderId, queryKey: getGetOrderQueryKey(orderId) },
@@ -88,6 +90,23 @@ export default function BusinessOrderDetail({ params }: Props) {
   function confirmStatusChange() {
     if (!statusConfirm) return;
     updateStatus.mutate({ id: orderId, data: { status: statusConfirm as never } });
+  }
+
+  async function handlePrintTicket() {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      const result = await printKitchenTicket();
+      if (!result.ok && !result.cancelled) {
+        toast({
+          title: "Could not print ticket",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setPrinting(false);
+    }
   }
 
   return (
@@ -139,15 +158,18 @@ export default function BusinessOrderDetail({ params }: Props) {
                 <span className={`text-sm px-3 py-1.5 rounded-full font-medium ${orderStatusBadgeClass(order.status)}`}>
                   {order.status.replace(/_/g, " ")}
                 </span>
-                <Button
+                <LoadingButton
+                  type="button"
                   variant="outline"
                   size="sm"
-                  onClick={printKitchenTicket}
+                  loading={printing}
+                  loadingText="Starting…"
+                  onClick={() => void handlePrintTicket()}
                   data-testid="button-print-kitchen-ticket"
                 >
                   <Printer className="h-4 w-4 mr-2" />
                   Print Ticket
-                </Button>
+                </LoadingButton>
               </div>
             </div>
 

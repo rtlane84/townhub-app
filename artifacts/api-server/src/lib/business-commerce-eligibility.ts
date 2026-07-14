@@ -36,6 +36,7 @@ export function evaluateBusinessOrderingAvailability(
   options?: {
     mobileLocations?: FoodTruckLocationWindow[];
     now?: Date;
+    timeZone?: string;
   },
 ): OrderingAvailabilityResult {
   return evaluateOrderingAvailability(
@@ -49,5 +50,6 @@ export function evaluateBusinessOrderingAvailability(
       orderClosingBufferMinutes: business.orderClosingBufferMinutes,
     },
     options?.now,
+    options?.timeZone,
   );
 }

@@ -37,6 +37,7 @@ import {
   normalizeWebsiteUrl,
   formatBusinessTypeLabel,
   hidesStorefrontCart,
+  formatCivilDateInTimeZone,
 } from "@workspace/api-zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +54,7 @@ import { StorefrontHoursCard } from "@/components/storefront-hours-card";
 import { StorefrontLocationCard } from "@/components/storefront-location-card";
 import { resolveBusinessHours } from "@/lib/business-hours";
 import { getStorefrontStatusLine } from "@/lib/business-listing";
+import { usePlatformBranding } from "@/components/theme-provider";
 import {
   googleMapsDirectionsUrl,
   locationDirectionsUrl,
@@ -149,6 +151,7 @@ export default function Storefront() {
 
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { timezone } = usePlatformBranding();
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [appointmentProductId, setAppointmentProductId] = useState<number | null>(null);
@@ -194,7 +197,10 @@ export default function Storefront() {
   const b = business!;
   const bx = b as unknown as Record<string, unknown>;
   const businessHours = resolveBusinessHours(b);
-  const statusLine = getStorefrontStatusLine(b);
+  const statusLine = getStorefrontStatusLine(b, {
+    timeZone: timezone,
+    mobileLocations: foodTruckLocations,
+  });
   const presence = resolveStorefrontPresence({
     address: b.address,
     isMobileBusiness,
@@ -220,7 +226,7 @@ export default function Storefront() {
     ? (bx.deliveryRadiusMiles as number | undefined)
     : undefined;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatCivilDateInTimeZone(new Date(), timezone);
   const upcomingLocations = foodTruckLocations
     .filter((l) => l.isActive && l.locationDate >= today)
     .slice(0, 5);
@@ -438,9 +444,12 @@ export default function Storefront() {
                 <h1 className="font-serif text-[1.65rem] font-bold leading-tight tracking-tight text-platform-heading sm:text-3xl">
                   {b.name}
                 </h1>
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  {typeLabel}
+                </p>
                 {statusLine ? (
-                  <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[13px]">
-                    <span
+                  <div className="mt-1.5 space-y-0.5 text-[13px]">
+                    <p
                       className={cn(
                         "inline-flex items-center gap-1.5 font-semibold",
                         statusLine.isOpen ? "text-emerald-600" : "text-red-600",
@@ -454,21 +463,23 @@ export default function Storefront() {
                         aria-hidden
                       />
                       {statusLine.statusLabel}
-                    </span>
+                    </p>
                     {statusLine.scheduleLabel ? (
-                      <span className="text-muted-foreground">
-                        · {statusLine.scheduleLabel}
-                      </span>
+                      <p
+                        className={cn(
+                          "font-medium leading-snug",
+                          statusLine.isOpen ? "text-emerald-600/90" : "text-red-600/90",
+                        )}
+                      >
+                        {statusLine.scheduleLabel}
+                      </p>
                     ) : null}
-                  </p>
+                  </div>
                 ) : b.active === false ? (
                   <p className="mt-1.5 text-[13px] font-semibold text-red-600">
                     Closed
                   </p>
                 ) : null}
-                <p className="mt-1 text-[13px] text-muted-foreground">
-                  {typeLabel}
-                </p>
               </div>
 
               <div className="flex shrink-0 flex-col items-end gap-3">
@@ -565,6 +576,10 @@ export default function Storefront() {
                 fallbackHours={businessHours.fallbackHours}
                 hasHours={businessHours.hasHours}
                 phone={b.phone}
+                isMobileBusiness={isMobileBusiness}
+                availability={statusLine}
+                mobileStops={foodTruckLocations}
+                todayIso={today}
               />
               <StorefrontLocationCard
                 presence={presence}

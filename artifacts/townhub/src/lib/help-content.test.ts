@@ -97,7 +97,7 @@ describe("help page wiring", () => {
     assert.match(appSource, /path="\/help"/);
     assert.match(
       appSource,
-      /const Help = lazy\(\(\) => import\("@\/pages\/help"\)\)/,
+      /const Help = lazyWithRetry\(\(\) => import\("@\/pages\/help"\)\)/,
     );
   });
 

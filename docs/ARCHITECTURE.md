@@ -365,7 +365,7 @@ Public `POST /api/appointment-requests` creates customer requests. Owners manage
 
 ## Admin System
 
-`GET /api/admin/system/health` returns service health (database, storage, email, SMS, Stripe, auth, weather). Admin → System Status page displays this plus notification logs.
+`GET /api/admin/system/health` returns current readiness (database ping, config presence for integrations, Sentry configured/not configured without DSN). Admin → Operations Center displays this plus durable notification and audit logs — not an in-app API error archive.
 
 Internal jobs (`POST /api/internal/jobs/subscription-trial-reminders`) require `Authorization: Bearer $JOB_SECRET`.
 

@@ -114,13 +114,18 @@ Initialization: `artifacts/townhub/src/lib/sentry.ts`, imported first from `main
 
 ## What is not sent
 
-Scrubbing is applied on the frontend before events leave the browser:
+Scrubbing is applied on both the API and frontend before events leave the process:
 
-- Passwords, tokens, authorization headers, secrets
-- Stripe-related fields
-- Full request/response bodies on fetch breadcrumbs
+- Passwords, tokens, authorization headers, secrets, and Stripe-related fields
+- Request cookies, headers, bodies, and query strings attached by default HTTP context
+- Full request/response bodies on breadcrumbs
+- User email/username (API keeps at most a stable user id when present)
+
+Routine 4xx responses (validation failures, denied authorization) are returned by route handlers and do **not** go through `Sentry.setupExpressErrorHandler` unless an unexpected exception is thrown.
 
 Do not add PII or secrets to Sentry `extra` / `context` manually.
+
+Operations Center reports whether the API Sentry DSN env var is set (**Configured** / **Not configured**) without exposing the DSN value. Do not add a TownHub UI that reproduces the Sentry issue feed.
 
 ---
 

@@ -21,6 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Sparkles } from "lucide-react";
 import { ImageField } from "@/components/image-field";
 import { resolveApiUrl } from "@/lib/api-base-url";
+import { usePlatformBranding } from "@/components/theme-provider";
+import { formatCivilDateInTimeZone } from "@workspace/api-zod";
 
 const ADMIN_HIGHLIGHTS_KEY = ["admin", "highlights"];
 
@@ -51,7 +53,8 @@ function useAdminHighlights(getToken: () => Promise<string | null>) {
 }
 
 export default function AdminHighlights() {
-  const today = new Date().toISOString().slice(0, 10);
+  const { timezone } = usePlatformBranding();
+  const today = formatCivilDateInTimeZone(new Date(), timezone);
   const { getToken } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();

@@ -21,6 +21,7 @@ Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.)
 - No authentication required
 - Does not expose service configuration, env vars, or internal errors
 - Returns HTTP 200 when the API process is running
+- A successful response means only that the API process is responding — not that every dependency is healthy
 
 **Legacy alias:** `GET /api/healthz` returns `{ "status": "ok" }` for backward compatibility.
 
@@ -30,35 +31,51 @@ Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.)
 2. Alert on non-200 responses or timeouts (> 10s)
 3. Do not send auth headers or query parameters with secrets
 
-## Admin System Status
+## Admin Operations Center
 
-**Path:** Admin dashboard → **System Status**
+**Path:** Admin dashboard → **Operations Center** (System Status)
 
 **API:** `GET /api/admin/system/health` (admin role required)
 
 The admin page shows:
 
-- **Application** — environment, version, build date, commit SHA (when env vars are set), uptime, timestamp
-- **Service health** — API, database, storage, email, SMS, Stripe, auth, weather/geocoding
+- **Application** — environment, version, build date, commit SHA (when env vars are set), uptime, start time
+- **Service readiness** — API, database (live ping), storage, email, SMS, Stripe, auth, weather/geocoding, background jobs, Sentry
+- **Operational logs** — durable notification delivery history and platform audit activity
+- **Business metrics** — orders, subscriptions, and related counts when available
+
+There is **no** in-app API error history. Unexpected exceptions go to **Sentry** (when configured) and structured Pino `[operational]` logs. Do not treat notification or audit logs as proof that every integration is healthy.
 
 Each service reports:
 
 | Field | Description |
 |-------|-------------|
-| `status` | `healthy`, `degraded`, `unhealthy`, or `not_configured` |
+| `status` | `healthy`, `configured`, `degraded`, `unavailable`, or `not_configured` |
 | `message` | Human-readable summary |
 | `responseTimeMs` | Present for timed checks (e.g. database) |
-| `metadata` | Safe non-secret details only (e.g. Stripe mode `test`/`live`, storage mode) |
+| `metadata` | Safe non-secret details only (e.g. Stripe mode `test`/`live`, storage mode). Never includes DSNs or API keys. |
+
+### Service status meanings
+
+| Status | Meaning |
+|--------|---------|
+| **healthy** | A real successful check (for example a database ping, or a recorded successful job/weather refresh) |
+| **configured** | Credentials or settings are present; TownHub did **not** perform a live provider ping |
+| **degraded** | Partially working or suboptimal (for example local storage in production) |
+| **unavailable** | Required or expected capability is broken or incomplete for use |
+| **not_configured** | Optional capability intentionally unset |
+
+Clerk, Stripe, email, SMS, storage, and weather are reported as **configured** (not healthy) when only environment variables or settings are verified.
 
 ### Overall status meanings
 
 | Status | Meaning |
 |--------|---------|
-| **healthy** | Required services (database, auth) are OK |
-| **degraded** | Required services OK; optional services missing or suboptimal (email/SMS not configured, local storage in production, etc.) |
-| **unhealthy** | A required service failed (e.g. database unreachable) |
+| **healthy** | Required services are OK; remaining services are healthy or merely configured |
+| **warning** | Optional gaps, degraded services, or incomplete configuration |
+| **error** | A required service failed (for example database unreachable) or health-report assembly failed |
 
-Optional services (email, SMS, Stripe, weather) being `not_configured` does **not** mark the system unhealthy.
+Optional services (email, SMS, Stripe, weather, Sentry, background jobs) being `not_configured` in **development** does not mark the platform overall as error. If the frontend cannot load health, it shows a prominent unavailable state instead of empty healthy cards.
 
 ## Structured operational logging
 
@@ -66,8 +83,8 @@ The API logs operational failures with the prefix `[operational]` and an `operat
 
 | Event | When |
 |-------|------|
-| `health_check_unhealthy` | Admin health report shows unhealthy overall status |
-| `health_check_failed` | Admin health endpoint threw an error |
+| `health_check_unhealthy` | Admin health report shows error overall status |
+| `health_check_failed` | Admin health endpoint threw while assembling the report |
 | `email_send_failed` | Outbound email failed |
 | `sms_send_failed` | Outbound SMS failed |
 | `order_notification_email_failed` | Owner/customer email notification failed |
@@ -102,15 +119,16 @@ Set in deployment for richer Admin System Status:
 - API keys, tokens, passwords, webhook secrets
 - `DATABASE_URL`, Supabase service role keys
 - Stripe secret keys or webhook signing secrets
+- Sentry DSNs in health payloads or admin UI
 - Full credit card or payment instrument data
 - Customer emails/phones except where strictly needed (prefer IDs)
 - Raw request bodies from authenticated endpoints
 
-Health endpoints and Admin System Status are designed to report **configuration presence** and **connectivity**, never secret values.
+Health endpoints and Operations Center report **configuration presence** and **connectivity where checked**, never secret values.
 
 ## Local development
 
 - Vite dev server proxies `/health` and `/api` to the API server (port 8080)
 - Run API: `pnpm --filter @workspace/api-server run dev`
 - Run frontend: `pnpm --filter @workspace/townhub run dev`
-- Admin System Status requires a user with `ADMIN` role
+- Operations Center requires a user with `ADMIN` role

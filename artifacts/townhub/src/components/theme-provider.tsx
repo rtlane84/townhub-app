@@ -29,6 +29,10 @@ import {
 } from "@/lib/platform-branding";
 import { applyPlatformThemeToRoot } from "@/lib/theme-colors";
 import { syncNativeStatusBar } from "@/lib/capacitor-shell";
+import {
+  DEFAULT_PLATFORM_TIMEZONE,
+  resolvePlatformTimeZone,
+} from "@workspace/api-zod";
 
 export type PlatformBranding = {
   theme: PlatformTheme | undefined;
@@ -52,6 +56,8 @@ export type PlatformBranding = {
   townPhotos: TownPhoto[];
   weatherEnabled: boolean;
   weatherLocation: string;
+  /** IANA platform timezone for civil "today" and availability. */
+  timezone: string;
   themeLoading: boolean;
 };
 
@@ -77,6 +83,7 @@ const PlatformBrandingContext = createContext<PlatformBranding>({
   townPhotos: [],
   weatherEnabled: false,
   weatherLocation: "",
+  timezone: DEFAULT_PLATFORM_TIMEZONE,
   themeLoading: true,
 });
 
@@ -121,6 +128,7 @@ export function PlatformThemeProvider({
       townPhotos: Array.isArray(theme?.townPhotos) ? theme.townPhotos : [],
       weatherEnabled: resolveWeatherEnabled(theme),
       weatherLocation: resolveWeatherLocation(theme),
+      timezone: resolvePlatformTimeZone(theme?.timezone),
       themeLoading: themePending && theme == null,
     };
   }, [theme, themePending]);

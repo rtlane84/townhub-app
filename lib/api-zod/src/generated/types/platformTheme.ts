@@ -64,6 +64,9 @@ export interface PlatformTheme {
   weatherEnabled?: boolean;
   /** @nullable */
   weatherLocation?: string | null;
+  /** IANA timezone used for platform civil dates ("today"), public hours, and mobile stop windows (e.g. America/New_York). Invalid values are rejected on write; reads coerce invalid stored values to America/New_York.
+   */
+  timezone?: string;
   /** Ordered homepage town photos for the hero carousel. Empty falls back to heroImageUrl. */
   townPhotos?: TownPhoto[];
   updatedAt?: Date;

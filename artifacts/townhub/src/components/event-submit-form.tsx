@@ -375,7 +375,7 @@ export function EventSubmitForm({ onCancel, onSubmitted, className }: EventSubmi
           className="rounded-full"
           data-testid="button-submit-event"
         >
-          Submit for Review
+          Submit Event
         </LoadingButton>
       </div>
     </form>

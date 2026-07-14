@@ -9,16 +9,25 @@ export interface HealthStatus {
   status: string;
 }
 
+/**
+ * healthy = a real successful connectivity or functional check. configured = only configuration presence was verified (no live ping). degraded = partially working or suboptimal (e.g. production using local storage). unavailable = required/configured capability is broken or incomplete for use. not_configured = optional capability intentionally unset.
+
+ */
 export type ServiceHealthStatus = typeof ServiceHealthStatus[keyof typeof ServiceHealthStatus];
 
 
 export const ServiceHealthStatus = {
   healthy: 'healthy',
-  warning: 'warning',
+  configured: 'configured',
+  degraded: 'degraded',
   unavailable: 'unavailable',
   not_configured: 'not_configured',
 } as const;
 
+/**
+ * Overall readiness. warning covers optional gaps and degraded services; error is reserved for required failures (e.g. database unreachable).
+
+ */
 export type SystemHealthStatus = typeof SystemHealthStatus[keyof typeof SystemHealthStatus];
 
 
@@ -50,21 +59,6 @@ export interface ApplicationHealth {
   uptimeSeconds: number;
   timestamp: string;
   startTime: string;
-}
-
-export interface ApiErrorLogEntry {
-  id: string;
-  timestamp: string;
-  endpoint: string;
-  httpStatus: number;
-  summary: string;
-  exceptionMessage?: string;
-  requestId?: string;
-  userId?: string;
-  userLabel?: string;
-  businessId?: number;
-  businessName?: string;
-  stackTrace?: string;
 }
 
 export interface PlatformActivityEntry {
@@ -114,7 +108,6 @@ export interface PlatformHealthSummary {
   emailsSentToday?: number | null;
   /** @nullable */
   failedEmailsToday?: number | null;
-  apiErrorsLast24h: number;
 }
 
 export interface SystemHealthReport {
@@ -124,7 +117,6 @@ export interface SystemHealthReport {
   summary: PlatformHealthSummary;
   metrics?: PlatformMetrics | null;
   services: ServiceHealth[];
-  apiErrors: ApiErrorLogEntry[];
   recentActivity: PlatformActivityEntry[];
 }
 
@@ -352,6 +344,28 @@ export interface BusinessDayHours {
   closeTime?: string | null;
 }
 
+/**
+ * Concise public open/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.
+
+ */
+export interface PublicAvailabilitySummary {
+  /** Primary status (e.g. Open now, Here now, Closed, Hours not provided). */
+  statusLabel: string;
+  /**
+     * Next-open or next-stop timing on its own line (e.g. Closes 5 PM, Opens tomorrow 9 AM, Next stop Tue 11 AM).
+
+     * @nullable
+     */
+  scheduleLabel?: string | null;
+  /** True when open now or at an active mobile stop. */
+  isOpen: boolean;
+  /**
+     * Public mobile stop name when a stop is currently active.
+     * @nullable
+     */
+  locationName?: string | null;
+}
+
 export interface ArchiveBusinessResponse {
   archived: boolean;
   subscriptionCanceled: boolean;
@@ -481,6 +495,9 @@ export interface Business {
      * @nullable
      */
   orderingUnavailableReason?: string | null;
+  /** Public directory/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.
+   */
+  publicAvailability?: PublicAvailabilitySummary | null;
   /** @nullable */
   accentColor?: string | null;
   /** @nullable */
@@ -1675,6 +1692,9 @@ export interface PlatformTheme {
   weatherEnabled?: boolean;
   /** @nullable */
   weatherLocation?: string | null;
+  /** IANA timezone used for platform civil dates ("today"), public hours, and mobile stop windows (e.g. America/New_York). Invalid values are rejected on write; reads coerce invalid stored values to America/New_York.
+   */
+  timezone?: string;
   /** Ordered homepage town photos for the hero carousel. Empty falls back to heroImageUrl. */
   townPhotos?: TownPhoto[];
   updatedAt?: string;
@@ -1758,6 +1778,9 @@ export interface PlatformThemeInput {
   logoSizePx?: number;
   weatherEnabled?: boolean;
   weatherLocation?: string;
+  /** IANA timezone for platform civil dates and public availability (e.g. America/New_York). Must be a valid IANA identifier.
+   */
+  timezone?: string;
   /** Replace the full town-photo collection (ordered). Pass [] to clear. */
   townPhotos?: TownPhoto[];
 }

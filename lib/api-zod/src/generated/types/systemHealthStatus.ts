@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+/**
+ * Overall readiness. warning covers optional gaps and degraded services; error is reserved for required failures (e.g. database unreachable).
+
+ */
 export type SystemHealthStatus = typeof SystemHealthStatus[keyof typeof SystemHealthStatus];
 
 

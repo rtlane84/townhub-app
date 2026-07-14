@@ -31,12 +31,14 @@ import {
   type FoodTruckLocationFormValues,
 } from "@/lib/food-truck-location-form";
 import { TimeRangePicker } from "@/components/time-picker";
-import { formatTimeRange12h } from "@workspace/api-zod";
+import { formatTimeRange12h, formatCivilDateInTimeZone } from "@workspace/api-zod";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { deleteLocationCopy } from "@/lib/confirm-action-copy";
+import { usePlatformBranding } from "@/components/theme-provider";
 
 export default function BusinessLocations() {
   const { selectedBusinessId, business, isLoading: bizLoading } = useSelectedBusiness();
+  const { timezone } = usePlatformBranding();
   const { data: locations = [], isLoading: locLoading } = useListFoodTruckLocations(
     business?.id ?? 0,
     { query: { enabled: !!business?.id, queryKey: getListFoodTruckLocationsQueryKey(business?.id ?? 0) } },
@@ -89,7 +91,7 @@ export default function BusinessLocations() {
   function openCreate() {
     setEditing(null);
     setInitialForm(null);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = formatCivilDateInTimeZone(new Date(), timezone);
     setForm({ ...BLANK_FOOD_TRUCK_LOCATION_FORM, locationDate: today });
     setOpen(true);
   }
@@ -130,7 +132,7 @@ export default function BusinessLocations() {
     [form, editing, initialForm],
   );
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatCivilDateInTimeZone(new Date(), timezone);
   const upcomingLocs = locations.filter((l) => l.locationDate >= today && l.isActive);
   const pastLocs = locations.filter((l) => l.locationDate < today || !l.isActive);
 

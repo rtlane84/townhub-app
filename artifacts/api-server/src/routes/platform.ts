@@ -8,6 +8,12 @@ import { eq, desc, and } from "drizzle-orm";
 import { logger } from "../lib/logger";
 import { serializeNotificationLog } from "../lib/notifications";
 import { normalizeTownPhotos } from "../lib/town-photos";
+import {
+  DEFAULT_PLATFORM_TIMEZONE,
+  isValidIanaTimeZone,
+  resolvePlatformTimeZone,
+} from "@workspace/api-zod";
+import { invalidatePlatformTimeZoneCache } from "../lib/platform-timezone";
 
 const router: IRouter = Router();
 
@@ -40,6 +46,7 @@ const THEME_DEFAULTS = {
   logoSizePx: 24,
   weatherEnabled: false,
   weatherLocation: null as string | null,
+  timezone: DEFAULT_PLATFORM_TIMEZONE,
   townPhotos: [] as ReturnType<typeof normalizeTownPhotos>,
 };
 
@@ -112,6 +119,7 @@ function serializePlatformSettings(
     logoSizePx: row.logoSizePx ?? THEME_DEFAULTS.logoSizePx,
     weatherEnabled: row.weatherEnabled ?? THEME_DEFAULTS.weatherEnabled,
     weatherLocation: row.weatherLocation,
+    timezone: resolvePlatformTimeZone(row.timezone),
     townPhotos: normalizeTownPhotos(row.townPhotos),
     updatedAt: row.updatedAt,
   };
@@ -177,6 +185,7 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
     "logoSizePx",
     "weatherEnabled",
     "weatherLocation",
+    "timezone",
     "townPhotos",
   ] as const;
 
@@ -197,6 +206,17 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
       }
       if (key === "weatherEnabled") {
         updates[key] = Boolean(value);
+        continue;
+      }
+      if (key === "timezone") {
+        if (typeof value !== "string" || !isValidIanaTimeZone(value)) {
+          res.status(400).json({
+            error:
+              "timezone must be a valid IANA timezone (e.g. America/New_York)",
+          });
+          return;
+        }
+        updates[key] = value.trim();
         continue;
       }
       if (
@@ -253,12 +273,13 @@ router.put("/admin/settings/theme", async (req, res): Promise<void> => {
       .where(eq(platformSettingsTable.id, 1))
       .returning();
 
+    invalidatePlatformTimeZoneCache();
     logger.info({ updates: Object.keys(updates) }, "Platform settings updated");
     res.json(serializePlatformSettings(updated));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     if (
-      /brand_prefix_color|brand_town_color|brand_hub_color|town_photos|show_hero_overlay|column .* does not exist/i.test(
+      /brand_prefix_color|brand_town_color|brand_hub_color|town_photos|show_hero_overlay|timezone|column .* does not exist/i.test(
         message,
       )
     ) {

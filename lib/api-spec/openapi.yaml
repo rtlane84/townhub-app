@@ -2491,11 +2491,20 @@ components:
 
     ServiceHealthStatus:
       type: string
-      enum: [healthy, warning, unavailable, not_configured]
+      enum: [healthy, configured, degraded, unavailable, not_configured]
+      description: >
+        healthy = a real successful connectivity or functional check.
+        configured = only configuration presence was verified (no live ping).
+        degraded = partially working or suboptimal (e.g. production using local storage).
+        unavailable = required/configured capability is broken or incomplete for use.
+        not_configured = optional capability intentionally unset.
 
     SystemHealthStatus:
       type: string
       enum: [healthy, warning, error]
+      description: >
+        Overall readiness. warning covers optional gaps and degraded services;
+        error is reserved for required failures (e.g. database unreachable).
 
     ServiceHealth:
       type: object
@@ -2545,36 +2554,6 @@ components:
         startTime:
           type: string
           format: date-time
-
-    ApiErrorLogEntry:
-      type: object
-      required: [id, timestamp, endpoint, httpStatus, summary]
-      properties:
-        id:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-        endpoint:
-          type: string
-        httpStatus:
-          type: integer
-        summary:
-          type: string
-        exceptionMessage:
-          type: string
-        requestId:
-          type: string
-        userId:
-          type: string
-        userLabel:
-          type: string
-        businessId:
-          type: integer
-        businessName:
-          type: string
-        stackTrace:
-          type: string
 
     PlatformActivityEntry:
       type: object
@@ -2644,7 +2623,6 @@ components:
       type: object
       required:
         - overallStatus
-        - apiErrorsLast24h
       properties:
         overallStatus:
           $ref: "#/components/schemas/SystemHealthStatus"
@@ -2664,12 +2642,10 @@ components:
           type: ["integer", "null"]
         failedEmailsToday:
           type: ["integer", "null"]
-        apiErrorsLast24h:
-          type: integer
 
     SystemHealthReport:
       type: object
-      required: [status, timestamp, application, summary, services, apiErrors, recentActivity]
+      required: [status, timestamp, application, summary, services, recentActivity]
       properties:
         status:
           $ref: "#/components/schemas/SystemHealthStatus"
@@ -2688,10 +2664,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ServiceHealth"
-        apiErrors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ApiErrorLogEntry"
         recentActivity:
           type: array
           items:
@@ -2920,6 +2892,28 @@ components:
           type: ["string", "null"]
           description: "24-hour time HH:mm"
 
+    PublicAvailabilitySummary:
+      type: object
+      required: [statusLabel, isOpen]
+      description: >
+        Concise public open/here status for directory and storefront (separate from
+        ordering availability modes). Computed in the platform IANA timezone.
+      properties:
+        statusLabel:
+          type: string
+          description: Primary status (e.g. Open now, Here now, Closed, Hours not provided).
+        scheduleLabel:
+          type: ["string", "null"]
+          description: >
+            Next-open or next-stop timing on its own line (e.g. Closes 5 PM,
+            Opens tomorrow 9 AM, Next stop Tue 11 AM).
+        isOpen:
+          type: boolean
+          description: True when open now or at an active mobile stop.
+        locationName:
+          type: ["string", "null"]
+          description: Public mobile stop name when a stop is currently active.
+
     ArchiveBusinessResponse:
       type: object
       required: [archived, subscriptionCanceled, hadActiveSubscription, alreadyArchived]
@@ -3087,6 +3081,14 @@ components:
         orderingUnavailableReason:
           type: ["string", "null"]
           description: Human-readable reason when orderingAvailable is false.
+        publicAvailability:
+          allOf:
+            - $ref: "#/components/schemas/PublicAvailabilitySummary"
+          nullable: true
+          description: >
+            Public directory/storefront open-here summary in the platform timezone.
+            For mobile businesses this uses scheduled stops; for fixed locations
+            it uses structured hours. Distinct from orderingAvailable.
         accentColor:
           type: ["string", "null"]
         buttonColor:
@@ -4798,6 +4800,12 @@ components:
           type: boolean
         weatherLocation:
           type: ["string", "null"]
+        timezone:
+          type: string
+          description: >
+            IANA timezone used for platform civil dates ("today"), public hours,
+            and mobile stop windows (e.g. America/New_York). Invalid values are
+            rejected on write; reads coerce invalid stored values to America/New_York.
         townPhotos:
           type: array
           description: Ordered homepage town photos for the hero carousel. Empty falls back to heroImageUrl.
@@ -4871,6 +4879,11 @@ components:
           type: boolean
         weatherLocation:
           type: string
+        timezone:
+          type: string
+          description: >
+            IANA timezone for platform civil dates and public availability
+            (e.g. America/New_York). Must be a valid IANA identifier.
         townPhotos:
           type: array
           description: Replace the full town-photo collection (ordered). Pass [] to clear.

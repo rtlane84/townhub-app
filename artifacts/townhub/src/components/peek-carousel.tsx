@@ -55,8 +55,23 @@ export function PeekCarousel({
 
   if (children.length === 0) return null;
 
+  // Keep single items at the same peek width as multi-item rails (start-aligned).
+  // Skip Embla chrome / nav when there is only one slide.
   if (children.length === 1) {
-    return <div className={className}>{children[0]}</div>;
+    return (
+      <div className={cn("w-full", className)} aria-label={label}>
+        <div className="-ml-3 flex">
+          <div
+            className={cn(
+              "min-w-0 shrink-0 grow-0 basis-[82%] pl-3 sm:basis-[48%] lg:basis-[32%]",
+              itemClassName,
+            )}
+          >
+            {children[0]}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

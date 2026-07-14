@@ -25,5 +25,4 @@ export interface PlatformHealthSummary {
   emailsSentToday?: number | null;
   /** @nullable */
   failedEmailsToday?: number | null;
-  apiErrorsLast24h: number;
 }

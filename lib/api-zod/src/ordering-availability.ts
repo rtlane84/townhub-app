@@ -1,4 +1,9 @@
 import { isOpenNow, parseStructuredHours, type DayHoursInput } from "./business-hours";
+import {
+  formatCivilDateInTimeZone,
+  getZonedMinutesOfDay,
+  resolvePlatformTimeZone,
+} from "./timezone";
 
 export const ORDERING_AVAILABILITY_MODES = [
   "ALWAYS",
@@ -18,9 +23,8 @@ export const DEFAULT_ORDER_CLOSING_BUFFER_MINUTES = 0;
 export const MAX_ORDER_CLOSING_BUFFER_MINUTES = 240;
 
 /**
- * Ordering windows use the same local civil clock as structured hours and mobile
- * stop times (`Date#getHours` / `getDay` / local YYYY-MM-DD). There is no
- * per-business timezone column yet — keep API host TZ aligned with the town.
+ * Ordering windows use civil clock parts from an explicit platform IANA timezone
+ * when provided; otherwise they fall back to the host process local zone.
  *
  * Overnight hours (close/end <= open/start) remain unsupported and count as closed.
  */
@@ -53,6 +57,8 @@ export type FoodTruckLocationWindow = {
   startTime?: string | null;
   endTime?: string | null;
   isActive?: boolean | null;
+  /** Optional for public availability labels; ignored by ordering checks. */
+  locationName?: string | null;
 };
 
 function toLocalDateString(date: Date): string {
@@ -81,9 +87,14 @@ export function hasActiveMobileLocationNow(
   locations: FoodTruckLocationWindow[],
   now = new Date(),
   closingBufferMinutes = 0,
+  timeZone?: string,
 ): boolean {
-  const today = toLocalDateString(now);
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const today = timeZone
+    ? formatCivilDateInTimeZone(now, timeZone)
+    : toLocalDateString(now);
+  const currentMinutes = timeZone
+    ? getZonedMinutesOfDay(now, timeZone)
+    : now.getHours() * 60 + now.getMinutes();
   const buffer = resolveOrderClosingBufferMinutes(closingBufferMinutes);
 
   return locations.some((loc) => {
@@ -147,8 +158,10 @@ export const ORDERING_UNAVAILABLE_MESSAGES = {
 export function evaluateOrderingAvailability(
   business: OrderingAvailabilityInput,
   now = new Date(),
+  timeZone?: string,
 ): OrderingAvailabilityResult {
   const mode = resolveOrderingAvailabilityMode(business);
+  const tz = timeZone ? resolvePlatformTimeZone(timeZone) : undefined;
 
   if (!business.active || business.archivedAt != null) {
     return { available: false, mode, reason: ORDERING_UNAVAILABLE_MESSAGES.inactive };
@@ -171,11 +184,11 @@ export function evaluateOrderingAvailability(
         (Array.isArray(business.structuredHours)
           ? (business.structuredHours as DayHoursInput[])
           : null);
-      if (!hours || !isOpenNow(hours, now, 0)) {
+      if (!hours || !isOpenNow(hours, now, 0, tz)) {
         return { available: false, mode, reason: ORDERING_UNAVAILABLE_MESSAGES.businessHours };
       }
       const buffer = resolveOrderClosingBufferMinutes(business.orderClosingBufferMinutes);
-      if (!isOpenNow(hours, now, buffer)) {
+      if (!isOpenNow(hours, now, buffer, tz)) {
         return { available: false, mode, reason: ORDERING_UNAVAILABLE_MESSAGES.closingEnded };
       }
       return { available: true, mode, reason: null };
@@ -183,11 +196,11 @@ export function evaluateOrderingAvailability(
 
     case "MOBILE_LOCATION_SCHEDULE": {
       const locations = business.mobileLocations ?? [];
-      if (!hasActiveMobileLocationNow(locations, now, 0)) {
+      if (!hasActiveMobileLocationNow(locations, now, 0, tz)) {
         return { available: false, mode, reason: ORDERING_UNAVAILABLE_MESSAGES.mobileLocation };
       }
       const buffer = resolveOrderClosingBufferMinutes(business.orderClosingBufferMinutes);
-      if (!hasActiveMobileLocationNow(locations, now, buffer)) {
+      if (!hasActiveMobileLocationNow(locations, now, buffer, tz)) {
         return { available: false, mode, reason: ORDERING_UNAVAILABLE_MESSAGES.closingEnded };
       }
       return { available: true, mode, reason: null };

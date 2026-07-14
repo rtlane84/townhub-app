@@ -270,6 +270,16 @@
   .th-h-scroll > * {
     scroll-snap-align: start;
   }
+
+  /* Businesses directory category pills — touch-friendly horizontal rail */
+  .business-category-scroller {
+    gap: 0.375rem;
+    scroll-padding-inline: 0.25rem;
+    flex-wrap: nowrap;
+  }
+  .business-category-scroller > * {
+    flex: 0 0 auto;
+  }
 }
 
 @keyframes th-fade-up {
@@ -402,6 +412,10 @@ html.native-app .native-bottom-tab-bar-inner {
 
 html.native-app .native-account-sheet {
   padding-bottom: calc(1.25rem + var(--safe-area-bottom));
+}
+
+html.native-app .native-account-sheet-scroll {
+  -webkit-overflow-scrolling: touch;
 }
 
 html.native-app .native-tab-item {

@@ -9,9 +9,9 @@ describe("storefront hero layout", () => {
       "utf8",
     );
     assert.match(source, /rounded-\[1\.5rem\]/);
-    assert.match(source, /absolute -bottom-6 left-4/);
+    assert.match(source, /-mt-7 ml-4/);
     assert.match(source, /StorefrontDetailHeader/);
-    assert.match(source, /overflow-hidden rounded-\[1\.5rem\] bg-card/);
+    assert.match(source, /rounded-\[1\.5rem\] bg-card/);
   });
 
   it("renders hours and location cards with presence-aware placeholders", async () => {

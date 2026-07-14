@@ -78,6 +78,7 @@ import {
   type HeroOverlayAlign,
   type HeroOverlaySize,
 } from "@/lib/platform-branding";
+import { DEFAULT_PLATFORM_TIMEZONE } from "@workspace/api-zod";
 
 type ColorKey =
   | "primaryColor"
@@ -195,6 +196,7 @@ export default function AdminSettings() {
   const [townPhotos, setTownPhotos] = useState<TownPhoto[]>([]);
   const [weatherSettings, setWeatherSettings] =
     useState<WeatherFields>(WEATHER_DEFAULTS);
+  const [timezone, setTimezone] = useState(DEFAULT_PLATFORM_TIMEZONE);
   const [isDirty, setIsDirty] = useState(false);
   const lastSyncAt = useRef<string | null>(null);
 
@@ -231,6 +233,7 @@ export default function AdminSettings() {
       weatherEnabled: theme.weatherEnabled ?? false,
       weatherLocation: theme.weatherLocation?.trim() || "",
     });
+    setTimezone(theme.timezone?.trim() || DEFAULT_PLATFORM_TIMEZONE);
   }, [theme, isDirty]);
 
   const markDirty = () => setIsDirty(true);
@@ -285,6 +288,7 @@ export default function AdminSettings() {
           townPhotos,
           weatherEnabled: weatherSettings.weatherEnabled,
           weatherLocation: weatherSettings.weatherLocation.trim(),
+          timezone: timezone.trim() || DEFAULT_PLATFORM_TIMEZONE,
         },
       });
       // Prefer server values; if an older API omits wordmark colors, keep what we saved.
@@ -327,6 +331,7 @@ export default function AdminSettings() {
         weatherEnabled: updated.weatherEnabled ?? false,
         weatherLocation: updated.weatherLocation?.trim() || "",
       });
+      setTimezone(updated.timezone?.trim() || DEFAULT_PLATFORM_TIMEZONE);
       setIsDirty(false);
       await queryClient.invalidateQueries({
         queryKey: getGetPlatformThemeQueryKey(),
@@ -361,6 +366,7 @@ export default function AdminSettings() {
     setBranding(BRANDING_DEFAULTS);
     setTownPhotos([]);
     setWeatherSettings(WEATHER_DEFAULTS);
+    setTimezone(DEFAULT_PLATFORM_TIMEZONE);
     markDirty();
   };
 
@@ -880,12 +886,28 @@ export default function AdminSettings() {
                   onChange={(e) =>
                     handleWeatherChange("weatherLocation", e.target.value)
                   }
-                  placeholder={theme?.townName?.trim() || "Clay, Alabama"}
+                  placeholder={theme?.townName?.trim() || "Town name"}
                   disabled={!weatherSettings.weatherEnabled}
                 />
                 <p className="text-xs text-muted-foreground">
                   City name, optionally with state. Falls back to town name when
                   blank.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="platformTimezone">Platform timezone</Label>
+                <Input
+                  id="platformTimezone"
+                  value={timezone}
+                  onChange={(e) => {
+                    setTimezone(e.target.value);
+                    markDirty();
+                  }}
+                  placeholder={DEFAULT_PLATFORM_TIMEZONE}
+                />
+                <p className="text-xs text-muted-foreground">
+                  IANA timezone for civil dates (“today”), public hours, and
+                  mobile stop windows (e.g. {DEFAULT_PLATFORM_TIMEZONE}).
                 </p>
               </div>
               {weatherSettings.weatherEnabled ? (

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
-import { LocateFixed, Navigation } from "lucide-react";
+import { Maximize2, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   foodTruckDirectionsUrl,
@@ -37,14 +37,15 @@ function MapViewportControls({ points }: { points: FoodTruckMapPoint[] }) {
     () => points.map((point) => [point.lat, point.lng] as [number, number]),
     [points],
   );
+  const hasStops = positions.length > 0;
 
-  const recenter = useCallback(() => {
+  const fitStops = useCallback(() => {
     fitMapToPoints(map, positions);
   }, [map, positions]);
 
   useEffect(() => {
-    recenter();
-  }, [recenter]);
+    if (hasStops) fitStops();
+  }, [fitStops, hasStops]);
 
   return (
     <div className="absolute bottom-3 right-3 z-[1000]">
@@ -53,11 +54,13 @@ function MapViewportControls({ points }: { points: FoodTruckMapPoint[] }) {
         size="icon"
         variant="secondary"
         className="h-10 w-10 rounded-full border border-black/10 bg-card shadow-md"
-        onClick={recenter}
-        aria-label="Recenter map on trucks"
-        data-testid="button-food-truck-map-recenter"
+        onClick={fitStops}
+        disabled={!hasStops}
+        aria-label="Show all stops"
+        title="Show all stops"
+        data-testid="button-food-truck-map-fit-stops"
       >
-        <LocateFixed className="h-4 w-4" aria-hidden />
+        <Maximize2 className="h-4 w-4" aria-hidden />
       </Button>
     </div>
   );

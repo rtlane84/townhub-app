@@ -157,19 +157,16 @@ export function NativeBottomTabBar() {
   function accountRowClass(href: string) {
     const active = isNavActive(location, href);
     return cn(
-      "flex min-h-12 items-center gap-3 px-4 py-3.5 rounded-2xl text-[15px] font-medium transition-colors w-full native-pressable",
+      "flex min-h-[3.25rem] items-center gap-3 px-4 py-3.5 text-[15px] font-medium transition-colors w-full native-pressable",
       active
-        ? "bg-primary/10 text-primary ring-1 ring-primary/15"
-        : "bg-card text-foreground shadow-sm ring-1 ring-black/[0.04] active:bg-muted/60",
+        ? "bg-primary/8 text-primary"
+        : "bg-transparent text-foreground active:bg-muted/50",
     );
   }
 
   function accountIconClass(activeHref: string) {
     const active = isNavActive(location, activeHref);
-    return cn(
-      "h-5 w-5 shrink-0",
-      active ? "text-primary" : "text-primary/80",
-    );
+    return cn("h-5 w-5 shrink-0 text-primary", active && "text-primary");
   }
 
   const displayName =
@@ -232,146 +229,151 @@ export function NativeBottomTabBar() {
       </nav>
 
       <Drawer open={accountOpen} onOpenChange={handleAccountOpenChange} shouldScaleBackground>
-        <DrawerContent className="native-account-sheet px-0 pb-0">
+        <DrawerContent className="native-account-sheet flex max-h-[92dvh] flex-col rounded-t-[1.35rem] bg-muted/90 px-0 pb-0">
           <DrawerHeader className="sr-only">
             <DrawerTitle>Account</DrawerTitle>
           </DrawerHeader>
 
-          <div className="px-5 pb-2 pt-1">
+          <div className="native-account-sheet-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 pt-1">
             {clerkLoaded && isSignedIn ? (
-              <div className="flex items-center gap-4 rounded-[1.5rem] bg-card px-4 py-4 shadow-[0_2px_20px_-6px_rgba(15,23,42,0.1)] ring-1 ring-black/[0.03]">
+              <div className="mb-4 flex items-center gap-3.5 px-1 py-2">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt=""
-                    className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-background shadow-sm"
+                    className="h-14 w-14 shrink-0 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/12 text-base font-semibold text-primary ring-2 ring-background">
-                    {initials}
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-semibold text-primary-foreground">
+                    {initials.slice(0, 1)}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-serif text-xl font-semibold tracking-tight text-foreground">{displayName}</p>
+                  <p className="truncate text-[17px] font-semibold tracking-tight text-foreground">
+                    {displayName}
+                  </p>
                   {email && displayName !== email ? (
-                    <p className="mt-0.5 truncate text-sm text-muted-foreground">{email}</p>
+                    <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{email}</p>
                   ) : null}
                 </div>
               </div>
             ) : (
-              <div className="rounded-[1.5rem] bg-card px-5 py-5 shadow-[0_2px_20px_-6px_rgba(15,23,42,0.1)] ring-1 ring-black/[0.03]">
-                <p className="font-serif text-xl font-semibold tracking-tight text-foreground">Welcome</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+              <div className="mb-4 px-1 py-2">
+                <p className="text-[17px] font-semibold tracking-tight text-foreground">Welcome</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
                   Sign in to track orders and manage your business.
                 </p>
               </div>
             )}
-          </div>
 
-          <nav className="mt-2 flex flex-col gap-2 px-3" aria-label="Account navigation">
-            {clerkLoaded && isSignedIn ? (
-              <button
-                type="button"
-                className={accountRowClass("/account")}
-                onClick={() => {
-                  closeAccount();
-                  openUserProfile();
-                }}
-              >
-                <UserRound className={accountIconClass("/account")} />
-                <span className="flex-1 text-left">Manage account</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
-              </button>
-            ) : null}
+            <nav
+              className="divide-y divide-black/[0.06] overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-black/[0.04]"
+              aria-label="Account navigation"
+            >
+              {clerkLoaded && isSignedIn ? (
+                <button
+                  type="button"
+                  className={accountRowClass("/account")}
+                  onClick={() => {
+                    closeAccount();
+                    openUserProfile();
+                  }}
+                >
+                  <UserRound className={accountIconClass("/account")} />
+                  <span className="flex-1 text-left">Manage Account</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                </button>
+              ) : null}
 
-            {showMyOrdersNav && (
-              <Link href="/my-orders" onClick={closeAccount}>
-                <span className={accountRowClass("/my-orders")}>
-                  <Package className={accountIconClass("/my-orders")} />
-                  <span className="flex-1 text-left">My Orders</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
-                </span>
-              </Link>
-            )}
-
-            {showBusinessHubNav && (
-              <Link href={dashboardHref} onClick={closeAccount}>
-                <span className={accountRowClass(dashboardHref)}>
-                  <DashboardIcon className={accountIconClass(dashboardHref)} />
-                  <span className="flex-1 text-left">{dashboardLabel}</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
-                </span>
-              </Link>
-            )}
-
-            {showListYourBusinessNav && (
-              <Link href="/list-your-business" onClick={closeAccount}>
-                <span className={accountRowClass("/list-your-business")}>
-                  <PlusCircle className={accountIconClass("/list-your-business")} />
-                  <span className="flex-1 text-left">List Your Business</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
-                </span>
-              </Link>
-            )}
-
-            <Link href="/help" onClick={closeAccount}>
-              <span className={accountRowClass("/help")}>
-                <HelpCircle className={accountIconClass("/help")} />
-                <span className="flex-1 text-left">Help</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
-              </span>
-            </Link>
-
-            {setupAvailable && (isLoggedOut || isCustomer) && (
-              <Link href="/setup" onClick={closeAccount}>
-                <span className={accountRowClass("/setup")}>
-                  <Wrench className={accountIconClass("/setup")} />
-                  <span className="flex-1 text-left">Admin Setup</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/70" aria-hidden />
-                </span>
-              </Link>
-            )}
-          </nav>
-
-          <div className="mt-3 border-t border-border/40 px-4 py-4 space-y-3">
-            {clerkLoaded && !isSignedIn && (
-              <div className="space-y-3">
-                <NativeGoogleSignInButton />
-                <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
-                  <Button className="w-full min-h-[50px]" onClick={closeAccount}>
-                    Sign In with email
-                  </Button>
-                </SignInButton>
-              </div>
-            )}
-
-            {clerkLoaded && isSignedIn && (
-              <LoadingButton
-                type="button"
-                variant="ghost"
-                className="w-full min-h-12 justify-center gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                loading={signingOut}
-                onClick={() => void handleSignOut()}
-              >
-                <LogOut className="h-4 w-4" aria-hidden />
-                Sign Out
-              </LoadingButton>
-            )}
-
-            {setupAvailable && (isLoggedOut || isCustomer) && (
-              <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
-                <p className="text-xs font-semibold text-primary">First time here?</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Sign in, then visit Admin Setup to claim platform admin access.
-                </p>
-                <Link href="/setup" onClick={closeAccount}>
-                  <Button size="sm" className="mt-3 w-full min-h-11">
-                    <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                    Go to Admin Setup
-                  </Button>
+              {showMyOrdersNav && (
+                <Link href="/my-orders" onClick={closeAccount}>
+                  <span className={accountRowClass("/my-orders")}>
+                    <Package className={accountIconClass("/my-orders")} />
+                    <span className="flex-1 text-left">My Orders</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                  </span>
                 </Link>
-              </div>
-            )}
+              )}
+
+              {showBusinessHubNav && (
+                <Link href={dashboardHref} onClick={closeAccount}>
+                  <span className={accountRowClass(dashboardHref)}>
+                    <DashboardIcon className={accountIconClass(dashboardHref)} />
+                    <span className="flex-1 text-left">{dashboardLabel}</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                  </span>
+                </Link>
+              )}
+
+              {showListYourBusinessNav && (
+                <Link href="/list-your-business" onClick={closeAccount}>
+                  <span className={accountRowClass("/list-your-business")}>
+                    <PlusCircle className={accountIconClass("/list-your-business")} />
+                    <span className="flex-1 text-left">List Your Business</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                  </span>
+                </Link>
+              )}
+
+              <Link href="/help" onClick={closeAccount}>
+                <span className={accountRowClass("/help")}>
+                  <HelpCircle className={accountIconClass("/help")} />
+                  <span className="flex-1 text-left">Help</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                </span>
+              </Link>
+
+              {setupAvailable && (isLoggedOut || isCustomer) && (
+                <Link href="/setup" onClick={closeAccount}>
+                  <span className={accountRowClass("/setup")}>
+                    <Wrench className={accountIconClass("/setup")} />
+                    <span className="flex-1 text-left">Admin Setup</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                  </span>
+                </Link>
+              )}
+            </nav>
+
+            <div className="mt-3 space-y-3">
+              {clerkLoaded && !isSignedIn && (
+                <div className="space-y-3 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-black/[0.04]">
+                  <NativeGoogleSignInButton />
+                  <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
+                    <Button className="w-full min-h-[48px]" onClick={closeAccount}>
+                      Sign In with email
+                    </Button>
+                  </SignInButton>
+                </div>
+              )}
+
+              {clerkLoaded && isSignedIn && (
+                <LoadingButton
+                  type="button"
+                  variant="ghost"
+                  className="h-12 w-full justify-center gap-2 rounded-2xl bg-card text-[15px] font-medium text-destructive shadow-sm ring-1 ring-black/[0.04] hover:bg-destructive/10 hover:text-destructive"
+                  loading={signingOut}
+                  onClick={() => void handleSignOut()}
+                >
+                  <LogOut className="h-5 w-5" aria-hidden />
+                  Sign Out
+                </LoadingButton>
+              )}
+
+              {setupAvailable && (isLoggedOut || isCustomer) && (
+                <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+                  <p className="text-xs font-semibold text-primary">First time here?</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Sign in, then visit Admin Setup to claim platform admin access.
+                  </p>
+                  <Link href="/setup" onClick={closeAccount}>
+                    <Button size="sm" className="mt-3 w-full min-h-11">
+                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                      Go to Admin Setup
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
