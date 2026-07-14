@@ -1,6 +1,6 @@
 import { SignInButton } from "@clerk/react";
 import { Button } from "@/components/ui/button";
-import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
+import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
 import { nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
 import { isNativeApp } from "@/lib/native-platform";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ type NativeAwareSignInProps = {
 
 /**
  * Web: Clerk modal with Google + email.
- * Native: Safari Google OAuth (NativeGoogleSignInButton) + email-only Clerk modal.
+ * Native: Safari Apple/Google OAuth + email-only Clerk modal.
  * Clerk’s in-WebView Google button triggers Google’s “access blocked” policy error.
  */
 export function NativeAwareSignIn({
@@ -38,7 +38,7 @@ export function NativeAwareSignIn({
   if (native) {
     return (
       <div className={cn("space-y-3", className)}>
-        <NativeGoogleSignInButton label="Continue with Google" />
+        <NativeSocialSignInButtons />
         <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
           <Button
             size={size}

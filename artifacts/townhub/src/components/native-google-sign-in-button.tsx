@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useSignIn } from "@clerk/react";
 import { Browser } from "@capacitor/browser";
 import { LoadingButton } from "@/components/ui/loading-button";
+import { Apple } from "lucide-react";
 import { isNativeApp } from "@/lib/native-platform";
 import { getNativeSsoHttpsCallbackUrl } from "@/lib/native-oauth";
 import { markNativeOAuthPending } from "@/lib/native-oauth-resume";
 import { rememberPostAuthRedirect } from "@/lib/native-post-auth-redirect";
 
-function clerkErrorMessage(err: unknown): string {
+function clerkErrorMessage(err: unknown, provider: "Apple" | "Google"): string {
   if (err && typeof err === "object") {
     const withMessage = err as { message?: string; longMessage?: string };
     if (withMessage.longMessage) return withMessage.longMessage;
@@ -20,7 +21,85 @@ function clerkErrorMessage(err: unknown): string {
     if (first?.longMessage) return first.longMessage;
     if (first?.message) return first.message;
   }
-  return err instanceof Error ? err.message : "Google sign-in failed";
+  return err instanceof Error ? err.message : `${provider} sign-in failed`;
+}
+
+type NativeSocialProvider = {
+  label: string;
+  provider: "Apple" | "Google";
+  strategy: "oauth_apple" | "oauth_google";
+};
+
+function NativeSocialSignInButton({
+  className,
+  label,
+  provider,
+  strategy,
+}: NativeSocialProvider & { className?: string }) {
+  const { signIn, fetchStatus } = useSignIn();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isNativeApp()) return null;
+
+  const ready = Boolean(signIn) && fetchStatus !== "fetching";
+
+  async function startOAuth() {
+    if (!signIn || !ready || pending) return;
+    setPending(true);
+    setError(null);
+
+    try {
+      const callbackUrl = getNativeSsoHttpsCallbackUrl();
+      const { error: createError } = await signIn.create({
+        strategy,
+        redirectUrl: callbackUrl,
+        actionCompleteRedirectUrl: callbackUrl,
+      });
+
+      if (createError) {
+        setError(clerkErrorMessage(createError, provider));
+        return;
+      }
+
+      const verificationUrl =
+        signIn.firstFactorVerification?.externalVerificationRedirectURL?.toString() ?? null;
+
+      if (!verificationUrl) {
+        setError(`Could not start ${provider} sign-in. Try email instead, or try again.`);
+        return;
+      }
+
+      markNativeOAuthPending();
+      rememberPostAuthRedirect();
+      await Browser.open({ url: verificationUrl });
+    } catch (err) {
+      setError(clerkErrorMessage(err, provider));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className={className}>
+      <LoadingButton
+        type="button"
+        variant="outline"
+        className={
+          provider === "Apple"
+            ? "w-full min-h-11 bg-black text-white border-black hover:bg-black/85 hover:text-white"
+            : "w-full min-h-11 bg-white text-foreground border-border"
+        }
+        loading={pending}
+        disabled={!ready}
+        onClick={() => void startOAuth()}
+      >
+        {provider === "Apple" ? <Apple className="mr-2 h-4 w-4" aria-hidden="true" /> : null}
+        {label}
+      </LoadingButton>
+      {error ? <p className="mt-2 text-xs text-destructive text-center">{error}</p> : null}
+    </div>
+  );
 }
 
 /**
@@ -42,66 +121,36 @@ export function NativeGoogleSignInButton({
   className?: string;
   label?: string;
 }) {
-  const { signIn, fetchStatus } = useSignIn();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  return (
+    <NativeSocialSignInButton
+      className={className}
+      label={label}
+      provider="Google"
+      strategy="oauth_google"
+    />
+  );
+}
 
-  if (!isNativeApp()) return null;
+export function NativeAppleSignInButton({ className }: { className?: string }) {
+  return (
+    <NativeSocialSignInButton
+      className={className}
+      label="Continue with Apple"
+      provider="Apple"
+      strategy="oauth_apple"
+    />
+  );
+}
 
-  const ready = Boolean(signIn) && fetchStatus !== "fetching";
-
-  async function startGoogleOAuth() {
-    if (!signIn || !ready || pending) return;
-    setPending(true);
-    setError(null);
-
-    try {
-      const callbackUrl = getNativeSsoHttpsCallbackUrl();
-      const { error: createError } = await signIn.create({
-        strategy: "oauth_google",
-        redirectUrl: callbackUrl,
-        actionCompleteRedirectUrl: callbackUrl,
-      });
-
-      if (createError) {
-        setError(clerkErrorMessage(createError));
-        return;
-      }
-
-      const verificationUrl =
-        signIn.firstFactorVerification?.externalVerificationRedirectURL?.toString() ??
-        null;
-
-      if (!verificationUrl) {
-        setError("Could not start Google sign-in. Try email instead, or try again.");
-        return;
-      }
-
-      markNativeOAuthPending();
-      rememberPostAuthRedirect();
-      await Browser.open({ url: verificationUrl });
-    } catch (err) {
-      setError(clerkErrorMessage(err));
-    } finally {
-      setPending(false);
-    }
-  }
-
+export function NativeSocialSignInButtons({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <LoadingButton
-        type="button"
-        variant="outline"
-        className="w-full min-h-11 bg-white text-foreground border-border"
-        loading={pending}
-        disabled={!ready}
-        onClick={() => void startGoogleOAuth()}
-      >
-        {label}
-      </LoadingButton>
-      {error ? <p className="mt-2 text-xs text-destructive text-center">{error}</p> : null}
+      <div className="space-y-3">
+        <NativeAppleSignInButton />
+        <NativeGoogleSignInButton />
+      </div>
       <p className="mt-2 text-[11px] text-muted-foreground text-center">
-        Opens Safari to sign in securely, then returns to TownHub.
+        Opens a secure sign-in page, then returns to TownHub.
       </p>
     </div>
   );

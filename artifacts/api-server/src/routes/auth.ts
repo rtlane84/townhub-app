@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
-import { db, usersTable } from "@workspace/db";
-import { eq, count, and, sql } from "drizzle-orm";
+import { db, usersTable, accountDeletionRequestsTable } from "@workspace/db";
+import { eq, count, and, sql, desc } from "drizzle-orm";
 import { serializeBusiness } from "./businesses";
 import { getPlatformTimeZone } from "../lib/platform-timezone";
 import {
@@ -15,12 +15,27 @@ import { resolveSelectedBusinessId } from "../lib/business-selection";
 import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
 import { isAdminBootstrapComplete } from "../lib/admin-bootstrap";
 import { respondIfUserDisabled } from "../lib/user-account-status";
+import { RequestMyAccountDeletionBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
 function sessionClaims(req: Parameters<typeof getAuth>[0]): Record<string, unknown> | undefined {
   return (req as unknown as { auth?: { sessionClaims?: Record<string, unknown> } })?.auth
     ?.sessionClaims;
+}
+
+function serializeAccountDeletionRequest(
+  request: typeof accountDeletionRequestsTable.$inferSelect,
+) {
+  return {
+    id: request.id,
+    status: request.status,
+    requestedAt: request.requestedAt,
+    scheduledFor: request.scheduledFor,
+    canceledAt: request.canceledAt,
+    completedAt: request.completedAt,
+    updatedAt: request.updatedAt,
+  };
 }
 
 // GET /api/auth/me
@@ -66,6 +81,127 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     businessIds: ownedIds,
     createdAt: user.createdAt,
   });
+});
+
+// GET /api/auth/account-deletion
+router.get("/auth/account-deletion", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  await ensureDbUserForClerkSession({ userId, sessionClaims: sessionClaims(req) });
+  const [request] = await db
+    .select()
+    .from(accountDeletionRequestsTable)
+    .where(eq(accountDeletionRequestsTable.userId, userId))
+    .limit(1);
+
+  res.set("Cache-Control", "no-store");
+  res.json({ request: request ? serializeAccountDeletionRequest(request) : null });
+});
+
+// POST /api/auth/account-deletion
+router.post("/auth/account-deletion", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  const parsed = RequestMyAccountDeletionBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Type DELETE to confirm this request." });
+    return;
+  }
+
+  const user = await ensureDbUserForClerkSession({
+    userId,
+    sessionClaims: sessionClaims(req),
+  });
+  const now = new Date();
+  const scheduledFor = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const [request] = await db
+    .insert(accountDeletionRequestsTable)
+    .values({
+      userId,
+      emailSnapshot: user.email,
+      status: "REQUESTED",
+      requestedAt: now,
+      scheduledFor,
+    })
+    .onConflictDoUpdate({
+      target: accountDeletionRequestsTable.userId,
+      set: {
+        emailSnapshot: user.email,
+        status: "REQUESTED",
+        requestedAt: now,
+        scheduledFor,
+        canceledAt: null,
+        completedAt: null,
+        updatedAt: now,
+      },
+    })
+    .returning();
+
+  req.log.warn({ userId, requestId: request.id }, "Account deletion requested");
+  res.set("Cache-Control", "no-store");
+  res.json(serializeAccountDeletionRequest(request));
+});
+
+// DELETE /api/auth/account-deletion
+router.delete("/auth/account-deletion", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  await ensureDbUserForClerkSession({ userId, sessionClaims: sessionClaims(req) });
+  const now = new Date();
+  const [request] = await db
+    .update(accountDeletionRequestsTable)
+    .set({ status: "CANCELED", canceledAt: now, updatedAt: now })
+    .where(
+      and(
+        eq(accountDeletionRequestsTable.userId, userId),
+        eq(accountDeletionRequestsTable.status, "REQUESTED"),
+      ),
+    )
+    .returning();
+
+  if (!request) {
+    res.status(404).json({ error: "No pending deletion request found." });
+    return;
+  }
+
+  req.log.info({ userId, requestId: request.id }, "Account deletion request canceled");
+  res.set("Cache-Control", "no-store");
+  res.json(serializeAccountDeletionRequest(request));
+});
+
+// GET /api/admin/account-deletion-requests (guarded by routes/index.ts)
+router.get("/admin/account-deletion-requests", async (_req, res): Promise<void> => {
+  const requests = await db
+    .select({
+      request: accountDeletionRequestsTable,
+      userId: usersTable.id,
+      email: usersTable.email,
+      role: usersTable.role,
+    })
+    .from(accountDeletionRequestsTable)
+    .innerJoin(usersTable, eq(usersTable.id, accountDeletionRequestsTable.userId))
+    .orderBy(desc(accountDeletionRequestsTable.requestedAt));
+
+  res.set("Cache-Control", "no-store");
+  res.json(
+    requests.map(({ request, userId, email, role }) => ({
+      ...serializeAccountDeletionRequest(request),
+      userId,
+      email,
+      role,
+    })),
+  );
 });
 
 // GET /api/auth/me/businesses

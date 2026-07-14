@@ -40,6 +40,7 @@ import {
   trialDaysRemaining,
 } from "@/lib/subscription-display";
 import { pollUntilSubscriptionReady } from "@/lib/subscription-activation";
+import { isStoreDistribution } from "@/lib/distribution-channel";
 
 type CheckoutReturnParams = SubscriptionSyncOptions & {
   kind: "checkout" | "portal";
@@ -69,6 +70,7 @@ export default function BusinessSubscription() {
   const [activationError, setActivationError] = useState<string | null>(null);
   const pendingCheckoutReturn = useRef<CheckoutReturnParams | null>(null);
   const checkoutReturnStarted = useRef(false);
+  const storeDistribution = isStoreDistribution();
 
   const subscriptionQueryKey = getGetMySubscriptionQueryKey(business?.id ?? 0);
 
@@ -244,17 +246,17 @@ export default function BusinessSubscription() {
   }
 
   const accessEndDate = subscription ? subscriptionAccessEndDate(subscription) : null;
-  const canManageBilling = !complimentary && !!subscription?.stripeCustomerId;
-  const canChangePlan = !complimentary;
+  const canManageBilling = !storeDistribution && !complimentary && !!subscription?.stripeCustomerId;
+  const canChangePlan = !storeDistribution && !complimentary;
   const isRefreshing = isFetching || syncPending;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("open") !== "billing" || !business?.id || !canManageBilling) return;
+    if (storeDistribution || params.get("open") !== "billing" || !business?.id || !canManageBilling) return;
     setLocation("/dashboard/business/subscription", { replace: true });
     void handleOpenPortal();
   // eslint-disable-next-line react-hooks/exhaustive-deps -- open billing once when linked from email
-  }, [business?.id, canManageBilling]);
+  }, [business?.id, canManageBilling, storeDistribution]);
 
   return (
     <BusinessDashboardLayout>
@@ -352,7 +354,10 @@ export default function BusinessSubscription() {
                   <div>
                     <p className="font-medium text-destructive">Subscription canceled</p>
                     <p className="text-muted-foreground mt-1">
-                      Paid features are no longer available. Choose a plan below to subscribe again.
+                      Paid features are no longer available.
+                      {storeDistribution
+                        ? " Contact TownHub support for account help."
+                        : " Choose a plan below to subscribe again."}
                     </p>
                   </div>
                 </CardContent>
@@ -366,7 +371,9 @@ export default function BusinessSubscription() {
                   <div>
                     <p className="font-medium text-amber-900">Payment past due</p>
                     <p className="text-amber-800/90 mt-1">
-                      Update your payment method in Manage Billing to avoid losing access.
+                      {storeDistribution
+                        ? "Your subscription needs attention. Contact TownHub support for account help."
+                        : "Update your payment method in Manage Billing to avoid losing access."}
                     </p>
                   </div>
                 </CardContent>
@@ -388,7 +395,9 @@ export default function BusinessSubscription() {
                       ) : (
                         <>Your subscription is scheduled to cancel at the end of the current billing period.</>
                       )}{" "}
-                      Reactivate anytime in Manage Billing.
+                      {storeDistribution
+                        ? " Contact TownHub support for account help."
+                        : " Reactivate anytime in Manage Billing."}
                     </p>
                   </div>
                 </CardContent>
@@ -477,7 +486,7 @@ export default function BusinessSubscription() {
                   <div className="flex items-center justify-between py-2 border-b gap-4">
                     <span className="text-sm font-medium">Cancellation</span>
                     <span className="text-amber-700 font-medium text-right text-sm">
-                      Scheduled — reactivate in Manage Billing
+                      {storeDistribution ? "Scheduled" : "Scheduled — reactivate in Manage Billing"}
                     </span>
                   </div>
                 )}
@@ -532,11 +541,21 @@ export default function BusinessSubscription() {
                 <CardDescription>
                   {complimentary
                     ? "Billing is managed by the platform for this plan."
-                    : "Manage your TownHub subscription through Stripe."}
+                    : storeDistribution
+                      ? "View your TownHub subscription status and plan details."
+                      : "Manage your TownHub subscription through Stripe."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {needsCheckout && subscription.plan && (
+                {storeDistribution && !complimentary && (
+                  <p className="text-sm text-muted-foreground">
+                    Subscription changes are not available in this app. If your business was recently
+                    approved, follow the setup instructions sent to your account email. Contact TownHub
+                    support if you need account help.
+                  </p>
+                )}
+
+                {!storeDistribution && needsCheckout && subscription.plan && (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
                       {subscription.plan.trialDays > 0
@@ -568,7 +587,7 @@ export default function BusinessSubscription() {
                   </div>
                 )}
 
-                <div className="flex flex-wrap gap-2">
+                {!storeDistribution && <div className="flex flex-wrap gap-2">
                   {canChangePlan && business?.id && (
                     <Button variant="default" onClick={() => setChangePlanOpen(true)}>
                       Change Plan
@@ -586,9 +605,9 @@ export default function BusinessSubscription() {
                       Manage Billing
                     </LoadingButton>
                   )}
-                </div>
+                </div>}
 
-                {!needsCheckout && !complimentary && !subscription.stripeCustomerId && (
+                {!storeDistribution && !needsCheckout && !complimentary && !subscription.stripeCustomerId && (
                   <p className="text-sm text-muted-foreground">
                     Billing details will appear here after your first checkout.
                   </p>
@@ -596,13 +615,15 @@ export default function BusinessSubscription() {
 
                 {complimentary && (
                   <p className="text-sm text-muted-foreground">
-                    To move to a paid plan, use Change Plan or contact the platform administrator.
+                    {storeDistribution
+                      ? "Contact the platform administrator if you need help with your plan."
+                      : "To move to a paid plan, use Change Plan or contact the platform administrator."}
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            {business?.id && (
+            {!storeDistribution && business?.id && (
               <ChangePlanDialog
                 businessId={business.id}
                 currentPlanId={subscription.planId}

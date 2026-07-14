@@ -312,6 +312,33 @@ export interface UserProfile {
   createdAt?: string;
 }
 
+export type AccountDeletionRequestStatus = typeof AccountDeletionRequestStatus[keyof typeof AccountDeletionRequestStatus];
+
+
+export const AccountDeletionRequestStatus = {
+  REQUESTED: 'REQUESTED',
+  CANCELED: 'CANCELED',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export interface AccountDeletionRequest {
+  id: number;
+  status: AccountDeletionRequestStatus;
+  requestedAt: string;
+  scheduledFor: string;
+  /** @nullable */
+  canceledAt?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
+  updatedAt: string;
+}
+
+export type AdminAccountDeletionRequest = AccountDeletionRequest & {
+  userId: string;
+  email: string;
+  role: UserRole;
+};
+
 export interface UserStatusUpdate {
   status: UserStatus;
 }
@@ -1977,6 +2004,21 @@ export type GetMeParams = {
  * Selected owned business id (must belong to the current user)
  */
 businessId?: number;
+};
+
+export type GetMyAccountDeletionRequest200 = {
+  request: AccountDeletionRequest | null;
+};
+
+export type RequestMyAccountDeletionBodyConfirmation = typeof RequestMyAccountDeletionBodyConfirmation[keyof typeof RequestMyAccountDeletionBodyConfirmation];
+
+
+export const RequestMyAccountDeletionBodyConfirmation = {
+  DELETE: 'DELETE',
+} as const;
+
+export type RequestMyAccountDeletionBody = {
+  confirmation: RequestMyAccountDeletionBodyConfirmation;
 };
 
 export type UnregisterDevice200 = {

@@ -36,6 +36,73 @@ export const GetMeResponse = zod.object({
 
 
 /**
+ * @summary Get the current user's account deletion request
+ */
+export const GetMyAccountDeletionRequestResponse = zod.object({
+  "request": zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['REQUESTED', 'CANCELED', 'COMPLETED']),
+  "requestedAt": zod.coerce.date(),
+  "scheduledFor": zod.coerce.date(),
+  "canceledAt": zod.coerce.date().nullish(),
+  "completedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date()
+}).nullable()
+})
+
+
+/**
+ * @summary Request deletion of the current user's TownHub account
+ */
+export const RequestMyAccountDeletionBody = zod.object({
+  "confirmation": zod.enum(['DELETE'])
+})
+
+export const RequestMyAccountDeletionResponse = zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['REQUESTED', 'CANCELED', 'COMPLETED']),
+  "requestedAt": zod.coerce.date(),
+  "scheduledFor": zod.coerce.date(),
+  "canceledAt": zod.coerce.date().nullish(),
+  "completedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Cancel a pending account deletion request
+ */
+export const CancelMyAccountDeletionRequestResponse = zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['REQUESTED', 'CANCELED', 'COMPLETED']),
+  "requestedAt": zod.coerce.date(),
+  "scheduledFor": zod.coerce.date(),
+  "canceledAt": zod.coerce.date().nullish(),
+  "completedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List account deletion requests for operational processing
+ */
+export const ListAccountDeletionRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "status": zod.enum(['REQUESTED', 'CANCELED', 'COMPLETED']),
+  "requestedAt": zod.coerce.date(),
+  "scheduledFor": zod.coerce.date(),
+  "canceledAt": zod.coerce.date().nullish(),
+  "completedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date()
+}).and(zod.object({
+  "userId": zod.string(),
+  "email": zod.string(),
+  "role": zod.enum(['CUSTOMER', 'BUSINESS_OWNER', 'ADMIN'])
+}))
+export const ListAccountDeletionRequestsResponse = zod.array(ListAccountDeletionRequestsResponseItem)
+
+
+/**
  * @summary Register or refresh a push notification device token
  */
 export const registerDeviceBodyTokenMin = 8;

@@ -20,14 +20,35 @@ export const NATIVE_SSO_DEEP_LINK = `${NATIVE_OAUTH_SCHEME}://${NATIVE_SSO_CALLB
 /** @deprecated Use getNativeSsoHttpsCallbackUrl() — Clerk rejects custom-scheme redirect_url. */
 export const NATIVE_SSO_CALLBACK_URL = NATIVE_SSO_DEEP_LINK;
 
+export function resolvePublicWebBaseUrl(
+  configured: unknown,
+  runtimeOrigin: string,
+): string {
+  const candidate = typeof configured === "string" && configured.trim()
+    ? configured.trim()
+    : runtimeOrigin.trim();
+  if (!/^https:\/\//i.test(candidate)) {
+    throw new Error(
+      "VITE_PUBLIC_WEB_URL must be an HTTPS URL for native OAuth.",
+    );
+  }
+  return candidate.replace(/\/+$/, "");
+}
+
+export function getPublicWebBaseUrl(): string {
+  const env = (import.meta as ImportMeta & { env?: Record<string, unknown> }).env;
+  const runtimeOrigin = typeof window !== "undefined" ? window.location.origin : "";
+  return resolvePublicWebBaseUrl(env?.VITE_PUBLIC_WEB_URL, runtimeOrigin);
+}
+
 /**
  * HTTPS callback Clerk accepts for oauth_google redirect_url.
  * Must match the deployed frontend origin loaded by the Capacitor WebView.
  */
 export function getNativeSsoHttpsCallbackUrl(
-  origin = typeof window !== "undefined" ? window.location.origin : "",
+  origin = getPublicWebBaseUrl(),
 ): string {
-  const base = origin.replace(/\/+$/, "");
+  const base = resolvePublicWebBaseUrl(origin, origin);
   return `${base}${NATIVE_SSO_HTTPS_BOUNCE_PATH}`;
 }
 
@@ -50,8 +71,8 @@ export function buildNativeSsoDeepLinkFromLocation(search: string, hash = ""): s
 }
 
 /**
- * Convert a deep-link OAuth return URL into an in-app HTTPS URL on the
- * deployed frontend origin so Clerk can finish the session in the WebView.
+ * Convert a deep-link OAuth return URL into an in-app URL on the bundled
+ * Capacitor origin so Clerk can finish the session inside the reviewed app.
  */
 export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string): string {
   if (/^https?:\/\//i.test(rawUrl)) {

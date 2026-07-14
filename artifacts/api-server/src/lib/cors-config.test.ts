@@ -6,6 +6,7 @@ describe("parseProductionAllowedOrigins", () => {
   const previous = {
     APP_BASE_URL: process.env.APP_BASE_URL,
     CORS_ALLOWED_ORIGINS: process.env.CORS_ALLOWED_ORIGINS,
+    NATIVE_ALLOWED_ORIGINS: process.env.NATIVE_ALLOWED_ORIGINS,
   };
 
   afterEach(() => {
@@ -13,6 +14,8 @@ describe("parseProductionAllowedOrigins", () => {
     else process.env.APP_BASE_URL = previous.APP_BASE_URL;
     if (previous.CORS_ALLOWED_ORIGINS === undefined) delete process.env.CORS_ALLOWED_ORIGINS;
     else process.env.CORS_ALLOWED_ORIGINS = previous.CORS_ALLOWED_ORIGINS;
+    if (previous.NATIVE_ALLOWED_ORIGINS === undefined) delete process.env.NATIVE_ALLOWED_ORIGINS;
+    else process.env.NATIVE_ALLOWED_ORIGINS = previous.NATIVE_ALLOWED_ORIGINS;
   });
 
   it("includes APP_BASE_URL origin and comma-separated extras", () => {
@@ -23,6 +26,22 @@ describe("parseProductionAllowedOrigins", () => {
       "https://townhub.example",
       "https://preview.example",
       "https://admin.example",
+    ]);
+  });
+
+  it("allows only known localhost native WebView origins", () => {
+    process.env.APP_BASE_URL = "https://townhub.example";
+    process.env.NATIVE_ALLOWED_ORIGINS = [
+      "capacitor://localhost",
+      "APP://localhost/",
+      "capacitor://evil.example",
+      "https://not-native.example",
+    ].join(",");
+
+    assert.deepEqual(parseProductionAllowedOrigins(), [
+      "https://townhub.example",
+      "capacitor://localhost",
+      "app://localhost",
     ]);
   });
 });

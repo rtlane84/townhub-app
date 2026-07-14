@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './accountDeletionRequest';
+export * from './accountDeletionRequestStatus';
+export * from './adminAccountDeletionRequest';
 export * from './adminBootstrapResult';
 export * from './adminBootstrapStatus';
 export * from './applicationHealth';
@@ -52,6 +55,7 @@ export * from './foodTruckLocationInput';
 export * from './foodTruckLocationWithBusiness';
 export * from './fulfillmentType';
 export * from './getMeParams';
+export * from './getMyAccountDeletionRequest200';
 export * from './getMyBusinessParams';
 export * from './getMyNotificationPreferencesAudience';
 export * from './getMyNotificationPreferencesParams';
@@ -131,6 +135,7 @@ export * from './publicPricingPlan';
 export * from './refundStatus';
 export * from './registerDeviceInput';
 export * from './registerDeviceInputPlatform';
+export * from './requestMyAccountDeletionBodyConfirmation';
 export * from './serviceHealth';
 export * from './serviceHealthMetadata';
 export * from './serviceHealthStatus';

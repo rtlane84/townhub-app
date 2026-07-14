@@ -67,7 +67,7 @@ export const clerkAuthAppearance = {
   },
 };
 
-/** Native: hide Clerk OAuth — use NativeGoogleSignInButton instead. */
+/** Native: hide Clerk OAuth — Apple and Google use the system-browser bridge instead. */
 export const nativeClerkAuthAppearance = {
   ...clerkAuthAppearance,
   elements: {

@@ -24,14 +24,13 @@ import { HelpVideoCard } from "@/components/help/help-video-card";
 import { HelpTopicCard } from "@/components/help/help-topic-card";
 import {
   featuredVideos,
-  whatsNewItems,
   customerTopics,
-  businessOwnerTopics,
   customerFaqs,
-  businessOwnerFaqs,
   platformSupportContact,
+  resolveBusinessOwnerHelpForDistribution,
   type HelpFaq,
 } from "@/lib/help-content";
+import { isStoreDistribution } from "@/lib/distribution-channel";
 
 function FaqSection({ title, items }: { title: string; items: HelpFaq[] }) {
   return (
@@ -58,6 +57,7 @@ function FaqSection({ title, items }: { title: string; items: HelpFaq[] }) {
 
 export default function Help() {
   const { platformName } = usePlatformBranding();
+  const ownerHelp = resolveBusinessOwnerHelpForDistribution(isStoreDistribution());
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-10 max-w-6xl">
@@ -118,7 +118,7 @@ export default function Help() {
           <h2 className="font-serif text-2xl font-semibold">What&apos;s new</h2>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
-          {whatsNewItems.map((item) => (
+          {ownerHelp.updates.map((item) => (
             <Card
               key={item.id}
               className="min-w-[280px] max-w-sm shrink-0 snap-start border-primary/15 bg-gradient-to-br from-primary/5 to-transparent"
@@ -182,7 +182,7 @@ export default function Help() {
               Follow these steps from application through daily operations. Each card will become a full article over time.
             </p>
             <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
-              {businessOwnerTopics.map((topic) => (
+              {ownerHelp.topics.map((topic) => (
                 <a
                   key={topic.id}
                   href={`#help-${topic.id}`}
@@ -200,13 +200,13 @@ export default function Help() {
           <section className="space-y-5">
             <h2 className="font-serif text-2xl font-semibold">Business owner guides</h2>
             <div className="grid sm:grid-cols-2 gap-5">
-              {businessOwnerTopics.map((topic) => (
+              {ownerHelp.topics.map((topic) => (
                 <HelpTopicCard key={topic.id} topic={topic} showStep />
               ))}
             </div>
           </section>
 
-          <FaqSection title="Business owner FAQs" items={businessOwnerFaqs} />
+          <FaqSection title="Business owner FAQs" items={ownerHelp.faqs} />
         </TabsContent>
       </Tabs>
 

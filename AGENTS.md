@@ -209,11 +209,11 @@ Read `docs/NOTIFICATIONS.md` and `docs/BUSINESS_HUB_LIVE_NOTIFICATIONS.md` befor
 
 ## Mobile and Capacitor Gotchas
 
-- TownHub's iOS app is a Capacitor shell around the deployed responsive web application.
+- TownHub's iOS app is a Capacitor shell around responsive Vite assets bundled into the reviewed native application.
 - Web behavior must remain correct when adding native-only behavior.
 - Google OAuth cannot run inside WKWebView; preserve the Safari bounce and deep-link flow.
 - Stripe Checkout and Connect open in the system browser on native.
-- `CAPACITOR_SERVER_URL` must match the deployed frontend, and production redirects depend on `APP_BASE_URL` alignment.
+- Native `VITE_API_BASE_URL` selects the remote API; `VITE_PUBLIC_WEB_URL` and API `APP_BASE_URL` must align for browser/deep-link returns.
 - Respect safe areas, native bottom-tab visibility rules, dashboard back navigation, and external-link handling.
 - Do not edit generated Pods, build output, DerivedData, or copied Capacitor public assets.
 - Run the iOS sync/build flow only for changes that affect Capacitor configuration, plugins, or the native bundle, and report if Xcode/device verification was not performed.

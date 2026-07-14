@@ -1,6 +1,6 @@
 # Production Monitoring
 
-TownHub includes lightweight operational visibility for uptime checks, admin diagnostics, and structured failure logging. This document describes what is available today and recommended next steps.
+TownHub includes application-level health, admin diagnostics, structured logs, and Sentry error capture. External uptime, centralized logs, provider alerts, and tested notification routing must be configured in each deployed environment; repository code alone cannot provide those guarantees.
 
 ## Public health endpoint
 
@@ -30,6 +30,16 @@ Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.)
 1. Monitor `https://<your-domain>/health` every 1–5 minutes
 2. Alert on non-200 responses or timeouts (> 10s)
 3. Do not send auth headers or query parameters with secrets
+
+For the production beta, create these monitors in both staging and production:
+
+| Monitor | Check | Interval | Alert condition |
+|---|---|---|---|
+| API process | `GET https://api…/health` | 1 minute | Two failures, non-200, or 10-second timeout |
+| Frontend | `GET https://app…/` | 1–5 minutes | Two failures, non-200, or 10-second timeout |
+| TLS/domain | Frontend and API certificates | Daily | Expiry within 21 days or certificate error |
+
+Route production alerts to the platform owner and one backup contact. Staging alerts may be lower urgency but must still reach an actively reviewed channel.
 
 ## Admin Operations Center
 
@@ -113,6 +123,36 @@ Set in deployment for richer Admin System Status:
 | **Managed Postgres backups** | Database disaster recovery — see [DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md) |
 | **Stripe Dashboard → Webhooks** | Delivery logs and retry inspection |
 | **Log drain** (Fly.io, Railway, etc.) | Centralize Pino JSON logs in production |
+
+## Required alert matrix for beta
+
+| Signal | Source | Required routing |
+|---|---|---|
+| API/frontend exception | Sentry | Immediate owner notification for new fatal/high issues; daily digest for lower severity |
+| API or frontend unavailable | External uptime monitor | Owner + backup contact |
+| `stripe_webhook_failed` or repeated webhook retries | Railway logs + Stripe Dashboard | Owner; payment incidents are urgent |
+| Database unavailable or pool exhaustion | Railway logs, Operations Center, provider alerts | Owner + backup contact |
+| Backup failure | PostgreSQL provider | Owner + backup contact |
+| Email/SMS/push delivery degradation | Operational logs/provider dashboards | Owner during beta operating hours |
+| Job overdue or failed | Operations Center + scheduler logs | Owner |
+| Account deletion approaching deadline | Admin → Users queue | Platform owner/privacy operator |
+
+Production alerts must not depend solely on the TownHub application or the same provider being monitored.
+
+## Release verification
+
+For every staging and production release, record the environment, version, commit SHA, tester, timestamp, and evidence for:
+
+1. `/health` success from outside the hosting provider.
+2. Frontend load and authenticated API call.
+3. Admin Operations Center database check and provider configuration state.
+4. A controlled Sentry test event tagged with the release. Production debug routes are disabled, so use a reviewed temporary test mechanism or Sentry SDK test during the release window and remove it afterward.
+5. A controlled operational log event reaching the central log destination without PII or secrets.
+6. Stripe test-mode webhook delivery in staging; an approved low-risk live verification in production.
+7. Backup status and the most recent restore-drill evidence.
+8. Alert delivery acknowledgment by the primary and backup contacts.
+
+Do not mark monitoring complete because environment variables are present. A test alert must be received and acknowledged.
 
 ## What must never be logged or exposed
 

@@ -71,6 +71,87 @@ paths:
         "401":
           description: Unauthorized
 
+  /auth/account-deletion:
+    get:
+      operationId: getMyAccountDeletionRequest
+      tags: [auth]
+      summary: Get the current user's account deletion request
+      responses:
+        "200":
+          description: Current request, if any
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [request]
+                properties:
+                  request:
+                    nullable: true
+                    allOf:
+                      - $ref: "#/components/schemas/AccountDeletionRequest"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: requestMyAccountDeletion
+      tags: [auth]
+      summary: Request deletion of the current user's TownHub account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmation]
+              properties:
+                confirmation:
+                  type: string
+                  enum: [DELETE]
+      responses:
+        "200":
+          description: Deletion request created or renewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDeletionRequest"
+        "400":
+          description: Confirmation is missing or invalid
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: cancelMyAccountDeletionRequest
+      tags: [auth]
+      summary: Cancel a pending account deletion request
+      responses:
+        "200":
+          description: Deletion request canceled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDeletionRequest"
+        "404":
+          description: No pending request
+        "401":
+          description: Unauthorized
+
+  /admin/account-deletion-requests:
+    get:
+      operationId: listAccountDeletionRequests
+      tags: [admin]
+      summary: List account deletion requests for operational processing
+      responses:
+        "200":
+          description: Account deletion requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminAccountDeletionRequest"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Admin access required
+
   /devices:
     post:
       operationId: registerDevice
@@ -2892,6 +2973,44 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    AccountDeletionRequest:
+      type: object
+      required: [id, status, requestedAt, scheduledFor, updatedAt]
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+          enum: [REQUESTED, CANCELED, COMPLETED]
+        requestedAt:
+          type: string
+          format: date-time
+        scheduledFor:
+          type: string
+          format: date-time
+        canceledAt:
+          type: ["string", "null"]
+          format: date-time
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AdminAccountDeletionRequest:
+      allOf:
+        - $ref: "#/components/schemas/AccountDeletionRequest"
+        - type: object
+          required: [userId, email, role]
+          properties:
+            userId:
+              type: string
+            email:
+              type: string
+            role:
+              $ref: "#/components/schemas/UserRole"
 
     UserStatusUpdate:
       type: object

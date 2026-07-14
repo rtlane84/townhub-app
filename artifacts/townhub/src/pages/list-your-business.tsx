@@ -49,6 +49,7 @@ import {
   STOREFRONT_URL_SUPPORT_NOTE,
 } from "@/components/storefront-url-field";
 import { resolveApiUrl } from "@/lib/api-base-url";
+import { isStoreDistribution } from "@/lib/distribution-channel";
 
 const BUSINESS_TYPES = BUSINESS_TYPE_OPTIONS;
 
@@ -160,7 +161,7 @@ function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
-function WhatHappensNext() {
+function WhatHappensNext({ storeDistribution }: { storeDistribution: boolean }) {
   return (
     <Alert className="bg-muted/40 border-border/60">
       <Info className="h-4 w-4" />
@@ -169,7 +170,11 @@ function WhatHappensNext() {
         <p>1. You submit this short form (about 2 minutes).</p>
         <p>2. Our team reviews your application — usually within a few business days.</p>
         <p>3. If approved, you&apos;ll get access to your Business Hub to finish setup and go live.</p>
-        <p className="pt-1">No payment is charged until your plan trial ends (if applicable).</p>
+        <p className="pt-1">
+          {storeDistribution
+            ? "If approved, subscription setup instructions are sent to your account email."
+            : "No payment is charged until your plan trial ends (if applicable)."}
+        </p>
         <p className="pt-1">
           <a href="#plans" className="underline font-medium hover:text-foreground">
             Compare business plans and pricing
@@ -189,6 +194,7 @@ export default function ListYourBusiness() {
     query: { enabled: !!isSignedIn, queryKey: getListMyBusinessesQueryKey() },
   });
   const hasExistingBusinesses = ownedBusinesses.length > 0;
+  const storeDistribution = isStoreDistribution();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -509,7 +515,7 @@ export default function ListYourBusiness() {
 
         <StepIndicator step={step} />
 
-        {step === 1 && <WhatHappensNext />}
+        {step === 1 && <WhatHappensNext storeDistribution={storeDistribution} />}
 
         {step === 1 && (
           <Card>
@@ -810,15 +816,17 @@ export default function ListYourBusiness() {
 
               {selectedPlan && selectedPlan.trialDays > 0 && !isComplimentaryPricingPlan(selectedPlan) && (
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-                  Your {selectedPlan.trialDays}-day free trial starts after you complete Stripe checkout in Business Hub.
-                  Nothing is charged until then.
+                  {storeDistribution
+                    ? `Your ${selectedPlan.trialDays}-day free trial starts after you complete the setup instructions sent after approval.`
+                    : `Your ${selectedPlan.trialDays}-day free trial starts after you complete Stripe checkout in Business Hub. Nothing is charged until then.`}
                 </p>
               )}
 
               {selectedPlan && !isComplimentaryPricingPlan(selectedPlan) && (
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-                  After approval, complete subscription checkout in Business Hub to activate paid features.
-                  Applying does not charge your card.
+                  {storeDistribution
+                    ? "After approval, follow the subscription setup instructions sent to your account email. Applying does not charge your card."
+                    : "After approval, complete subscription checkout in Business Hub to activate paid features. Applying does not charge your card."}
                 </p>
               )}
 

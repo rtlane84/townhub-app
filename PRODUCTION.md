@@ -1,6 +1,6 @@
 # TownHub — Production Checklist
 
-Follow these steps before going live. For local setup see [docs/SETUP.md](docs/SETUP.md). For architecture see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). For security behavior see [SECURITY.md](SECURITY.md).
+Follow these steps before going live. The canonical Cloudflare + Railway staging/production topology and isolation procedure is [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md). For local setup see [docs/SETUP.md](docs/SETUP.md), architecture see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and security behavior see [SECURITY.md](SECURITY.md).
 
 ---
 
@@ -37,13 +37,17 @@ Examples: Railway variables, Render environment, Fly secrets, Replit Secrets.
 | Secret | Purpose |
 |--------|---------|
 | `DATABASE_URL` | PostgreSQL connection string |
+| `DEPLOYMENT_ENVIRONMENT` | `staging` or `production`; must match the isolated provider resources |
 | `CLERK_SECRET_KEY` | Production Clerk secret key |
 | `CLERK_PUBLISHABLE_KEY` | Production Clerk publishable key |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Frontend build-time publishable key |
 | `SESSION_SECRET` | Guest order access token signing (≥ 32 chars) |
 | `APP_BASE_URL` | Public frontend URL (e.g. `https://yourdomain.com`) |
-| `VITE_API_BASE_URL` | Absolute API origin when frontend and API are on different hosts (e.g. `https://town-hub-production.up.railway.app`). Required for Netlify + Railway. Leave empty for same-origin / Vite proxy. |
+| `VITE_API_BASE_URL` | Absolute Railway API origin for Cloudflare and native builds. Leave empty only for local same-origin/Vite proxy development. |
+| `VITE_PUBLIC_WEB_URL` | Public HTTPS web origin used by native Apple/Google OAuth return bridges |
+| `VITE_DISTRIBUTION_CHANNEL` | `web` for Cloudflare; `app-store` for iOS release builds |
 | `CORS_ALLOWED_ORIGINS` | Optional comma-separated extra browser origins for API CORS in production (preview/staging). `APP_BASE_URL` origin is always included. |
+| `NATIVE_ALLOWED_ORIGINS` | Set to `capacitor://localhost` for bundled store builds |
 
 **Build-time frontend variables** (`VITE_*`) must be set **before** the frontend build step on your host. Changing them later requires a rebuild, not just a restart.
 
@@ -235,7 +239,7 @@ TownHub is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`
 2. **Deploy the frontend** — build `artifacts/townhub` and serve static assets, or use your host's combined build pipeline.
 3. **Set production environment variables** in the host secret manager (see §2). Include `DATABASE_URL`, Clerk, `SESSION_SECRET`, `APP_BASE_URL`, Stripe, media, and monitoring keys.
 4. **Set build-time frontend variables** (`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` when frontend and API hosts differ, `VITE_SENTRY_DSN`, etc.) **before** running the frontend build.
-5. **Attach production or custom domain** — point DNS to your host; set `APP_BASE_URL` to the public HTTPS URL. For Netlify/Cloudflare Pages + Railway: set the frontend host’s `VITE_API_BASE_URL` to the Railway API origin, and set Railway `APP_BASE_URL` to the frontend URL so CORS allows the browser.
+5. **Attach production domains** — point DNS to Cloudflare/Railway; set Railway `APP_BASE_URL` to the public frontend URL and the Cloudflare build’s `VITE_API_BASE_URL` to the Railway API origin.
 6. **Restart or redeploy the application** after any environment variable change (runtime secrets need a restart; `VITE_*` changes need a rebuild).
 7. **Apply database schema** if this release includes schema changes:
    ```bash
@@ -274,19 +278,9 @@ If install fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`:
 3. Or set env `SKIP_DEPENDENCY_INSTALL=true` and change the build command to:
    `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build`
 
-After deploy, confirm `https://YOUR_WORKER_URL/native-sso-callback` shows “Returning to TownHub…” (not a 404), then update Clerk’s mobile SSO allowlist and Capacitor `CAPACITOR_SERVER_URL` / API `APP_BASE_URL` to the new URL.
+After deploy, confirm `https://YOUR_WORKER_URL/native-sso-callback` shows “Returning to TownHub…” (not a 404), then update Clerk’s mobile SSO allowlist, native `VITE_PUBLIC_WEB_URL`, and API `APP_BASE_URL` to the matching environment URL.
 
 **Note:** Commit and push the updated root `wrangler.toml` before redeploying so CI picks up the assets config.
-
-### Example: Replit deployment
-
-1. Click **Publish** in the Replit workspace.
-2. Choose a `.replit.app` subdomain or connect a custom domain.
-3. Set all production secrets in **Replit → Secrets**.
-4. Set `VITE_CLERK_PUBLISHABLE_KEY` and `VITE_SENTRY_DSN` before publish (build-time).
-5. **Republish or restart** after changing secrets or env vars.
-
----
 
 ## 8. Rollback
 

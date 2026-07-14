@@ -2,13 +2,14 @@ import { useListPublicPricingPlans, getListPublicPricingPlansQueryKey } from "@w
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
+import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
 import { Check, Layers, Loader2, Sparkles } from "lucide-react";
 import { formatPlanAmount, pricingPlanCtaLabel } from "@/lib/subscription-display";
 import { isNativeApp } from "@/lib/native-platform";
 import { cn } from "@/lib/utils";
 import { SignInButton } from "@clerk/react";
 import { nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
+import { isStoreDistribution } from "@/lib/distribution-channel";
 
 type BusinessPlansSectionProps = {
   /** When true, plan cards prompt sign-in before applying. */
@@ -21,6 +22,7 @@ export function BusinessPlansSection({ promptSignIn = false, className }: Busine
     query: { queryKey: getListPublicPricingPlansQueryKey() },
   });
   const native = isNativeApp();
+  const storeDistribution = isStoreDistribution();
 
   return (
     <section id="plans" className={cn("scroll-mt-24", className)}>
@@ -40,7 +42,7 @@ export function BusinessPlansSection({ promptSignIn = false, className }: Busine
 
       {promptSignIn && native ? (
         <div className="mx-auto mb-8 max-w-sm">
-          <NativeGoogleSignInButton />
+          <NativeSocialSignInButtons />
         </div>
       ) : null}
 
@@ -144,7 +146,9 @@ export function BusinessPlansSection({ promptSignIn = false, className }: Busine
       )}
 
       <p className="text-center text-sm text-muted-foreground mt-10">
-        Paid plans use secure Stripe checkout after your business is approved. Applying is free.
+        {storeDistribution
+          ? "Applying is free. Approved owners receive subscription setup instructions by email."
+          : "Paid plans use secure Stripe checkout after your business is approved. Applying is free."}
       </p>
     </section>
   );

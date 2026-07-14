@@ -17,3 +17,4 @@ export * from "./applications";
 export * from "./appointment-requests";
 export * from "./media";
 export * from "./operations";
+export * from "./account-deletion-requests";

@@ -10,6 +10,7 @@ import {
   featuredVideos,
   whatsNewItems,
   platformSupportContact,
+  resolveBusinessOwnerHelpForDistribution,
 } from "./help-content.ts";
 import { parseYouTubeId, parseVimeoId, resolveVideoEmbed } from "./help-video.ts";
 
@@ -64,6 +65,16 @@ describe("help-content", () => {
   it("includes FAQ entries for both audiences", () => {
     assert.ok(customerFaqs.length >= 3);
     assert.ok(businessOwnerFaqs.length >= 3);
+  });
+
+  it("removes owner billing actions from store-distribution help", () => {
+    const storeHelp = resolveBusinessOwnerHelpForDistribution(true);
+    const serialized = JSON.stringify(storeHelp);
+
+    assert.match(serialized, /setup instructions sent/);
+    assert.doesNotMatch(serialized, /Start Free Trial/);
+    assert.doesNotMatch(serialized, /Manage Billing opens/);
+    assert.doesNotMatch(serialized, /completing checkout/);
   });
 });
 

@@ -6,6 +6,7 @@ import {
   useGetMe,
   getListUsersQueryKey,
   getGetMeQueryKey,
+  useListAccountDeletionRequests,
 } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,6 +62,8 @@ export default function AdminUsers() {
     query: { queryKey: getGetMeQueryKey() },
   });
   const { data: users, isLoading } = useListUsers();
+  const { data: deletionRequests = [], isLoading: deletionRequestsLoading } =
+    useListAccountDeletionRequests();
 
   const invalidateUsers = () => {
     queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
@@ -209,6 +212,43 @@ export default function AdminUsers() {
             Manage user roles and account status. Users are disabled, not deleted, so history is preserved.
           </p>
         </div>
+
+        <Card>
+          <CardContent className="p-5 space-y-3">
+            <div>
+              <h2 className="font-medium">Account deletion requests</h2>
+              <p className="text-sm text-muted-foreground">
+                Process pending requests with the operator runbook before their scheduled date.
+                Completion is intentionally not a one-click action because identity, ownership,
+                subscriptions, and legally retained records must be reconciled.
+              </p>
+            </div>
+            {deletionRequestsLoading ? (
+              <Skeleton className="h-16 w-full" />
+            ) : deletionRequests.filter((request) => request.status === "REQUESTED").length === 0 ? (
+              <p className="text-sm text-muted-foreground">No pending deletion requests.</p>
+            ) : (
+              <div className="divide-y rounded-lg border">
+                {deletionRequests
+                  .filter((request) => request.status === "REQUESTED")
+                  .map((request) => (
+                    <div key={request.id} className="flex flex-col gap-1 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{request.email}</p>
+                        <p className="text-xs text-muted-foreground">{request.role.replaceAll("_", " ")}</p>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <Badge variant="destructive">Pending deletion</Badge>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Process by {new Date(request.scheduledFor).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardContent className="p-0">

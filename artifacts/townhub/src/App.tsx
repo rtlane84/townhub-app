@@ -17,7 +17,7 @@ import { PlatformThemeProvider } from "@/components/theme-provider";
 import { AnimatedSplash } from "@/components/animated-splash";
 
 import { RoutePageLoader } from "@/components/route-page-loader";
-import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
+import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
 import { isNativeApp } from "@/lib/native-platform";
 import {
   buildNativeSsoDeepLinkFromLocation,
@@ -37,8 +37,11 @@ const OrderConfirmation = lazyWithRetry(() => import("@/pages/order-confirmation
 const CheckoutReturnPage = lazyWithRetry(() => import("@/pages/checkout-return"));
 const MyOrders = lazyWithRetry(() => import("@/pages/my-orders"));
 const MyOrderDetail = lazyWithRetry(() => import("@/pages/my-order-detail"));
+const Account = lazyWithRetry(() => import("@/pages/account"));
 const Help = lazyWithRetry(() => import("@/pages/help"));
 const Pricing = lazyWithRetry(() => import("@/pages/pricing"));
+const PrivacyPolicy = lazyWithRetry(() => import("@/pages/privacy-policy"));
+const TermsOfService = lazyWithRetry(() => import("@/pages/terms-of-service"));
 const FoodTrucks = lazyWithRetry(() => import("@/pages/food-trucks"));
 const Setup = lazyWithRetry(() => import("@/pages/setup"));
 const ListYourBusiness = lazyWithRetry(() => import("@/pages/list-your-business"));
@@ -137,7 +140,7 @@ function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-4">
-        {native ? <NativeGoogleSignInButton /> : null}
+        {native ? <NativeSocialSignInButtons /> : null}
         <SignIn
           routing="path"
           path={`${basePath}/sign-in`}
@@ -171,7 +174,7 @@ function SignUpPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-4">
-        {native ? <NativeGoogleSignInButton label="Continue with Google" /> : null}
+        {native ? <NativeSocialSignInButtons /> : null}
         <SignUp
           routing="path"
           path={`${basePath}/sign-up`}
@@ -278,7 +281,7 @@ function ClerkApiTokenBridge() {
   return null;
 }
 
-const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/pricing", "/sign-in", "/sign-up", "/setup", "/list-your-business", "/help"];
+const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/pricing", "/privacy-policy", "/terms-of-service", "/sign-in", "/sign-up", "/setup", "/list-your-business", "/help"];
 
 function PostSignInRedirector() {
   const { isSignedIn, isLoaded } = useUser();
@@ -447,6 +450,7 @@ function ClerkProviderWithRoutes() {
                 <SuspenseRoute path="/order/:id" component={OrderConfirmation} />
                 <ProtectedRoute path="/my-orders/:id" component={MyOrderDetail} />
                 <ProtectedRoute path="/my-orders" component={MyOrders} />
+                <ProtectedRoute path="/account" component={Account} />
 
                 <Route path="/sign-in/*?" component={SignInPage} />
                 <Route path="/sign-up/*?" component={SignUpPage} />
@@ -457,6 +461,8 @@ function ClerkProviderWithRoutes() {
                 <SuspenseRoute path="/list-your-business" component={ListYourBusiness} />
                 <SuspenseRoute path="/help" component={Help} />
                 <SuspenseRoute path="/pricing" component={Pricing} />
+                <SuspenseRoute path="/privacy-policy" component={PrivacyPolicy} />
+                <SuspenseRoute path="/terms-of-service" component={TermsOfService} />
                 {import.meta.env.DEV ? (
                   <SuspenseRoute path="/debug/sentry" component={DebugSentryPage} />
                 ) : null}

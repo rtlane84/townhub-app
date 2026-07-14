@@ -16,6 +16,7 @@ import {
   LogOut,
   ChevronRight,
   UserRound,
+  ScrollText,
 } from "lucide-react";
 import { SignInButton, useClerk, useUser } from "@clerk/react";
 import {
@@ -41,7 +42,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
-import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
+import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
 import { nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
 
 type TabItem = {
@@ -57,7 +58,7 @@ export function NativeBottomTabBar() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const { isSignedIn, isLoaded: clerkLoaded, user } = useUser();
-  const { signOut, openUserProfile } = useClerk();
+  const { signOut } = useClerk();
   const unregisterDevice = useUnregisterDevice();
   const {
     authResolved,
@@ -276,18 +277,13 @@ export function NativeBottomTabBar() {
               aria-label="Account navigation"
             >
               {clerkLoaded && isSignedIn ? (
-                <button
-                  type="button"
-                  className={accountRowClass("/account")}
-                  onClick={() => {
-                    closeAccount();
-                    openUserProfile();
-                  }}
-                >
-                  <UserRound className={accountIconClass("/account")} />
-                  <span className="flex-1 text-left">Manage Account</span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
-                </button>
+                <Link href="/account" onClick={closeAccount}>
+                  <span className={accountRowClass("/account")}>
+                    <UserRound className={accountIconClass("/account")} />
+                    <span className="flex-1 text-left">Manage Account</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                  </span>
+                </Link>
               ) : null}
 
               {showMyOrdersNav && (
@@ -328,6 +324,22 @@ export function NativeBottomTabBar() {
                 </span>
               </Link>
 
+              <Link href="/privacy-policy" onClick={closeAccount}>
+                <span className={accountRowClass("/privacy-policy")}>
+                  <ShieldCheck className={accountIconClass("/privacy-policy")} />
+                  <span className="flex-1 text-left">Privacy</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                </span>
+              </Link>
+
+              <Link href="/terms-of-service" onClick={closeAccount}>
+                <span className={accountRowClass("/terms-of-service")}>
+                  <ScrollText className={accountIconClass("/terms-of-service")} />
+                  <span className="flex-1 text-left">Terms</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/55" aria-hidden />
+                </span>
+              </Link>
+
               {setupAvailable && (isLoggedOut || isCustomer) && (
                 <Link href="/setup" onClick={closeAccount}>
                   <span className={accountRowClass("/setup")}>
@@ -342,7 +354,7 @@ export function NativeBottomTabBar() {
             <div className="mt-3 space-y-3">
               {clerkLoaded && !isSignedIn && (
                 <div className="space-y-3 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-black/[0.04]">
-                  <NativeGoogleSignInButton />
+                  <NativeSocialSignInButtons />
                   <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
                     <Button className="w-full min-h-[48px]" onClick={closeAccount}>
                       Sign In with email

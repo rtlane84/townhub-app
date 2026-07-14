@@ -3,6 +3,7 @@ import { UserButton, useUser, SignInButton } from "@clerk/react";
 import {
   ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
   Wrench, Menu, ExternalLink, Calendar, Truck, Package, HelpCircle, ArrowLeft,
+  UserRound,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
@@ -14,7 +15,7 @@ import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { clerkUserButtonAppearance, nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
 import { isNativeApp } from "@/lib/native-platform";
-import { NativeGoogleSignInButton } from "@/components/native-google-sign-in-button";
+import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB_HEIGHT_PX, resolveNativeHeaderLogoPx } from "@/lib/platform-branding";
 import { PlatformBrandMark } from "@/components/platform-brand-mark";
@@ -212,7 +213,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </SignInButton>
                   )}
                   {!hideHeaderAccount && clerkLoaded && isSignedIn && (
-                    <UserButton appearance={clerkUserButtonAppearance} />
+                    <div className="flex items-center gap-1">
+                      <Button asChild variant="ghost" size="icon">
+                        <Link href="/account" aria-label="Account settings">
+                          <UserRound className="h-5 w-5" />
+                        </Link>
+                      </Button>
+                      <UserButton appearance={clerkUserButtonAppearance} />
+                    </div>
                   )}
                 </div>
               </div>
@@ -381,7 +389,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {!hideHeaderAccount && clerkLoaded && isSignedIn && (
-              <UserButton appearance={clerkUserButtonAppearance} />
+              <div className="flex items-center gap-1">
+                <Button asChild variant="ghost" size="icon">
+                  <Link href="/account" aria-label="Account settings">
+                    <UserRound className="h-5 w-5" />
+                  </Link>
+                </Button>
+                <UserButton appearance={clerkUserButtonAppearance} />
+              </div>
             )}
 
             {/* Mobile hamburger — hidden in Capacitor (bottom tabs replace it) */}
@@ -513,7 +528,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
                   {clerkLoaded && !isSignedIn && (
                     <div className="pt-3 border-t mt-3 space-y-3">
-                      {isNativeApp() ? <NativeGoogleSignInButton /> : null}
+                      {isNativeApp() ? <NativeSocialSignInButtons /> : null}
                       <SignInButton
                         mode="modal"
                         appearance={isNativeApp() ? nativeClerkAuthAppearance : undefined}
@@ -578,9 +593,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
                 {footerTagline}
               </p>
-              <p className="mt-4 text-sm text-muted-foreground">
+              <p className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
                 <Link href="/help" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
                   Help Center
+                </Link>
+                <Link href="/privacy-policy" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
+                  Privacy
+                </Link>
+                <Link href="/terms-of-service" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
+                  Terms
                 </Link>
               </p>
             </div>

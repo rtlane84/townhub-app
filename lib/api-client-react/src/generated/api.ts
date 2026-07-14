@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AccountDeletionRequest,
+  AdminAccountDeletionRequest,
   AdminBootstrapResult,
   AdminBootstrapStatus,
   AppointmentRequest,
@@ -52,6 +54,7 @@ import type {
   FoodTruckLocationInput,
   FoodTruckLocationWithBusiness,
   GetMeParams,
+  GetMyAccountDeletionRequest200,
   GetMyBusinessParams,
   GetMyNotificationPreferencesParams,
   HealthStatus,
@@ -94,6 +97,7 @@ import type {
   PublicPricingPlan,
   RegisterDeviceInput,
   RejectEventBody,
+  RequestMyAccountDeletionBody,
   StripeConnectStartInput,
   StripeConnectStartResult,
   StripeConnectStatus,
@@ -277,6 +281,301 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Err
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetMeQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetMyAccountDeletionRequestUrl = () => {
+
+
+
+
+  return `/api/auth/account-deletion`
+}
+
+/**
+ * @summary Get the current user's account deletion request
+ */
+export const getMyAccountDeletionRequest = async ( options?: RequestInit): Promise<GetMyAccountDeletionRequest200> => {
+
+  return customFetch<GetMyAccountDeletionRequest200>(getGetMyAccountDeletionRequestUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyAccountDeletionRequestQueryKey = () => {
+    return [
+    `/api/auth/account-deletion`
+    ] as const;
+    }
+
+
+export const getGetMyAccountDeletionRequestQueryOptions = <TData = Awaited<ReturnType<typeof getMyAccountDeletionRequest>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyAccountDeletionRequest>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyAccountDeletionRequestQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyAccountDeletionRequest>>> = ({ signal }) => getMyAccountDeletionRequest({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyAccountDeletionRequest>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyAccountDeletionRequestQueryResult = NonNullable<Awaited<ReturnType<typeof getMyAccountDeletionRequest>>>
+export type GetMyAccountDeletionRequestQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the current user's account deletion request
+ */
+
+export function useGetMyAccountDeletionRequest<TData = Awaited<ReturnType<typeof getMyAccountDeletionRequest>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyAccountDeletionRequest>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyAccountDeletionRequestQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getRequestMyAccountDeletionUrl = () => {
+
+
+
+
+  return `/api/auth/account-deletion`
+}
+
+/**
+ * @summary Request deletion of the current user's TownHub account
+ */
+export const requestMyAccountDeletion = async (requestMyAccountDeletionBody: RequestMyAccountDeletionBody, options?: RequestInit): Promise<AccountDeletionRequest> => {
+
+  return customFetch<AccountDeletionRequest>(getRequestMyAccountDeletionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      requestMyAccountDeletionBody,)
+  }
+);}
+
+
+
+
+export const getRequestMyAccountDeletionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMyAccountDeletion>>, TError,{data: BodyType<RequestMyAccountDeletionBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestMyAccountDeletion>>, TError,{data: BodyType<RequestMyAccountDeletionBody>}, TContext> => {
+
+const mutationKey = ['requestMyAccountDeletion'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestMyAccountDeletion>>, {data: BodyType<RequestMyAccountDeletionBody>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestMyAccountDeletion(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestMyAccountDeletionMutationResult = NonNullable<Awaited<ReturnType<typeof requestMyAccountDeletion>>>
+    export type RequestMyAccountDeletionMutationBody = BodyType<RequestMyAccountDeletionBody>
+    export type RequestMyAccountDeletionMutationError = ErrorType<void>
+
+    /**
+ * @summary Request deletion of the current user's TownHub account
+ */
+export const useRequestMyAccountDeletion = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMyAccountDeletion>>, TError,{data: BodyType<RequestMyAccountDeletionBody>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestMyAccountDeletion>>,
+        TError,
+        {data: BodyType<RequestMyAccountDeletionBody>},
+        TContext
+      > => {
+      return useMutation(getRequestMyAccountDeletionMutationOptions(options));
+    }
+
+export const getCancelMyAccountDeletionRequestUrl = () => {
+
+
+
+
+  return `/api/auth/account-deletion`
+}
+
+/**
+ * @summary Cancel a pending account deletion request
+ */
+export const cancelMyAccountDeletionRequest = async ( options?: RequestInit): Promise<AccountDeletionRequest> => {
+
+  return customFetch<AccountDeletionRequest>(getCancelMyAccountDeletionRequestUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getCancelMyAccountDeletionRequestMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelMyAccountDeletionRequest>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelMyAccountDeletionRequest>>, TError,void, TContext> => {
+
+const mutationKey = ['cancelMyAccountDeletionRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelMyAccountDeletionRequest>>, void> = () => {
+
+
+          return  cancelMyAccountDeletionRequest(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelMyAccountDeletionRequestMutationResult = NonNullable<Awaited<ReturnType<typeof cancelMyAccountDeletionRequest>>>
+
+    export type CancelMyAccountDeletionRequestMutationError = ErrorType<void>
+
+    /**
+ * @summary Cancel a pending account deletion request
+ */
+export const useCancelMyAccountDeletionRequest = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelMyAccountDeletionRequest>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelMyAccountDeletionRequest>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCancelMyAccountDeletionRequestMutationOptions(options));
+    }
+
+export const getListAccountDeletionRequestsUrl = () => {
+
+
+
+
+  return `/api/admin/account-deletion-requests`
+}
+
+/**
+ * @summary List account deletion requests for operational processing
+ */
+export const listAccountDeletionRequests = async ( options?: RequestInit): Promise<AdminAccountDeletionRequest[]> => {
+
+  return customFetch<AdminAccountDeletionRequest[]>(getListAccountDeletionRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAccountDeletionRequestsQueryKey = () => {
+    return [
+    `/api/admin/account-deletion-requests`
+    ] as const;
+    }
+
+
+export const getListAccountDeletionRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listAccountDeletionRequests>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAccountDeletionRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAccountDeletionRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccountDeletionRequests>>> = ({ signal }) => listAccountDeletionRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAccountDeletionRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAccountDeletionRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listAccountDeletionRequests>>>
+export type ListAccountDeletionRequestsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List account deletion requests for operational processing
+ */
+
+export function useListAccountDeletionRequests<TData = Awaited<ReturnType<typeof listAccountDeletionRequests>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAccountDeletionRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAccountDeletionRequestsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -344,6 +344,84 @@ export const businessOwnerFaqs: HelpFaq[] = [
   },
 ];
 
+export function resolveBusinessOwnerHelpForDistribution(storeDistribution: boolean): {
+  topics: HelpTopic[];
+  faqs: HelpFaq[];
+  updates: HelpWhatsNewItem[];
+} {
+  if (!storeDistribution) {
+    return { topics: businessOwnerTopics, faqs: businessOwnerFaqs, updates: whatsNewItems };
+  }
+
+  const topics = businessOwnerTopics.map((topic): HelpTopic => {
+    if (topic.id === "choose-plan") {
+      return {
+        ...topic,
+        highlights: [
+          "Compare plans and choose the capabilities your business needs.",
+          "Founding, beta, and free plans do not require card setup.",
+          "Approved owners receive paid-plan setup instructions by account email.",
+        ],
+      };
+    }
+    if (topic.id === "billing-after-approval") {
+      return {
+        ...topic,
+        summary: "Follow the account setup instructions sent after approval.",
+        highlights: [
+          "Check the account email used for your business application.",
+          "Follow the secure subscription setup instructions in your approval message.",
+          "Return to Business Hub → Subscription to confirm your plan status and enabled features.",
+        ],
+        link: { href: "/dashboard/business/subscription", label: "View subscription status" },
+      };
+    }
+    if (topic.id === "subscriptions-billing") {
+      return {
+        ...topic,
+        summary: "Review your TownHub plan, status, and enabled features.",
+        highlights: [
+          "Business Hub → Subscription shows your plan, status, and enabled features.",
+          "Subscription changes are not available in this app.",
+          "Contact TownHub support if your subscription needs attention.",
+        ],
+      };
+    }
+    if (topic.id === "enabled-features") {
+      return {
+        ...topic,
+        highlights: [
+          "Your Subscription page lists features included with your current plan.",
+          "Locked items in the Business Hub menu indicate features not on your plan.",
+          "Contact the platform administrator if you need help with your plan.",
+        ],
+      };
+    }
+    return topic;
+  });
+
+  const faqs = businessOwnerFaqs.map((faq): HelpFaq =>
+    faq.id === "paid-before-approval"
+      ? {
+          ...faq,
+          answer:
+            "Applying is free. If approved, follow the subscription setup instructions sent to your account email. Any configured trial begins only after activation.",
+        }
+      : faq,
+  );
+
+  const updates = whatsNewItems.map((item): HelpWhatsNewItem =>
+    item.id === "stripe-billing"
+      ? {
+          ...item,
+          summary: "Business Hub now shows owners their current plan, subscription status, and enabled features.",
+        }
+      : item,
+  );
+
+  return { topics, faqs, updates };
+}
+
 /** @deprecated Use customerTopics — kept for tests migrating from workflows */
 export const customerWorkflows = customerTopics.map((topic) => ({
   id: topic.id,

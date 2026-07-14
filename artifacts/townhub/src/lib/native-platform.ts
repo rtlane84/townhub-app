@@ -39,6 +39,9 @@ const ACCOUNT_ROUTE_PREFIXES = [
   "/list-your-business",
   "/setup",
   "/pricing",
+  "/account",
+  "/privacy-policy",
+  "/terms-of-service",
 ];
 
 export function isDashboardRoute(location: string): boolean {

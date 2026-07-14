@@ -1,167 +1,165 @@
 # TownHub iOS App (Capacitor)
 
-Native iOS shell for TownHub. The app loads the deployed TownHub web frontend inside a WKWebView — no native screen rewrites for this MVP.
+TownHub iOS is a Capacitor shell around the responsive React application. App Store builds package the reviewed Vite assets inside the native bundle and call a selected remote API. They do not use Capacitor `server.url` or download the deployed web application as executable UI.
 
 ## Prerequisites
 
-- macOS with [Xcode](https://developer.apple.com/xcode/) installed (**full Xcode app**, not Command Line Tools alone)
-- Point `xcode-select` at Xcode if needed:
+- macOS with the full current Xcode release required by App Store Connect
+- Xcode Command Line Tools and CocoaPods
+- Node.js and the repository pnpm version
+- Apple Developer Program membership
+- A Clerk native application and Sign in with Apple connection for `com.lanetech.townhub`
 
-```bash
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-```
-
-- Xcode Command Line Tools: `xcode-select --install`
-- [CocoaPods](https://cocoapods.org/): `sudo gem install cocoapods` (or via Homebrew)
-- Node.js and **pnpm** (repo standard)
-- Apple Developer account (for TestFlight / App Store later)
-
-## Configure the deployed URL
-
-The iOS app loads your hosted TownHub frontend, not a local dev server.
-
-1. Copy the root `.env.example` to `.env` if you have not already.
-2. Set the production or beta frontend URL:
-
-```bash
-# Root .env (or export before cap sync)
-CAPACITOR_SERVER_URL=https://your-townhub.netlify.app
-```
-
-Replace the placeholder with your real Netlify (or other) frontend URL. This must match `APP_BASE_URL` on the API so Stripe and notification redirects return to the same host.
-
-3. Re-sync after changing the URL:
-
-```bash
-pnpm --filter @workspace/townhub run ios:sync
-```
-
-## Install dependencies
-
-From the repository root:
-
-```bash
-pnpm install
-```
-
-## Build web assets and sync iOS
-
-Capacitor still needs a local `webDir` bundle for sync, even when `server.url` points at production:
-
-```bash
-pnpm --filter @workspace/townhub run ios:sync
-```
-
-This runs `vite build` and `cap sync ios`.
-
-## Open in Xcode
+Open the workspace, not the project file:
 
 ```bash
 pnpm --filter @workspace/townhub run ios:open
 ```
 
-Or manually open `artifacts/townhub/ios/App/App.xcworkspace`.
+## Build-time configuration
 
-## Run on the iOS Simulator
+The iOS bundle requires these build-time values:
 
-1. Open the project in Xcode (command above).
-2. Select a simulator (e.g. iPhone 16) in the scheme toolbar.
-3. Press **Run** (⌘R).
+| Variable | Purpose |
+|---|---|
+| `DEPLOYMENT_ENVIRONMENT` | `staging` for TestFlight testing or `production` for the App Store candidate |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Matching Clerk instance publishable key |
+| `VITE_API_BASE_URL` | Matching remote API HTTPS origin |
+| `VITE_PUBLIC_WEB_URL` | Matching public web HTTPS origin used for OAuth return bridges |
+| `VITE_SENTRY_DSN` | Native frontend error project/DSN |
+| `VITE_DISTRIBUTION_CHANNEL` | `app-store` |
 
-CLI alternative:
+The API must allow the fixed bundled WebView origin:
 
 ```bash
-pnpm --filter @workspace/townhub exec cap run ios
+NATIVE_ALLOWED_ORIGINS=capacitor://localhost
 ```
 
-## Run on a physical device
+Validate the selected environment before syncing:
 
-1. Connect your iPhone via USB.
-2. Open `ios/App/App.xcworkspace` in Xcode.
-3. Select your device in the scheme toolbar.
-4. In **Signing & Capabilities**, choose your Apple Developer team.
-5. Press **Run** (⌘R). Trust the developer certificate on the device if prompted.
+```bash
+pnpm run release:check-env -- --environment staging --component native
+pnpm --filter @workspace/townhub run ios:sync
+```
 
-## Auth, Stripe, and external links
+`ios:sync` builds the Vite application and copies `dist/public` into the native project. Any React code, help copy, legal copy, build-time variable, Capacitor configuration, plugin, entitlement, or bundled asset change requires a new iOS build and App Store Connect upload. A website deploy alone does not update an installed app.
 
-| Flow | Behavior |
-|------|----------|
-| Clerk login | Email/password can use the in-app Clerk UI. **Google OAuth must use Safari** (Google blocks WKWebView — `disallowed_useragent`). Native Google uses HTTPS `https://your-app/native-sso-callback` (static HTML bounce → `townhub://sso-callback` → WebView `/sso-callback`). Allowlist that HTTPS URL under **Native applications → Allowlist for mobile SSO redirect**. **Redeploy Netlify from this branch** — `ios:sync` alone does not update the remote WebView. |
-| In-app navigation | Same routes as the web app (`/`, `/dashboard/business`, `/sign-in`, etc.). On native dashboards, a **Back** control returns to Home. |
-| Stripe Checkout / Connect | Opens in the system browser via `@capacitor/browser` on native. Success/cancel URLs must use the same host as `CAPACITOR_SERVER_URL` / `APP_BASE_URL`. |
-| Kitchen ticket print | Desktop / mobile browser: Print Ticket opens the system print dialog for the ticket only (hidden iframe). Native iOS: Cap `KitchenPrinter` plugin presents AirPrint via `UIPrintInteractionController`. Cap 7 registers this local plugin in `MainViewController.capacitorDidLoad()` (storyboard class `MainViewController`). Canceling the print dialog is not treated as an app error. **Requires an iOS rebuild** after native plugin or view-controller changes — frontend deploy alone is not enough. |
-| External links | `mailto:`, `tel:`, Stripe, Google Maps, Facebook, privacy/terms pages open in Safari. Google OAuth also opens in Safari (required by Google). |
-| Deep links | Custom scheme `townhub://` opens the app (`townhub://sso-callback` → `/sso-callback`). Clerk’s OAuth `redirect_url` must stay HTTPS (`/native-sso-callback`). Push taps use `deepLink` payload paths (see [NOTIFICATIONS.md](./NOTIFICATIONS.md)). |
+## Environment targeting
 
-## Push notifications (APNs)
+- Internal and early external TestFlight builds target the isolated staging API and web OAuth bridge.
+- The App Store release candidate is rebuilt from the approved commit with production API/web values.
+- Increment `CURRENT_PROJECT_VERSION` for every App Store Connect upload.
+- Never submit a staging-targeted archive as the production App Store version.
 
-TownHub uses Capacitor Push Notifications + the shared backend notification pipeline (not an iOS-only stack). Full architecture, env vars, and testing: [NOTIFICATIONS.md](./NOTIFICATIONS.md).
+See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
-Quick checklist:
+## Authentication
 
-1. Enable **Push Notifications** on the App ID and in Xcode Signing & Capabilities.
-2. Create an APNs Auth Key (`.p8`) and set `APNS_*` on the API.
-3. Ensure `Info.plist` includes `UIBackgroundModes` → `remote-notification` (already in the Capacitor template).
-4. `pnpm --filter @workspace/townhub run ios:sync` after installing `@capacitor/push-notifications`.
-5. Sign in on a physical device, accept permission, confirm `device_tokens`, then send a test from `POST /api/me/notifications/test-push`.
+Native sign-in offers Apple, Google, and email:
 
-Operational App Push (orders/appointments) uses a single Enable in Business Hub → Notifications. **Critical Stripe / payment alerts always push** when a device is registered and cannot be disabled — see [NOTIFICATIONS.md](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
+- Apple and Google use Clerk OAuth through the system browser and return through `https://<public-web>/native-sso-callback` → `townhub://sso-callback` → bundled `/sso-callback`.
+- Email/password uses Clerk UI in the WebView.
+- Configure the production and staging callback URLs in their matching Clerk instances.
+- Enable Apple for sign-in and sign-up, add the Clerk native application with the Apple App ID prefix and bundle ID, enable the **Sign in with Apple** capability, and configure Apple private-email relay for TownHub sender domains.
+- Test Apple first-time consent, Hide My Email, returning users, canceled auth, and sign-out on a physical device.
 
-## Useful scripts
+TownHub currently uses the system-browser Clerk OAuth bridge for Apple. Validate this exact flow during TestFlight review preparation. If Clerk or Apple requires the native Authentication Services token exchange for this application configuration, that is a release blocker—not a reason to remove Apple login.
 
-All commands run from the repo root:
+## Store billing behavior
 
-| Script | Description |
-|--------|-------------|
-| `pnpm --filter @workspace/townhub run cap:sync:ios` | Sync Capacitor plugins and config to iOS |
-| `pnpm --filter @workspace/townhub run ios:sync` | Build frontend + sync iOS |
-| `pnpm --filter @workspace/townhub run ios:open` | Open Xcode workspace |
-| `pnpm --filter @workspace/townhub run ios:run` | Build, sync, and launch on simulator/device |
+The iOS app includes the customer marketplace, Business Hub, and role-protected admin dashboard. Customer checkout for physical goods/services remains available.
 
-## TestFlight / App Store (later)
+TownHub owner SaaS billing is read-only in store distributions:
 
-1. Set **Bundle Identifier** to `com.lanetech.townhub` (already configured in `capacitor.config.ts`).
-2. Configure app icons and launch screen in Xcode (`ios/App/App/Assets.xcassets`).
-3. Archive via **Product → Archive** and upload to App Store Connect.
-4. Submit for TestFlight beta review.
+- Owners can see the assigned plan, status, enabled features, and renewal/access dates.
+- Subscribe, Start Trial, Change Plan, Stripe Billing portal, and billing deep-link actions are suppressed.
+- Approved owners receive account setup instructions by email.
+- Admin plan assignment remains available to authorized platform administrators.
+
+`VITE_DISTRIBUTION_CHANNEL=app-store` activates this behavior, and native runtime detection fails closed if the variable is missing.
+
+## Account deletion and legal pages
+
+- Signed-in users open **Account → Delete TownHub account**, type `DELETE`, and receive a processing date.
+- Pending requests can be canceled and are visible in Admin → Users.
+- Operators follow [ACCOUNT_DELETION_RUNBOOK.md](./ACCOUNT_DELETION_RUNBOOK.md).
+- `/privacy-policy` and `/terms-of-service` are bundled routes and must also be deployed at stable public HTTPS URLs for App Store Connect metadata.
+- Privacy disclosures and `PrivacyInfo.xcprivacy` must match actual Clerk, Stripe, Sentry, notification, storage, order, appointment, and business data handling.
+
+## Push notifications
+
+TownHub uses Capacitor Push Notifications and the shared notification pipeline. The Xcode project includes Push Notifications and remote-notification background mode declarations.
+
+Before device testing:
+
+1. Enable Push Notifications for the App ID and provisioning profiles.
+2. Create/configure the APNs key and `APNS_*` API variables.
+3. Ensure the bundle ID is `com.lanetech.townhub`.
+4. On a physical device, grant permission, verify registration in `device_tokens`, and send an authorized test push.
+5. Test signed-in customer, owner, and admin deep links without exposing guest tokens or PII.
+
+See [NOTIFICATIONS.md](./NOTIFICATIONS.md) for event routing and critical payment alerts.
+
+## Native capabilities and metadata
+
+The checked-in native project includes:
+
+- iPhone-only target family
+- `App.entitlements` for Push Notifications and Sign in with Apple
+- `PrivacyInfo.xcprivacy`
+- `townhub://` callback scheme
+- bundled app icons and launch assets
+
+Before archive, verify in Xcode:
+
+- Signing team, bundle ID, provisioning profile, capabilities, minimum iOS version
+- marketing version and unique build number
+- icons and launch screen at all required sizes
+- Release configuration uses the expected entitlements
+- privacy manifest is present in the built product
+
+## TestFlight workflow
+
+1. Enroll in the Apple Developer Program and create the App ID/App Store Connect record.
+2. Configure Clerk, Apple, APNs, staging API CORS, Sentry, and all staging providers.
+3. Run repository release gates and the native environment check.
+4. Run `ios:sync`, open the workspace, and build Release for a generic iOS device.
+5. Test on a physical iPhone before archiving.
+6. Archive with **Product → Archive**, validate, and upload.
+7. Complete App Privacy, privacy/support URLs, age rating, export compliance, screenshots, review notes, and a review account that exposes customer, owner, and admin behavior as appropriate.
+8. Complete internal TestFlight, then external beta review if used.
+9. Rebuild against production for the App Store candidate and repeat the smoke matrix.
+
+## Required physical-device matrix
+
+- Fresh install, upgrade, offline launch/failure recovery, safe areas, keyboard, dark/light mode
+- Apple, Google, and email sign-in; sign-out; disabled account; account deletion request/cancel
+- Customer browsing, guest/signed-in order, card browser return, pay at pickup, order tracking, appointment request
+- Owner Business Hub, notifications, product/order/kitchen/appointment operations, Connect browser return, read-only subscription page
+- Admin dashboard and authorization-negative checks
+- Push registration, receipt, deep links, token removal on sign-out
+- Privacy, Terms, Help, support email, external maps/social links
 
 ## Troubleshooting
 
-| Issue | Fix |
-|-------|-----|
-| Blank WebView | Confirm `CAPACITOR_SERVER_URL` is reachable in Safari on the same device/simulator. Re-run `ios:sync`. |
-| Clerk auth errors | Add your deployed frontend URL to Clerk allowed origins / redirect URLs. |
-| Stripe redirect fails | Ensure API `APP_BASE_URL` matches `CAPACITOR_SERVER_URL`. |
-| Pod install errors | `cd artifacts/townhub/ios/App && pod install --repo-update` |
-| CORS errors | Should not occur — the WebView origin is your deployed HTTPS URL. If testing a staging URL, add it to API `CORS_ALLOWED_ORIGINS`. |
-
-## Native mobile experience (Capacitor only)
-
-When `Capacitor.isNativePlatform()` is true, the same React app gains native polish. **Web browsers are unchanged.**
-
-| Feature | Behavior |
-|---------|----------|
-| Bottom tabs | Home, Businesses, Events, Food Trucks, Account — hidden on dashboards, storefronts, cart, and checkout. Header Sign In / UserButton is hidden while tabs are visible (Account tab owns that). |
-| Dashboard back | Native-only **Back** in the header on Admin / Business Hub |
-| Safe areas | Notch, Dynamic Island, home indicator, landscape insets via `env(safe-area-inset-*)` |
-| Splash screen | TownHub cream background (`#faf8f5`); stays until load + short minimum, then fades out |
-| Status bar | Dark icons on light theme; syncs when `.dark` class toggles |
-| Pull to refresh | Home, Businesses, Events, Food Trucks only |
-| Haptics | Tab changes, order placed, business approved, save toasts, pull to refresh |
-
-Helpers live in `src/lib/native-platform.ts`, `src/hooks/use-native-platform.ts`, and `src/lib/capacitor-shell.ts`.
+| Symptom | Check |
+|---|---|
+| Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
+| API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
+| OAuth fails | `VITE_PUBLIC_WEB_URL`, Clerk mobile SSO allowlist, Apple/Google connection, custom scheme, physical-device logs |
+| Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |
+| Push fails | App ID/profile capability, APNs environment/key/team/bundle ID, device token registration |
+| Store billing buttons appear | Release env gate and `VITE_DISTRIBUTION_CHANNEL=app-store` |
 
 ## Project layout
 
-```
+```text
 artifacts/townhub/
-├── capacitor.config.ts    # App id, name, remote server URL
-├── ios/                   # Native Xcode project (generated)
-├── src/lib/capacitor-shell.ts       # Splash, status bar, deep links, external URLs
-├── src/lib/native-platform.ts       # isNativeApp(), isIOS(), isAndroid()
-├── src/components/native-bottom-tab-bar.tsx
-├── src/components/native-pull-to-refresh.tsx
-└── dist/public/           # Vite build output (Capacitor webDir)
+├── capacitor.config.ts
+├── ios/App/App.xcworkspace
+├── ios/App/App/App.entitlements
+├── ios/App/App/PrivacyInfo.xcprivacy
+├── src/lib/capacitor-shell.ts
+├── src/lib/distribution-channel.ts
+└── dist/public/                  # copied into iOS by cap sync
 ```
-
-The existing web app code is unchanged; native helpers only run when `Capacitor.isNativePlatform()` is true.

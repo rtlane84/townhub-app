@@ -1,5 +1,6 @@
 /**
- * Absolute API origin for split deploys (Netlify frontend + Railway API).
+ * Absolute API origin for split deploys (Cloudflare frontend + Railway API)
+ * and bundled native builds.
  * Leave unset in local Vite dev — `/api` is proxied to localhost:8080.
  *
  * Example: https://town-hub-production.up.railway.app
