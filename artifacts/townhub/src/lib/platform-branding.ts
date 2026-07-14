@@ -1,6 +1,6 @@
 import type { PlatformTheme } from "@workspace/api-client-react";
 
-export const DEFAULT_PLATFORM_NAME = "LocalOrderHub";
+export const DEFAULT_PLATFORM_NAME = "TownHub";
 
 export const DEFAULT_HERO_TAGLINE =
   "Your town's best bakeries, florists, markets, and shops—all in one place. Fresh, local, and community-driven.";

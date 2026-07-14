@@ -25,6 +25,7 @@ import {
 } from "@/lib/native-oauth";
 import { clearNativeOAuthPending } from "@/lib/native-oauth-resume";
 import { consumePostAuthRedirect } from "@/lib/native-post-auth-redirect";
+import { resetClientSessionState } from "@/lib/reset-client-session";
 
 import NotFound from "@/pages/not-found";
 const Home = lazyWithRetry(() => import("@/pages/home"));
@@ -239,7 +240,9 @@ function ClerkQueryClientCacheInvalidator() {
     const unsubscribe = addListener(({ user }) => {
       const userId = user?.id ?? null;
       if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
-        queryClient.clear();
+        // Clears bearer getter first, then cache (theme preserved). Do not also
+        // call queryClient.clear() from sign-out UI — this listener owns reset.
+        resetClientSessionState(queryClient);
       }
       prevUserIdRef.current = userId;
     });
@@ -257,6 +260,9 @@ function ClerkQueryClientCacheInvalidator() {
  * apply SameSite=Lax to Clerk's session cookies, so they are silently stripped
  * from every API request.  Sending the JWT as Authorization: Bearer sidesteps
  * the cookie restriction in both dev (iframe) and prod (published domain).
+ *
+ * Logout must clear the getter synchronously (via resetClientSessionState)
+ * before wiping React Query — this effect runs after paint and is too late alone.
  */
 function ClerkApiTokenBridge() {
   const { getToken, isSignedIn } = useAuth();

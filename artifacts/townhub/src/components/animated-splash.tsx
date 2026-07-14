@@ -12,8 +12,10 @@ import { PlatformBrandMark } from "@/components/platform-brand-mark";
 /** Static launch logo — matches iOS LaunchScreen / Splash.imageset mark. */
 const SPLASH_LOGO_SRC = "/splash-logo.png";
 
-/** Total time the branded splash stays up before cross-fading to the app. */
+/** Minimum time the branded splash stays up before cross-fading to the app. */
 const SPLASH_HOLD_MS = 3000;
+/** Never pin splash longer than this waiting for theme (failed/slow network). */
+const SPLASH_THEME_SAFETY_MS = 4000;
 const CROSS_FADE_MS = 420;
 /** Keep the mark compact so the cold-start frame matches LaunchScreen (160pt). */
 const SPLASH_LOGO_SIZE_PX = 160;
@@ -28,17 +30,22 @@ const SPLASH_CANVAS = "#F4F5F8";
  * Native cold-start splash: solid light canvas, launch logo with spring spin,
  * fade-in wordmark, then cross-fade into the main app shell.
  * Skipped on in-session remounts (e.g. Google OAuth return via location.assign).
+ *
+ * Hold ends after the minimum branding hold once theme is ready (or cached),
+ * with a hard safety cap so a stuck theme fetch cannot pin the overlay.
  */
 export function AnimatedSplash() {
   const native = isNativeApp();
   const reduceMotion = useReducedMotion();
-  const { platformName } = usePlatformBranding();
+  const { platformName, themeLoading } = usePlatformBranding();
   const [visible, setVisible] = useState(() => {
     if (!native) return false;
     // OAuth / deep-link remounts share this WebView session — don't replay splash.
     return !hasNativeSplashShownThisSession();
   });
   const [logoReady, setLogoReady] = useState(false);
+  const [minHoldElapsed, setMinHoldElapsed] = useState(false);
+  const [safetyElapsed, setSafetyElapsed] = useState(false);
 
   // Start the logo animation once the asset is decodable (including cache hits).
   useEffect(() => {
@@ -84,12 +91,26 @@ export function AnimatedSplash() {
     markNativeSplashShownThisSession();
   }, [native, visible]);
 
-  // Phase 3 — leave after the hold, regardless of theme fetch.
   useEffect(() => {
     if (!native || !visible) return;
-    const timer = window.setTimeout(() => setVisible(false), SPLASH_HOLD_MS);
-    return () => window.clearTimeout(timer);
+    const minTimer = window.setTimeout(() => setMinHoldElapsed(true), SPLASH_HOLD_MS);
+    const safetyTimer = window.setTimeout(
+      () => setSafetyElapsed(true),
+      SPLASH_THEME_SAFETY_MS,
+    );
+    return () => {
+      window.clearTimeout(minTimer);
+      window.clearTimeout(safetyTimer);
+    };
   }, [native, visible]);
+
+  // Dismiss once the min hold elapsed and theme is ready, or when safety fires.
+  useEffect(() => {
+    if (!native || !visible) return;
+    if (safetyElapsed || (minHoldElapsed && !themeLoading)) {
+      setVisible(false);
+    }
+  }, [native, visible, minHoldElapsed, themeLoading, safetyElapsed]);
 
   if (!native) return null;
 

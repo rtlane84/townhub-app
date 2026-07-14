@@ -30,6 +30,10 @@ import {
 import { applyPlatformThemeToRoot } from "@/lib/theme-colors";
 import { syncNativeStatusBar } from "@/lib/capacitor-shell";
 import {
+  readCachedPlatformTheme,
+  writeCachedPlatformTheme,
+} from "@/lib/platform-theme-cache";
+import {
   DEFAULT_PLATFORM_TIMEZONE,
   resolvePlatformTimeZone,
 } from "@workspace/api-zod";
@@ -96,12 +100,15 @@ export function PlatformThemeProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const cachedTheme = useMemo(() => readCachedPlatformTheme(), []);
+
   const { data: theme, isPending: themePending } = useGetPlatformTheme({
     query: {
       queryKey: getGetPlatformThemeQueryKey(),
       staleTime: 30 * 1000,
       refetchOnWindowFocus: true,
       refetchOnMount: "always",
+      ...(cachedTheme ? { initialData: cachedTheme } : {}),
     },
   });
 
@@ -129,9 +136,16 @@ export function PlatformThemeProvider({
       weatherEnabled: resolveWeatherEnabled(theme),
       weatherLocation: resolveWeatherLocation(theme),
       timezone: resolvePlatformTimeZone(theme?.timezone),
+      // Cached initialData means theme is non-null on first paint — not "loading".
       themeLoading: themePending && theme == null,
     };
   }, [theme, themePending]);
+
+  useEffect(() => {
+    if (theme) {
+      writeCachedPlatformTheme(theme);
+    }
+  }, [theme]);
 
   useEffect(() => {
     applyPlatformThemeToRoot(theme);

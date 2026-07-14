@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Home,
   Store,
@@ -19,7 +18,12 @@ import {
   UserRound,
 } from "lucide-react";
 import { SignInButton, useClerk, useUser } from "@clerk/react";
-import { useUnregisterDevice } from "@workspace/api-client-react";
+import {
+  setAuthTokenGetter,
+  useUnregisterDevice,
+  useGetAdminBootstrapStatus,
+  getGetAdminBootstrapStatusQueryKey,
+} from "@workspace/api-client-react";
 import { unregisterNativePushDevice } from "@/lib/native-push";
 import { cn } from "@/lib/utils";
 import { isAccountRoute, isNavActive } from "@/lib/native-platform";
@@ -29,7 +33,6 @@ import {
   triggerTabChangeHaptic,
 } from "@/lib/native-haptics";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
-import { useGetAdminBootstrapStatus, getGetAdminBootstrapStatusQueryKey } from "@workspace/api-client-react";
 import {
   Drawer,
   DrawerContent,
@@ -55,7 +58,6 @@ export function NativeBottomTabBar() {
   const [signingOut, setSigningOut] = useState(false);
   const { isSignedIn, isLoaded: clerkLoaded, user } = useUser();
   const { signOut, openUserProfile } = useClerk();
-  const queryClient = useQueryClient();
   const unregisterDevice = useUnregisterDevice();
   const {
     authResolved,
@@ -143,8 +145,11 @@ export function NativeBottomTabBar() {
       await unregisterNativePushDevice(async (input) => {
         await unregisterDevice.mutateAsync({ data: input });
       });
+      // Clear bearer before Clerk teardown so public refetches during session
+      // reset do not await a hung getToken(). Cache wipe is owned by
+      // ClerkQueryClientCacheInvalidator via resetClientSessionState.
+      setAuthTokenGetter(null);
       await signOut();
-      queryClient.clear();
       closeAccount();
       setLocation("/");
     } catch {

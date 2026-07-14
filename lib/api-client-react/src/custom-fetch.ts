@@ -11,6 +11,9 @@ export type AuthTokenGetter = () => Promise<string | null> | string | null;
 const NO_BODY_STATUS = new Set([204, 205, 304]);
 const DEFAULT_JSON_ACCEPT = "application/json, application/problem+json";
 
+/** Avoid hung public fetches when Clerk getToken stalls after sign-out. */
+export const AUTH_TOKEN_TIMEOUT_MS = 2_000;
+
 // ---------------------------------------------------------------------------
 // Module-level configuration
 // ---------------------------------------------------------------------------
@@ -42,6 +45,40 @@ export function setBaseUrl(url: string | null): void {
  */
 export function setAuthTokenGetter(getter: AuthTokenGetter | null): void {
   _authTokenGetter = getter;
+}
+
+/**
+ * Resolves a bearer token from a getter, racing a timeout so callers never
+ * block indefinitely when the session was torn down mid-flight.
+ * Exported for unit tests.
+ */
+export async function resolveAuthTokenWithTimeout(
+  getter: AuthTokenGetter,
+  timeoutMs: number = AUTH_TOKEN_TIMEOUT_MS,
+): Promise<string | null> {
+  try {
+    const result = getter();
+    if (result == null || typeof result === "string") {
+      return result;
+    }
+
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        result,
+        new Promise<null>((resolve) => {
+          timeoutId = setTimeout(() => resolve(null), timeoutMs);
+        }),
+      ]);
+    } finally {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+      // Swallow late rejection from the original getter so it does not surface
+      // as an unhandled rejection after we already timed out.
+      void Promise.resolve(result).catch(() => undefined);
+    }
+  } catch {
+    return null;
+  }
 }
 
 function isRequest(input: RequestInfo | URL): input is Request {
@@ -352,7 +389,7 @@ export async function customFetch<T = unknown>(
   // Attach bearer token when an auth getter is configured and no
   // Authorization header has been explicitly provided.
   if (_authTokenGetter && !headers.has("authorization")) {
-    const token = await _authTokenGetter();
+    const token = await resolveAuthTokenWithTimeout(_authTokenGetter);
     if (token) {
       headers.set("authorization", `Bearer ${token}`);
     }
