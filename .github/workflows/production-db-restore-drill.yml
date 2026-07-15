@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       archive_key:
-        description: Optional R2 object key (default: latest townhub-production-*.zip)
+        description: "Optional R2 object key; defaults to latest townhub-production-*.zip"
         required: false
         type: string
 
