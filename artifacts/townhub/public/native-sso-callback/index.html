@@ -26,13 +26,19 @@
     <script>
       (function () {
         // Static bounce — no React. Works even before the SPA bundle loads.
-        // Preserves Clerk OAuth query/hash for the WebView /sso-callback handler.
-        var deepLink = "townhub://sso-callback" + location.search + location.hash;
+        // Path-encode Clerk params: Cap/iOS often strips query strings from townhub://.
+        var payload = location.search + location.hash;
+        var deepLink =
+          payload && payload !== "?" && payload !== "#"
+            ? "townhub://sso-callback/p/" + encodeURIComponent(payload)
+            : "townhub://sso-callback";
+        function setLink() {
+          var openLink = document.getElementById("open-app");
+          if (openLink) openLink.setAttribute("href", deepLink);
+        }
+        setLink();
         location.replace(deepLink);
-        window.addEventListener("DOMContentLoaded", function () {
-          var link = document.getElementById("open-app");
-          if (link) link.setAttribute("href", deepLink);
-        });
+        window.addEventListener("DOMContentLoaded", setLink);
       })();
     </script>
   </head>

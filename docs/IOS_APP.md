@@ -85,6 +85,7 @@ TownHub owner SaaS billing is read-only in store distributions:
 - Operators follow [ACCOUNT_DELETION_RUNBOOK.md](./ACCOUNT_DELETION_RUNBOOK.md).
 - `/privacy-policy` and `/terms-of-service` are bundled routes and must also be deployed at stable public HTTPS URLs for App Store Connect metadata.
 - Privacy disclosures and `PrivacyInfo.xcprivacy` must match actual Clerk, Stripe, Sentry, notification, storage, order, appointment, and business data handling.
+- Enter App Store Connect privacy answers using [APP_STORE_PRIVACY.md](./APP_STORE_PRIVACY.md) (IOS-004 owner sign-off checklist).
 
 ## Push notifications
 
@@ -146,7 +147,7 @@ Before archive, verify in Xcode:
 |---|---|
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
-| OAuth fails | `VITE_PUBLIC_WEB_URL`, Clerk mobile SSO allowlist, Apple/Google connection, custom scheme, physical-device logs |
+| OAuth fails | `VITE_PUBLIC_WEB_URL`, Clerk mobile SSO allowlist (`townhub://sso-callback` + `https://…/native-sso-callback`), Apple/Google connection, custom scheme, physical-device logs. Instance `allowed_origins` must include `capacitor://localhost` (PATCH `/v1/instance`). CapacitorCookies may be enabled for WKWebView; do not enable CapacitorHttp globally (breaks Clerk fetch). |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |
 | Push fails | App ID/profile capability, APNs environment/key/team/bundle ID, device token registration |
 | Store billing buttons appear | Release env gate and `VITE_DISTRIBUTION_CHANNEL=app-store` |

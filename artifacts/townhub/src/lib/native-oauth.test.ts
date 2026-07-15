@@ -6,6 +6,7 @@ import {
   buildNativeSsoDeepLinkFromLocation,
   getNativeSsoHttpsCallbackUrl,
   isNativeSsoCallbackUrl,
+  nativeSsoDeepLinkHasParams,
   resolvePublicWebBaseUrl,
   resolveNativeDeepLinkToAppUrl,
 } from "./native-oauth.ts";
@@ -23,15 +24,23 @@ describe("native-oauth", () => {
   it("detects SSO callback URLs", () => {
     assert.equal(isNativeSsoCallbackUrl("townhub://sso-callback"), true);
     assert.equal(isNativeSsoCallbackUrl("townhub://sso-callback?__clerk_status=complete"), true);
+    assert.equal(isNativeSsoCallbackUrl("townhub://sso-callback/p/%3Frotating_token_nonce%3Dabc"), true);
     assert.equal(isNativeSsoCallbackUrl("https://app.example/sso-callback"), true);
     assert.equal(isNativeSsoCallbackUrl("https://app.example/native-sso-callback"), true);
     assert.equal(isNativeSsoCallbackUrl("https://app.example/businesses"), false);
   });
 
-  it("builds deep link bounce with Clerk query params", () => {
+  it("path-encodes Clerk params so Cap cannot strip the query string", () => {
     assert.equal(
       buildNativeSsoDeepLinkFromLocation("?__clerk_status=complete&rotating_token_nonce=abc"),
-      "townhub://sso-callback?__clerk_status=complete&rotating_token_nonce=abc",
+      "townhub://sso-callback/p/" + encodeURIComponent("?__clerk_status=complete&rotating_token_nonce=abc"),
+    );
+    assert.equal(nativeSsoDeepLinkHasParams("townhub://sso-callback"), false);
+    assert.equal(
+      nativeSsoDeepLinkHasParams(
+        "townhub://sso-callback/p/" + encodeURIComponent("?rotating_token_nonce=abc"),
+      ),
+      true,
     );
   });
 
@@ -53,6 +62,20 @@ describe("native-oauth", () => {
         "capacitor://localhost",
       ),
       "capacitor://localhost/sso-callback?__clerk_status=complete",
+    );
+    assert.equal(
+      resolveNativeDeepLinkToAppUrl(
+        "townhub://sso-callback/p/" + encodeURIComponent("?rotating_token_nonce=abc&__clerk_status=complete"),
+        "capacitor://localhost",
+      ),
+      "capacitor://localhost/sso-callback?rotating_token_nonce=abc&__clerk_status=complete",
+    );
+    assert.equal(
+      resolveNativeDeepLinkToAppUrl(
+        "https://staging.townhub.example/native-sso-callback?rotating_token_nonce=abc",
+        "capacitor://localhost",
+      ),
+      "capacitor://localhost/sso-callback?rotating_token_nonce=abc",
     );
   });
 });

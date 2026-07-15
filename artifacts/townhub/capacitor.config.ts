@@ -33,11 +33,13 @@ const config: CapacitorConfig = {
     scheme: "capacitor",
   },
   plugins: {
+    // Keep CapacitorHttp OFF — patching global fetch breaks Clerk/Vite in WKWebView.
+    // CapacitorCookies helps persist Clerk session cookies after Safari OAuth return.
     CapacitorHttp: {
       enabled: false,
     },
     CapacitorCookies: {
-      enabled: false,
+      enabled: true,
     },
     SplashScreen: {
       launchShowDuration: 2000,

@@ -18,6 +18,7 @@ import { AnimatedSplash } from "@/components/animated-splash";
 
 import { RoutePageLoader } from "@/components/route-page-loader";
 import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
+import { NativeSsoFinish } from "@/components/native-sso-finish";
 import { isNativeApp } from "@/lib/native-platform";
 import {
   buildNativeSsoDeepLinkFromLocation,
@@ -214,8 +215,12 @@ function NativeSsoBouncePage() {
   );
 }
 
-/** WebView / web: finish Clerk OAuth session, then return to the pre-OAuth page. */
+/** Native Safari bridge finish vs web Clerk redirect callback. */
 function SsoCallbackPage() {
+  return isNativeApp() ? <NativeSsoFinish /> : <WebSsoCallbackPage />;
+}
+
+function WebSsoCallbackPage() {
   const [redirectUrl] = useState(() => consumePostAuthRedirect("/"));
 
   useEffect(() => {

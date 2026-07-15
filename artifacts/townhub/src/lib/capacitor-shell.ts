@@ -10,10 +10,11 @@ import {
   isStripeCheckoutUrl,
   shouldOpenLinkExternally,
 } from "@/lib/native-external-links";
-import { resolveNativeDeepLinkToAppUrl, isNativeSsoCallbackUrl } from "@/lib/native-oauth";
+import { resolveNativeDeepLinkToAppUrl, isNativeSsoCallbackUrl, nativeSsoDeepLinkHasParams } from "@/lib/native-oauth";
 import {
   clearNativeOAuthPending,
   installNativeOAuthResumeHandlers,
+  isNativeOAuthPending,
 } from "@/lib/native-oauth-resume";
 import { skipNativeSplashOnNextLoad } from "@/lib/native-splash-session";
 
@@ -239,7 +240,16 @@ export function initCapacitorShell(): void {
 
   void App.addListener("appUrlOpen", ({ url }) => {
     void closeExternalBrowser();
-    if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
+    if (url.startsWith("townhub://") || url.startsWith(window.location.origin) || /^https:\/\//i.test(url)) {
+      // Cap/iOS sometimes delivers a bare townhub://sso-callback before the
+      // param-bearing open. Ignore empty callbacks while OAuth is in flight.
+      if (
+        isNativeSsoCallbackUrl(url) &&
+        isNativeOAuthPending() &&
+        !nativeSsoDeepLinkHasParams(url)
+      ) {
+        return;
+      }
       if (isNativeSsoCallbackUrl(url)) {
         clearNativeOAuthPending();
       }
@@ -255,7 +265,14 @@ export function initCapacitorShell(): void {
   void App.getLaunchUrl().then((result) => {
     const url = result?.url;
     if (!url) return;
-    if (url.startsWith("townhub://") || url.startsWith(window.location.origin)) {
+    if (url.startsWith("townhub://") || url.startsWith(window.location.origin) || /^https:\/\//i.test(url)) {
+      if (
+        isNativeSsoCallbackUrl(url) &&
+        isNativeOAuthPending() &&
+        !nativeSsoDeepLinkHasParams(url)
+      ) {
+        return;
+      }
       if (isNativeSsoCallbackUrl(url)) {
         clearNativeOAuthPending();
       }

@@ -31,5 +31,7 @@ describe("App Store compliance wiring", () => {
   it("declares native privacy behavior without tracking", () => {
     assert.match(privacyManifest, /<key>NSPrivacyTracking<\/key>\s*<false\/>/);
     assert.match(privacyManifest, /NSPrivacyAccessedAPICategoryUserDefaults/);
+    assert.match(privacyManifest, /NSPrivacyCollectedDataTypeDeviceID/);
+    assert.match(privacyManifest, /NSPrivacyCollectedDataTypePhotosorVideos/);
   });
 });
