@@ -94,3 +94,25 @@ Before every release, record pass/fail evidence for these checks:
 - Native staging and production builds show the expected API/environment in Admin → Operations Center.
 
 Any cross-environment result is an immediate release stop.
+
+## Branch deployment wiring (Railway + Cloudflare)
+
+Canonical branch mapping for automatic deploys:
+
+| Git branch | API (Railway) | Frontend (Cloudflare Workers Builds) |
+|---|---|---|
+| `main` | Production API (`api.townhub.io`) | Production Worker / custom domains `townhub.io` (+ `www` redirect) |
+| `develop` | Staging API (`api-staging.townhub.io`) | Staging Worker / custom domain `staging.townhub.io` |
+
+### Verified on 2026-07-15
+
+- Git branches `main` and `develop` both exist on `origin`.
+- Public health checks returned HTTP 200 for `https://api.townhub.io/health`, `https://api-staging.townhub.io/health`, `https://townhub.io/`, and `https://staging.townhub.io/`.
+- Cloudflare account has Worker scripts `townhub-production` and `townhub-app` (repo `wrangler.toml` currently names `townhub-app`; confirm which Builds project deploys from which branch and which custom domains attach to which Worker).
+
+### Still requires dashboard confirmation
+
+1. **Railway:** production service watches `main` only; staging service watches `develop` only. Confirm separate projects/services and that neither shares `DATABASE_URL` or webhook secrets.
+2. **Cloudflare Workers Builds:** production Builds project deploys `main` → production Worker/domains; staging Builds project deploys `develop` → staging Worker/domain. Build env vars (`VITE_API_BASE_URL`, Clerk publishable key, Sentry DSN, distribution channel) must match the environment.
+3. **Uptime / alerts:** create external monitors for the four URLs above, wire Railway log drain, and test alert delivery per [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md).
+4. Do not mark ENV-001 or OPS-002 complete until the branch→environment matrix and alert tests are recorded with screenshots or operator notes (no secrets).
