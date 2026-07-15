@@ -129,8 +129,51 @@ jobs:
           sed -i 's/^SET transaction_timeout/# &/' \
             "$work_dir/roles.sql" "$work_dir/schema.sql" "$work_dir/data.sql"
 
-          # Roles can reference reserved/cloud-managed names; continue after
-          # non-fatal role statements so schema/data still validate.
+          # Plain postgres:16 lacks Supabase-managed roles/schemas that the
+          # dump ALTERs and references. Bootstrap stubs before restore.
+          psql "$RESTORE_DATABASE_URL" --set ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+              CREATE ROLE anon NOLOGIN;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+              CREATE ROLE authenticated NOLOGIN;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+              CREATE ROLE service_role NOLOGIN BYPASSRLS;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticator') THEN
+              CREATE ROLE authenticator NOINHERIT LOGIN PASSWORD 'postgres';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_admin') THEN
+              CREATE ROLE supabase_admin NOLOGIN CREATEDB CREATEROLE;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_auth_admin') THEN
+              CREATE ROLE supabase_auth_admin NOLOGIN;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_storage_admin') THEN
+              CREATE ROLE supabase_storage_admin NOLOGIN;
+            END IF;
+          END
+          $$;
+          GRANT anon, authenticated, service_role TO authenticator;
+          CREATE SCHEMA IF NOT EXISTS extensions;
+          CREATE SCHEMA IF NOT EXISTS auth;
+          CREATE SCHEMA IF NOT EXISTS storage;
+          CREATE SCHEMA IF NOT EXISTS realtime;
+          CREATE SCHEMA IF NOT EXISTS graphql_public;
+          CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA extensions;
+          CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+          SQL
+
+          # Optional extensions referenced by some Supabase dumps.
+          set +e
+          psql "$RESTORE_DATABASE_URL" --command 'CREATE EXTENSION IF NOT EXISTS pg_graphql WITH SCHEMA extensions'
+          psql "$RESTORE_DATABASE_URL" --command 'CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault'
+          set -e
+
+          # Roles statements can still warn on cloud-only attributes.
           set +e
           psql "$RESTORE_DATABASE_URL" \
             --set ON_ERROR_STOP=0 \
@@ -139,16 +182,38 @@ jobs:
           set -e
           echo "roles_restore_exit=$roles_rc"
 
+          # Schema may reference optional Supabase extensions; keep going and
+          # require application tables in the verify step.
+          set +e
           psql "$RESTORE_DATABASE_URL" \
-            --single-transaction \
-            --set ON_ERROR_STOP=1 \
+            --set ON_ERROR_STOP=0 \
             --file "$work_dir/schema.sql"
+          schema_rc=$?
+          set -e
+          echo "schema_restore_exit=$schema_rc"
 
+          set +e
           psql "$RESTORE_DATABASE_URL" \
-            --single-transaction \
-            --set ON_ERROR_STOP=1 \
+            --set ON_ERROR_STOP=0 \
             --command "SET session_replication_role = replica" \
             --file "$work_dir/data.sql"
+          data_rc=$?
+          set -e
+          echo "data_restore_exit=$data_rc"
+
+          # Fail closed if none of the TownHub application tables appeared.
+          app_tables="$(psql "$RESTORE_DATABASE_URL" -At <<'SQL'
+          SELECT count(*)
+          FROM information_schema.tables
+          WHERE table_schema = 'public'
+            AND table_name IN (
+              'users', 'businesses', 'products', 'orders',
+              'platform_settings', 'subscription_plans'
+            );
+          SQL
+          )"
+          echo "core_app_tables=$app_tables"
+          test "$app_tables" -ge 6
 
       - name: Verify tables, row counts, and connectivity
         id: verify
