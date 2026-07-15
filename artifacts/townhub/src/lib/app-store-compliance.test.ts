@@ -16,9 +16,10 @@ const entitlements = readFileSync(`${iosRoot}/App.entitlements`, "utf8");
 
 describe("App Store compliance wiring", () => {
   it("offers Apple as an equivalent native social login", () => {
-    assert.match(socialSource, /strategy="oauth_apple"/);
     assert.match(socialSource, /Continue with Apple/);
-    assert.match(socialSource, /signIn\.sso\(/);
+    // Native Apple uses ASAuthorization + Clerk's oauth_token_apple exchange.
+    assert.match(socialSource, /oauth_token_apple/);
+    assert.match(socialSource, /AuthSession\.appleSignIn/);
     assert.match(entitlements, /com\.apple\.developer\.applesignin/);
   });
 

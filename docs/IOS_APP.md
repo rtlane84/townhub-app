@@ -57,17 +57,39 @@ See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 ## Authentication
 
-Native sign-in offers Apple, Google, and email:
+Native sign-in on iOS offers **Apple** and **email**. Google is temporarily hidden on iOS (see below).
 
-- Apple and Google OAuth run **inside the Capacitor WebView** with the web Clerk SDK (`signIn.sso`). The WKWebView follows the Clerk → provider → Clerk redirect chain and returns to `capacitor://localhost/sso-callback`, where `AuthenticateWithRedirectCallback` finishes the session via Clerk's handshake. No external browser, custom scheme, or `rotating_token_nonce` — those are native-SDK concepts and the web SDK never emits them.
-- **Apple** works inside WKWebView. **Google blocks embedded web views** (`disallowed_useragent`); the Google button surfaces a fallback message on iOS steering users to Apple or email.
-- **Required Clerk config (staging + production):** the instance `allowed_origins` must include `capacitor://localhost`. That single allowed origin lets Clerk redirect the OAuth callback back into the bundle. The old `townhub://oauth/sso-callback` redirect URL is no longer used.
-- The provider hosts (`appleid.apple.com`, `*.apple.com`, `accounts.google.com`, `*.google.com`) and Clerk FAPI hosts are listed in `capacitor.config.ts` → `server.allowNavigation` so the redirect chain stays in-WebView instead of opening externally.
-- Email/password uses Clerk UI in the WebView.
-- Enable Apple for sign-in and sign-up, add the Clerk native application with the Apple App ID prefix and bundle ID, enable the **Sign in with Apple** capability, and configure Apple private-email relay for TownHub sender domains.
-- Test Apple first-time consent, Hide My Email, returning users, canceled auth, and sign-out on a physical device.
+### Why not browser-based OAuth on iOS
 
-Apple and Google OAuth complete inside the Capacitor WebView using the web Clerk SDK and Clerk's handshake against the `capacitor://localhost` allowed origin. Validate Apple on a physical device during TestFlight review preparation. Google sign-in is not available in the WebView (Google rejects embedded web views); if Google on iOS becomes a hard requirement, it needs a native Clerk SDK/token-exchange path—that is a separate architecture decision, not a reason to remove Apple login.
+The web Clerk SDK (`@clerk/react`) completes OAuth via a cookie/handshake in the **same browser context** and needs to redirect back to an **https origin**. The Capacitor app can't provide one: Capacitor serves the bundle over the custom `capacitor://localhost` scheme, and WKWebView reserves `http`/`https` so `server.iosScheme` cannot be set to https. Consequences we verified on-device:
+
+- Full-page OAuth (`signIn.sso`) → Apple returns to `capacitor://localhost/...` → **blank** (WKWebView can't complete a redirect into the custom scheme).
+- `ASWebAuthenticationSession` + custom scheme → Google loads, but the web SDK can't recover the session (`bare-sso`, signed out).
+- Google inside WKWebView → **`403 disallowed_useragent`** (Google blocks embedded web views).
+
+So browser-based Clerk OAuth cannot work in the iOS Capacitor shell. The web build is unaffected and still uses Clerk's hosted OAuth.
+
+### Native Apple (current)
+
+Apple uses the **native `ASAuthorization` sheet** — no browser, no redirect:
+
+1. `AuthSession.appleSignIn()` (in the `@townhub/capacitor-auth-session` plugin, `AuthenticationServices` — a built-in framework, no external SDK) presents the Apple sheet and returns the **identity token** (JWT).
+2. `clerk.client.signIn.create({ strategy: "oauth_token_apple", token })` verifies the token. First-time users transfer to `signUp.create({ transfer: true })`.
+3. `clerk.setActive({ session })` establishes the session in the WebView.
+
+**Required config for the token to verify (staging + production):**
+
+- **Clerk → Apple connection → enable "Use custom credentials"** and add the Apple **Services ID**, **Team ID**, **Key ID**, and **.p8 key**. Without custom credentials Clerk uses shared dev credentials whose `aud` won't match the app's identity token, and the exchange fails.
+- **Apple Developer:** a **Services ID** and a **Sign in with Apple key (.p8)** tied to bundle `com.lanetech.townhub`. The **Sign in with Apple** capability/entitlement is already in `App.entitlements`.
+- Configure Apple private-email relay for TownHub sender domains (Hide My Email).
+
+Adding the plugin method requires re-running `ios:sync` (pod re-sync) and a rebuild.
+
+Test Apple first-time consent, Hide My Email, returning users, canceled auth, and sign-out on a physical device.
+
+### Google (next slice)
+
+Native Google (Google Identity SDK → `clerk.authenticateWithGoogleOneTap({ token })`) is not built yet, so the Google button is hidden on iOS to avoid the `disallowed_useragent` wall. It needs a Google Cloud **iOS OAuth client** for `com.lanetech.townhub` plus Clerk Google **custom credentials**. Bring it back after native Apple is verified on-device.
 
 ## Store billing behavior
 
@@ -151,9 +173,9 @@ Before archive, verify in Xcode:
 |---|---|
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
-| OAuth fails | Verify `capacitor://localhost` is in the Clerk instance `allowed_origins` (this is what lets the in-WebView callback finish). Check the Apple/Google connection is enabled, and that provider + Clerk FAPI hosts are in `capacitor.config.ts` → `allowNavigation`. Inspect physical-device Safari Web Inspector logs. Keep CapacitorHttp/Cookies off. |
-| Google button shows "Google blocks sign-in inside app web views" | Expected on iOS — Google rejects embedded web views (`disallowed_useragent`). Use Apple or email. |
-| Blank/stuck after tapping Apple | Confirm `appleid.apple.com`/`*.apple.com` are in `allowNavigation` so the WebView doesn't try to open Apple externally, and that the redirect returns to `capacitor://localhost/sso-callback`. |
+| Apple sign-in fails after the sheet (token rejected) | Clerk → Apple must have **"Use custom credentials"** on with a valid Services ID / Team ID / Key ID / .p8 whose audience matches bundle `com.lanetech.townhub`. Shared dev credentials will fail the `oauth_token_apple` exchange. |
+| Apple sheet doesn't appear | Re-run `ios:sync` so the plugin's new `appleSignIn` method is registered, confirm the **Sign in with Apple** capability/entitlement is present, and rebuild. |
+| Google button missing on iOS | Intentional — native Google isn't built yet and browser Google fails with `disallowed_useragent`. Use Apple or email. |
 | `x.map` / `x.filter` is not a function on native | List API payload wasn’t an array. Public pages use `asArray()`. Re-check Cap Cookies/Http are disabled. |
 | Generic “TownHub” branding / empty home data / “Loading sign-in…” forever | Native bundle missing `VITE_API_BASE_URL` and/or baked-in `VITE_CLERK_PROXY_URL` from root `.env`. Source `.env.native.staging` (see `.env.native.staging.example`), confirm `ios:sync` preflight passes, rebuild from Xcode. Home should show **ClayTownHub** when API is reachable. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |

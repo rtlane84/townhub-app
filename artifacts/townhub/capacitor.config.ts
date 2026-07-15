@@ -19,16 +19,10 @@ const config: CapacitorConfig = {
       "clerk.com",
       "*.clerk.accounts.dev",
       "accounts.dev",
-      // In-WebView OAuth: the WKWebView follows the Clerk → provider → Clerk
-      // redirect chain and returns to capacitor://localhost/sso-callback, where
-      // Clerk's handshake finishes the session. These provider hosts must stay
-      // in-WebView (not open externally). Apple works here; Google rejects
-      // embedded web views (disallowed_useragent) and shows a fallback message.
-      "appleid.apple.com",
-      "*.apple.com",
-      "accounts.google.com",
-      "*.google.com",
-      "*.gstatic.com",
+      // Apple/Google social sign-in does NOT navigate this WebView (Apple uses the
+      // native ASAuthorization sheet + Clerk oauth_token_apple token exchange).
+      // Do not add https OAuth-bounce hosts here: navigating the root WebView to
+      // https and back to capacitor:// blanks the app.
     ],
   },
   ios: {
@@ -41,9 +35,9 @@ const config: CapacitorConfig = {
   plugins: {
     // Keep CapacitorHttp OFF — patching global fetch breaks Clerk/Vite in WKWebView.
     // CapacitorCookies OFF: enabling it during OAuth debugging coincided with native
-    // list pages receiving non-array payloads (.map/.filter crashes). Clerk finishes
-    // Apple/Google in-WebView via authenticateWithRedirect + capacitor://localhost
-    // handshake (allowed origin); do not re-enable without verifying list API arrays.
+    // list pages receiving non-array payloads (.map/.filter crashes). Apple sign-in
+    // is native (ASAuthorization + Clerk oauth_token_apple) and does not need cookies;
+    // do not re-enable without verifying public list API data stays arrays.
     CapacitorHttp: {
       enabled: false,
     },

@@ -11,15 +11,17 @@ import Capacitor
  * Expo/Clerk-style auth-session primitive.
  */
 @objc(AuthSessionPlugin)
-public class AuthSessionPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticationPresentationContextProviding {
+public class AuthSessionPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticationPresentationContextProviding, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
     public let identifier = "AuthSessionPlugin"
     public let jsName = "AuthSession"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "openAuthSession", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "openAuthSession", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "appleSignIn", returnType: CAPPluginReturnPromise)
     ]
 
     private var session: ASWebAuthenticationSession?
     private var retainedSelf: AuthSessionPlugin?
+    private var appleSignInCall: CAPPluginCall?
 
     @objc func openAuthSession(_ call: CAPPluginCall) {
         guard let urlString = call.getString("url"), let url = URL(string: urlString) else {
@@ -76,6 +78,87 @@ public class AuthSessionPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthentication
     }
 
     public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        return resolvePresentationAnchor()
+    }
+
+    // MARK: - Native Sign in with Apple (ASAuthorization)
+
+    /// Presents Apple's native sign-in sheet and resolves with the identity token
+    /// (a JWT) that Clerk verifies via the `oauth_token_apple` strategy. No browser
+    /// or redirect is involved, so the `capacitor://` scheme limitation does not apply.
+    @objc func appleSignIn(_ call: CAPPluginCall) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                call.reject("AuthSession plugin released")
+                return
+            }
+            self.appleSignInCall = call
+
+            let provider = ASAuthorizationAppleIDProvider()
+            let request = provider.createRequest()
+            request.requestedScopes = [.fullName, .email]
+            if let nonce = call.getString("nonce"), !nonce.isEmpty {
+                request.nonce = nonce
+            }
+
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            controller.performRequests()
+        }
+    }
+
+    public func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        guard let call = appleSignInCall else { return }
+        defer { appleSignInCall = nil }
+
+        guard
+            let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+            let tokenData = credential.identityToken,
+            let identityToken = String(data: tokenData, encoding: .utf8)
+        else {
+            call.reject("Apple sign-in returned no identity token", "AUTH_NO_TOKEN")
+            return
+        }
+
+        var result: [String: Any] = ["identityToken": identityToken]
+        if let codeData = credential.authorizationCode,
+           let code = String(data: codeData, encoding: .utf8) {
+            result["authorizationCode"] = code
+        }
+        result["user"] = credential.user
+        if let email = credential.email {
+            result["email"] = email
+        }
+        if let fullName = credential.fullName {
+            if let given = fullName.givenName { result["givenName"] = given }
+            if let family = fullName.familyName { result["familyName"] = family }
+        }
+        call.resolve(result)
+    }
+
+    public func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error
+    ) {
+        guard let call = appleSignInCall else { return }
+        defer { appleSignInCall = nil }
+
+        if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+            call.reject("User cancelled sign-in", "AUTH_CANCELLED")
+            return
+        }
+        call.reject(error.localizedDescription, "AUTH_FAILED")
+    }
+
+    public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        return resolvePresentationAnchor()
+    }
+
+    private func resolvePresentationAnchor() -> ASPresentationAnchor {
         if let window = bridge?.viewController?.view.window {
             return window
         }
