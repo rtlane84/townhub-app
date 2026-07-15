@@ -92,7 +92,7 @@ pg_dump "$DATABASE_URL" \
 
 ### 3.3 Automated Supabase-to-R2 backup (TownHub beta)
 
-TownHub now includes `.github/workflows/production-db-backup.yml`. It creates separate roles, schema, and data dumps with the Supabase CLI, validates the archive, uploads it to a Cloudflare R2 bucket, and verifies the uploaded object. It is intentionally manual-only until the first successful run and restore drill; then enable the nightly 02:00 UTC schedule in the workflow.
+TownHub now includes `.github/workflows/production-db-backup.yml`. It creates separate roles, schema, and data dumps with the Supabase CLI, validates the archive, uploads it to a Cloudflare R2 bucket, and verifies the uploaded object. The first manual production run succeeded on 2026-07-15 (GitHub Actions run `29389309625`). It remains manual-only until the restore drill is complete; then enable the nightly 02:00 UTC schedule in the workflow.
 
 Before enabling this workflow, create a production-only R2 bucket and a bucket-scoped R2 API token, then add these GitHub Actions repository secrets:
 
@@ -104,7 +104,7 @@ Before enabling this workflow, create a production-only R2 bucket and a bucket-s
 | `CF_BUCKET_NAME` | R2 bucket name |
 | `CF_BUCKET_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` |
 
-Configure an R2 lifecycle rule for the retention period you want. The workflow protects PostgreSQL only; Supabase Storage media requires a separate export or provider-retention plan. A successful upload is not a restore drill: restore one archive to a non-production database and record the verification before marking OPS-001 complete.
+Configure an R2 lifecycle rule for the retention period you want. The workflow protects PostgreSQL only; Supabase Storage media requires a separate export or provider-retention plan. A successful upload is not a restore drill: restore the verified archive to a non-production database and record the verification before marking OPS-001 complete.
 
 ### 3.3 Supabase Storage (media)
 
@@ -203,7 +203,7 @@ When the provider supports **point-in-time recovery**:
 Complete before accepting real customer orders:
 
 - [ ] Production database is **not** shared with local dev
-- [ ] Automated daily backups **enabled** and visible in provider dashboard
+- [ ] Automated daily backups **enabled** and visible in provider dashboard (nightly schedule still pending restore drill)
 - [ ] At least one **manual `pg_dump`** stored off-host
 - [ ] **Restore drill completed** once (restore to staging DB, verify app connects)
 - [ ] `DATABASE_URL` documented in secure ops vault (not in git)
