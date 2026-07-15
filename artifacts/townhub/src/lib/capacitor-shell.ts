@@ -19,7 +19,7 @@ import {
 import {
   clearNativeOAuthPending,
   installNativeOAuthResumeHandlers,
-  isNativeOAuthPending,
+  isNativeAuthSessionHandled,
 } from "@/lib/native-oauth-resume";
 import { skipNativeSplashOnNextLoad } from "@/lib/native-splash-session";
 
@@ -251,13 +251,13 @@ export function initCapacitorShell(): void {
       url.startsWith(window.location.origin) ||
       /^https:\/\//i.test(url)
     ) {
-      // Cap/iOS sometimes delivers a bare townhub://…/sso-callback before the
-      // param-bearing open. Ignore empty callbacks while OAuth is in flight.
-      if (
-        isNativeSsoCallbackUrl(url) &&
-        isNativeOAuthPending() &&
-        !nativeSsoDeepLinkHasParams(url)
-      ) {
+      // AuthSession already remounted with the callback — Cap often also fires
+      // a bare townhub:// appUrlOpen that would wipe Clerk params.
+      if (isNativeSsoCallbackUrl(url) && isNativeAuthSessionHandled()) {
+        return;
+      }
+      // Never remount from a param-less SSO deep link (with or without pending).
+      if (isNativeSsoCallbackUrl(url) && !nativeSsoDeepLinkHasParams(url)) {
         return;
       }
       if (isNativeSsoCallbackUrl(url)) {
@@ -281,11 +281,7 @@ export function initCapacitorShell(): void {
       url.startsWith(window.location.origin) ||
       /^https:\/\//i.test(url)
     ) {
-      if (
-        isNativeSsoCallbackUrl(url) &&
-        isNativeOAuthPending() &&
-        !nativeSsoDeepLinkHasParams(url)
-      ) {
+      if (isNativeSsoCallbackUrl(url) && !nativeSsoDeepLinkHasParams(url)) {
         return;
       }
       if (isNativeSsoCallbackUrl(url)) {

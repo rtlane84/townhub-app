@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth, useClerk } from "@clerk/react";
 import { useLocation } from "wouter";
 import { LoadingButton } from "@/components/ui/loading-button";
-import { clearNativeOAuthPending } from "@/lib/native-oauth-resume";
+import {
+  clearNativeOAuthPending,
+  consumeNativeAuthReturnShape,
+} from "@/lib/native-oauth-resume";
+import { promoteNativeSsoPathParamsToSearch } from "@/lib/native-oauth";
 import { consumePostAuthRedirect } from "@/lib/native-post-auth-redirect";
 
 type FinishState =
@@ -54,6 +58,7 @@ export function NativeSsoFinish() {
   const signedInRef = useRef(false);
 
   useEffect(() => {
+    promoteNativeSsoPathParamsToSearch();
     clearNativeOAuthPending();
   }, []);
 
@@ -71,14 +76,19 @@ export function NativeSsoFinish() {
     let settleTimer = 0;
 
     void (async () => {
+      promoteNativeSsoPathParamsToSearch();
       const params = readCallbackParams();
+      const returnShape = consumeNativeAuthReturnShape();
       if (!params.nonce && !params.status && !params.search) {
         if (!cancelled) {
           setState({
             kind: "error",
             message: "Sign-in return was missing Clerk parameters.",
-            detail:
-              "The app opened /sso-callback without rotating_token_nonce. Auth session should return townhub://oauth/sso-callback/p/… after the HTTPS bounce. Confirm Clerk allowlists include townhub://oauth/sso-callback and https://…/native-sso-callback.",
+            detail: [
+              "Opened /sso-callback without rotating_token_nonce.",
+              returnShape ?? "no auth-session shape recorded",
+              "Auth session should return townhub://oauth/sso-callback/p/… after the HTTPS bounce.",
+            ].join(" "),
           });
         }
         return;

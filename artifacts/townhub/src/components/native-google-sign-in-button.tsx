@@ -8,9 +8,16 @@ import {
   getNativeBundledOrigin,
   getNativeSsoHttpsCallbackUrl,
   NATIVE_OAUTH_SCHEME,
+  describeNativeAuthReturnUrl,
+  nativeSsoDeepLinkHasParams,
   resolveNativeDeepLinkToAppUrl,
 } from "@/lib/native-oauth";
-import { clearNativeOAuthPending, markNativeOAuthPending } from "@/lib/native-oauth-resume";
+import {
+  clearNativeOAuthPending,
+  markNativeAuthSessionHandled,
+  markNativeOAuthPending,
+  rememberNativeAuthReturnShape,
+} from "@/lib/native-oauth-resume";
 import { rememberPostAuthRedirect } from "@/lib/native-post-auth-redirect";
 import { skipNativeSplashOnNextLoad } from "@/lib/native-splash-session";
 
@@ -99,6 +106,18 @@ function NativeSocialSignInButton({
         prefersEphemeralSession: false,
       });
 
+      rememberNativeAuthReturnShape(describeNativeAuthReturnUrl(returnedUrl));
+
+      if (!nativeSsoDeepLinkHasParams(returnedUrl)) {
+        clearNativeOAuthPending();
+        setError(
+          `Sign-in returned without Clerk parameters (${describeNativeAuthReturnUrl(returnedUrl)}). Check Clerk allowlists for https://…/native-sso-callback and townhub://oauth/sso-callback.`,
+        );
+        return;
+      }
+
+      // Block Cap's racing bare townhub:// appUrlOpen from wiping params.
+      markNativeAuthSessionHandled();
       clearNativeOAuthPending();
       skipNativeSplashOnNextLoad();
       const next = resolveNativeDeepLinkToAppUrl(

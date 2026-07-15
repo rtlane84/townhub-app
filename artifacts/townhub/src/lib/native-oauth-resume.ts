@@ -2,9 +2,14 @@ import { Browser } from "@capacitor/browser";
 import { App } from "@capacitor/app";
 
 const NATIVE_OAUTH_PENDING_KEY = "townhub.nativeOAuthPending";
+const AUTH_SESSION_HANDLED_UNTIL_KEY = "townhub.authSessionHandledUntil";
+const LAST_AUTH_RETURN_KEY = "townhub.lastAuthReturnShape";
 
 /** How long to wait for townhub://sso-callback before treating OAuth as cancelled. */
 const OAUTH_DEEP_LINK_GRACE_MS = 8_000;
+
+/** Ignore racing bare appUrlOpen after AuthSession already remounted. */
+const AUTH_SESSION_HANDLED_TTL_MS = 8_000;
 
 /** Mark that Google OAuth is in progress so we can refresh UI when Safari closes. */
 export function markNativeOAuthPending(): void {
@@ -32,6 +37,52 @@ export function isNativeOAuthPending(maxAgeMs = 15 * 60 * 1000): boolean {
     return Date.now() - started < maxAgeMs;
   } catch {
     return false;
+  }
+}
+
+/** AuthSession already remounted — ignore Cap appUrlOpen SSO for a short window. */
+export function markNativeAuthSessionHandled(): void {
+  try {
+    sessionStorage.setItem(
+      AUTH_SESSION_HANDLED_UNTIL_KEY,
+      String(Date.now() + AUTH_SESSION_HANDLED_TTL_MS),
+    );
+  } catch {
+    // ignore
+  }
+}
+
+export function isNativeAuthSessionHandled(): boolean {
+  try {
+    const raw = sessionStorage.getItem(AUTH_SESSION_HANDLED_UNTIL_KEY);
+    if (!raw) return false;
+    const until = Number(raw);
+    if (!Number.isFinite(until)) return false;
+    if (Date.now() > until) {
+      sessionStorage.removeItem(AUTH_SESSION_HANDLED_UNTIL_KEY);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function rememberNativeAuthReturnShape(description: string): void {
+  try {
+    sessionStorage.setItem(LAST_AUTH_RETURN_KEY, description);
+  } catch {
+    // ignore
+  }
+}
+
+export function consumeNativeAuthReturnShape(): string | null {
+  try {
+    const value = sessionStorage.getItem(LAST_AUTH_RETURN_KEY);
+    sessionStorage.removeItem(LAST_AUTH_RETURN_KEY);
+    return value;
+  } catch {
+    return null;
   }
 }
 

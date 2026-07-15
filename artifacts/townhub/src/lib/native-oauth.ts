@@ -121,13 +121,70 @@ export function buildNativeSsoDeepLinkFromLocation(search: string, hash = ""): s
 }
 
 /**
- * Remount target on the bundled Capacitor origin with Clerk query intact.
- * Only used after a townhub:// / https deep link is resolved inside Cap JS.
+ * Remount target on the bundled Capacitor origin.
+ * Clerk params are path-encoded under /sso-callback/p/… — Cap / WKWebView
+ * often strip query strings from capacitor:// and townhub:// navigations.
  */
 export function buildNativeSsoCapacitorCallbackUrl(search: string, hash = ""): string {
   const query = search.startsWith("?") || search === "" ? search : `?${search}`;
   const fragment = hash.startsWith("#") || hash === "" ? hash : `#${hash}`;
-  return `${NATIVE_BUNDLED_ORIGIN}${NATIVE_SSO_CALLBACK_PATH}${query}${fragment}`;
+  const payload = `${query}${fragment}`;
+  if (!payload || payload === "?" || payload === "#") {
+    return `${NATIVE_BUNDLED_ORIGIN}${NATIVE_SSO_CALLBACK_PATH}`;
+  }
+  return `${NATIVE_BUNDLED_ORIGIN}/${NATIVE_SSO_ENCODED_PARAM_PREFIX}${encodeURIComponent(payload)}`;
+}
+
+/** Decode path-encoded Clerk payload (`…/sso-callback/p/%3F…`) into search+hash. */
+export function decodeNativeSsoEncodedPayload(pathname: string): string | null {
+  const idx = pathname.indexOf(`/${NATIVE_SSO_ENCODED_PARAM_PREFIX}`);
+  const altIdx = pathname.indexOf(NATIVE_SSO_ENCODED_PARAM_PREFIX);
+  const start =
+    idx >= 0
+      ? idx + 1 + NATIVE_SSO_ENCODED_PARAM_PREFIX.length
+      : altIdx >= 0
+        ? altIdx + NATIVE_SSO_ENCODED_PARAM_PREFIX.length
+        : -1;
+  if (start < 0) return null;
+  const encoded = pathname.slice(start).replace(/\/$/, "");
+  if (!encoded) return null;
+  try {
+    const decoded = decodeURIComponent(encoded);
+    if (!decoded) return null;
+    return decoded.startsWith("?") || decoded.startsWith("#") ? decoded : `?${decoded}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Before React/Clerk boot: if this load used path-encoded SSO params, promote
+ * them into the query string via replaceState (no native navigation that can
+ * strip query again).
+ */
+export function promoteNativeSsoPathParamsToSearch(): boolean {
+  if (typeof window === "undefined") return false;
+  const { pathname, search, hash } = window.location;
+  if (search && /rotating_token_nonce|__clerk_status/i.test(search)) {
+    return false;
+  }
+  if (hash && /rotating_token_nonce|__clerk_status/i.test(hash)) {
+    return false;
+  }
+  const decoded = decodeNativeSsoEncodedPayload(pathname);
+  if (!decoded) return false;
+  const nextUrl = `${NATIVE_SSO_CALLBACK_PATH}${decoded}`;
+  window.history.replaceState(window.history.state, "", nextUrl);
+  return true;
+}
+
+function capacitorSsoRemountFromPayload(origin: string, payload: string): string {
+  if (!payload || payload === "?" || payload === "#") {
+    return `${origin}${NATIVE_SSO_CALLBACK_PATH}`;
+  }
+  const normalized =
+    payload.startsWith("?") || payload.startsWith("#") ? payload : `?${payload}`;
+  return `${origin}/${NATIVE_SSO_ENCODED_PARAM_PREFIX}${encodeURIComponent(normalized)}`;
 }
 
 /**
@@ -145,11 +202,18 @@ export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string)
   if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith("capacitor://")) {
     try {
       const parsed = new URL(rawUrl);
+      const pathDecoded = decodeNativeSsoEncodedPayload(parsed.pathname);
+      if (pathDecoded) {
+        return capacitorSsoRemountFromPayload(origin, pathDecoded);
+      }
       if (
         parsed.pathname.includes(NATIVE_SSO_HTTPS_BOUNCE_PATH) ||
         parsed.pathname.includes(NATIVE_SSO_CALLBACK_PATH)
       ) {
-        return `${origin}${NATIVE_SSO_CALLBACK_PATH}${parsed.search}${parsed.hash}`;
+        return capacitorSsoRemountFromPayload(
+          origin,
+          `${parsed.search}${parsed.hash}`,
+        );
       }
     } catch {
       // fall through
@@ -172,8 +236,7 @@ export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string)
     const encoded = withoutScheme.slice(encodedIdx + NATIVE_SSO_ENCODED_PARAM_PREFIX.length);
     try {
       const decoded = decodeURIComponent(encoded.replace(/\/$/, ""));
-      const suffix = decoded.startsWith("?") || decoded.startsWith("#") ? decoded : `?${decoded}`;
-      return `${origin}${NATIVE_SSO_CALLBACK_PATH}${suffix}`;
+      return capacitorSsoRemountFromPayload(origin, decoded);
     } catch {
       return `${origin}${NATIVE_SSO_CALLBACK_PATH}`;
     }
@@ -189,7 +252,7 @@ export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string)
         ? `?${rest}`
         : "";
     if (suffix.startsWith("?") || suffix.startsWith("#")) {
-      return `${origin}${NATIVE_SSO_CALLBACK_PATH}${suffix}`;
+      return capacitorSsoRemountFromPayload(origin, suffix);
     }
     if (pathStart === 0 || withoutScheme.startsWith(`${NATIVE_SSO_DEEP_LINK_HOST}/`)) {
       return `${origin}${NATIVE_SSO_CALLBACK_PATH}`;
@@ -200,4 +263,18 @@ export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string)
     ? withoutScheme
     : `/${withoutScheme}`;
   return `${origin}${withLeadingSlash}`;
+}
+
+/** Compact shape of an auth-session return URL for on-device error details. */
+export function describeNativeAuthReturnUrl(rawUrl: string): string {
+  const hasEncoded = rawUrl.includes(NATIVE_SSO_ENCODED_PARAM_PREFIX);
+  const hasQuery = /[?#].*(rotating_token_nonce|__clerk_status)/i.test(rawUrl);
+  const bare = isNativeSsoCallbackUrl(rawUrl) && !hasEncoded && !hasQuery;
+  const scheme = rawUrl.split(":", 1)[0] ?? "unknown";
+  return [
+    `scheme=${scheme}`,
+    hasEncoded ? "path-encoded=yes" : "path-encoded=no",
+    hasQuery ? "query-params=yes" : "query-params=no",
+    bare ? "bare-sso=yes" : "bare-sso=no",
+  ].join(" · ");
 }

@@ -3,9 +3,13 @@ import { createRoot } from "react-dom/client";
 import { setBaseUrl } from "@workspace/api-client-react";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 import { initCapacitorShell } from "@/lib/capacitor-shell";
+import { promoteNativeSsoPathParamsToSearch } from "@/lib/native-oauth";
 import { isNativeApp } from "@/lib/native-platform";
 import App from "./App";
 import "./index.css";
+
+// Path-encoded SSO remounts promote into ?search before Clerk boots.
+promoteNativeSsoPathParamsToSearch();
 
 const apiBaseUrl = getApiBaseUrl();
 setBaseUrl(apiBaseUrl || null);
