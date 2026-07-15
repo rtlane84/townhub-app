@@ -73,15 +73,11 @@ function NativeSocialSignInButton({
       markNativeOAuthPending();
       rememberPostAuthRedirect();
 
-      // Google blocks WKWebView (disallowed_useragent) → Cap Browser + townhub:// bounce.
-      // Apple works in-WebView; keep the full redirect chain inside Capacitor so
-      // /native-sso-callback can return via capacitor://localhost/sso-callback?params
-      // (Cap Browser / SFSafariViewController often drops custom-scheme query params).
-      if (provider === "Google") {
-        await Browser.open({ url: verificationUrl });
-      } else {
-        window.location.assign(verificationUrl);
-      }
+      // Keep Cap Browser for BOTH Apple and Google. Navigating Apple inside the
+      // Cap WebView (allowNavigation → staging bounce → capacitor://) blanks the
+      // WebView. Cap Browser leaves capacitor://localhost + appUrlOpen alive;
+      // bounce path-encodes Clerk params into townhub://oauth/sso-callback/p/….
+      await Browser.open({ url: verificationUrl });
     } catch (err) {
       setError(clerkErrorMessage(err, provider));
     } finally {
@@ -112,16 +108,17 @@ function NativeSocialSignInButton({
 }
 
 /**
- * Native-only Google OAuth.
+ * Native-only Google OAuth (Cap Browser bridge).
  *
  * Google blocks OAuth inside WKWebView (Error 403: disallowed_useragent).
  * Clerk also rejects custom-scheme redirect_url (invalid_url_scheme).
  *
  * Flow:
- * 1. Create SignIn with oauth_google + https://{app}/native-sso-callback
- * 2. Open externalVerificationRedirectURL in Safari
- * 3. Clerk redirects to HTTPS /native-sso-callback in Safari
- * 4. That page bounces to townhub://sso-callback → WebView finishes session on /sso-callback
+ * 1. Create SignIn with oauth_* + https://{app}/native-sso-callback
+ * 2. Open externalVerificationRedirectURL in Cap Browser
+ * 3. Clerk redirects to HTTPS /native-sso-callback
+ * 4. Bounce path-encodes params into townhub://oauth/sso-callback/p/…
+ * 5. Cap remounts capacitor://localhost/sso-callback?… and finishes the session
  */
 export function NativeGoogleSignInButton({
   className,

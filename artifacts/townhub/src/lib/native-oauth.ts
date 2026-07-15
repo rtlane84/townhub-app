@@ -1,11 +1,14 @@
 /** Custom URL scheme registered in iOS Info.plist for OAuth return into the app. */
 export const NATIVE_OAUTH_SCHEME = "townhub";
 
+/** Bundled Capacitor WebView origin — always remount here after OAuth. */
+export const NATIVE_BUNDLED_ORIGIN = "capacitor://localhost";
+
 /** Path where the Capacitor WebView finishes Clerk OAuth (AuthenticateWithRedirectCallback). */
 export const NATIVE_SSO_CALLBACK_PATH = "/sso-callback";
 
 /**
- * HTTPS path Clerk redirects to after Google OAuth in Safari.
+ * HTTPS path Clerk redirects to after Google / Apple OAuth in Cap Browser.
  * Must be http(s) — Clerk rejects custom schemes (invalid_url_scheme).
  * This page only bounces into the app via townhub://; it does not finish the session.
  */
@@ -14,12 +17,16 @@ export const NATIVE_SSO_HTTPS_BOUNCE_PATH = "/native-sso-callback";
 /**
  * Deep link used to bounce from Safari / SFSafariViewController back into the
  * Capacitor WebView after Clerk redirects to the HTTPS bounce page.
+ *
+ * Use an explicit host (`oauth`) so Cap delivers pathname + path-encoded params;
+ * bare `townhub://sso-callback` often arrives with query/path stripped.
  */
-export const NATIVE_SSO_DEEP_LINK = `${NATIVE_OAUTH_SCHEME}://${NATIVE_SSO_CALLBACK_PATH.replace(/^\//, "")}`;
+export const NATIVE_SSO_DEEP_LINK_HOST = "oauth";
+export const NATIVE_SSO_DEEP_LINK = `${NATIVE_OAUTH_SCHEME}://${NATIVE_SSO_DEEP_LINK_HOST}${NATIVE_SSO_CALLBACK_PATH}`;
 
 /**
  * Prefix for path-encoded Clerk params. iOS / Cap Browser often deliver
- * `townhub://sso-callback` with the query string stripped; encoding into the
+ * custom-scheme URLs with the query string stripped; encoding into the
  * path keeps rotating_token_nonce intact.
  */
 export const NATIVE_SSO_ENCODED_PARAM_PREFIX = "sso-callback/p/";
@@ -49,8 +56,8 @@ export function getPublicWebBaseUrl(): string {
 }
 
 /**
- * HTTPS callback Clerk accepts for oauth_google redirect_url.
- * Must match the deployed frontend origin loaded by the Capacitor WebView.
+ * HTTPS callback Clerk accepts for oauth_* redirect_url.
+ * Must match the deployed public web origin (Safari / Cap Browser bounce page).
  */
 export function getNativeSsoHttpsCallbackUrl(
   origin = getPublicWebBaseUrl(),
@@ -59,12 +66,24 @@ export function getNativeSsoHttpsCallbackUrl(
   return `${base}${NATIVE_SSO_HTTPS_BOUNCE_PATH}`;
 }
 
+/** Always remount the reviewed bundle — never https://staging after allowNavigation. */
+export function getNativeBundledOrigin(runtimeOrigin?: string): string {
+  if (runtimeOrigin && runtimeOrigin.startsWith("capacitor://")) {
+    return runtimeOrigin.replace(/\/+$/, "");
+  }
+  return NATIVE_BUNDLED_ORIGIN;
+}
+
 export function isNativeSsoCallbackUrl(url: string): boolean {
+  if (url.includes(NATIVE_SSO_CALLBACK_PATH) || url.includes(NATIVE_SSO_HTTPS_BOUNCE_PATH)) {
+    return true;
+  }
+  if (url.includes(NATIVE_SSO_ENCODED_PARAM_PREFIX)) {
+    return true;
+  }
   return (
-    url.startsWith(NATIVE_SSO_DEEP_LINK) ||
-    url.includes(NATIVE_SSO_CALLBACK_PATH) ||
-    url.includes(NATIVE_SSO_HTTPS_BOUNCE_PATH) ||
-    url.includes(NATIVE_SSO_ENCODED_PARAM_PREFIX)
+    url.startsWith(`${NATIVE_OAUTH_SCHEME}://${NATIVE_SSO_DEEP_LINK_HOST}`) ||
+    url.startsWith(NATIVE_SSO_DEEP_LINK)
   );
 }
 
@@ -85,11 +104,11 @@ export function nativeSsoDeepLinkHasParams(url: string): boolean {
 }
 
 /**
- * When OAuth completes in Safari, bounce to the app deep link with the same
- * Clerk query/hash so the WebView can finish the session on /sso-callback.
+ * When OAuth completes in Cap Browser / Safari, bounce to the app deep link
+ * with Clerk params path-encoded (Cap Browser strips query strings).
  *
- * Prefer path-encoding for `townhub://` (Cap Browser strips query strings).
- * Capacitor WebView bounce pages should use {@link buildNativeSsoCapacitorCallbackUrl}.
+ * Do NOT bounce to capacitor:// from the HTTPS page — that empties the
+ * WebView after allowNavigation left capacitor://localhost.
  */
 export function buildNativeSsoDeepLinkFromLocation(search: string, hash = ""): string {
   const query = search.startsWith("?") || search === "" ? search : `?${search}`;
@@ -98,17 +117,17 @@ export function buildNativeSsoDeepLinkFromLocation(search: string, hash = ""): s
   if (!payload || payload === "?" || payload === "#") {
     return NATIVE_SSO_DEEP_LINK;
   }
-  return `${NATIVE_OAUTH_SCHEME}://${NATIVE_SSO_ENCODED_PARAM_PREFIX}${encodeURIComponent(payload)}`;
+  return `${NATIVE_OAUTH_SCHEME}://${NATIVE_SSO_DEEP_LINK_HOST}/${NATIVE_SSO_ENCODED_PARAM_PREFIX}${encodeURIComponent(payload)}`;
 }
 
 /**
- * In-WebView bounce target. Preserves query/hash on capacitor://localhost —
- * more reliable than townhub:// after SFSafariViewController.
+ * Remount target on the bundled Capacitor origin with Clerk query intact.
+ * Only used after a townhub:// / https deep link is resolved inside Cap JS.
  */
 export function buildNativeSsoCapacitorCallbackUrl(search: string, hash = ""): string {
   const query = search.startsWith("?") || search === "" ? search : `?${search}`;
   const fragment = hash.startsWith("#") || hash === "" ? hash : `#${hash}`;
-  return `capacitor://localhost${NATIVE_SSO_CALLBACK_PATH}${query}${fragment}`;
+  return `${NATIVE_BUNDLED_ORIGIN}${NATIVE_SSO_CALLBACK_PATH}${query}${fragment}`;
 }
 
 /**
@@ -116,7 +135,12 @@ export function buildNativeSsoCapacitorCallbackUrl(search: string, hash = ""): s
  * Capacitor origin so Clerk can finish the session inside the reviewed app.
  */
 export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string): string {
-  const origin = appOrigin.replace(/\/+$/, "");
+  // SSO returns must remount the reviewed Cap bundle even if the WebView drifted
+  // onto https://staging during a bad allowNavigation attempt. Other deep links
+  // (orders, notifications) keep the caller's app origin.
+  const origin = (
+    isNativeSsoCallbackUrl(rawUrl) ? getNativeBundledOrigin(appOrigin) : appOrigin
+  ).replace(/\/+$/, "");
 
   if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith("capacitor://")) {
     try {
@@ -131,7 +155,12 @@ export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string)
       // fall through
     }
     if (rawUrl.startsWith("capacitor://")) {
-      return rawUrl;
+      try {
+        const parsed = new URL(rawUrl);
+        return `${origin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+      } catch {
+        return rawUrl;
+      }
     }
     return rawUrl;
   }
@@ -146,6 +175,23 @@ export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string)
       const suffix = decoded.startsWith("?") || decoded.startsWith("#") ? decoded : `?${decoded}`;
       return `${origin}${NATIVE_SSO_CALLBACK_PATH}${suffix}`;
     } catch {
+      return `${origin}${NATIVE_SSO_CALLBACK_PATH}`;
+    }
+  }
+
+  // townhub://oauth/sso-callback?… or legacy townhub://sso-callback?…
+  const pathStart = withoutScheme.indexOf(NATIVE_SSO_CALLBACK_PATH.replace(/^\//, ""));
+  if (pathStart >= 0) {
+    const rest = withoutScheme.slice(pathStart + NATIVE_SSO_CALLBACK_PATH.replace(/^\//, "").length);
+    const suffix = rest.startsWith("?") || rest.startsWith("#") || rest.startsWith("/")
+      ? rest.replace(/^\//, "")
+      : rest
+        ? `?${rest}`
+        : "";
+    if (suffix.startsWith("?") || suffix.startsWith("#")) {
+      return `${origin}${NATIVE_SSO_CALLBACK_PATH}${suffix}`;
+    }
+    if (pathStart === 0 || withoutScheme.startsWith(`${NATIVE_SSO_DEEP_LINK_HOST}/`)) {
       return `${origin}${NATIVE_SSO_CALLBACK_PATH}`;
     }
   }

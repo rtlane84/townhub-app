@@ -10,7 +10,12 @@ import {
   isStripeCheckoutUrl,
   shouldOpenLinkExternally,
 } from "@/lib/native-external-links";
-import { resolveNativeDeepLinkToAppUrl, isNativeSsoCallbackUrl, nativeSsoDeepLinkHasParams } from "@/lib/native-oauth";
+import {
+  getNativeBundledOrigin,
+  resolveNativeDeepLinkToAppUrl,
+  isNativeSsoCallbackUrl,
+  nativeSsoDeepLinkHasParams,
+} from "@/lib/native-oauth";
 import {
   clearNativeOAuthPending,
   installNativeOAuthResumeHandlers,
@@ -246,7 +251,7 @@ export function initCapacitorShell(): void {
       url.startsWith(window.location.origin) ||
       /^https:\/\//i.test(url)
     ) {
-      // Cap/iOS sometimes delivers a bare townhub://sso-callback before the
+      // Cap/iOS sometimes delivers a bare townhub://…/sso-callback before the
       // param-bearing open. Ignore empty callbacks while OAuth is in flight.
       if (
         isNativeSsoCallbackUrl(url) &&
@@ -260,8 +265,8 @@ export function initCapacitorShell(): void {
       }
       // Full reload remounts React — skip branded splash on OAuth / checkout return.
       skipNativeSplashOnNextLoad();
-      const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
-      // Full navigation so Clerk reloads with OAuth query params and finishes the session.
+      // Always remount the bundled origin (never https://staging after a bad nav).
+      const next = resolveNativeDeepLinkToAppUrl(url, getNativeBundledOrigin(window.location.origin));
       window.location.assign(next);
     }
   });
@@ -287,7 +292,7 @@ export function initCapacitorShell(): void {
         clearNativeOAuthPending();
       }
       skipNativeSplashOnNextLoad();
-      const next = resolveNativeDeepLinkToAppUrl(url, window.location.origin);
+      const next = resolveNativeDeepLinkToAppUrl(url, getNativeBundledOrigin(window.location.origin));
       if (next !== window.location.href) {
         window.location.assign(next);
       }

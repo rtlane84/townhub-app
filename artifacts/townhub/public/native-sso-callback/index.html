@@ -30,39 +30,30 @@
     </style>
     <script>
       (function () {
-        // Cap Browser / SFSafariViewController often strips query strings from
-        // townhub://. Prefer capacitor://localhost first (works when OAuth ran
-        // inside the Cap WebView, e.g. Sign in with Apple). Fall back to a
-        // path-encoded townhub:// deep link for system Safari / Cap Browser.
+        // Cap Browser strips query strings from custom schemes. Path-encode
+        // Clerk params under an explicit host (townhub://oauth/…). Never bounce
+        // to capacitor:// from this HTTPS page — that blanks the WebView after
+        // Apple OAuth leaves capacitor://localhost via allowNavigation.
         var payload = location.search + location.hash;
-        var capacitorLink =
-          "capacitor://localhost/sso-callback" + (payload || "");
-        var townhubLink =
+        var deepLink =
           payload && payload !== "?" && payload !== "#"
-            ? "townhub://sso-callback/p/" + encodeURIComponent(payload)
-            : "townhub://sso-callback";
+            ? "townhub://oauth/sso-callback/p/" + encodeURIComponent(payload)
+            : "townhub://oauth/sso-callback";
 
-        function setLinks() {
+        function setLink() {
           var openLink = document.getElementById("open-app");
-          if (openLink) openLink.setAttribute("href", townhubLink);
+          if (openLink) openLink.setAttribute("href", deepLink);
         }
-        setLinks();
-
-        location.replace(capacitorLink);
-        window.setTimeout(function () {
-          // Still on the HTTPS bounce page → Cap Browser / Safari path.
-          if (location.pathname.indexOf("native-sso-callback") !== -1) {
-            location.replace(townhubLink);
-          }
-        }, 450);
-        window.addEventListener("DOMContentLoaded", setLinks);
+        setLink();
+        location.replace(deepLink);
+        window.addEventListener("DOMContentLoaded", setLink);
       })();
     </script>
   </head>
   <body>
     <div>
       <p>Returning to TownHub…</p>
-      <p><a id="open-app" href="townhub://sso-callback">Tap here if the app doesn’t open</a></p>
+      <p><a id="open-app" href="townhub://oauth/sso-callback">Tap here if the app doesn’t open</a></p>
       <p class="hint">If this screen stays open, tap the link above.</p>
     </div>
   </body>
