@@ -57,7 +57,7 @@ See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 ## Authentication
 
-Native sign-in on iOS offers **Apple** and **email**. Google is temporarily hidden on iOS (see below).
+Native sign-in on iOS offers **Apple**, **Google**, and **email**.
 
 ### Why not browser-based OAuth on iOS
 
@@ -87,9 +87,21 @@ Adding the plugin method requires re-running `ios:sync` (pod re-sync) and a rebu
 
 Test Apple first-time consent, Hide My Email, returning users, canceled auth, and sign-out on a physical device.
 
-### Google (next slice)
+### Google (native)
 
-Native Google (Google Identity SDK → `clerk.authenticateWithGoogleOneTap({ token })`) is not built yet, so the Google button is hidden on iOS to avoid the `disallowed_useragent` wall. It needs a Google Cloud **iOS OAuth client** for `com.lanetech.townhub` plus Clerk Google **custom credentials**. Bring it back after native Apple is verified on-device.
+Google uses the **Google Sign-In iOS SDK** (`GIDSignIn`) inside `@townhub/capacitor-auth-session`:
+
+1. `AuthSession.googleSignIn({ clientId, serverClientId })` returns an **ID token**.
+2. `clerk.authenticateWithGoogleOneTap({ token })` verifies it; then `setActive`.
+
+**Required config:**
+
+- **Google Cloud:** an **iOS** OAuth client for bundle `com.lanetech.townhub`, plus a **Web** OAuth client (its client ID becomes the ID token `aud` / `serverClientId`).
+- Put both in `.env.native.staging` as `VITE_GOOGLE_IOS_CLIENT_ID` and `VITE_GOOGLE_SERVER_CLIENT_ID`. `ios:sync` patches `Info.plist` (`GIDClientID`, `GIDServerClientID`, reversed URL scheme).
+- **Clerk → Google → Use custom credentials ON**, using that same **Web** client ID + secret.
+- AppDelegate forwards Google callback URLs via `GIDSignIn.sharedInstance.handle(url)`.
+
+Without those env vars the Google button still appears but shows a configuration error (Apple and email remain available).
 
 ## Store billing behavior
 
@@ -175,7 +187,9 @@ Before archive, verify in Xcode:
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
 | Apple sign-in fails after the sheet (token rejected) | Clerk → Apple must have **"Use custom credentials"** on with a valid Services ID / Team ID / Key ID / .p8 whose audience matches bundle `com.lanetech.townhub`. Shared dev credentials will fail the `oauth_token_apple` exchange. |
 | Apple sheet doesn't appear | Re-run `ios:sync` so the plugin's new `appleSignIn` method is registered, confirm the **Sign in with Apple** capability/entitlement is present, and rebuild. |
-| Google button missing on iOS | Intentional — native Google isn't built yet and browser Google fails with `disallowed_useragent`. Use Apple or email. |
+| Google button missing on iOS | Rebuild with this branch; Google is shown again via native GIDSignIn. |
+| Google Sign-In config error on tap | Set `VITE_GOOGLE_IOS_CLIENT_ID` + `VITE_GOOGLE_SERVER_CLIENT_ID` in `.env.native.staging`, re-run `ios:sync`, and enable Clerk Google **custom credentials** with the Web client. |
+| Google Sign-In sheet fails / no callback | Confirm `Info.plist` has `GIDClientID` and the reversed iOS client URL scheme; AppDelegate must call `GIDSignIn.sharedInstance.handle(url)`. |
 | `x.map` / `x.filter` is not a function on native | List API payload wasn’t an array. Public pages use `asArray()`. Re-check Cap Cookies/Http are disabled. |
 | Generic “TownHub” branding / empty home data / “Loading sign-in…” forever | Native bundle missing `VITE_API_BASE_URL` and/or baked-in `VITE_CLERK_PROXY_URL` from root `.env`. Source `.env.native.staging` (see `.env.native.staging.example`), confirm `ios:sync` preflight passes, rebuild from Xcode. Home should show **ClayTownHub** when API is reachable. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |

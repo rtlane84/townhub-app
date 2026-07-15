@@ -30,9 +30,24 @@ export interface AppleSignInResult {
   familyName?: string;
 }
 
+export interface GoogleSignInOptions {
+  /** iOS OAuth client ID (`….apps.googleusercontent.com`). */
+  clientId: string;
+  /** Web OAuth client ID — becomes the ID token `aud` Clerk verifies. */
+  serverClientId?: string;
+}
+
+export interface GoogleSignInResult {
+  /** Google ID token (JWT) — exchanged with Clerk via google_one_tap. */
+  idToken: string;
+  email?: string;
+  name?: string;
+}
+
 export interface AuthSessionPlugin {
   openAuthSession(options: OpenAuthSessionOptions): Promise<OpenAuthSessionResult>;
   appleSignIn(options?: AppleSignInOptions): Promise<AppleSignInResult>;
+  googleSignIn(options: GoogleSignInOptions): Promise<GoogleSignInResult>;
 }
 
 export const AuthSession = registerPlugin<AuthSessionPlugin>("AuthSession", {
@@ -42,6 +57,9 @@ export const AuthSession = registerPlugin<AuthSessionPlugin>("AuthSession", {
     },
     appleSignIn: async () => {
       throw new Error("AuthSession.appleSignIn is only available in the native app.");
+    },
+    googleSignIn: async () => {
+      throw new Error("AuthSession.googleSignIn is only available in the native app.");
     },
   }),
 });

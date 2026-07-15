@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useClerk } from "@clerk/react";
 import { useSignIn, useSignUp } from "@clerk/react/legacy";
 import { useLocation } from "wouter";
 import { LoadingButton } from "@/components/ui/loading-button";
@@ -12,7 +13,9 @@ function nativeErrorMessage(err: unknown): string {
     const withCode = err as { code?: string; message?: string; longMessage?: string };
     if (withCode.code === "AUTH_CANCELLED") return "Sign-in cancelled.";
     if (withCode.longMessage) return withCode.longMessage;
-    const clerkErr = err as { errors?: Array<{ longMessage?: string; message?: string; code?: string }> };
+    const clerkErr = err as {
+      errors?: Array<{ longMessage?: string; message?: string; code?: string }>;
+    };
     const first = clerkErr.errors?.[0];
     if (first?.longMessage) return first.longMessage;
     if (first?.message) return first.message;
@@ -37,17 +40,19 @@ function createAppleNonce(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function googleClientConfig(): { clientId: string; serverClientId: string } | null {
+  const clientId = import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID?.trim() ?? "";
+  const serverClientId = import.meta.env.VITE_GOOGLE_SERVER_CLIENT_ID?.trim() ?? "";
+  if (!clientId || !serverClientId) return null;
+  return { clientId, serverClientId };
+}
+
 /**
  * Native Apple sign-in for the Capacitor app.
  *
  * Uses Apple's native `ASAuthorization` sheet (no browser, no redirect) to get
  * an identity token, then exchanges it with Clerk via the `oauth_token_apple`
- * strategy. This avoids the WKWebView limitations that break browser-based OAuth
- * inside Capacitor (custom `capacitor://` scheme can't receive OAuth redirects).
- *
- * Matches Clerk Expo's flow: generate a nonce, pass it into Apple, then
- * `signIn.create({ strategy: "oauth_token_apple", token })`. Missing the nonce
- * causes Clerk to reject with "You are not authorized to perform this request".
+ * strategy. Missing the nonce causes Clerk to reject with "not authorized".
  */
 export function NativeAppleSignInButton({ className }: { className?: string }) {
   const { isLoaded: signInLoaded, signIn, setActive } = useSignIn();
@@ -56,7 +61,6 @@ export function NativeAppleSignInButton({ className }: { className?: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Native Apple sheet is iOS-only (ASAuthorization).
   if (!isIOS()) return null;
 
   async function signInWithApple() {
@@ -72,7 +76,6 @@ export function NativeAppleSignInButton({ className }: { className?: string }) {
 
       rememberPostAuthRedirect();
 
-      // Required by Clerk — without this, FAPI returns "not authorized".
       const nonce = createAppleNonce();
       const { identityToken } = await AuthSession.appleSignIn({ nonce });
       if (!identityToken) {
@@ -90,7 +93,6 @@ export function NativeAppleSignInButton({ className }: { className?: string }) {
       if (signIn.status === "complete") {
         createdSessionId = signIn.createdSessionId;
       } else if (signIn.firstFactorVerification?.status === "transferable") {
-        // First-time user: transfer the verified Apple identity into a new sign-up.
         await signUp.create({ transfer: true });
         if (signUp.status === "complete") {
           createdSessionId = signUp.createdSessionId;
@@ -133,15 +135,86 @@ export function NativeAppleSignInButton({ className }: { className?: string }) {
 }
 
 /**
- * Native Google sign-in is temporarily hidden on iOS.
+ * Native Google Sign-In for the Capacitor iOS app.
  *
- * Browser-based Google OAuth fails in the Capacitor WKWebView (Google returns
- * `disallowed_useragent`). Native Google Sign-In (Google Identity SDK + Clerk
- * `google_one_tap`) is the next slice; until then this renders nothing so users
- * don't hit the broken flow. Apple and email remain available.
+ * GIDSignIn returns an ID token whose audience is the Web client
+ * (`serverClientId`). Clerk verifies it with `authenticateWithGoogleOneTap`.
+ * Requires Google Cloud iOS + Web OAuth clients and Clerk Google custom credentials.
  */
-export function NativeGoogleSignInButton(_: { className?: string; label?: string }) {
-  return null;
+export function NativeGoogleSignInButton({
+  className,
+  label = "Continue with Google",
+}: {
+  className?: string;
+  label?: string;
+}) {
+  const clerk = useClerk();
+  const [, setLocation] = useLocation();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isIOS()) return null;
+
+  const googleConfig = googleClientConfig();
+
+  async function signInWithGoogle() {
+    if (pending) return;
+    setPending(true);
+    setError(null);
+
+    try {
+      if (!googleConfig) {
+        setError(
+          "Google Sign-In is not configured for this build. Add VITE_GOOGLE_IOS_CLIENT_ID and VITE_GOOGLE_SERVER_CLIENT_ID, then rebuild.",
+        );
+        return;
+      }
+
+      rememberPostAuthRedirect();
+
+      const { idToken } = await AuthSession.googleSignIn({
+        clientId: googleConfig.clientId,
+        serverClientId: googleConfig.serverClientId,
+      });
+      if (!idToken) {
+        setError("Google did not return a sign-in token. Try again.");
+        return;
+      }
+
+      const signInOrUp = await clerk.authenticateWithGoogleOneTap({ token: idToken });
+      const createdSessionId = signInOrUp.createdSessionId;
+      if (!createdSessionId) {
+        setError("Could not complete Google sign-in. Try Apple or email instead.");
+        return;
+      }
+
+      await clerk.setActive({ session: createdSessionId });
+      setLocation(consumePostAuthRedirect("/"));
+    } catch (err) {
+      if (isCancelled(err)) {
+        setError(null);
+        return;
+      }
+      setError(nativeErrorMessage(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className={className}>
+      <LoadingButton
+        type="button"
+        variant="outline"
+        className="w-full min-h-11 bg-white text-foreground border-border"
+        loading={pending}
+        onClick={() => void signInWithGoogle()}
+      >
+        {label}
+      </LoadingButton>
+      {error ? <p className="mt-2 text-xs text-destructive text-center">{error}</p> : null}
+    </div>
+  );
 }
 
 export function NativeSocialSignInButtons({ className }: { className?: string }) {
@@ -149,9 +222,12 @@ export function NativeSocialSignInButtons({ className }: { className?: string })
 
   return (
     <div className={className}>
-      <NativeAppleSignInButton />
+      <div className="space-y-3">
+        <NativeAppleSignInButton />
+        <NativeGoogleSignInButton />
+      </div>
       <p className="mt-2 text-[11px] text-muted-foreground text-center">
-        Uses your Apple ID. No password needed.
+        Uses Apple or Google on this device. No password needed.
       </p>
     </div>
   );

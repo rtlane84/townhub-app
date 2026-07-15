@@ -1,14 +1,13 @@
 import Foundation
 import AuthenticationServices
 import Capacitor
+import GoogleSignIn
 
 /**
- * Opens an OAuth URL with ASWebAuthenticationSession and resolves with the
- * full callback URL (including query / path-encoded Clerk params).
- *
- * Cap Browser (SFSafariViewController) cannot reliably return custom-scheme
- * OAuth redirects; Apple's auth page often stalls blank. This is the
- * Expo/Clerk-style auth-session primitive.
+ * Native auth helpers for TownHub Capacitor:
+ * - ASWebAuthenticationSession (legacy browser OAuth; kept for fallbacks)
+ * - Sign in with Apple (ASAuthorization → Clerk oauth_token_apple)
+ * - Google Sign-In (GIDSignIn → Clerk google_one_tap / authenticateWithGoogleOneTap)
  */
 @objc(AuthSessionPlugin)
 public class AuthSessionPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticationPresentationContextProviding, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
@@ -16,7 +15,8 @@ public class AuthSessionPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthentication
     public let jsName = "AuthSession"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "openAuthSession", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "appleSignIn", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "appleSignIn", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "googleSignIn", returnType: CAPPluginReturnPromise)
     ]
 
     private var session: ASWebAuthenticationSession?
@@ -156,6 +156,68 @@ public class AuthSessionPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthentication
 
     public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
         return resolvePresentationAnchor()
+    }
+
+    // MARK: - Native Google Sign-In (GIDSignIn)
+
+    /// Presents Google's native sign-in UI and resolves with an ID token that
+    /// Clerk verifies via `google_one_tap` / `authenticateWithGoogleOneTap`.
+    /// Requires `clientId` (iOS OAuth client) and `serverClientId` (Web client —
+    /// the audience Clerk expects on the ID token).
+    @objc func googleSignIn(_ call: CAPPluginCall) {
+        guard let clientId = call.getString("clientId"), !clientId.isEmpty else {
+            call.reject("Google Sign-In requires clientId (iOS OAuth client)", "AUTH_CONFIG")
+            return
+        }
+        let serverClientId = call.getString("serverClientId")
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                call.reject("AuthSession plugin released")
+                return
+            }
+            guard let presenting = self.bridge?.viewController else {
+                call.reject("No presenting view controller for Google Sign-In", "AUTH_NO_PRESENTER")
+                return
+            }
+
+            let config: GIDConfiguration
+            if let serverClientId = serverClientId, !serverClientId.isEmpty {
+                config = GIDConfiguration(clientID: clientId, serverClientID: serverClientId)
+            } else {
+                config = GIDConfiguration(clientID: clientId)
+            }
+            GIDSignIn.sharedInstance.configuration = config
+
+            GIDSignIn.sharedInstance.signIn(withPresenting: presenting) { result, error in
+                if let error = error as NSError? {
+                    // Google Sign-In cancel code is -5 (kGIDSignInErrorCodeCanceled).
+                    if error.code == -5 {
+                        call.reject("User cancelled sign-in", "AUTH_CANCELLED")
+                        return
+                    }
+                    call.reject(error.localizedDescription, "AUTH_FAILED")
+                    return
+                }
+                guard
+                    let user = result?.user,
+                    let idToken = user.idToken?.tokenString,
+                    !idToken.isEmpty
+                else {
+                    call.reject("Google Sign-In returned no ID token", "AUTH_NO_TOKEN")
+                    return
+                }
+
+                var payload: [String: Any] = ["idToken": idToken]
+                if let email = user.profile?.email {
+                    payload["email"] = email
+                }
+                if let name = user.profile?.name {
+                    payload["name"] = name
+                }
+                call.resolve(payload)
+            }
+        }
     }
 
     private func resolvePresentationAnchor() -> ASPresentationAnchor {

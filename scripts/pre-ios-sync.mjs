@@ -57,3 +57,6 @@ if (errors.length > 0) {
 }
 
 console.log("Native iOS build preflight passed.");
+
+// Optional Google Sign-In: patches Info.plist when iOS client ID is present.
+await import("./patch-ios-google-sign-in.mjs");
