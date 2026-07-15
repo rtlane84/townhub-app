@@ -6,7 +6,7 @@ TownHub includes application-level health, admin diagnostics, structured logs, a
 
 **`GET /health`**
 
-Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.).
+Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.). The production and staging API endpoints were manually checked on 2026-07-14 and both returned HTTP 200; this is not a substitute for an external monitor because the check originated from the deployment host's operator environment.
 
 **Response (minimal, safe):**
 
