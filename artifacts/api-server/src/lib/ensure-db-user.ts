@@ -5,7 +5,7 @@ import {
   fetchClerkPrimaryEmail,
   resolveOwnerDeliverableEmail,
 } from "./owner-email";
-import { isDevClerkRelinkAllowed, isSyntheticClerkEmail } from "./relink-clerk-user-shared";
+import { isSyntheticClerkEmail } from "./relink-clerk-user-shared";
 
 export class ClerkUserDesyncError extends Error {
   readonly currentClerkUserId: string;
@@ -93,10 +93,9 @@ export async function ensureDbUserForClerkSession(input: {
       .where(sql`lower(${usersTable.email}) = ${email.trim().toLowerCase()}`);
 
     if (byEmail && byEmail.id !== userId) {
-      if (isDevClerkRelinkAllowed()) {
-        throw new ClerkUserDesyncError(userId, byEmail);
-      }
-      throw new Error("Account email is already linked to a different user ID.");
+      // Always surface as a typed conflict so /auth/me returns 409 (not a
+      // opaque 500). Production clients hide nav until role is resolved.
+      throw new ClerkUserDesyncError(userId, byEmail);
     }
 
     const [raceWinner] = await db.select().from(usersTable).where(eq(usersTable.id, userId));

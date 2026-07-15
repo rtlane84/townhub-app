@@ -74,7 +74,7 @@ So browser-based Clerk OAuth cannot work in the iOS Capacitor shell. The web bui
 Apple uses the **native `ASAuthorization` sheet** — no browser, no redirect:
 
 1. `AuthSession.appleSignIn()` (in the `@townhub/capacitor-auth-session` plugin, `AuthenticationServices` — a built-in framework, no external SDK) presents the Apple sheet and returns the **identity token** (JWT). A **nonce** is required; without it Clerk rejects with “not authorized”.
-2. Clerk token exchange uses **`oauth_token_apple`**. Order matters on Production: try **`signUp.create({ strategy: "oauth_token_apple", token })` first** (new users). If that fails because the Apple ID already exists, **`signIn.create`** with the same token (returning users). SignIn-first binds the token and then both `transfer: true` and SignUp-with-same-token fail.
+2. Clerk token exchange uses **`oauth_token_apple`**. Production treats each Apple token as one-shot: **SignIn first** (returning users). If Clerk reports transferable / no account, present Apple **again** for a fresh token and **`signUp.create`** with that token. Do not `transfer: true` or reuse the first token — both fail on Production.
 3. `clerk.setActive({ session })` establishes the session in the WebView.
 
 **Required config for the token to verify (staging + production):**
@@ -188,7 +188,9 @@ Before archive, verify in Xcode:
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
 | Apple sign-in fails after the sheet (token rejected) | Clerk → Apple must have **"Use custom credentials"** on with a valid Services ID / Team ID / Key ID / .p8 whose audience matches bundle `com.lanetech.townhub`. Shared dev credentials will fail the `oauth_token_apple` exchange. Ensure a nonce is sent. |
-| Apple first-time user: “not authorized” / “no account to transfer” | Use SignUp-with-token first, then SignIn (do not SignIn-first then transfer). Keep Production bot CAPTCHA off for Cap. |
+| Apple first-time user: “not authorized” / “no account to transfer” | SignIn-first binds the token — get a **second** Apple sheet and SignUp with a fresh token (never transfer / reuse). Keep Production bot CAPTCHA off for Cap. |
+| Apple returning user: “not authorized” after SignUp-first | SignUp burns the token for existing Apple IDs — use SignIn-first instead. |
+| Web: signed in but no My Orders / List Your Business | `/api/auth/me` failed (often email already linked to another Clerk user ID after Apple creates a new identity). Check Network for `auth/me` 4xx/5xx; link Apple on the existing Clerk user or repair the DB id. |
 | Apple sheet doesn't appear | Re-run `ios:sync` so the plugin's new `appleSignIn` method is registered, confirm the **Sign in with Apple** capability/entitlement is present, and rebuild. |
 | Google button missing on iOS | Rebuild with this branch; Google is shown again via native GIDSignIn. |
 | Google Sign-In config error on tap | Set `VITE_GOOGLE_IOS_CLIENT_ID` + `VITE_GOOGLE_SERVER_CLIENT_ID` in `.env.native.staging`, re-run `ios:sync`, and enable Clerk Google **custom credentials** with the Web client. |

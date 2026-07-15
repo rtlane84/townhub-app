@@ -47,16 +47,29 @@ function googleClientConfig(): { clientId: string; serverClientId: string } | nu
   return { clientId, serverClientId };
 }
 
+function isAppleTransferable(result: {
+  status?: string | null;
+  isTransferable?: boolean;
+  firstFactorVerification?: { status?: string | null } | null;
+  verifications?: { externalAccount?: { status?: string | null } | null } | null;
+}): boolean {
+  return (
+    result.isTransferable === true ||
+    result.firstFactorVerification?.status === "transferable" ||
+    result.verifications?.externalAccount?.status === "transferable"
+  );
+}
+
 /**
  * Native Apple sign-in for the Capacitor app.
  *
  * Uses Apple's native `ASAuthorization` sheet (no browser, no redirect) to get
  * an identity token, then exchanges it with Clerk via `oauth_token_apple`.
  *
- * Order matters on Production: SignIn-first binds the token and then both
- * `transfer: true` and SignUp-with-same-token fail. So we SignUp with the
- * token first (new users). If that fails because the Apple ID already exists,
- * SignIn with the same token (returning users). Bot CAPTCHA must stay off.
+ * Clerk Production burns a one-shot Apple token on the first exchange attempt.
+ * SignIn-first works for returning users. New users need a *second* Apple
+ * sheet for a fresh token on SignUp — `transfer: true` and SignUp-with-same-
+ * token both fail after SignIn binds the token. Bot CAPTCHA must stay off.
  */
 export function NativeAppleSignInButton({ className }: { className?: string }) {
   const { isLoaded: signInLoaded, signIn, setActive } = useSignIn();
@@ -66,6 +79,15 @@ export function NativeAppleSignInButton({ className }: { className?: string }) {
   const [error, setError] = useState<string | null>(null);
 
   if (!isIOS()) return null;
+
+  async function requestAppleIdentityToken(): Promise<string> {
+    const nonce = createAppleNonce();
+    const { identityToken } = await AuthSession.appleSignIn({ nonce });
+    if (!identityToken) {
+      throw new Error("Apple did not return a sign-in token. Try again.");
+    }
+    return identityToken;
+  }
 
   async function signInWithApple() {
     if (pending) return;
@@ -80,54 +102,34 @@ export function NativeAppleSignInButton({ className }: { className?: string }) {
 
       rememberPostAuthRedirect();
 
-      const nonce = createAppleNonce();
-      const { identityToken } = await AuthSession.appleSignIn({ nonce });
-      if (!identityToken) {
-        setError("Apple did not return a sign-in token. Try again.");
-        return;
-      }
-
+      const identityToken = await requestAppleIdentityToken();
       let createdSessionId: string | null = null;
+      let needsFreshSignUp = false;
 
       try {
-        const signUpAttempt = await signUp.create({
-          strategy: "oauth_token_apple",
-          token: identityToken,
-        });
-        if (signUpAttempt.status === "complete") {
-          createdSessionId = signUpAttempt.createdSessionId;
-        } else if (
-          (signUpAttempt as { isTransferable?: boolean }).isTransferable ||
-          signUpAttempt.verifications?.externalAccount?.status === "transferable"
-        ) {
-          const transferred = await signIn.create({ transfer: true });
-          if (transferred.status === "complete") {
-            createdSessionId = transferred.createdSessionId;
-          }
-        }
-      } catch {
-        // Likely an existing Apple user — SignIn with the same token.
         const signInAttempt = await signIn.create({
           strategy: "oauth_token_apple",
           token: identityToken,
         });
         if (signInAttempt.status === "complete") {
           createdSessionId = signInAttempt.createdSessionId;
+        } else if (isAppleTransferable(signInAttempt)) {
+          // Token is bound — do not transfer or reuse; get a fresh Apple token.
+          needsFreshSignUp = true;
         }
+      } catch {
+        // No existing Apple session — SignUp needs a fresh token (this one is spent).
+        needsFreshSignUp = true;
       }
 
-      if (!createdSessionId) {
-        // Last resort: SignIn path for new accounts that SignUp rejected oddly.
-        try {
-          const signInAttempt = await signIn.create({
-            strategy: "oauth_token_apple",
-            token: identityToken,
-          });
-          if (signInAttempt.status === "complete") {
-            createdSessionId = signInAttempt.createdSessionId;
-          }
-        } catch {
-          // ignore — surface generic error below
+      if (!createdSessionId && needsFreshSignUp) {
+        const signUpToken = await requestAppleIdentityToken();
+        const signUpAttempt = await signUp.create({
+          strategy: "oauth_token_apple",
+          token: signUpToken,
+        });
+        if (signUpAttempt.status === "complete") {
+          createdSessionId = signUpAttempt.createdSessionId;
         }
       }
 
