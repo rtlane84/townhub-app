@@ -59,6 +59,14 @@
 				<string>townhub</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>GoogleSignIn</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.352828490639-8hcmfqljkg4k19oc0gfea2plb765gtbh</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>
