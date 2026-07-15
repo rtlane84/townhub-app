@@ -19,7 +19,7 @@
     "index.d.ts",
     "ios/",
     "android/",
-    "TownhubAuthSession.podspec",
+    "TownhubCapacitorAuthSession.podspec",
     "Package.swift"
   ],
   "author": "TownHub",

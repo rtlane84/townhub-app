@@ -3,7 +3,8 @@ require 'json'
 package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
 
 Pod::Spec.new do |s|
-  s.name = 'TownhubAuthSession'
+  # Capacitor derives this from @townhub/capacitor-auth-session
+  s.name = 'TownhubCapacitorAuthSession'
   s.version = package['version']
   s.summary = package['description']
   s.license = package['license']

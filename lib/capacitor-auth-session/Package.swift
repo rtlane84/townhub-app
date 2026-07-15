@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "TownhubAuthSession",
+    name: "TownhubCapacitorAuthSession",
     platforms: [.iOS(.v14)],
     products: [
         .library(
-            name: "TownhubAuthSession",
+            name: "TownhubCapacitorAuthSession",
             targets: ["AuthSessionPlugin"])
     ],
     dependencies: [
