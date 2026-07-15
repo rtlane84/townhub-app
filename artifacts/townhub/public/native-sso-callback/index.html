@@ -30,10 +30,9 @@
     </style>
     <script>
       (function () {
-        // Cap Browser strips query strings from custom schemes. Path-encode
-        // Clerk params under an explicit host (townhub://oauth/…). Never bounce
-        // to capacitor:// from this HTTPS page — that blanks the WebView after
-        // Apple OAuth leaves capacitor://localhost via allowNavigation.
+        // Clerk lands here over HTTPS (custom schemes are rejected). Bounce to
+        // townhub:// so ASWebAuthenticationSession can capture the full URL
+        // (path-encoded — Cap Browser used to strip query strings).
         var payload = location.search + location.hash;
         var deepLink =
           payload && payload !== "?" && payload !== "#"

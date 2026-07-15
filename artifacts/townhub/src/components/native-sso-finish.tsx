@@ -78,7 +78,7 @@ export function NativeSsoFinish() {
             kind: "error",
             message: "Sign-in return was missing Clerk parameters.",
             detail:
-              "The app opened /sso-callback without rotating_token_nonce. Confirm Cap Browser showed “Returning to TownHub…”, Clerk allowlists include townhub://oauth/sso-callback, and staging bounce path-encodes params into townhub://oauth/sso-callback/p/…",
+              "The app opened /sso-callback without rotating_token_nonce. Auth session should return townhub://oauth/sso-callback/p/… after the HTTPS bounce. Confirm Clerk allowlists include townhub://oauth/sso-callback and https://…/native-sso-callback.",
           });
         }
         return;

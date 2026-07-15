@@ -57,13 +57,13 @@ See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 Native sign-in offers Apple, Google, and email:
 
-- Apple and Google both use Cap Browser (system Safari sheet) and return through `https://<public-web>/native-sso-callback` → path-encoded `townhub://oauth/sso-callback/p/…` → bundled `capacitor://localhost/sso-callback?…`. Do not run Apple OAuth inside the Cap WebView — leaving `capacitor://localhost` for the HTTPS bounce blanks the app.
+- Apple and Google OAuth use `ASWebAuthenticationSession` (not Cap Browser). Clerk redirects to `https://<public-web>/native-sso-callback`, which path-encodes into `townhub://oauth/sso-callback/p/…`; the auth session returns that full URL and remounts `capacitor://localhost/sso-callback?…`. Cap Browser blanks on `appleid.apple.com` and cannot capture custom-scheme OAuth returns.
 - Email/password uses Clerk UI in the WebView.
 - Configure the production and staging callback URLs in their matching Clerk instances.
 - Enable Apple for sign-in and sign-up, add the Clerk native application with the Apple App ID prefix and bundle ID, enable the **Sign in with Apple** capability, and configure Apple private-email relay for TownHub sender domains.
 - Test Apple first-time consent, Hide My Email, returning users, canceled auth, and sign-out on a physical device.
 
-TownHub uses the Cap Browser Clerk OAuth bridge for Apple and Google. Validate both on a physical device during TestFlight review preparation. If Clerk or Apple requires the native Authentication Services token exchange for this application configuration, that is a release blocker—not a reason to remove Apple login.
+TownHub uses ASWebAuthenticationSession for Apple and Google OAuth (same primitive as Clerk Expo’s `openAuthSessionAsync`). Validate both on a physical device during TestFlight review preparation. If Clerk or Apple requires the native Authentication Services identity-token exchange for this application configuration, that is a release blocker—not a reason to remove Apple login.
 
 ## Store billing behavior
 
@@ -147,8 +147,9 @@ Before archive, verify in Xcode:
 |---|---|
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
-| OAuth fails | `VITE_PUBLIC_WEB_URL`, Clerk mobile SSO allowlist (`townhub://oauth/sso-callback` + `https://…/native-sso-callback`), Apple/Google connection, custom scheme, physical-device logs. Instance `allowed_origins` must include `capacitor://localhost` (PATCH `/v1/instance`). Do not add townhub.io to Cap `allowNavigation` (blanks the WebView after HTTPS bounce). CapacitorCookies may be enabled for WKWebView; do not enable CapacitorHttp globally (breaks Clerk fetch). |
-| Blank white screen after Apple | Usually Cap WebView left `capacitor://localhost` for staging bounce. Rebuild without townhub hosts in `allowNavigation`; keep Apple in Cap Browser; bounce only via `townhub://oauth/…`. |
+| OAuth fails | `VITE_PUBLIC_WEB_URL`, Clerk mobile SSO allowlist (`townhub://oauth/sso-callback` + `https://…/native-sso-callback`), Apple/Google connection, custom scheme, physical-device logs. Instance `allowed_origins` must include `capacitor://localhost`. Do not use Cap Browser for OAuth (blanks on appleid.apple.com). CapacitorCookies may be enabled; do not enable CapacitorHttp globally. |
+| Blank white at appleid.apple.com | Cap Browser / SFSafariViewController — rebuild with `@townhub/capacitor-auth-session` (ASWebAuthenticationSession). |
+| Blank white screen after Apple | Usually Cap WebView left `capacitor://localhost` for staging bounce, or Cap Browser fullscreen detach. Keep OAuth in ASWebAuthenticationSession. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |
 | Push fails | App ID/profile capability, APNs environment/key/team/bundle ID, device token registration |
 | Store billing buttons appear | Release env gate and `VITE_DISTRIBUTION_CHANNEL=app-store` |

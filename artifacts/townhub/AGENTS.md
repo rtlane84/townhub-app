@@ -20,7 +20,7 @@ These instructions refine the root `AGENTS.md` for the production React applicat
 
 - Capacitor App Store builds package the responsive Vite application from `webDir` and call the selected remote API; do not set `server.url` or fork business features into native-only screens.
 - All changes must work in ordinary browsers first and account for WKWebView safe areas, bottom tabs, dashboard back navigation, keyboard, and external links.
-- Apple and Google OAuth use Cap Browser + path-encoded `townhub://oauth/sso-callback/p/…` bounce (never navigate the Cap WebView to townhub.io for OAuth — that blanks the app). Customer Stripe Checkout and Connect use the system browser; owner Stripe Billing actions are suppressed in store distributions.
+- Apple and Google OAuth use ASWebAuthenticationSession (`@townhub/capacitor-auth-session`) with HTTPS bounce → path-encoded `townhub://oauth/…` return. Do not use Cap Browser for OAuth. Customer Stripe Checkout and Connect use the system browser; owner Stripe Billing actions are suppressed in store distributions.
 - Preserve `VITE_PUBLIC_WEB_URL`/`APP_BASE_URL` callback alignment, the bundled `capacitor://localhost` origin, `native-sso-callback`, `native-checkout-return`, APNs registration, and authorized notification deep links.
 - Do not edit copied `ios/App/App/public`, Pods, DerivedData, or generated Capacitor output. Change source/config, then use the sync scripts only when native configuration, plugins, or bundled assets are affected.
 

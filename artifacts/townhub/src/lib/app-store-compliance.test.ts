@@ -18,6 +18,7 @@ describe("App Store compliance wiring", () => {
   it("offers Apple as an equivalent native social login", () => {
     assert.match(socialSource, /strategy="oauth_apple"/);
     assert.match(socialSource, /Continue with Apple/);
+    assert.match(socialSource, /AuthSession\.openAuthSession/);
     assert.match(entitlements, /com\.apple\.developer\.applesignin/);
   });
 

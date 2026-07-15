@@ -475,6 +475,9 @@ importers:
       '@sentry/react':
         specifier: ^10.63.0
         version: 10.63.0(react@19.1.4)
+      '@townhub/capacitor-auth-session':
+        specifier: workspace:*
+        version: link:../../lib/capacitor-auth-session
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
@@ -692,6 +695,8 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
+
+  lib/capacitor-auth-session: {}
 
   lib/db:
     dependencies:

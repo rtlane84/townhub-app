@@ -82,6 +82,7 @@
     "wouter": "^3.3.5"
   },
   "dependencies": {
+    "@townhub/capacitor-auth-session": "workspace:*",
     "@capacitor/app": "^7.0.1",
     "@capacitor/browser": "^7.0.1",
     "@capacitor/core": "^7.2.0",
