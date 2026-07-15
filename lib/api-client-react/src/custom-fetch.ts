@@ -323,7 +323,9 @@ function inferResponseType(response: Response): "json" | "text" | "blob" {
   const mediaType = getMediaType(response.headers);
 
   if (isJsonMediaType(mediaType)) return "json";
-  if (isTextMediaType(mediaType) || mediaType == null) return "text";
+  // Cap WKWebView / some proxies omit Content-Type. This client is Orval/JSON-first.
+  if (mediaType == null) return "json";
+  if (isTextMediaType(mediaType)) return "text";
   return "blob";
 }
 
@@ -345,7 +347,18 @@ async function parseSuccessBody(
 
     case "text": {
       const text = await response.text();
-      return text === "" ? null : text;
+      if (text === "") return null;
+      const normalized = stripBom(text);
+      // Treat JSON payloads as JSON even when Content-Type was text/* —
+      // otherwise list hooks receive a string and `.map` crashes the UI.
+      if (looksLikeJson(normalized)) {
+        try {
+          return JSON.parse(normalized);
+        } catch {
+          return text;
+        }
+      }
+      return text;
     }
 
     case "blob":

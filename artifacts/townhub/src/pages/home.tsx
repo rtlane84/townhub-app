@@ -215,9 +215,17 @@ export default function Home() {
       },
     });
 
-  const spotlightItems = highlights.slice(0, 3);
-  const featuredBusinesses = businesses?.slice(0, 6) ?? [];
-  const featuredEvents = featuredEventsRaw.slice(0, 3);
+  const highlightList = Array.isArray(highlights) ? highlights : [];
+  const businessList = Array.isArray(businesses) ? businesses : [];
+  const allBusinessList = Array.isArray(allBusinesses) ? allBusinesses : [];
+  const featuredEventList = Array.isArray(featuredEventsRaw) ? featuredEventsRaw : [];
+  const upcomingEventList = Array.isArray(allUpcomingEvents) ? allUpcomingEvents : [];
+  const todayTruckList = Array.isArray(todayTrucks) ? todayTrucks : [];
+  const upcomingTruckList = Array.isArray(upcomingTrucks) ? upcomingTrucks : [];
+
+  const spotlightItems = highlightList.slice(0, 3);
+  const featuredBusinesses = businessList.slice(0, 6);
+  const featuredEvents = featuredEventList.slice(0, 3);
 
   return (
     <div className="flex flex-col bg-background">
@@ -249,14 +257,14 @@ export default function Home() {
       >
         <TodayInTownSection
           placeLabel={placeLabel}
-          todayTrucks={todayTrucks}
-          todayTrucksLoading={todayTrucksPending && todayTrucks.length === 0}
-          upcomingTrucks={upcomingTrucks}
-          upcomingEvents={allUpcomingEvents}
+          todayTrucks={todayTruckList}
+          todayTrucksLoading={todayTrucksPending && todayTruckList.length === 0}
+          upcomingTrucks={upcomingTruckList}
+          upcomingEvents={upcomingEventList}
           upcomingEventsLoading={
-            upcomingEventsPending && allUpcomingEvents.length === 0
+            upcomingEventsPending && upcomingEventList.length === 0
           }
-          businesses={allBusinesses}
+          businesses={allBusinessList}
           marketplaceStats={marketplaceStats}
           marketplaceStatsLoading={marketplaceStatsPending && !marketplaceStats}
         />
@@ -365,7 +373,7 @@ export default function Home() {
         ) : null}
 
         {/* On the move today — list only when trucks exist (Today card already summarizes empty) */}
-        {todayTrucksPending && todayTrucks.length === 0 ? (
+        {todayTrucksPending && todayTruckList.length === 0 ? (
           <section
             className="th-fade-up"
             aria-labelledby="trucks-today-heading"
@@ -377,7 +385,7 @@ export default function Home() {
             />
             <HomeFoodTrucksSkeleton />
           </section>
-        ) : todayTrucks.length > 0 ? (
+        ) : todayTruckList.length > 0 ? (
           <section
             id="food-trucks-today"
             className="th-fade-up"
@@ -398,7 +406,7 @@ export default function Home() {
               </Badge>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {todayTrucks.map((truck) => (
+              {todayTruckList.map((truck) => (
                 <Link key={truck.id} href={`/businesses/${truck.businessSlug}`}>
                   <Card className={cn(LISTING_CARD_CLASS, "rounded-[1.35rem]")}>
                     <CardContent className="p-4">
