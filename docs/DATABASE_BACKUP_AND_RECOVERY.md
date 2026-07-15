@@ -225,6 +225,7 @@ Complete before accepting real customer orders:
 
 - Same project often hosts both Postgres and the media bucket — confirm backup scope covers both.
 - Database connection string: Project Settings → Database → URI (use pooler mode for serverless/API).
+- The TownHub Production Supabase project was checked on 2026-07-14. Its dashboard reports the **Free** plan and states that project backups are not included. Do not mark OPS-001 complete until the project is upgraded to a plan with visible backup history (or production moves to another managed provider), then complete the restore drill to a non-production target.
 
 ---
 
