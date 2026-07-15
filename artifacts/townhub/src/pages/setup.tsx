@@ -90,7 +90,7 @@ export default function Setup() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!isLoaded || mePending ? (
+            {!isLoaded || (isSignedIn && mePending) ? (
               <div className="flex items-center justify-center py-6">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>

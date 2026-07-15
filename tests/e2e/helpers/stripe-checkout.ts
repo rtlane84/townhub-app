@@ -12,7 +12,7 @@ const ONLINE_PAYMENT_MODES = new Set(["BOTH", "ONLINE_ONLY"]);
 type CheckoutContext = {
   paymentMode?: string | null;
   payAtPickupEnabled?: boolean | null;
-  stripeConnectedAccountId?: string | null;
+  onlinePaymentsAvailable?: boolean | null;
 };
 
 type StorefrontResponse = {
@@ -38,7 +38,7 @@ async function resolveStripeBusinessFromSlug(slug: string): Promise<E2ECheckoutB
   );
   if (!checkoutResponse.ok) return null;
   const checkout = (await checkoutResponse.json()) as CheckoutContext;
-  if (!allowsOnlinePayment(checkout) || !checkout.stripeConnectedAccountId) return null;
+  if (!allowsOnlinePayment(checkout) || checkout.onlinePaymentsAvailable !== true) return null;
 
   const product = storefront.products.find(
     (item) => item.available && (item.optionGroups?.length ?? 0) === 0,

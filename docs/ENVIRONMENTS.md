@@ -49,7 +49,7 @@ Existing test data may remain in staging. Do not copy it into production unless 
 - All 31 application tables have RLS enabled with no `anon` or `authenticated` policies. Direct PostgREST table access is intentionally deny-all; the API server remains the sole application database boundary.
 - Role-simulation checks confirmed that `anon` and `authenticated` read zero rows from representative identity, order, and device-token tables.
 - The API database role retains the server access required by the current architecture, and the full API test suite passes.
-- The production project is provisioned but remains empty. Applying schema or data to it requires a backup/recovery plan, reviewed Drizzle output, and explicit production authorization.
+- The production project has the reviewed schema, storage bucket, and locked-down public access applied. Production backups and a restore drill remain release blockers; production pilot data must still be introduced deliberately.
 
 ## Create production
 
@@ -57,7 +57,7 @@ Existing test data may remain in staging. Do not copy it into production unless 
 2. Create a separate Cloudflare Worker/deploy environment, attach `townhub.io`, and redirect `www.townhub.io` to the apex domain.
 3. Create or select the Clerk production instance. Configure only production origins, redirects, native application details, Apple connection, and authorized support/admin accounts.
 4. Configure Stripe live mode. Create separate Connect and platform Billing webhook destinations pointing to the production API. Never reuse staging webhook secrets.
-5. Apply the reviewed schema and access controls to the TownHub Production Supabase project, enable managed database backups, and create separate production storage and provider credentials. Verify bucket access and deletion procedures.
+5. Apply the reviewed schema and access controls to the TownHub Production Supabase project, enable managed database backups, and create separate production storage and provider credentials. Verify bucket access and deletion procedures. (Schema, access controls, storage, and provider separation are complete; backup history and restore drill remain.)
 6. Configure verified production email/SMS identities, Sentry projects/releases, uptime monitors, log drain, alert recipients, job scheduler, and APNs credentials.
 7. Set `DEPLOYMENT_ENVIRONMENT=production`, production URLs, secrets, and build metadata.
 8. Run the production environment gates for the API and frontend before deployment.

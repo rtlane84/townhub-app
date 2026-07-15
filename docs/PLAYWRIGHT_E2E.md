@@ -68,6 +68,8 @@ Guest checkout tests need **one active business** that:
 
 By default, helpers call `GET /api/businesses` and pick the first matching business. Set `E2E_BUSINESS_SLUG` to pin a known storefront (e.g. a dev business you control).
 
+The public checkout response intentionally omits the connected Stripe account ID. Stripe checkout discovery uses its public `onlinePaymentsAvailable` readiness flag; do not add private provider identifiers to public API responses.
+
 There is **no destructive seed/reset** in the suite — helpers read live API data and create guest orders through the public `POST /api/orders` endpoint.
 
 ## Test structure
@@ -171,6 +173,8 @@ Stripe card checkout and refund workflows run only when `E2E_STRIPE_CHECKOUT=1` 
 - Webhook forwarding so paid pending checkouts materialize as `paymentStatus: PAID` orders (e.g. Stripe CLI `stripe listen --forward-to localhost:8080/api/checkout/webhook`)
 
 Without that, pay-at-pickup smoke tests still run; Stripe workflow specs skip with a clear message.
+
+As of July 14, 2026, the staging Sandbox Connect account and online payment mode are ready. The remaining Stripe workflow issue is Playwright compatibility with Stripe's current hosted Checkout card-field iframe structure; no live payment was made.
 
 ## Debugging failures
 
