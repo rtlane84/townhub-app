@@ -8,30 +8,30 @@ export const NATIVE_BUNDLED_ORIGIN = "capacitor://localhost";
 export const NATIVE_SSO_CALLBACK_PATH = "/sso-callback";
 
 /**
- * HTTPS path Clerk redirects to after Google / Apple OAuth in Cap Browser.
- * Must be http(s) — Clerk rejects custom schemes (invalid_url_scheme).
- * This page only bounces into the app via townhub://; it does not finish the session.
+ * HTTPS bounce page (legacy / web Cap Browser path). Kept deployed so an old
+ * allowlist entry still lands somewhere useful — auth session primary flow
+ * uses the custom-scheme redirect below so Clerk attaches rotating_token_nonce.
  */
 export const NATIVE_SSO_HTTPS_BOUNCE_PATH = "/native-sso-callback";
 
 /**
- * Deep link used to bounce from Safari / SFSafariViewController back into the
- * Capacitor WebView after Clerk redirects to the HTTPS bounce page.
+ * Deep link Clerk must allowlist as a **native redirect URL**.
+ * ASWebAuthenticationSession intercepts this scheme; Clerk appends
+ * `rotating_token_nonce` only when redirect_url is a whitelisted native URL
+ * (HTTPS web bounce alone does not emit the transfer nonce).
  *
- * Use an explicit host (`oauth`) so Cap delivers pathname + path-encoded params;
- * bare `townhub://sso-callback` often arrives with query/path stripped.
+ * Use an explicit host (`oauth`) so Cap delivers pathname + params.
  */
 export const NATIVE_SSO_DEEP_LINK_HOST = "oauth";
 export const NATIVE_SSO_DEEP_LINK = `${NATIVE_OAUTH_SCHEME}://${NATIVE_SSO_DEEP_LINK_HOST}${NATIVE_SSO_CALLBACK_PATH}`;
 
 /**
- * Prefix for path-encoded Clerk params. iOS / Cap Browser often deliver
- * custom-scheme URLs with the query string stripped; encoding into the
- * path keeps rotating_token_nonce intact.
+ * Prefix for path-encoded Clerk params. iOS / Cap often strip query strings
+ * from capacitor:// remounts; encoding into the path keeps the nonce intact.
  */
 export const NATIVE_SSO_ENCODED_PARAM_PREFIX = "sso-callback/p/";
 
-/** @deprecated Use getNativeSsoHttpsCallbackUrl() — Clerk rejects custom-scheme redirect_url. */
+/** @deprecated Prefer getNativeOAuthRedirectUrl(). */
 export const NATIVE_SSO_CALLBACK_URL = NATIVE_SSO_DEEP_LINK;
 
 export function resolvePublicWebBaseUrl(
@@ -56,8 +56,17 @@ export function getPublicWebBaseUrl(): string {
 }
 
 /**
- * HTTPS callback Clerk accepts for oauth_* redirect_url.
- * Must match the deployed public web origin (Safari / Cap Browser bounce page).
+ * Native OAuth redirect_url for Clerk SignIn.create (custom scheme).
+ * Must be allowlisted in Clerk → Native applications / Redirect URLs.
+ * Clerk then redirects ASWebAuthenticationSession to this URL with
+ * rotating_token_nonce — required to finish the session in the Cap WebView.
+ */
+export function getNativeOAuthRedirectUrl(): string {
+  return NATIVE_SSO_DEEP_LINK;
+}
+
+/**
+ * HTTPS bounce URL (legacy). Prefer getNativeOAuthRedirectUrl() for AuthSession.
  */
 export function getNativeSsoHttpsCallbackUrl(
   origin = getPublicWebBaseUrl(),

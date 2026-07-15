@@ -6,7 +6,7 @@ import { Apple } from "lucide-react";
 import { isNativeApp } from "@/lib/native-platform";
 import {
   getNativeBundledOrigin,
-  getNativeSsoHttpsCallbackUrl,
+  getNativeOAuthRedirectUrl,
   NATIVE_OAUTH_SCHEME,
   describeNativeAuthReturnUrl,
   nativeSsoDeepLinkHasParams,
@@ -74,7 +74,10 @@ function NativeSocialSignInButton({
     setError(null);
 
     try {
-      const callbackUrl = getNativeSsoHttpsCallbackUrl();
+      // Custom scheme — Clerk attaches rotating_token_nonce only for allowlisted
+      // native redirect URLs. HTTPS bounce alone lands without a transfer nonce
+      // (browser cookies stay in AuthSession, Cap WebView stays signed out).
+      const callbackUrl = getNativeOAuthRedirectUrl();
       const { error: createError } = await signIn.create({
         strategy,
         redirectUrl: callbackUrl,
@@ -82,7 +85,14 @@ function NativeSocialSignInButton({
       });
 
       if (createError) {
-        setError(clerkErrorMessage(createError, provider));
+        const message = clerkErrorMessage(createError, provider);
+        if (/invalid_url_scheme|redirect_url|not (allowed|whitelisted)/i.test(message)) {
+          setError(
+            `${message} Add ${callbackUrl} under Clerk → Native applications / Redirect URLs (staging instance).`,
+          );
+        } else {
+          setError(message);
+        }
         return;
       }
 
@@ -111,7 +121,7 @@ function NativeSocialSignInButton({
       if (!nativeSsoDeepLinkHasParams(returnedUrl)) {
         clearNativeOAuthPending();
         setError(
-          `Sign-in returned without Clerk parameters (${describeNativeAuthReturnUrl(returnedUrl)}). Check Clerk allowlists for https://…/native-sso-callback and townhub://oauth/sso-callback.`,
+          `Sign-in returned without Clerk parameters (${describeNativeAuthReturnUrl(returnedUrl)}). Add ${getNativeOAuthRedirectUrl()} to Clerk Redirect URLs on the staging instance, then try again.`,
         );
         return;
       }
@@ -163,11 +173,11 @@ function NativeSocialSignInButton({
  * Native Apple / Google OAuth via ASWebAuthenticationSession.
  *
  * Flow:
- * 1. Create SignIn with oauth_* + https://{public-web}/native-sso-callback
- * 2. Open Clerk verification URL in ASWebAuthenticationSession (not Cap Browser)
- * 3. Clerk → provider → HTTPS bounce → townhub://oauth/sso-callback/p/…
- * 4. Auth session resolves with the full callback URL
- * 5. Remount capacitor://localhost/sso-callback?… and finish the session
+ * 1. Create SignIn with oauth_* + redirectUrl=townhub://oauth/sso-callback
+ * 2. Open Clerk verification URL in ASWebAuthenticationSession
+ * 3. Clerk → provider → townhub://oauth/sso-callback?rotating_token_nonce=…
+ * 4. Auth session resolves with that URL
+ * 5. Remount capacitor://localhost/sso-callback/p/… and finish the session
  */
 export function NativeGoogleSignInButton({
   className,

@@ -59,9 +59,9 @@ See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 Native sign-in offers Apple, Google, and email:
 
-- Apple and Google OAuth use `ASWebAuthenticationSession` (not Cap Browser). Clerk redirects to `https://<public-web>/native-sso-callback`, which path-encodes into `townhub://oauth/sso-callback/p/…`; the auth session returns that full URL and remounts `capacitor://localhost/sso-callback?…`. Cap Browser blanks on `appleid.apple.com` and cannot capture custom-scheme OAuth returns.
+- Apple and Google OAuth use `ASWebAuthenticationSession` (not Cap Browser). Clerk `redirect_url` is the custom scheme `townhub://oauth/sso-callback` so Clerk emits `rotating_token_nonce`. Auth session captures that URL and remounts the Cap WebView via path-encoded `/sso-callback/p/…`. Cap Browser blanks on `appleid.apple.com` and cannot capture custom-scheme OAuth returns.
+- **Required Clerk allowlist (staging + production):** under **Native applications / Redirect URLs**, add exactly `townhub://oauth/sso-callback`. Instance `allowed_origins` must include `capacitor://localhost`.
 - Email/password uses Clerk UI in the WebView.
-- Configure the production and staging callback URLs in their matching Clerk instances.
 - Enable Apple for sign-in and sign-up, add the Clerk native application with the Apple App ID prefix and bundle ID, enable the **Sign in with Apple** capability, and configure Apple private-email relay for TownHub sender domains.
 - Test Apple first-time consent, Hide My Email, returning users, canceled auth, and sign-out on a physical device.
 
@@ -149,7 +149,7 @@ Before archive, verify in Xcode:
 |---|---|
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
-| OAuth fails | `VITE_PUBLIC_WEB_URL`, Clerk mobile SSO allowlist (`townhub://oauth/sso-callback` + `https://…/native-sso-callback`), Apple/Google connection, custom scheme, physical-device logs. Instance `allowed_origins` must include `capacitor://localhost`. Do not use Cap Browser for OAuth (blanks on appleid.apple.com). Keep CapacitorHttp and CapacitorCookies **off** unless re-verified — Cap Cookies was linked to native list `.map`/`.filter` crashes. Remount uses path-encoded `/sso-callback/p/…` because Cap strips query on `capacitor://` assigns; bare `townhub://` `appUrlOpen` is ignored after AuthSession. |
+| OAuth fails | Clerk **Redirect URLs** must include `townhub://oauth/sso-callback` (native). Symptom `bare-sso=yes` means Clerk returned the scheme without `rotating_token_nonce` — usually the HTTPS bounce allowlist path. Also verify `capacitor://localhost` in instance `allowed_origins`, Apple/Google connection, custom scheme, physical-device logs. Do not use Cap Browser for OAuth. Keep CapacitorHttp/Cookies off. |
 | Blank white at appleid.apple.com | Cap Browser / SFSafariViewController — rebuild with `@townhub/capacitor-auth-session` (ASWebAuthenticationSession). |
 | Blank white screen after Apple | Usually Cap WebView left `capacitor://localhost` for staging bounce, or Cap Browser fullscreen detach. Keep OAuth in ASWebAuthenticationSession. |
 | `x.map` / `x.filter` is not a function on native | List API payload wasn’t an array. Public pages use `asArray()`. Re-check Cap Cookies/Http are disabled. |

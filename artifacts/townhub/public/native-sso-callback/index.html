@@ -27,17 +27,37 @@
         font-size: 13px;
         color: #6b635b;
       }
+      .err {
+        color: #b42318;
+        font-size: 14px;
+      }
     </style>
     <script>
       (function () {
-        // Clerk lands here over HTTPS (custom schemes are rejected). Bounce to
-        // townhub:// so ASWebAuthenticationSession can capture the full URL
-        // (path-encoded — Cap Browser used to strip query strings).
+        // Legacy Cap Browser path. Prefer townhub:// redirect_url so Clerk sends
+        // rotating_token_nonce. Only bounce when Clerk params are present —
+        // bare townhub:// is worse than showing an error (AuthSession captures it).
         var payload = location.search + location.hash;
+        var hasParams =
+          payload &&
+          payload !== "?" &&
+          payload !== "#" &&
+          /(rotating_token_nonce|__clerk_status)/i.test(payload);
+
+        if (!hasParams) {
+          document.addEventListener("DOMContentLoaded", function () {
+            var hint = document.querySelector(".hint");
+            if (hint) {
+              hint.className = "err";
+              hint.textContent =
+                "Missing Clerk sign-in parameters. Close this window and use the latest TownHub build (native townhub:// redirect).";
+            }
+          });
+          return;
+        }
+
         var deepLink =
-          payload && payload !== "?" && payload !== "#"
-            ? "townhub://oauth/sso-callback/p/" + encodeURIComponent(payload)
-            : "townhub://oauth/sso-callback";
+          "townhub://oauth/sso-callback/p/" + encodeURIComponent(payload);
 
         function setLink() {
           var openLink = document.getElementById("open-app");

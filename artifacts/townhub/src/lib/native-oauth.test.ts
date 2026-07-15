@@ -9,6 +9,7 @@ import {
   decodeNativeSsoEncodedPayload,
   describeNativeAuthReturnUrl,
   getNativeBundledOrigin,
+  getNativeOAuthRedirectUrl,
   getNativeSsoHttpsCallbackUrl,
   isNativeSsoCallbackUrl,
   nativeSsoDeepLinkHasParams,
@@ -17,13 +18,14 @@ import {
 } from "./native-oauth.ts";
 
 describe("native-oauth", () => {
-  it("builds HTTPS bounce URL Clerk accepts and townhub deep link for app return", () => {
+  it("builds HTTPS bounce URL and native townhub redirect for AuthSession", () => {
     assert.equal(NATIVE_SSO_HTTPS_BOUNCE_PATH, "/native-sso-callback");
     assert.equal(
       getNativeSsoHttpsCallbackUrl("https://staging.townhub.example"),
       "https://staging.townhub.example/native-sso-callback",
     );
     assert.equal(NATIVE_SSO_DEEP_LINK, "townhub://oauth/sso-callback");
+    assert.equal(getNativeOAuthRedirectUrl(), "townhub://oauth/sso-callback");
   });
 
   it("detects SSO callback URLs", () => {
