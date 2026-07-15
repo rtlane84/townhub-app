@@ -4,18 +4,19 @@
   "private": true,
   "type": "module",
   "description": "ASWebAuthenticationSession wrapper for TownHub native OAuth (Clerk Apple/Google).",
-  "main": "dist/esm/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/esm/index.d.ts",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/esm/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "default": "./dist/esm/index.js"
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "default": "./index.js"
     }
   },
   "files": [
-    "dist/",
+    "index.js",
+    "index.d.ts",
     "ios/",
     "android/",
     "TownhubAuthSession.podspec",
