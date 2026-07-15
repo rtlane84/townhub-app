@@ -1,0 +1,212 @@
+name: Production database restore drill
+
+# Restores the latest (or selected) R2 backup archive into an ephemeral
+# GitHub Actions Postgres service. Never targets staging or production.
+
+on:
+  workflow_dispatch:
+    inputs:
+      archive_key:
+        description: Optional R2 object key (default: latest townhub-production-*.zip)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-db-restore-drill
+  cancel-in-progress: false
+
+jobs:
+  restore-drill:
+    name: Restore R2 archive into ephemeral Postgres
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: townhub_restore_drill
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d townhub_restore_drill"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.CF_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_SECRET_ACCESS_KEY }}
+      CF_BUCKET_NAME: ${{ secrets.CF_BUCKET_NAME }}
+      CF_BUCKET_ENDPOINT: ${{ secrets.CF_BUCKET_ENDPOINT }}
+      RESTORE_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/townhub_restore_drill
+      ARCHIVE_KEY_INPUT: ${{ inputs.archive_key }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Assert restore target is ephemeral localhost
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          host="$(python3 - <<'PY'
+          from urllib.parse import urlparse
+          import os
+          print(urlparse(os.environ["RESTORE_DATABASE_URL"]).hostname or "")
+          PY
+          )"
+          db="$(python3 - <<'PY'
+          from urllib.parse import urlparse
+          import os
+          print((urlparse(os.environ["RESTORE_DATABASE_URL"]).path or "").lstrip("/"))
+          PY
+          )"
+          test "$host" = "127.0.0.1" -o "$host" = "localhost"
+          test "$db" = "townhub_restore_drill"
+          echo "Restore target confirmed: ${host}/${db}"
+
+      - name: Select and download R2 archive
+        id: archive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -n "$AWS_ACCESS_KEY_ID"
+          test -n "$AWS_SECRET_ACCESS_KEY"
+          test -n "$CF_BUCKET_NAME"
+          test -n "$CF_BUCKET_ENDPOINT"
+
+          if [ -n "${ARCHIVE_KEY_INPUT:-}" ]; then
+            archive="$ARCHIVE_KEY_INPUT"
+          else
+            archive="$(
+              aws s3api list-objects-v2 \
+                --bucket "$CF_BUCKET_NAME" \
+                --endpoint-url "$CF_BUCKET_ENDPOINT" \
+                --query "reverse(sort_by(Contents[?starts_with(Key, 'townhub-production-') && ends_with(Key, '.zip')], &LastModified))[0].Key" \
+                --output text
+            )"
+          fi
+
+          if [ -z "$archive" ] || [ "$archive" = "None" ] || [ "$archive" = "null" ]; then
+            echo "No townhub-production-*.zip object found in R2 bucket." >&2
+            exit 1
+          fi
+
+          echo "Selected archive: $archive"
+          aws s3api head-object \
+            --bucket "$CF_BUCKET_NAME" \
+            --key "$archive" \
+            --endpoint-url "$CF_BUCKET_ENDPOINT" >/dev/null
+          aws s3 cp \
+            "s3://$CF_BUCKET_NAME/$archive" \
+            "$archive" \
+            --endpoint-url "$CF_BUCKET_ENDPOINT" \
+            --no-progress
+          unzip -tq "$archive"
+          test "$(stat -c '%s' "$archive")" -gt 0
+
+          echo "archive=$archive" >> "$GITHUB_OUTPUT"
+          echo "archive_bytes=$(stat -c '%s' "$archive")" >> "$GITHUB_OUTPUT"
+
+      - name: Restore roles, schema, and data
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.archive.outputs.archive }}
+        run: |
+          set -Eeuo pipefail
+          work_dir="$(mktemp -d)"
+          trap 'rm -rf "$work_dir"' EXIT
+          unzip -q "$ARCHIVE" -d "$work_dir"
+          test -f "$work_dir/roles.sql"
+          test -f "$work_dir/schema.sql"
+          test -f "$work_dir/data.sql"
+
+          # Postgres 16 may reject PG17-only GUCs present in some dumps.
+          sed -i 's/^SET transaction_timeout/# &/' \
+            "$work_dir/roles.sql" "$work_dir/schema.sql" "$work_dir/data.sql"
+
+          # Roles can reference reserved/cloud-managed names; continue after
+          # non-fatal role statements so schema/data still validate.
+          set +e
+          psql "$RESTORE_DATABASE_URL" \
+            --set ON_ERROR_STOP=0 \
+            --file "$work_dir/roles.sql"
+          roles_rc=$?
+          set -e
+          echo "roles_restore_exit=$roles_rc"
+
+          psql "$RESTORE_DATABASE_URL" \
+            --single-transaction \
+            --set ON_ERROR_STOP=1 \
+            --file "$work_dir/schema.sql"
+
+          psql "$RESTORE_DATABASE_URL" \
+            --single-transaction \
+            --set ON_ERROR_STOP=1 \
+            --command "SET session_replication_role = replica" \
+            --file "$work_dir/data.sql"
+
+      - name: Verify tables, row counts, and connectivity
+        id: verify
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.archive.outputs.archive }}
+          ARCHIVE_BYTES: ${{ steps.archive.outputs.archive_bytes }}
+        run: |
+          set -Eeuo pipefail
+
+          # Application connectivity: open a fresh libpq session and run
+          # representative counts against the restored ephemeral database.
+          counts="$(psql "$RESTORE_DATABASE_URL" -v ON_ERROR_STOP=1 -At <<'SQL'
+          SELECT format(
+            'users=%s businesses=%s products=%s orders=%s platform_settings=%s subscription_plans=%s',
+            (SELECT count(*) FROM public.users),
+            (SELECT count(*) FROM public.businesses),
+            (SELECT count(*) FROM public.products),
+            (SELECT count(*) FROM public.orders),
+            (SELECT count(*) FROM public.platform_settings),
+            (SELECT count(*) FROM public.subscription_plans)
+          );
+          SQL
+          )"
+
+          table_count="$(psql "$RESTORE_DATABASE_URL" -v ON_ERROR_STOP=1 -At <<'SQL'
+          SELECT count(*)
+          FROM information_schema.tables
+          WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
+          SQL
+          )"
+
+          echo "public_tables=$table_count"
+          echo "counts=$counts"
+
+          # Production pilot DBs may be empty; require schema presence.
+          test "$table_count" -ge 20
+
+          {
+            echo "## Restore drill verification"
+            echo
+            echo "- Date (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "- Target: ephemeral GitHub Actions Postgres \`townhub_restore_drill\` on localhost (not staging/production)"
+            echo "- Archive: \`$ARCHIVE\` (${ARCHIVE_BYTES} bytes)"
+            echo "- Public tables: $table_count"
+            echo "- Row counts: \`$counts\`"
+            echo "- Connectivity: psql session against restored localhost database succeeded"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "public_tables=$table_count" >> "$GITHUB_OUTPUT"
+          echo "counts=$counts" >> "$GITHUB_OUTPUT"
+
+      - name: Remove local archive
+        if: ${{ always() }}
+        shell: bash
+        env:
+          ARCHIVE: ${{ steps.archive.outputs.archive }}
+        run: |
+          if [ -n "${ARCHIVE:-}" ]; then
+            rm -f -- "$ARCHIVE"
+          fi
