@@ -19,6 +19,10 @@ describe("App Store compliance wiring", () => {
     assert.match(socialSource, /strategy="oauth_apple"/);
     assert.match(socialSource, /Continue with Apple/);
     assert.match(socialSource, /AuthSession\.openAuthSession/);
+    assert.match(
+      readFileSync(`${srcRoot}/lib/native-auth-session.ts`, "utf8"),
+      /registerPlugin.*AuthSession/,
+    );
     assert.match(entitlements, /com\.apple\.developer\.applesignin/);
   });
 

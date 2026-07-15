@@ -24,9 +24,6 @@
   ],
   "author": "TownHub",
   "license": "UNLICENSED",
-  "peerDependencies": {
-    "@capacitor/core": ">=7.0.0"
-  },
   "capacitor": {
     "ios": {
       "src": "ios"

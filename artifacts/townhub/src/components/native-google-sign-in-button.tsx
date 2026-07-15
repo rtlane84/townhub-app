@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSignIn } from "@clerk/react";
-import { AuthSession } from "@townhub/capacitor-auth-session";
+import { AuthSession } from "@/lib/native-auth-session";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Apple } from "lucide-react";
 import { isNativeApp } from "@/lib/native-platform";
