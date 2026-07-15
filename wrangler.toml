@@ -1,26 +1,40 @@
 # Cloudflare Workers (static assets) — TownHub frontend
 #
-# Dashboard (Workers & Pages → townhub → Settings → Build):
-#   Root directory:     (leave empty — repo root)
+# Use TWO Workers Builds projects (not classic Pages):
+#
+# Staging project (Git branch: develop)
+#   Worker / deploy:    npx wrangler deploy --env staging  → script townhub-app
+#   Custom domain:      staging.townhub.io
 #   Build command:      pnpm --filter @workspace/townhub run build
-#   Deploy command:     npx wrangler deploy
+#   Build env:          DEPLOYMENT_ENVIRONMENT=staging
+#                       VITE_DISTRIBUTION_CHANNEL=web
+#                       VITE_API_BASE_URL=https://api-staging.townhub.io
+#                       VITE_CLERK_PUBLISHABLE_KEY=pk_test_…
+#                       NODE_VERSION=22
+#
+# Production project (Git branch: main)
+#   Worker / deploy:    npx wrangler deploy --env production → script townhub-production
+#   Custom domains:     townhub.io (+ www redirect to apex)
+#   Build command:      pnpm --filter @workspace/townhub run build
+#   Build env:          DEPLOYMENT_ENVIRONMENT=production
+#                       VITE_DISTRIBUTION_CHANNEL=web
+#                       VITE_API_BASE_URL=https://api.townhub.io
+#                       VITE_CLERK_PUBLISHABLE_KEY=pk_live_…
+#                       NODE_VERSION=22
+#
+# Shared settings for both projects:
+#   Root directory:     (leave empty — repo root)
 #   Build output dir:   (optional / unused — assets come from this file)
+#   pnpm version:       10.11.1 (matches packageManager in root package.json)
 #
 # Auth: use the default Build API token (Workers Scripts Edit is enough).
 #   Do NOT set CLOUDFLARE_API_TOKEN as a Build variable — it overrides the
 #   Build → API token field and often causes auth error 10000.
-#   Remove any custom CLOUDFLARE_API_TOKEN from Build variables/secrets.
-#
-# Env (build-time):
-#   NODE_VERSION=22
-#   VITE_CLERK_PUBLISHABLE_KEY=...
-#   VITE_API_BASE_URL=https://your-api.example.com
 #
 # If auto `pnpm install --frozen-lockfile` fails with LOCKFILE_CONFIG_MISMATCH:
 #   SKIP_DEPENDENCY_INSTALL=true
 #   Build command: pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build
 
-# Must match the Workers Builds project name (CI overrides otherwise).
 name = "townhub-app"
 compatibility_date = "2026-07-09"
 
@@ -29,3 +43,11 @@ compatibility_date = "2026-07-09"
 [assets]
 directory = "artifacts/townhub/dist/public"
 not_found_handling = "single-page-application"
+
+# Staging frontend Worker (develop → staging.townhub.io)
+[env.staging]
+name = "townhub-app"
+
+# Production frontend Worker (main → townhub.io)
+[env.production]
+name = "townhub-production"

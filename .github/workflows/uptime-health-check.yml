@@ -1,0 +1,52 @@
+name: External uptime health checks
+
+# Lightweight external monitors independent of Railway/Cloudflare app hosts.
+# Complements (does not replace) Better Stack / UptimeRobot alert routing.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: external-uptime-health
+  cancel-in-progress: true
+
+jobs:
+  health:
+    name: Check staging and production surfaces
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - url: https://api.townhub.io/health
+            expect_json_ok: "true"
+          - url: https://api-staging.townhub.io/health
+            expect_json_ok: "true"
+          - url: https://townhub.io/
+            expect_json_ok: "false"
+          - url: https://staging.townhub.io/
+            expect_json_ok: "false"
+    steps:
+      - name: Probe URL
+        shell: bash
+        env:
+          TARGET_URL: ${{ matrix.url }}
+          EXPECT_JSON_OK: ${{ matrix.expect_json_ok }}
+        run: |
+          set -Eeuo pipefail
+          code="$(curl -sS -o /tmp/uptime-body -w '%{http_code}' \
+            --connect-timeout 10 --max-time 20 \
+            -A 'TownHub-Uptime/1.0' \
+            "$TARGET_URL" || true)"
+          echo "url=$TARGET_URL"
+          echo "http_status=$code"
+          test "$code" = "200"
+          if [ "$EXPECT_JSON_OK" = "true" ]; then
+            python3 -c 'import json; d=json.load(open("/tmp/uptime-body")); assert d.get("status")=="ok", d; print("health_status=ok")'
+          fi

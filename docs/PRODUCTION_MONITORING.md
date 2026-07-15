@@ -132,7 +132,8 @@ When a DSN is absent, the app continues without sending events. Admin Operations
 | Tool | Purpose |
 |------|---------|
 | **Sentry** | API and frontend error aggregation |
-| **UptimeRobot / Better Stack** | External uptime on `/health` |
+| **UptimeRobot / Better Stack** | External uptime on `/health` with human alert routing |
+| **GitHub Actions `uptime-health-check.yml`** | Independent 5-minute probes of staging/production API `/health` and frontend origins |
 | **Managed Postgres backups** | Database disaster recovery — see [DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md) |
 | **Stripe Dashboard → Webhooks** | Delivery logs and retry inspection |
 | **Log drain** (Fly.io, Railway, etc.) | Centralize Pino JSON logs in production |

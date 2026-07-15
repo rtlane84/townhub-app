@@ -249,17 +249,23 @@ TownHub is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`
 
 ### Example: Cloudflare Workers (frontend static assets)
 
-Repo root is a pnpm monorepo. Use **Workers Builds** (not classic Pages `wrangler pages deploy`):
+Repo root is a pnpm monorepo. Use **two Workers Builds projects** (not classic Pages `wrangler pages deploy`), matching root `wrangler.toml` environments:
+
+| Builds project | Git branch | Deploy command | Worker script | Domain |
+|---|---|---|---|---|
+| Staging | `develop` | `npx wrangler deploy --env staging` | `townhub-app` | `staging.townhub.io` |
+| Production | `main` | `npx wrangler deploy --env production` | `townhub-production` | `townhub.io` (+ `www` redirect) |
+
+Shared build settings:
 
 | Setting | Value |
 |--------|--------|
 | Root directory | *(leave empty — repo root)* |
 | Build command | `pnpm --filter @workspace/townhub run build` |
-| Deploy command | `npx wrangler deploy` |
 | Node version | `22` |
 | pnpm version | `10.11.1` (matches `packageManager` in root `package.json`) |
 
-Root `wrangler.toml` configures an assets-only Worker named `townhub-app` (`assets.directory` + SPA `not_found_handling`). Deploy with **`npx wrangler deploy`** — that uses **Workers Scripts Edit**, which the default Build API token already has.
+Root `wrangler.toml` configures assets-only Workers with `[env.staging]` → `townhub-app` and `[env.production]` → `townhub-production` (`assets.directory` + SPA `not_found_handling`). Deploy with **`npx wrangler deploy --env …`** — that uses **Workers Scripts Edit**, which the default Build API token already has.
 
 Do not put a `/* /index.html 200` rule in `public/_redirects` — Workers SPA handling covers that, and the catch-all fails deploy with error `100324` (infinite loop).
 
