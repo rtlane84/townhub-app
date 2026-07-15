@@ -352,16 +352,29 @@ export function NativeBottomTabBar() {
             </nav>
 
             <div className="mt-3 space-y-3">
-              {clerkLoaded && !isSignedIn && (
+              {!isSignedIn ? (
                 <div className="space-y-3 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-black/[0.04]">
-                  <NativeSocialSignInButtons />
-                  <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
-                    <Button className="w-full min-h-[48px]" onClick={closeAccount}>
-                      Sign In with email
-                    </Button>
-                  </SignInButton>
+                  {clerkLoaded ? (
+                    <>
+                      <NativeSocialSignInButtons />
+                      <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
+                        <Button className="w-full min-h-[48px]" onClick={closeAccount}>
+                          Sign In with email
+                        </Button>
+                      </SignInButton>
+                    </>
+                  ) : (
+                    <div className="space-y-3" aria-busy="true" aria-label="Loading sign-in">
+                      <div className="h-11 animate-pulse rounded-md bg-muted" />
+                      <div className="h-11 animate-pulse rounded-md bg-muted" />
+                      <div className="h-11 animate-pulse rounded-md bg-muted" />
+                      <p className="text-center text-[11px] text-muted-foreground">
+                        Loading sign-in…
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              ) : null}
 
               {clerkLoaded && isSignedIn && (
                 <LoadingButton

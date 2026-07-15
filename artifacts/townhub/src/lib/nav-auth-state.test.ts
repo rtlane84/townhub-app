@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { resolveNavAuthState } from "./nav-auth-state.ts";
 
 describe("resolveNavAuthState", () => {
-  it("shows public nav only while Clerk is loading", () => {
+  it("shows public nav and list-your-business while Clerk is loading", () => {
     const state = resolveNavAuthState({
       clerkLoaded: false,
       isSignedIn: false,
@@ -11,9 +11,9 @@ describe("resolveNavAuthState", () => {
     });
     assert.equal(state.authResolved, false);
     assert.equal(state.showPublicNavOnly, true);
-    assert.equal(state.isLoggedOut, false);
+    assert.equal(state.isLoggedOut, true);
     assert.equal(state.showMyOrdersNav, false);
-    assert.equal(state.showListYourBusinessNav, false);
+    assert.equal(state.showListYourBusinessNav, true);
   });
 
   it("shows public nav only while signed-in profile is loading", () => {

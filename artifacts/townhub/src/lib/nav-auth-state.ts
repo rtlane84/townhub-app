@@ -25,6 +25,9 @@ export function resolveNavAuthState(input: NavAuthInput): NavAuthState {
   const authResolved = input.clerkLoaded && (!input.isSignedIn || !input.meLoading);
 
   if (!authResolved) {
+    // While Clerk boots, treat the user as logged out for public CTAs so the
+    // Account sheet is not an empty Help/Privacy/Terms stub with no Sign In.
+    const clerkStillBooting = !input.clerkLoaded;
     return {
       authResolved: false,
       showPublicNavOnly: true,
@@ -32,10 +35,10 @@ export function resolveNavAuthState(input: NavAuthInput): NavAuthState {
       isBusinessOwner: false,
       hasActiveBusinesses: false,
       showBusinessHubNav: false,
-      showListYourBusinessNav: false,
+      showListYourBusinessNav: clerkStillBooting || !input.isSignedIn,
       showMyOrdersNav: false,
       isCustomer: false,
-      isLoggedOut: false,
+      isLoggedOut: clerkStillBooting || !input.isSignedIn,
       isAccountDisabled: false,
     };
   }

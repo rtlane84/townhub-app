@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   useGetPlatformTheme,
   getGetPlatformThemeQueryKey,
@@ -101,6 +101,7 @@ export function PlatformThemeProvider({
   children: React.ReactNode;
 }) {
   const cachedTheme = useMemo(() => readCachedPlatformTheme(), []);
+  const [themeWaitTimedOut, setThemeWaitTimedOut] = useState(false);
 
   const { data: theme, isPending: themePending } = useGetPlatformTheme({
     query: {
@@ -111,6 +112,15 @@ export function PlatformThemeProvider({
       ...(cachedTheme ? { initialData: cachedTheme } : {}),
     },
   });
+
+  useEffect(() => {
+    if (!themePending || theme != null) {
+      setThemeWaitTimedOut(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setThemeWaitTimedOut(true), 2500);
+    return () => window.clearTimeout(timer);
+  }, [themePending, theme]);
 
   const branding = useMemo<PlatformBranding>(() => {
     return {
@@ -137,9 +147,10 @@ export function PlatformThemeProvider({
       weatherLocation: resolveWeatherLocation(theme),
       timezone: resolvePlatformTimeZone(theme?.timezone),
       // Cached initialData means theme is non-null on first paint — not "loading".
-      themeLoading: themePending && theme == null,
+      // Cap / slow network must not pin the hero pulse forever.
+      themeLoading: themePending && theme == null && !themeWaitTimedOut,
     };
-  }, [theme, themePending]);
+  }, [theme, themePending, themeWaitTimedOut]);
 
   useEffect(() => {
     if (theme) {
