@@ -45,14 +45,18 @@ jobs:
           test -n "$CF_BUCKET_NAME"
           test -n "$CF_BUCKET_ENDPOINT"
 
+          # The Supabase CLI rejects pooler URIs copied with no-verify.
+          # Normalize that query value while keeping TLS enabled.
+          DB_URL="${SUPABASE_DB_URL//sslmode=no-verify/sslmode=require}"
+
           work_dir="$(mktemp -d)"
           trap 'rm -rf "$work_dir"' EXIT
 
-          supabase db dump --db-url "$SUPABASE_DB_URL" \
+          supabase db dump --db-url "$DB_URL" \
             --role-only -f "$work_dir/roles.sql"
-          supabase db dump --db-url "$SUPABASE_DB_URL" \
+          supabase db dump --db-url "$DB_URL" \
             -f "$work_dir/schema.sql"
-          supabase db dump --db-url "$SUPABASE_DB_URL" \
+          supabase db dump --db-url "$DB_URL" \
             --data-only --use-copy -f "$work_dir/data.sql"
 
           archive="townhub-production-$(date -u +%Y-%m-%dT%H-%M-%SZ).zip"
