@@ -19,7 +19,6 @@ import { AnimatedSplash } from "@/components/animated-splash";
 
 import { RoutePageLoader } from "@/components/route-page-loader";
 import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
-import { NativeSsoFinish } from "@/components/native-sso-finish";
 import { isNativeApp } from "@/lib/native-platform";
 import {
   buildNativeSsoDeepLinkFromLocation,
@@ -212,9 +211,9 @@ function NativeSsoBouncePage() {
   );
 }
 
-/** Native Safari bridge finish vs web Clerk redirect callback. */
+/** Both native (in-WebView) and web finish Clerk OAuth via the redirect callback. */
 function SsoCallbackPage() {
-  return isNativeApp() ? <NativeSsoFinish /> : <WebSsoCallbackPage />;
+  return <WebSsoCallbackPage />;
 }
 
 function WebSsoCallbackPage() {

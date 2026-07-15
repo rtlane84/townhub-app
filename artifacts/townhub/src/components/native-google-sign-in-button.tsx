@@ -1,32 +1,14 @@
 import { useState } from "react";
 import { useSignIn } from "@clerk/react";
-import { AuthSession } from "@/lib/native-auth-session";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Apple } from "lucide-react";
 import { isNativeApp } from "@/lib/native-platform";
-import {
-  getNativeBundledOrigin,
-  getNativeOAuthRedirectUrl,
-  NATIVE_OAUTH_SCHEME,
-  describeNativeAuthReturnUrl,
-  nativeSsoDeepLinkHasParams,
-  resolveNativeDeepLinkToAppUrl,
-} from "@/lib/native-oauth";
-import {
-  clearNativeOAuthPending,
-  markNativeAuthSessionHandled,
-  markNativeOAuthPending,
-  rememberNativeAuthReturnShape,
-} from "@/lib/native-oauth-resume";
+import { getNativeBundledOrigin, NATIVE_SSO_CALLBACK_PATH } from "@/lib/native-oauth";
 import { rememberPostAuthRedirect } from "@/lib/native-post-auth-redirect";
-import { skipNativeSplashOnNextLoad } from "@/lib/native-splash-session";
 
 function clerkErrorMessage(err: unknown, provider: "Apple" | "Google"): string {
   if (err && typeof err === "object") {
     const withCode = err as { code?: string; message?: string; longMessage?: string };
-    if (withCode.code === "AUTH_CANCELLED") {
-      return "Sign-in cancelled.";
-    }
     if (withCode.longMessage) return withCode.longMessage;
     if (withCode.message) return withCode.message;
 
@@ -40,12 +22,13 @@ function clerkErrorMessage(err: unknown, provider: "Apple" | "Google"): string {
   return err instanceof Error ? err.message : `${provider} sign-in failed`;
 }
 
-function isAuthCancelled(err: unknown): boolean {
-  return Boolean(
-    err &&
-      typeof err === "object" &&
-      (err as { code?: string }).code === "AUTH_CANCELLED",
-  );
+/** Google rejects embedded web views; surface a clear fallback on iOS. */
+function googleWebViewHint(message: string, provider: "Apple" | "Google"): string | null {
+  if (provider !== "Google") return null;
+  if (/disallowed_useragent|user.?agent|403|not.*allowed/i.test(message)) {
+    return "Google blocks sign-in inside app web views. Use Apple or email on iOS.";
+  }
+  return null;
 }
 
 type NativeSocialProvider = {
@@ -74,75 +57,27 @@ function NativeSocialSignInButton({
     setError(null);
 
     try {
-      // Custom scheme — Clerk attaches rotating_token_nonce only for allowlisted
-      // native redirect URLs. HTTPS bounce alone lands without a transfer nonce
-      // (browser cookies stay in AuthSession, Cap WebView stays signed out).
-      const callbackUrl = getNativeOAuthRedirectUrl();
-      const { error: createError } = await signIn.create({
-        strategy,
-        redirectUrl: callbackUrl,
-        actionCompleteRedirectUrl: callbackUrl,
-      });
-
-      if (createError) {
-        const message = clerkErrorMessage(createError, provider);
-        if (/invalid_url_scheme|redirect_url|not (allowed|whitelisted)/i.test(message)) {
-          setError(
-            `${message} Add ${callbackUrl} under Clerk → Native applications / Redirect URLs (staging instance).`,
-          );
-        } else {
-          setError(message);
-        }
-        return;
-      }
-
-      const verificationUrl =
-        signIn.firstFactorVerification?.externalVerificationRedirectURL?.toString() ?? null;
-
-      if (!verificationUrl) {
-        setError(`Could not start ${provider} sign-in. Try email instead, or try again.`);
-        return;
-      }
-
-      markNativeOAuthPending();
       rememberPostAuthRedirect();
 
-      // Cap Browser (SFSafariViewController) blanks on appleid.apple.com and
-      // cannot return custom-scheme OAuth callbacks. ASWebAuthenticationSession
-      // intercepts townhub:// from the HTTPS bounce with the full URL.
-      const { url: returnedUrl } = await AuthSession.openAuthSession({
-        url: verificationUrl,
-        callbackScheme: NATIVE_OAUTH_SCHEME,
-        prefersEphemeralSession: false,
+      // In-WebView web OAuth: the WebView follows the provider redirect chain
+      // and Clerk finishes the session on capacitor://localhost via its handshake
+      // (AuthenticateWithRedirectCallback at /sso-callback). No external browser
+      // or custom-scheme nonce — that path is incompatible with the web SDK.
+      const origin = getNativeBundledOrigin(window.location.origin);
+      const { error: ssoError } = await signIn.sso({
+        strategy,
+        redirectUrl: `${origin}/`,
+        redirectCallbackUrl: `${origin}${NATIVE_SSO_CALLBACK_PATH}`,
       });
-
-      rememberNativeAuthReturnShape(describeNativeAuthReturnUrl(returnedUrl));
-
-      if (!nativeSsoDeepLinkHasParams(returnedUrl)) {
-        clearNativeOAuthPending();
-        setError(
-          `Sign-in returned without Clerk parameters (${describeNativeAuthReturnUrl(returnedUrl)}). Add ${getNativeOAuthRedirectUrl()} to Clerk Redirect URLs on the staging instance, then try again.`,
-        );
-        return;
+      // sso() navigates away on success; only reachable if it returned an error.
+      if (ssoError) {
+        const message = clerkErrorMessage(ssoError, provider);
+        setError(googleWebViewHint(message, provider) ?? message);
+        setPending(false);
       }
-
-      // Block Cap's racing bare townhub:// appUrlOpen from wiping params.
-      markNativeAuthSessionHandled();
-      clearNativeOAuthPending();
-      skipNativeSplashOnNextLoad();
-      const next = resolveNativeDeepLinkToAppUrl(
-        returnedUrl,
-        getNativeBundledOrigin(window.location.origin),
-      );
-      window.location.assign(next);
     } catch (err) {
-      clearNativeOAuthPending();
-      if (isAuthCancelled(err)) {
-        setError(null);
-        return;
-      }
-      setError(clerkErrorMessage(err, provider));
-    } finally {
+      const message = clerkErrorMessage(err, provider);
+      setError(googleWebViewHint(message, provider) ?? message);
       setPending(false);
     }
   }
@@ -170,14 +105,16 @@ function NativeSocialSignInButton({
 }
 
 /**
- * Native Apple / Google OAuth via ASWebAuthenticationSession.
+ * Native Apple / Google OAuth via the web Clerk SDK, in the Capacitor WebView.
  *
  * Flow:
- * 1. Create SignIn with oauth_* + redirectUrl=townhub://oauth/sso-callback
- * 2. Open Clerk verification URL in ASWebAuthenticationSession
- * 3. Clerk → provider → townhub://oauth/sso-callback?rotating_token_nonce=…
- * 4. Auth session resolves with that URL
- * 5. Remount capacitor://localhost/sso-callback/p/… and finish the session
+ * 1. signIn.authenticateWithRedirect navigates the WKWebView to the provider.
+ * 2. Provider → Clerk FAPI → back to capacitor://localhost/sso-callback.
+ * 3. AuthenticateWithRedirectCallback completes the session via Clerk's handshake
+ *    (capacitor://localhost is an allowed origin on the instance).
+ *
+ * Apple works inside WKWebView; Google blocks embedded web views
+ * (disallowed_useragent) and surfaces a fallback message on iOS.
  */
 export function NativeGoogleSignInButton({
   className,

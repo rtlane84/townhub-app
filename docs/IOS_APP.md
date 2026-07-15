@@ -59,13 +59,15 @@ See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 Native sign-in offers Apple, Google, and email:
 
-- Apple and Google OAuth use `ASWebAuthenticationSession` (not Cap Browser). Clerk `redirect_url` is the custom scheme `townhub://oauth/sso-callback` so Clerk emits `rotating_token_nonce`. Auth session captures that URL and remounts the Cap WebView via path-encoded `/sso-callback/p/…`. Cap Browser blanks on `appleid.apple.com` and cannot capture custom-scheme OAuth returns.
-- **Required Clerk allowlist (staging + production):** under **Native applications / Redirect URLs**, add exactly `townhub://oauth/sso-callback`. Instance `allowed_origins` must include `capacitor://localhost`.
+- Apple and Google OAuth run **inside the Capacitor WebView** with the web Clerk SDK (`signIn.sso`). The WKWebView follows the Clerk → provider → Clerk redirect chain and returns to `capacitor://localhost/sso-callback`, where `AuthenticateWithRedirectCallback` finishes the session via Clerk's handshake. No external browser, custom scheme, or `rotating_token_nonce` — those are native-SDK concepts and the web SDK never emits them.
+- **Apple** works inside WKWebView. **Google blocks embedded web views** (`disallowed_useragent`); the Google button surfaces a fallback message on iOS steering users to Apple or email.
+- **Required Clerk config (staging + production):** the instance `allowed_origins` must include `capacitor://localhost`. That single allowed origin lets Clerk redirect the OAuth callback back into the bundle. The old `townhub://oauth/sso-callback` redirect URL is no longer used.
+- The provider hosts (`appleid.apple.com`, `*.apple.com`, `accounts.google.com`, `*.google.com`) and Clerk FAPI hosts are listed in `capacitor.config.ts` → `server.allowNavigation` so the redirect chain stays in-WebView instead of opening externally.
 - Email/password uses Clerk UI in the WebView.
 - Enable Apple for sign-in and sign-up, add the Clerk native application with the Apple App ID prefix and bundle ID, enable the **Sign in with Apple** capability, and configure Apple private-email relay for TownHub sender domains.
 - Test Apple first-time consent, Hide My Email, returning users, canceled auth, and sign-out on a physical device.
 
-TownHub uses ASWebAuthenticationSession for Apple and Google OAuth (same primitive as Clerk Expo’s `openAuthSessionAsync`). Validate both on a physical device during TestFlight review preparation. If Clerk or Apple requires the native Authentication Services identity-token exchange for this application configuration, that is a release blocker—not a reason to remove Apple login.
+Apple and Google OAuth complete inside the Capacitor WebView using the web Clerk SDK and Clerk's handshake against the `capacitor://localhost` allowed origin. Validate Apple on a physical device during TestFlight review preparation. Google sign-in is not available in the WebView (Google rejects embedded web views); if Google on iOS becomes a hard requirement, it needs a native Clerk SDK/token-exchange path—that is a separate architecture decision, not a reason to remove Apple login.
 
 ## Store billing behavior
 
@@ -149,9 +151,9 @@ Before archive, verify in Xcode:
 |---|---|
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
-| OAuth fails | Clerk **Redirect URLs** must include `townhub://oauth/sso-callback` (native). Symptom `bare-sso=yes` means Clerk returned the scheme without `rotating_token_nonce` — usually the HTTPS bounce allowlist path. Also verify `capacitor://localhost` in instance `allowed_origins`, Apple/Google connection, custom scheme, physical-device logs. Do not use Cap Browser for OAuth. Keep CapacitorHttp/Cookies off. |
-| Blank white at appleid.apple.com | Cap Browser / SFSafariViewController — rebuild with `@townhub/capacitor-auth-session` (ASWebAuthenticationSession). |
-| Blank white screen after Apple | Usually Cap WebView left `capacitor://localhost` for staging bounce, or Cap Browser fullscreen detach. Keep OAuth in ASWebAuthenticationSession. |
+| OAuth fails | Verify `capacitor://localhost` is in the Clerk instance `allowed_origins` (this is what lets the in-WebView callback finish). Check the Apple/Google connection is enabled, and that provider + Clerk FAPI hosts are in `capacitor.config.ts` → `allowNavigation`. Inspect physical-device Safari Web Inspector logs. Keep CapacitorHttp/Cookies off. |
+| Google button shows "Google blocks sign-in inside app web views" | Expected on iOS — Google rejects embedded web views (`disallowed_useragent`). Use Apple or email. |
+| Blank/stuck after tapping Apple | Confirm `appleid.apple.com`/`*.apple.com` are in `allowNavigation` so the WebView doesn't try to open Apple externally, and that the redirect returns to `capacitor://localhost/sso-callback`. |
 | `x.map` / `x.filter` is not a function on native | List API payload wasn’t an array. Public pages use `asArray()`. Re-check Cap Cookies/Http are disabled. |
 | Generic “TownHub” branding / empty home data / “Loading sign-in…” forever | Native bundle missing `VITE_API_BASE_URL` and/or baked-in `VITE_CLERK_PROXY_URL` from root `.env`. Source `.env.native.staging` (see `.env.native.staging.example`), confirm `ios:sync` preflight passes, rebuild from Xcode. Home should show **ClayTownHub** when API is reachable. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |
