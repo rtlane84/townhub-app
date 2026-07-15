@@ -49,17 +49,17 @@ Both staging and production API service instances set `healthcheckPath=/health` 
 
 `.github/workflows/uptime-health-check.yml` still probes the four public surfaces every 5 minutes. On job failure it opens or comments on a GitHub issue titled `OPS-002: External uptime check failed` labeled `uptime`. Acknowledge and close that issue only after all probes are healthy again. Keep Better Stack / UptimeRobot email or SMS as the primary human route.
 
-### Better Stack free-tier setup (in progress 2026-07-15)
+### Better Stack free-tier setup (complete 2026-07-15)
 
 Team `t570646` (Uptime + Errors + Telemetry) is configured to maximize free monitoring:
 
 | Area | Status | Notes |
 |---|---|---|
-| Uptime monitors | Created | Production + staging API `/health` (status + keyword body), production + staging frontend; prior `townhub.io` monitor retained. Email alerts enabled. Call/SMS/push need paid upgrade. Free SSL/domain monitors are not available without upgrade. |
+| Uptime monitors | Live | Production + staging API `/health` (status + keyword body), production + staging frontend; prior `townhub.io` monitor retained. Email alerts enabled. Call/SMS/push need paid upgrade. Free SSL/domain monitors are not available without upgrade. |
 | Test alert | Acknowledged | Monitor `api.townhub.io/health` test alert received by owner (2026-07-15). |
-| Status page | Blocked | Creating a status page redirected to billing/features; stay on free Pay as you go — do not purchase bundles just for OPS-002. Revisit after free-plan status-page entitlement is clear. |
-| Errors (Sentry-compatible) | Cut over | `TownHub Frontend` + `TownHub API` apps live. Railway `SENTRY_DSN` (staging+production) and Cloudflare Builds `VITE_SENTRY_DSN` (staging+production triggers) point at Better Stack. Events should be tagged `environment=staging|production` via `DEPLOYMENT_ENVIRONMENT` (API + Vite build). Redeploys verified for DSN cutover; env-tag code must be deployed from git. Do not commit DSNs. |
-| Logs HTTP source | Created | Source `TownHub Railway API logs` (HTTP, Europe). Ingest verified with HTTP 202. Still need Railway [Locomotive](https://railway.com/deploy/locomotive) sidecar: `LOCOMOTIVE_WEBHOOK_MODE=betterstack`, `LOCOMOTIVE_WEBHOOK_URL=https://<ingesting-host>`, `LOCOMOTIVE_ADDITIONAL_HEADERS=Authorization=Bearer <source-token>`. Tokens live only in Railway/Better Stack secrets. |
+| Status page | Deferred | Creating a status page redirected to billing/features; stay on free Pay as you go — do not purchase bundles just for OPS-002. Revisit after free-plan status-page entitlement is clear. |
+| Errors (Sentry-compatible) | Live | `TownHub Frontend` + `TownHub API` apps live. Railway `SENTRY_DSN` (staging+production) and Cloudflare Builds `VITE_SENTRY_DSN` (staging+production triggers) point at Better Stack. Events tagged `environment=staging|production` via `DEPLOYMENT_ENVIRONMENT` (API + Vite build). Do not commit DSNs. |
+| Logs (Railway → Telemetry) | Live | Source `TownHub Railway API logs` (HTTP, Europe). Railway [Locomotive](https://railway.com/deploy/locomotive) sidecars: `locomotive` (staging) and `locomotive-production` (production), each watching the TownHub API service with `LOCOMOTIVE_WEBHOOK_MODE=betterstack`. Live Tail verified with `/health` request lines and an ingest marker (2026-07-15). Use an **account-scoped** Railway API token (`LOCOMOTIVE_RAILWAY_API_KEY`); tokens live only in Railway/Better Stack secrets. |
 
 Dashboards: [Monitors](https://uptime.betterstack.com/team/t570646/monitors), [Errors applications](https://errors.betterstack.com/team/t570646/applications), [Log sources](https://telemetry.betterstack.com/team/t570646/sources).
 
@@ -160,7 +160,7 @@ When a DSN is absent, the app continues without sending events. Admin Operations
 | **GitHub Actions `uptime-health-check.yml`** | Independent 5-minute probes of staging/production API `/health` and frontend origins |
 | **Managed Postgres backups** | Database disaster recovery — see [DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md) |
 | **Stripe Dashboard → Webhooks** | Delivery logs and retry inspection |
-| **Better Stack HTTP logs + Railway Locomotive** | Centralize Pino JSON logs (free: 3 GB / 3 days). Railway has no native log drain; use Locomotive sidecar or emit from the API to the HTTP source. |
+| **Better Stack HTTP logs + Railway Locomotive** | Centralize Pino JSON logs (free: 3 GB / 3 days). Staging `locomotive` and production `locomotive-production` ship TownHub API logs to Telemetry source `TownHub Railway API logs`. |
 
 ## Required alert matrix for beta
 
