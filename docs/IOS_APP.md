@@ -73,8 +73,8 @@ So browser-based Clerk OAuth cannot work in the iOS Capacitor shell. The web bui
 
 Apple uses the **native `ASAuthorization` sheet** — no browser, no redirect:
 
-1. `AuthSession.appleSignIn()` (in the `@townhub/capacitor-auth-session` plugin, `AuthenticationServices` — a built-in framework, no external SDK) presents the Apple sheet and returns the **identity token** (JWT).
-2. `clerk.client.signIn.create({ strategy: "oauth_token_apple", token })` verifies the token. First-time users transfer to `signUp.create({ transfer: true })`.
+1. `AuthSession.appleSignIn()` (in the `@townhub/capacitor-auth-session` plugin, `AuthenticationServices` — a built-in framework, no external SDK) presents the Apple sheet and returns the **identity token** (JWT). A **nonce** is required; without it Clerk rejects with “not authorized”.
+2. Clerk token exchange uses **`oauth_token_apple`**. Order matters on Production: try **`signUp.create({ strategy: "oauth_token_apple", token })` first** (new users). If that fails because the Apple ID already exists, **`signIn.create`** with the same token (returning users). SignIn-first binds the token and then both `transfer: true` and SignUp-with-same-token fail.
 3. `clerk.setActive({ session })` establishes the session in the WebView.
 
 **Required config for the token to verify (staging + production):**
@@ -82,6 +82,8 @@ Apple uses the **native `ASAuthorization` sheet** — no browser, no redirect:
 - **Clerk → Apple connection → enable "Use custom credentials"** and add the Apple **Services ID**, **Team ID**, **Key ID**, and **.p8 key**. Without custom credentials Clerk uses shared dev credentials whose `aud` won't match the app's identity token, and the exchange fails.
 - **Apple Developer:** a **Services ID** and a **Sign in with Apple key (.p8)** tied to bundle `com.lanetech.townhub`. The **Sign in with Apple** capability/entitlement is already in `App.entitlements`.
 - Configure Apple private-email relay for TownHub sender domains (Hide My Email).
+- **Production bot sign-up protection / CAPTCHA must stay off** for the Capacitor app (Turnstile fails in WKWebView and blocks first-time Apple sign-up).
+- Add `capacitor://localhost` to the Clerk instance **allowed_origins** so the WebView can load Clerk.
 
 Adding the plugin method requires re-running `ios:sync` (pod re-sync) and a rebuild.
 
@@ -185,7 +187,8 @@ Before archive, verify in Xcode:
 |---|---|
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
-| Apple sign-in fails after the sheet (token rejected) | Clerk → Apple must have **"Use custom credentials"** on with a valid Services ID / Team ID / Key ID / .p8 whose audience matches bundle `com.lanetech.townhub`. Shared dev credentials will fail the `oauth_token_apple` exchange. |
+| Apple sign-in fails after the sheet (token rejected) | Clerk → Apple must have **"Use custom credentials"** on with a valid Services ID / Team ID / Key ID / .p8 whose audience matches bundle `com.lanetech.townhub`. Shared dev credentials will fail the `oauth_token_apple` exchange. Ensure a nonce is sent. |
+| Apple first-time user: “not authorized” / “no account to transfer” | Use SignUp-with-token first, then SignIn (do not SignIn-first then transfer). Keep Production bot CAPTCHA off for Cap. |
 | Apple sheet doesn't appear | Re-run `ios:sync` so the plugin's new `appleSignIn` method is registered, confirm the **Sign in with Apple** capability/entitlement is present, and rebuild. |
 | Google button missing on iOS | Rebuild with this branch; Google is shown again via native GIDSignIn. |
 | Google Sign-In config error on tap | Set `VITE_GOOGLE_IOS_CLIENT_ID` + `VITE_GOOGLE_SERVER_CLIENT_ID` in `.env.native.staging`, re-run `ios:sync`, and enable Clerk Google **custom credentials** with the Web client. |

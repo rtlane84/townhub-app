@@ -51,8 +51,12 @@ function googleClientConfig(): { clientId: string; serverClientId: string } | nu
  * Native Apple sign-in for the Capacitor app.
  *
  * Uses Apple's native `ASAuthorization` sheet (no browser, no redirect) to get
- * an identity token, then exchanges it with Clerk via the `oauth_token_apple`
- * strategy. Missing the nonce causes Clerk to reject with "not authorized".
+ * an identity token, then exchanges it with Clerk via `oauth_token_apple`.
+ *
+ * Order matters on Production: SignIn-first binds the token and then both
+ * `transfer: true` and SignUp-with-same-token fail. So we SignUp with the
+ * token first (new users). If that fails because the Apple ID already exists,
+ * SignIn with the same token (returning users). Bot CAPTCHA must stay off.
  */
 export function NativeAppleSignInButton({ className }: { className?: string }) {
   const { isLoaded: signInLoaded, signIn, setActive } = useSignIn();
@@ -85,22 +89,50 @@ export function NativeAppleSignInButton({ className }: { className?: string }) {
 
       let createdSessionId: string | null = null;
 
-      await signIn.create({
-        strategy: "oauth_token_apple",
-        token: identityToken,
-      });
-
-      if (signIn.status === "complete") {
-        createdSessionId = signIn.createdSessionId;
-      } else if (signIn.firstFactorVerification?.status === "transferable") {
-        await signUp.create({ transfer: true });
-        if (signUp.status === "complete") {
-          createdSessionId = signUp.createdSessionId;
+      try {
+        const signUpAttempt = await signUp.create({
+          strategy: "oauth_token_apple",
+          token: identityToken,
+        });
+        if (signUpAttempt.status === "complete") {
+          createdSessionId = signUpAttempt.createdSessionId;
+        } else if (
+          (signUpAttempt as { isTransferable?: boolean }).isTransferable ||
+          signUpAttempt.verifications?.externalAccount?.status === "transferable"
+        ) {
+          const transferred = await signIn.create({ transfer: true });
+          if (transferred.status === "complete") {
+            createdSessionId = transferred.createdSessionId;
+          }
+        }
+      } catch {
+        // Likely an existing Apple user — SignIn with the same token.
+        const signInAttempt = await signIn.create({
+          strategy: "oauth_token_apple",
+          token: identityToken,
+        });
+        if (signInAttempt.status === "complete") {
+          createdSessionId = signInAttempt.createdSessionId;
         }
       }
 
       if (!createdSessionId) {
-        setError("Could not complete Apple sign-in. Try email instead.");
+        // Last resort: SignIn path for new accounts that SignUp rejected oddly.
+        try {
+          const signInAttempt = await signIn.create({
+            strategy: "oauth_token_apple",
+            token: identityToken,
+          });
+          if (signInAttempt.status === "complete") {
+            createdSessionId = signInAttempt.createdSessionId;
+          }
+        } catch {
+          // ignore — surface generic error below
+        }
+      }
+
+      if (!createdSessionId) {
+        setError("Could not complete Apple sign-in. Try email or Google.");
         return;
       }
 
