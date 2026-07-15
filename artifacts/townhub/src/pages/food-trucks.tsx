@@ -14,17 +14,21 @@ import { FoodTruckMapSection } from "@/components/food-truck-map";
 import { NativeEmptyState } from "@/components/native-empty-state";
 import { PeekCarousel } from "@/components/peek-carousel";
 import { SectionHeader } from "@/components/section-header";
-import { formatFoodTruckDateHeading, groupFoodTrucksByDate } from "@/lib/food-truck-utils";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
+import { asArray } from "@/lib/as-array";
 import { cn } from "@/lib/utils";
+import { formatFoodTruckDateHeading, groupFoodTrucksByDate } from "@/lib/food-truck-utils";
 
 export default function FoodTrucks() {
-  const { data: todayTrucks = [], isLoading: todayLoading } = useListTodayFoodTrucks({
+  const { data: todayTrucksData, isLoading: todayLoading } = useListTodayFoodTrucks({
     query: { queryKey: getListTodayFoodTrucksQueryKey() },
   });
-  const { data: upcomingTrucks = [], isLoading: upcomingLoading } = useListUpcomingFoodTrucks({
+  const { data: upcomingTrucksData, isLoading: upcomingLoading } = useListUpcomingFoodTrucks({
     query: { queryKey: getListUpcomingFoodTrucksQueryKey() },
   });
+
+  const todayTrucks = asArray(todayTrucksData);
+  const upcomingTrucks = asArray(upcomingTrucksData);
 
   const upcomingByDate = useMemo(
     () => groupFoodTrucksByDate(upcomingTrucks),

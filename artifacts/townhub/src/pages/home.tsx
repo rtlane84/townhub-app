@@ -48,6 +48,7 @@ import { BusinessLogoBadge } from "@/components/business-logo-badge";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { formatFoodTruckTimeWindow } from "@/lib/food-truck-utils";
 import { LISTING_CARD_CLASS, PAGE_CONTAINER } from "@/lib/design-tokens";
+import { asArray } from "@/lib/as-array";
 import { cn } from "@/lib/utils";
 
 /**
@@ -215,13 +216,13 @@ export default function Home() {
       },
     });
 
-  const highlightList = Array.isArray(highlights) ? highlights : [];
-  const businessList = Array.isArray(businesses) ? businesses : [];
-  const allBusinessList = Array.isArray(allBusinesses) ? allBusinesses : [];
-  const featuredEventList = Array.isArray(featuredEventsRaw) ? featuredEventsRaw : [];
-  const upcomingEventList = Array.isArray(allUpcomingEvents) ? allUpcomingEvents : [];
-  const todayTruckList = Array.isArray(todayTrucks) ? todayTrucks : [];
-  const upcomingTruckList = Array.isArray(upcomingTrucks) ? upcomingTrucks : [];
+  const highlightList = asArray(highlights);
+  const businessList = asArray(businesses);
+  const allBusinessList = asArray(allBusinesses);
+  const featuredEventList = asArray(featuredEventsRaw);
+  const upcomingEventList = asArray(allUpcomingEvents);
+  const todayTruckList = asArray(todayTrucks);
+  const upcomingTruckList = asArray(upcomingTrucks);
 
   const spotlightItems = highlightList.slice(0, 3);
   const featuredBusinesses = businessList.slice(0, 6);

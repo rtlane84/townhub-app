@@ -282,7 +282,16 @@ async function parseJsonBody(
   }
 
   try {
-    return JSON.parse(normalized);
+    const parsed: unknown = JSON.parse(normalized);
+    // Some Cap / proxy paths double-encode JSON lists as a JSON string.
+    if (typeof parsed === "string" && looksLikeJson(parsed)) {
+      try {
+        return JSON.parse(parsed);
+      } catch {
+        return parsed;
+      }
+    }
+    return parsed;
   } catch (cause) {
     throw new ResponseParseError(response, raw, cause, requestInfo);
   }

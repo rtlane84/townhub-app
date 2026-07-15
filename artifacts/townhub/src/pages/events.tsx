@@ -11,6 +11,7 @@ import { SectionHeader } from "@/components/section-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
+import { asArray } from "@/lib/as-array";
 import { eventOccursOnDate, toLocalIsoDate } from "@/lib/event-dates";
 import { cn } from "@/lib/utils";
 import { PeekCarousel } from "@/components/peek-carousel";
@@ -67,10 +68,12 @@ export default function Events() {
     return (params.get("q") ?? params.get("search") ?? "").trim().toLowerCase();
   }, [searchString]);
 
-  const { data: events = [], isLoading } = useListEvents({ upcoming: true });
+  const { data: eventsData, isLoading } = useListEvents({ upcoming: true });
   const [formOpen, setFormOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedDay, setSelectedDay] = useState<Date>(() => new Date());
+
+  const events = asArray(eventsData);
 
   const sortedEvents = useMemo(() => {
     const sorted = [...events].sort((a, b) => a.date.localeCompare(b.date));

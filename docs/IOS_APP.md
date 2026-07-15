@@ -147,9 +147,10 @@ Before archive, verify in Xcode:
 |---|---|
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
-| OAuth fails | `VITE_PUBLIC_WEB_URL`, Clerk mobile SSO allowlist (`townhub://oauth/sso-callback` + `https://…/native-sso-callback`), Apple/Google connection, custom scheme, physical-device logs. Instance `allowed_origins` must include `capacitor://localhost`. Do not use Cap Browser for OAuth (blanks on appleid.apple.com). CapacitorCookies may be enabled; do not enable CapacitorHttp globally. |
+| OAuth fails | `VITE_PUBLIC_WEB_URL`, Clerk mobile SSO allowlist (`townhub://oauth/sso-callback` + `https://…/native-sso-callback`), Apple/Google connection, custom scheme, physical-device logs. Instance `allowed_origins` must include `capacitor://localhost`. Do not use Cap Browser for OAuth (blanks on appleid.apple.com). Keep CapacitorHttp and CapacitorCookies **off** unless re-verified — Cap Cookies was linked to native list `.map`/`.filter` crashes. |
 | Blank white at appleid.apple.com | Cap Browser / SFSafariViewController — rebuild with `@townhub/capacitor-auth-session` (ASWebAuthenticationSession). |
 | Blank white screen after Apple | Usually Cap WebView left `capacitor://localhost` for staging bounce, or Cap Browser fullscreen detach. Keep OAuth in ASWebAuthenticationSession. |
+| `x.map` / `x.filter` is not a function on native | List API payload wasn’t an array. Public pages use `asArray()`. Re-check Cap Cookies/Http are disabled. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |
 | Push fails | App ID/profile capability, APNs environment/key/team/bundle ID, device token registration |
 | Store billing buttons appear | Release env gate and `VITE_DISTRIBUTION_CHANNEL=app-store` |

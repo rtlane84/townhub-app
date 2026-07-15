@@ -33,12 +33,15 @@ const config: CapacitorConfig = {
   },
   plugins: {
     // Keep CapacitorHttp OFF — patching global fetch breaks Clerk/Vite in WKWebView.
-    // CapacitorCookies helps persist Clerk session cookies after Safari OAuth return.
+    // CapacitorCookies OFF: enabling it during OAuth debugging coincided with native
+    // list pages receiving non-array payloads (.map/.filter crashes). Clerk finishes
+    // Apple/Google via ASWebAuthenticationSession + rotating_token_nonce in-WebView;
+    // do not re-enable without verifying public list API data stays arrays.
     CapacitorHttp: {
       enabled: false,
     },
     CapacitorCookies: {
-      enabled: true,
+      enabled: false,
     },
     SplashScreen: {
       launchShowDuration: 2000,

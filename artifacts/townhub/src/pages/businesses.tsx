@@ -19,6 +19,7 @@ import { CategoryChipScroller } from "@/components/category-chip-scroller";
 import { SectionHeader } from "@/components/section-header";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
+import { asArray } from "@/lib/as-array";
 import { cn } from "@/lib/utils";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -62,7 +63,7 @@ export default function Businesses() {
   });
 
   const visibleBusinesses = useMemo(() => {
-    const list = businesses ?? [];
+    const list = asArray(businesses);
     if (!orderingOnly) return list;
     return list.filter(
       (business) =>
