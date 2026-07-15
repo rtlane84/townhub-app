@@ -90,6 +90,22 @@ pg_dump "$DATABASE_URL" \
 - Before any production `drizzle push` that is not purely additive
 - After major data imports or admin bulk changes
 
+### 3.3 Automated Supabase-to-R2 backup (TownHub beta)
+
+TownHub now includes `.github/workflows/production-db-backup.yml`. It creates separate roles, schema, and data dumps with the Supabase CLI, validates the archive, uploads it to a Cloudflare R2 bucket, and verifies the uploaded object. It is intentionally manual-only until the first successful run and restore drill; then enable the nightly 02:00 UTC schedule in the workflow.
+
+Before enabling this workflow, create a production-only R2 bucket and a bucket-scoped R2 API token, then add these GitHub Actions repository secrets:
+
+| Secret | Value |
+|--------|-------|
+| `SUPABASE_DB_URL` | Production Supabase Session Pooler URI (port 5432) |
+| `CF_ACCESS_KEY_ID` | R2 access key ID scoped to the backup bucket |
+| `CF_SECRET_ACCESS_KEY` | R2 secret access key |
+| `CF_BUCKET_NAME` | R2 bucket name |
+| `CF_BUCKET_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` |
+
+Configure an R2 lifecycle rule for the retention period you want. The workflow protects PostgreSQL only; Supabase Storage media requires a separate export or provider-retention plan. A successful upload is not a restore drill: restore one archive to a non-production database and record the verification before marking OPS-001 complete.
+
 ### 3.3 Supabase Storage (media)
 
 Postgres backups **do not** include image bytes in the storage bucket.
