@@ -6,7 +6,7 @@ TownHub includes application-level health, admin diagnostics, structured logs, a
 
 **`GET /health`**
 
-Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.). Operator checks on 2026-07-14 and again on 2026-07-15 returned HTTP 200 for both `https://api.townhub.io/health` and `https://api-staging.townhub.io/health`. Frontend origins `https://townhub.io/` and `https://staging.townhub.io/` also returned HTTP 200 on 2026-07-15. These are not a substitute for an external monitor because the checks originated from the operator environment.
+Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.). Operator checks on 2026-07-14 and again on 2026-07-15 returned HTTP 200 for both `https://api.townhub.io/health` and `https://api-staging.townhub.io/health`. Frontend origins `https://townhub.io/` and `https://staging.townhub.io/` also returned HTTP 200 on 2026-07-15. GitHub Actions workflow `.github/workflows/uptime-health-check.yml` has been succeeding on schedule (example run `29416225184`). These are not a substitute for Better Stack / UptimeRobot human alert routing because Actions notifications alone may miss a non-GitHub contact path.
 
 **Response (minimal, safe):**
 
@@ -40,6 +40,28 @@ For the production beta, create these monitors in both staging and production:
 | TLS/domain | Frontend and API certificates | Daily | Expiry within 21 days or certificate error |
 
 Route production alerts to the platform owner and one backup contact. Staging alerts may be lower urgency but must still reach an actively reviewed channel.
+
+### Railway deploy healthchecks (configured 2026-07-15)
+
+Both staging and production API service instances set `healthcheckPath=/health` with `healthcheckTimeout=30`. This is Railway’s pre-promotion check and complements external monitors; it is not an external uptime product.
+
+### GitHub Actions uptime probe alert (configured 2026-07-15)
+
+`.github/workflows/uptime-health-check.yml` still probes the four public surfaces every 5 minutes. On job failure it opens or comments on a GitHub issue titled `OPS-002: External uptime check failed` labeled `uptime`. Acknowledge and close that issue only after all probes are healthy again. Keep Better Stack / UptimeRobot email or SMS as the primary human route.
+
+### Better Stack free-tier setup (in progress 2026-07-15)
+
+Team `t570646` (Uptime + Errors + Telemetry) is configured to maximize free monitoring:
+
+| Area | Status | Notes |
+|---|---|---|
+| Uptime monitors | Created | Production + staging API `/health` (status + keyword body), production + staging frontend; prior `townhub.io` monitor retained. Email alerts enabled. Call/SMS/push need paid upgrade. Free SSL/domain monitors are not available without upgrade. |
+| Test alert | Acknowledged | Monitor `api.townhub.io/health` test alert received by owner (2026-07-15). |
+| Status page | Blocked | Creating a status page redirected to billing/features; stay on free Pay as you go — do not purchase bundles just for OPS-002. Revisit after free-plan status-page entitlement is clear. |
+| Errors (Sentry-compatible) | Cut over | `TownHub Frontend` + `TownHub API` apps live. Railway `SENTRY_DSN` (staging+production) and Cloudflare Builds `VITE_SENTRY_DSN` (staging+production triggers) point at Better Stack. Events should be tagged `environment=staging|production` via `DEPLOYMENT_ENVIRONMENT` (API + Vite build). Redeploys verified for DSN cutover; env-tag code must be deployed from git. Do not commit DSNs. |
+| Logs HTTP source | Created | Source `TownHub Railway API logs` (HTTP, Europe). Ingest verified with HTTP 202. Still need Railway [Locomotive](https://railway.com/deploy/locomotive) sidecar: `LOCOMOTIVE_WEBHOOK_MODE=betterstack`, `LOCOMOTIVE_WEBHOOK_URL=https://<ingesting-host>`, `LOCOMOTIVE_ADDITIONAL_HEADERS=Authorization=Bearer <source-token>`. Tokens live only in Railway/Better Stack secrets. |
+
+Dashboards: [Monitors](https://uptime.betterstack.com/team/t570646/monitors), [Errors applications](https://errors.betterstack.com/team/t570646/applications), [Log sources](https://telemetry.betterstack.com/team/t570646/sources).
 
 ## Admin Operations Center
 
@@ -116,7 +138,9 @@ Set in deployment for richer Admin System Status:
 
 ## Sentry setup
 
-Create separate Sentry projects for the API (`SENTRY_DSN`) and frontend (`VITE_SENTRY_DSN`) so alerts and releases can be triaged independently. Vite variables must be present at build time.
+Create separate Sentry/Better Stack apps for the API (`SENTRY_DSN`) and frontend (`VITE_SENTRY_DSN`) so alerts and releases can be triaged independently. Vite variables must be present at build time.
+
+Tag events with **`DEPLOYMENT_ENVIRONMENT`** (`staging` or `production`) so Better Stack can filter staging vs production on the same DSN. The API reads `DEPLOYMENT_ENVIRONMENT` (fallback `NODE_ENV`). The frontend build exposes it as `VITE_DEPLOYMENT_ENVIRONMENT` from `DEPLOYMENT_ENVIRONMENT` or an explicit `VITE_DEPLOYMENT_ENVIRONMENT`. Cloudflare Builds already set `DEPLOYMENT_ENVIRONMENT`; Railway must set it per environment.
 
 - API initialization: `artifacts/api-server/src/instrument.ts`
 - Frontend initialization: `artifacts/townhub/src/lib/sentry.ts`
@@ -131,12 +155,12 @@ When a DSN is absent, the app continues without sending events. Admin Operations
 
 | Tool | Purpose |
 |------|---------|
-| **Sentry** | API and frontend error aggregation |
-| **UptimeRobot / Better Stack** | External uptime on `/health` with human alert routing |
+| **Sentry SDK → Better Stack Errors (or sentry.io)** | API and frontend error aggregation; Better Stack free tier includes 100k exceptions/month via Sentry-compatible DSN |
+| **Better Stack Uptime** | External uptime on `/health` and frontends with email alert routing |
 | **GitHub Actions `uptime-health-check.yml`** | Independent 5-minute probes of staging/production API `/health` and frontend origins |
 | **Managed Postgres backups** | Database disaster recovery — see [DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md) |
 | **Stripe Dashboard → Webhooks** | Delivery logs and retry inspection |
-| **Log drain** (Fly.io, Railway, etc.) | Centralize Pino JSON logs in production |
+| **Better Stack HTTP logs + Railway Locomotive** | Centralize Pino JSON logs (free: 3 GB / 3 days). Railway has no native log drain; use Locomotive sidecar or emit from the API to the HTTP source. |
 
 ## Required alert matrix for beta
 

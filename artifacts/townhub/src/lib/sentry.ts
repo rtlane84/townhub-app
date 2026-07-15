@@ -90,9 +90,17 @@ if (dsn) {
     import.meta.env.VITE_GIT_COMMIT_SHA?.trim() ||
     undefined;
 
+  // Prefer VITE_DEPLOYMENT_ENVIRONMENT (set from DEPLOYMENT_ENVIRONMENT at
+  // build time) so staging vs production builds are distinct. Vite MODE is
+  // "production" for every `vite build`.
+  const environment = (
+    import.meta.env.VITE_DEPLOYMENT_ENVIRONMENT?.trim() ||
+    import.meta.env.MODE
+  ).toLowerCase();
+
   Sentry.init({
     dsn,
-    environment: import.meta.env.MODE,
+    environment,
     release,
     tracesSampleRate: 0,
     profilesSampleRate: 0,

@@ -88,9 +88,19 @@ function beforeBreadcrumb(breadcrumb: Sentry.Breadcrumb): Sentry.Breadcrumb | nu
   };
 }
 
+function resolveSentryEnvironment(): string {
+  const raw =
+    process.env.DEPLOYMENT_ENVIRONMENT?.trim() ||
+    process.env.NODE_ENV?.trim() ||
+    "development";
+  return raw.toLowerCase();
+}
+
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV ?? "development",
+  // Prefer DEPLOYMENT_ENVIRONMENT so staging vs production are distinct in
+  // Better Stack / Sentry (NODE_ENV is usually "production" on both Railway envs).
+  environment: resolveSentryEnvironment(),
   release,
   // Error monitoring only — no performance tracing or profiling.
   tracesSampleRate: 0,

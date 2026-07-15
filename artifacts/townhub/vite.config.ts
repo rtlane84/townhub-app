@@ -26,8 +26,21 @@ if (!basePath) {
   );
 }
 
+// Cloudflare Builds already set DEPLOYMENT_ENVIRONMENT; expose it to the
+// client as VITE_DEPLOYMENT_ENVIRONMENT for Sentry / Better Stack tagging.
+const deploymentEnvironment = (
+  process.env.VITE_DEPLOYMENT_ENVIRONMENT?.trim() ||
+  process.env.DEPLOYMENT_ENVIRONMENT?.trim() ||
+  ""
+);
+
 export default defineConfig({
   base: basePath,
+  define: {
+    "import.meta.env.VITE_DEPLOYMENT_ENVIRONMENT": JSON.stringify(
+      deploymentEnvironment,
+    ),
+  },
   plugins: [
     react(),
     tailwindcss(),

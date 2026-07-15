@@ -110,15 +110,26 @@ Canonical branch mapping for automatic deploys:
 - Public health checks returned HTTP 200 for `https://api.townhub.io/health`, `https://api-staging.townhub.io/health`, `https://townhub.io/`, and `https://staging.townhub.io/` (rechecked later the same day).
 - Frontend isolation probe: `townhub.io` bundles `VITE` API origin `https://api.townhub.io`; `staging.townhub.io` bundles `https://api-staging.townhub.io`. Asset hashes differ between the two hosts.
 - API isolation probe: production `GET /api/businesses` returned 0 businesses; staging returned 3. Staging theme `platformName` is `ClayTownHub`; production theme has no pilot platform name.
-- Cloudflare Workers Builds for script `townhub-app` has a long history of successful deploys from **`main` only** (plus one historical `docs/agent-guidance` build). No `develop` builds were observed.
-- Cloudflare Worker script `townhub-production` exists but has **zero** Workers Builds history — production or staging frontend automation is incomplete relative to the branch matrix below.
-- Repo `wrangler.toml` now defines `[env.staging]` → `townhub-app` and `[env.production]` → `townhub-production` so Builds projects can deploy with `--env staging|production`.
+- Repo `wrangler.toml` defines `[env.staging]` → `townhub-app` and `[env.production]` → `townhub-production`.
+- **Cloudflare Workers Builds (dashboard-confirmed):**
+  - `townhub-production`: Git `rtlane84/townhub-app`; build `pnpm --filter @workspace/townhub run build`; deploy `npx wrangler deploy --env production`; production branch `main`; non-production branch builds **Disabled**; build vars include `DEPLOYMENT_ENVIRONMENT=production`, `VITE_API_BASE_URL=https://api.townhub.io`, `VITE_PUBLIC_WEB_URL=https://townhub.io`, `VITE_DISTRIBUTION_CHANNEL=web`, `VITE_CLERK_PUBLISHABLE_KEY` (`pk_live_…`), and `VITE_SENTRY_DSN`.
+  - `townhub-app` (staging): same repo; same build command; deploy `npx wrangler deploy --env staging`; production branch `develop`; non-production branch builds **Enabled** (tighten later if preview deploys to staging are unwanted); build vars include `DEPLOYMENT_ENVIRONMENT=staging`, `VITE_API_BASE_URL=https://api-staging.townhub.io`, `VITE_PUBLIC_WEB_URL=https://staging.townhub.io`, `VITE_DISTRIBUTION_CHANNEL=web`, `VITE_CLERK_PUBLISHABLE_KEY` (`pk_test_…`), and `VITE_SENTRY_DSN`.
+
+### Railway branch watches (confirmed 2026-07-15)
+
+Single Railway project **TownHub** (`9b013f1f-…`) with two environments and one API service:
+
+| Environment | Custom domain | Git branch trigger | Identity / payments | Database project |
+|---|---|---|---|---|
+| `production` | `api.townhub.io` | `main` | Clerk `pk_live_` / Stripe live | Supabase `ubntmzbkxyqsvihojcfp` |
+| `staging` | `api-staging.townhub.io` | `develop` (was incorrectly `main`; updated) | Clerk `pk_test_` / Stripe test | Supabase `eajzpwkodnglonzxocep` |
+
+- Staging and production do **not** share `DATABASE_URL` hosts, Supabase project IDs, Clerk keys, Stripe keys, or webhook signing secrets (compared via dashboard session without copying secret values).
+- Railway service Settings UI showed **GitHub Repo not found** for the branch picker in both environments even while deploys and GraphQL `deploymentTriggers` remained readable; branch wiring was verified/updated through the authenticated Railway GraphQL API (`deploymentTriggerUpdate`).
+- Both environments were previously triggered from `main` (staging and production deploys shared the same recent `main` commit history). Staging trigger is now `develop` only.
 
 ### Dashboard actions still required
 
-1. **Railway:** production service watches `main` only; staging service watches `develop` only. Confirm separate projects/services and that neither shares `DATABASE_URL` or webhook secrets. (Railway CLI not logged in from this operator environment.)
-2. **Cloudflare Workers Builds:** create/confirm **two** Builds projects:
-   - Staging: branch `develop`, deploy `npx wrangler deploy --env staging`, build env points at staging API + `pk_test_…`, domain `staging.townhub.io`.
-   - Production: branch `main`, deploy `npx wrangler deploy --env production`, build env points at production API + `pk_live_…`, domains `townhub.io` / `www`.
-3. **Uptime / alerts:** workflow `.github/workflows/uptime-health-check.yml` polls the four public URLs every 5 minutes via GitHub Actions. Still create Better Stack/UptimeRobot monitors with human alert routing, wire Railway log drain, and test alert delivery per [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md).
-4. Do not mark ENV-001 complete until Railway branch watches and Cloudflare dual Builds projects are confirmed. Do not mark OPS-002 complete until external monitor alert delivery is acknowledged.
+1. **Optional Cloudflare harden:** disable non-production branch builds on `townhub-app` if only `develop` should update staging.
+2. **Optional Railway UI:** reopen service Source → reconnect GitHub if the branch picker still shows **GitHub Repo not found** (triggers are already correct; staging UI now shows `develop`).
+3. **Better Stack (OPS-002):** uptime monitors live; owner acknowledged a test alert; Errors DSNs cut over (`SENTRY_DSN` on Railway staging+production, `VITE_SENTRY_DSN` on Cloudflare Builds staging+production) with verified redeploys. Remaining: Railway Locomotive → Better Stack HTTP log source, optional free status page. GitHub Actions still probes every 5 minutes; Railway `healthcheckPath=/health` is set on staging and production.
