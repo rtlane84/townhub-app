@@ -101,6 +101,9 @@ if (component === "native") {
   }
   requireHttps("VITE_API_BASE_URL");
   requireHttps("VITE_PUBLIC_WEB_URL");
+  if (value("VITE_CLERK_PROXY_URL")) {
+    errors.push("VITE_CLERK_PROXY_URL must be unset for native app-store builds");
+  }
 }
 
 if (environment === "production") {

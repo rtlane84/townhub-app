@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, Suspense, type ComponentType } from "react
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth, AuthenticateWithRedirectCallback } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
+import { resolveClerkPublishableKey, resolveClerkProxyUrl } from "@/lib/clerk-config";
 import { clerkAuthAppearance, nativeClerkAuthAppearance as nativeClerkAuthBase } from "@/lib/clerk-appearance";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -82,14 +83,11 @@ import { NativePushRegistration } from "@/components/native-push-registration";
 import { SentryErrorBoundary } from "@/components/sentry-error-boundary";
 import { SentryContextBridge } from "@/components/sentry-context-bridge";
 
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
+const clerkPubKey = resolveClerkPublishableKey();
 
 // Empty in dev (Clerk loads from its CDN directly). Auto-populated in prod by Replit.
-// DO NOT hardcode or gate on NODE_ENV — any change here breaks prod.
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+// Native app-store builds must never use a localhost proxy — see clerk-config.ts.
+const clerkProxyUrl = resolveClerkProxyUrl();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function stripBase(path: string): string {

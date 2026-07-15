@@ -12,7 +12,7 @@
     "cap:sync": "cap sync",
     "cap:sync:ios": "cap sync ios",
     "cap:open:ios": "cap open ios",
-    "ios:sync": "pnpm run build && pnpm run cap:sync:ios",
+    "ios:sync": "node ../../scripts/pre-ios-sync.mjs && pnpm run build && pnpm run cap:sync:ios",
     "ios:open": "pnpm run cap:open:ios",
     "ios:run": "pnpm run ios:sync && cap run ios"
   },

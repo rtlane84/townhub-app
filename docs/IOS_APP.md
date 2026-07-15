@@ -29,6 +29,8 @@ The iOS bundle requires these build-time values:
 | `VITE_SENTRY_DSN` | Native frontend error project/DSN |
 | `VITE_DISTRIBUTION_CHANNEL` | `app-store` |
 
+**Do not** set `VITE_CLERK_PROXY_URL` in native build env (copy from root `.env.example`). That value targets local web dev and makes Clerk load from unreachable `localhost` on a device. Use `.env.native.staging.example` as a template.
+
 The API must allow the fixed bundled WebView origin:
 
 ```bash
@@ -151,6 +153,7 @@ Before archive, verify in Xcode:
 | Blank white at appleid.apple.com | Cap Browser / SFSafariViewController — rebuild with `@townhub/capacitor-auth-session` (ASWebAuthenticationSession). |
 | Blank white screen after Apple | Usually Cap WebView left `capacitor://localhost` for staging bounce, or Cap Browser fullscreen detach. Keep OAuth in ASWebAuthenticationSession. |
 | `x.map` / `x.filter` is not a function on native | List API payload wasn’t an array. Public pages use `asArray()`. Re-check Cap Cookies/Http are disabled. |
+| Generic “TownHub” branding / empty home data / “Loading sign-in…” forever | Native bundle missing `VITE_API_BASE_URL` and/or baked-in `VITE_CLERK_PROXY_URL` from root `.env`. Source `.env.native.staging` (see `.env.native.staging.example`), confirm `ios:sync` preflight passes, rebuild from Xcode. Home should show **ClayTownHub** when API is reachable. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |
 | Push fails | App ID/profile capability, APNs environment/key/team/bundle ID, device token registration |
 | Store billing buttons appear | Release env gate and `VITE_DISTRIBUTION_CHANNEL=app-store` |
