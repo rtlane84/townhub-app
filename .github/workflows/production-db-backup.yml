@@ -2,9 +2,8 @@ name: Production database backup
 
 on:
   workflow_dispatch:
-  # Enable after the first successful manual run and restore drill.
-  # schedule:
-  #   - cron: "0 2 * * *"
+  schedule:
+    - cron: "0 2 * * *"
 
 permissions:
   contents: read

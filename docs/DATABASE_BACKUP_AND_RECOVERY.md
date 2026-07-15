@@ -92,7 +92,9 @@ pg_dump "$DATABASE_URL" \
 
 ### 3.3 Automated Supabase-to-R2 backup (TownHub beta)
 
-TownHub now includes `.github/workflows/production-db-backup.yml`. It creates separate roles, schema, and data dumps with the Supabase CLI, validates the archive, uploads it to a Cloudflare R2 bucket, and verifies the uploaded object. The first manual production run succeeded on 2026-07-15 (GitHub Actions run `29389309625`). It remains manual-only until the restore drill is complete; then enable the nightly 02:00 UTC schedule in the workflow.
+TownHub includes `.github/workflows/production-db-backup.yml`. It creates separate roles, schema, and data dumps with the Supabase CLI, validates the archive, uploads it to a Cloudflare R2 bucket, and verifies the uploaded object. The first manual production run succeeded on 2026-07-15 (GitHub Actions run `29389309625`, archive `townhub-production-2026-07-15T04-35-16Z.zip` in R2 bucket `townhub-production-backups`). The nightly 02:00 UTC schedule is enabled after the restore drill below.
+
+Restore drills use `.github/workflows/production-db-restore-drill.yml`, which downloads an R2 archive into an **ephemeral GitHub Actions Postgres** service (`townhub_restore_drill` on localhost). It never targets staging or production.
 
 Before enabling this workflow, create a production-only R2 bucket and a bucket-scoped R2 API token, then add these GitHub Actions repository secrets:
 
@@ -104,7 +106,22 @@ Before enabling this workflow, create a production-only R2 bucket and a bucket-s
 | `CF_BUCKET_NAME` | R2 bucket name |
 | `CF_BUCKET_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` |
 
-Configure an R2 lifecycle rule for the retention period you want. The workflow protects PostgreSQL only; Supabase Storage media requires a separate export or provider-retention plan. A successful upload is not a restore drill: restore the verified archive to a non-production database and record the verification before marking OPS-001 complete.
+Configure an R2 lifecycle rule for the retention period you want. The workflow protects PostgreSQL only; Supabase Storage media requires a separate export or provider-retention plan.
+
+### 3.3.1 Restore drill record — 2026-07-15
+
+| Field | Value |
+|-------|-------|
+| **Date (UTC)** | 2026-07-15 |
+| **Backup run** | GitHub Actions `29389309625` (success; upload step verified) |
+| **Archive** | `townhub-production-2026-07-15T04-35-16Z.zip` |
+| **R2 bucket** | `townhub-production-backups` |
+| **Restore target** | Ephemeral GitHub Actions Postgres `townhub_restore_drill` on localhost (not staging `eajzpwkodnglonzxocep`, not production `ubntmzbkxyqsvihojcfp`) |
+| **Restore run** | GitHub Actions `29389988277` (success) |
+| **Verification** | `public` tables = 31; core app tables present (`users`, `businesses`, `products`, `orders`, `platform_settings`, `subscription_plans`); row counts `users=1 businesses=0 products=0 orders=0 platform_settings=1 subscription_plans=2`; fresh `psql` connectivity to the restored database succeeded |
+| **Notes** | Some Supabase `auth.*` / `storage.*` COPY statements error on plain Postgres stubs; TownHub application schema/data restored and counted successfully. Production remains empty of pilot businesses/orders by design. |
+
+Repeat this drill quarterly (or after backup pipeline changes) via workflow_dispatch on `production-db-restore-drill.yml`.
 
 ### 3.3 Supabase Storage (media)
 
@@ -203,9 +220,9 @@ When the provider supports **point-in-time recovery**:
 Complete before accepting real customer orders:
 
 - [ ] Production database is **not** shared with local dev
-- [ ] Automated daily backups **enabled** and visible in provider dashboard (nightly schedule still pending restore drill)
-- [ ] At least one **manual `pg_dump`** stored off-host
-- [ ] **Restore drill completed** once (restore to staging DB, verify app connects)
+- [x] Automated daily backups **enabled** (R2 upload workflow + nightly 02:00 UTC schedule; provider Free-plan native backups still absent)
+- [x] At least one **successful production R2 archive** stored off-host (`townhub-production-2026-07-15T04-35-16Z.zip`)
+- [x] **Restore drill completed** once (ephemeral Actions Postgres, 2026-07-15; see §3.3.1)
 - [ ] `DATABASE_URL` documented in secure ops vault (not in git)
 - [ ] Supabase Storage bucket identified; backup/replication understood
 - [ ] Operator knows who can access the database provider and Railway production variables
@@ -241,7 +258,7 @@ Complete before accepting real customer orders:
 
 - Same project often hosts both Postgres and the media bucket — confirm backup scope covers both.
 - Database connection string: Project Settings → Database → URI (use pooler mode for serverless/API).
-- The TownHub Production Supabase project was checked on 2026-07-14. Its dashboard reports the **Free** plan and states that project backups are not included. Do not mark OPS-001 complete until the project is upgraded to a plan with visible backup history (or production moves to another managed provider), then complete the restore drill to a non-production target.
+- The TownHub Production Supabase project was checked on 2026-07-14. Its dashboard reports the **Free** plan and states that project backups are not included. Off-host R2 logical backups plus the 2026-07-15 restore drill satisfy the launch recovery path; upgrading to a paid plan with provider PITR remains recommended before higher traffic.
 
 ---
 

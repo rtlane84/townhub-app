@@ -67,3 +67,4 @@ artifacts/townhub/ios/App/build/
 artifacts/townhub/ios/App/DerivedData/
 artifacts/townhub/ios/App/App/public/
 **/xcuserdata/
+.tmp/
