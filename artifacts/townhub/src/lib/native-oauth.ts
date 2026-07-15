@@ -88,7 +88,8 @@ export function nativeSsoDeepLinkHasParams(url: string): boolean {
  * When OAuth completes in Safari, bounce to the app deep link with the same
  * Clerk query/hash so the WebView can finish the session on /sso-callback.
  *
- * Params are path-encoded so Cap/iOS cannot drop the query string.
+ * Prefer path-encoding for `townhub://` (Cap Browser strips query strings).
+ * Capacitor WebView bounce pages should use {@link buildNativeSsoCapacitorCallbackUrl}.
  */
 export function buildNativeSsoDeepLinkFromLocation(search: string, hash = ""): string {
   const query = search.startsWith("?") || search === "" ? search : `?${search}`;
@@ -101,20 +102,36 @@ export function buildNativeSsoDeepLinkFromLocation(search: string, hash = ""): s
 }
 
 /**
+ * In-WebView bounce target. Preserves query/hash on capacitor://localhost —
+ * more reliable than townhub:// after SFSafariViewController.
+ */
+export function buildNativeSsoCapacitorCallbackUrl(search: string, hash = ""): string {
+  const query = search.startsWith("?") || search === "" ? search : `?${search}`;
+  const fragment = hash.startsWith("#") || hash === "" ? hash : `#${hash}`;
+  return `capacitor://localhost${NATIVE_SSO_CALLBACK_PATH}${query}${fragment}`;
+}
+
+/**
  * Convert a deep-link OAuth return URL into an in-app URL on the bundled
  * Capacitor origin so Clerk can finish the session inside the reviewed app.
  */
 export function resolveNativeDeepLinkToAppUrl(rawUrl: string, appOrigin: string): string {
   const origin = appOrigin.replace(/\/+$/, "");
 
-  if (/^https?:\/\//i.test(rawUrl)) {
+  if (/^https?:\/\//i.test(rawUrl) || rawUrl.startsWith("capacitor://")) {
     try {
-      const httpsUrl = new URL(rawUrl);
-      if (httpsUrl.pathname.includes(NATIVE_SSO_HTTPS_BOUNCE_PATH) || httpsUrl.pathname.includes(NATIVE_SSO_CALLBACK_PATH)) {
-        return `${origin}${NATIVE_SSO_CALLBACK_PATH}${httpsUrl.search}${httpsUrl.hash}`;
+      const parsed = new URL(rawUrl);
+      if (
+        parsed.pathname.includes(NATIVE_SSO_HTTPS_BOUNCE_PATH) ||
+        parsed.pathname.includes(NATIVE_SSO_CALLBACK_PATH)
+      ) {
+        return `${origin}${NATIVE_SSO_CALLBACK_PATH}${parsed.search}${parsed.hash}`;
       }
     } catch {
       // fall through
+    }
+    if (rawUrl.startsWith("capacitor://")) {
+      return rawUrl;
     }
     return rawUrl;
   }

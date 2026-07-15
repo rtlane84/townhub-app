@@ -57,13 +57,13 @@ See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 Native sign-in offers Apple, Google, and email:
 
-- Apple and Google use Clerk OAuth through the system browser and return through `https://<public-web>/native-sso-callback` → `townhub://sso-callback` → bundled `/sso-callback`.
+- Apple OAuth stays in the Capacitor WebView and returns through `https://<public-web>/native-sso-callback` → `capacitor://localhost/sso-callback?…` (query preserved). Google uses Cap Browser / Safari (WKWebView blocks Google) and falls back to path-encoded `townhub://sso-callback/p/…` → bundled `/sso-callback`.
 - Email/password uses Clerk UI in the WebView.
 - Configure the production and staging callback URLs in their matching Clerk instances.
 - Enable Apple for sign-in and sign-up, add the Clerk native application with the Apple App ID prefix and bundle ID, enable the **Sign in with Apple** capability, and configure Apple private-email relay for TownHub sender domains.
 - Test Apple first-time consent, Hide My Email, returning users, canceled auth, and sign-out on a physical device.
 
-TownHub currently uses the system-browser Clerk OAuth bridge for Apple. Validate this exact flow during TestFlight review preparation. If Clerk or Apple requires the native Authentication Services token exchange for this application configuration, that is a release blocker—not a reason to remove Apple login.
+TownHub uses in-WebView Clerk OAuth for Apple and the system-browser bridge for Google. Validate both on a physical device during TestFlight review preparation. If Clerk or Apple requires the native Authentication Services token exchange for this application configuration, that is a release blocker—not a reason to remove Apple login.
 
 ## Store billing behavior
 

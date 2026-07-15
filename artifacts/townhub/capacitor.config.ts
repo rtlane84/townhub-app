@@ -19,7 +19,12 @@ const config: CapacitorConfig = {
       "clerk.com",
       "*.clerk.accounts.dev",
       "accounts.dev",
-      // Keep Google / Apple OAuth inside the WebView so login returns to the app
+      // HTTPS OAuth bounce must stay in the Cap WebView (not Cap Browser) so
+      // capacitor://localhost/sso-callback can carry Clerk query params.
+      "staging.townhub.io",
+      "townhub.io",
+      "*.townhub.io",
+      // Keep Google / Apple OAuth hostnames allowed for in-WebView Apple.
       "accounts.google.com",
       "*.googleusercontent.com",
       "appleid.apple.com",

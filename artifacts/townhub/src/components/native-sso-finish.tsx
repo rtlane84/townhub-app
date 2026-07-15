@@ -78,7 +78,7 @@ export function NativeSsoFinish() {
             kind: "error",
             message: "Sign-in return was missing Clerk parameters.",
             detail:
-              "The app opened /sso-callback without rotating_token_nonce. Confirm townhub://sso-callback is allowlisted and Safari shows “Returning to TownHub…” before the app opens.",
+              "The app opened /sso-callback without rotating_token_nonce. Rebuild with Apple in-WebView (not Cap Browser), confirm staging bounce prefers capacitor://localhost/sso-callback, and that Clerk allowlists include townhub://sso-callback.",
           });
         }
         return;

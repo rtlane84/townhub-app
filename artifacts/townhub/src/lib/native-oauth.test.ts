@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   NATIVE_SSO_DEEP_LINK,
   NATIVE_SSO_HTTPS_BOUNCE_PATH,
+  buildNativeSsoCapacitorCallbackUrl,
   buildNativeSsoDeepLinkFromLocation,
   getNativeSsoHttpsCallbackUrl,
   isNativeSsoCallbackUrl,
@@ -28,6 +29,13 @@ describe("native-oauth", () => {
     assert.equal(isNativeSsoCallbackUrl("https://app.example/sso-callback"), true);
     assert.equal(isNativeSsoCallbackUrl("https://app.example/native-sso-callback"), true);
     assert.equal(isNativeSsoCallbackUrl("https://app.example/businesses"), false);
+  });
+
+  it("builds capacitor:// callback with Clerk query intact", () => {
+    assert.equal(
+      buildNativeSsoCapacitorCallbackUrl("?rotating_token_nonce=abc"),
+      "capacitor://localhost/sso-callback?rotating_token_nonce=abc",
+    );
   });
 
   it("path-encodes Clerk params so Cap cannot strip the query string", () => {
@@ -73,6 +81,13 @@ describe("native-oauth", () => {
     assert.equal(
       resolveNativeDeepLinkToAppUrl(
         "https://staging.townhub.example/native-sso-callback?rotating_token_nonce=abc",
+        "capacitor://localhost",
+      ),
+      "capacitor://localhost/sso-callback?rotating_token_nonce=abc",
+    );
+    assert.equal(
+      resolveNativeDeepLinkToAppUrl(
+        "capacitor://localhost/sso-callback?rotating_token_nonce=abc",
         "capacitor://localhost",
       ),
       "capacitor://localhost/sso-callback?rotating_token_nonce=abc",

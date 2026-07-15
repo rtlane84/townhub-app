@@ -22,23 +22,40 @@
       a {
         color: #1e3a5f;
       }
+      .hint {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #6b635b;
+      }
     </style>
     <script>
       (function () {
-        // Static bounce — no React. Works even before the SPA bundle loads.
-        // Path-encode Clerk params: Cap/iOS often strips query strings from townhub://.
+        // Cap Browser / SFSafariViewController often strips query strings from
+        // townhub://. Prefer capacitor://localhost first (works when OAuth ran
+        // inside the Cap WebView, e.g. Sign in with Apple). Fall back to a
+        // path-encoded townhub:// deep link for system Safari / Cap Browser.
         var payload = location.search + location.hash;
-        var deepLink =
+        var capacitorLink =
+          "capacitor://localhost/sso-callback" + (payload || "");
+        var townhubLink =
           payload && payload !== "?" && payload !== "#"
             ? "townhub://sso-callback/p/" + encodeURIComponent(payload)
             : "townhub://sso-callback";
-        function setLink() {
+
+        function setLinks() {
           var openLink = document.getElementById("open-app");
-          if (openLink) openLink.setAttribute("href", deepLink);
+          if (openLink) openLink.setAttribute("href", townhubLink);
         }
-        setLink();
-        location.replace(deepLink);
-        window.addEventListener("DOMContentLoaded", setLink);
+        setLinks();
+
+        location.replace(capacitorLink);
+        window.setTimeout(function () {
+          // Still on the HTTPS bounce page → Cap Browser / Safari path.
+          if (location.pathname.indexOf("native-sso-callback") !== -1) {
+            location.replace(townhubLink);
+          }
+        }, 450);
+        window.addEventListener("DOMContentLoaded", setLinks);
       })();
     </script>
   </head>
@@ -46,6 +63,7 @@
     <div>
       <p>Returning to TownHub…</p>
       <p><a id="open-app" href="townhub://sso-callback">Tap here if the app doesn’t open</a></p>
+      <p class="hint">If this screen stays open, tap the link above.</p>
     </div>
   </body>
 </html>

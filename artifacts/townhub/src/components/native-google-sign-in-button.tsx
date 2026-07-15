@@ -72,7 +72,16 @@ function NativeSocialSignInButton({
 
       markNativeOAuthPending();
       rememberPostAuthRedirect();
-      await Browser.open({ url: verificationUrl });
+
+      // Google blocks WKWebView (disallowed_useragent) → Cap Browser + townhub:// bounce.
+      // Apple works in-WebView; keep the full redirect chain inside Capacitor so
+      // /native-sso-callback can return via capacitor://localhost/sso-callback?params
+      // (Cap Browser / SFSafariViewController often drops custom-scheme query params).
+      if (provider === "Google") {
+        await Browser.open({ url: verificationUrl });
+      } else {
+        window.location.assign(verificationUrl);
+      }
     } catch (err) {
       setError(clerkErrorMessage(err, provider));
     } finally {

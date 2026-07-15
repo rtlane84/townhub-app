@@ -21,6 +21,7 @@ import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-bu
 import { NativeSsoFinish } from "@/components/native-sso-finish";
 import { isNativeApp } from "@/lib/native-platform";
 import {
+  buildNativeSsoCapacitorCallbackUrl,
   buildNativeSsoDeepLinkFromLocation,
   NATIVE_SSO_HTTPS_BOUNCE_PATH,
 } from "@/lib/native-oauth";
@@ -188,25 +189,31 @@ function SignUpPage() {
 }
 
 /**
- * Safari-only after native Google OAuth.
- * Clerk redirects here (HTTPS), then we open the app via townhub://.
- * Must stay a separate path from /sso-callback so web Google login still works.
+ * After native OAuth: Clerk hits this HTTPS path, then we return into the app.
+ * Prefer capacitor:// (preserves query when OAuth ran in the Cap WebView).
+ * Fall back to path-encoded townhub:// for Cap Browser / Safari (Google).
  */
 function NativeSsoBouncePage() {
-  const deepLink = buildNativeSsoDeepLinkFromLocation(
-    typeof window !== "undefined" ? window.location.search : "",
-    typeof window !== "undefined" ? window.location.hash : "",
-  );
+  const search = typeof window !== "undefined" ? window.location.search : "";
+  const hash = typeof window !== "undefined" ? window.location.hash : "";
+  const capacitorLink = buildNativeSsoCapacitorCallbackUrl(search, hash);
+  const townhubLink = buildNativeSsoDeepLinkFromLocation(search, hash);
 
   useEffect(() => {
-    window.location.replace(deepLink);
-  }, [deepLink]);
+    window.location.replace(capacitorLink);
+    const timer = window.setTimeout(() => {
+      if (window.location.pathname.includes(NATIVE_SSO_HTTPS_BOUNCE_PATH)) {
+        window.location.replace(townhubLink);
+      }
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [capacitorLink, townhubLink]);
 
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-background px-4 py-12 text-center">
       <p className="text-sm text-muted-foreground">Returning to TownHub…</p>
       <a
-        href={deepLink}
+        href={townhubLink}
         className="text-sm font-medium text-primary underline underline-offset-4"
       >
         Tap here if the app doesn’t open
