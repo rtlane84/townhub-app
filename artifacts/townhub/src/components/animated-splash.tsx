@@ -13,10 +13,10 @@ import { PlatformBrandMark } from "@/components/platform-brand-mark";
 const SPLASH_LOGO_SRC = "/splash-logo.png";
 
 /** Minimum time the branded splash stays up before cross-fading to the app. */
-const SPLASH_HOLD_MS = 3000;
+const SPLASH_HOLD_MS = 1200;
 /** Never pin splash longer than this waiting for theme (failed/slow network). */
-const SPLASH_THEME_SAFETY_MS = 4000;
-const CROSS_FADE_MS = 420;
+const SPLASH_THEME_SAFETY_MS = 2500;
+const CROSS_FADE_MS = 280;
 /** Keep the mark compact so the cold-start frame matches LaunchScreen (160pt). */
 const SPLASH_LOGO_SIZE_PX = 160;
 
@@ -27,8 +27,8 @@ const SPLASH_LOGO_SIZE_PX = 160;
 const SPLASH_CANVAS = "#F4F5F8";
 
 /**
- * Native cold-start splash: solid light canvas, launch logo with spring spin,
- * fade-in wordmark, then cross-fade into the main app shell.
+ * Native cold-start splash: solid light canvas, a subtle logo fade/scale,
+ * fade-in wordmark, then a quick cross-fade into the main app shell.
  * Skipped on in-session remounts (e.g. Google OAuth return via location.assign).
  *
  * Hold ends after the minimum branding hold once theme is ready (or cached),
@@ -137,37 +137,29 @@ export function AnimatedSplash() {
               draggable={false}
               className="select-none object-contain"
               style={{ width: SPLASH_LOGO_SIZE_PX, height: SPLASH_LOGO_SIZE_PX }}
-              initial={reduceMotion ? false : { opacity: 0, rotate: 0 }}
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
               animate={
                 reduceMotion
-                  ? { opacity: 1, rotate: 0 }
+                  ? { opacity: 1, scale: 1 }
                   : logoReady
-                    ? { opacity: 1, rotate: 360 }
-                    : { opacity: 0, rotate: 0 }
+                    ? { opacity: 1, scale: 1 }
+                    : { opacity: 0, scale: 0.94 }
               }
               transition={
                 reduceMotion || !logoReady
-                  ? { duration: reduceMotion ? 0 : 0.35 }
-                  : {
-                      opacity: { duration: 0.35, ease: "easeOut" },
-                      rotate: {
-                        type: "spring",
-                        stiffness: 70,
-                        damping: 14,
-                        mass: 0.9,
-                      },
-                    }
+                  ? { duration: reduceMotion ? 0 : 0.3 }
+                  : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
               }
             />
 
             <motion.div
               className="flex flex-col items-center gap-1.5 text-center"
-              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={
                 reduceMotion
                   ? { duration: 0 }
-                  : { delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+                  : { delay: 0.18, duration: 0.38, ease: [0.22, 1, 0.36, 1] }
               }
             >
               <PlatformBrandMark
