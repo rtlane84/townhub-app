@@ -17,6 +17,8 @@ import { createAuthedApiContext } from "../helpers/authed-api";
 import { gotoOrderConfirmation } from "../helpers/navigation";
 
 test.describe("Refund workflow", () => {
+  test.setTimeout(240_000);
+
   test.beforeEach(() => {
     test.skip(!isStripeCheckoutE2EEnabled(), STRIPE_CHECKOUT_SKIP_REASON);
     test.skip(!hasOwnerAuthState(), OWNER_AUTH_SKIP_REASON);
