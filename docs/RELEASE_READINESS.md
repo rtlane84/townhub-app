@@ -18,7 +18,7 @@ closed only when its implementation and required validation are complete.
 | Frontend tests | Pass | 298/298 across 90 suites |
 | API tests | Pass | 453/453 across 146 suites when permitted to open the temporary localhost listener used by the rate-limit test (July 16) |
 | Production build | Pass | `pnpm run build` passed July 16; bundled Vite production build and unsigned iPhone-simulator Release build are also recorded |
-| Provider E2E | Partial pass | 2026-07-15 staging: public/guest/owner/admin **11/11** passed after regenerating owner+admin storage state (`E2E_BASE_URL=https://staging.townhub.io`). Stripe checkout workflow failed early because Playwright `pageApiJson` called relative `/api` on the SPA host (`staging.townhub.io/api` → HTML); fix routes API calls via `E2E_API_URL`. Hosted Checkout iframe fill may still need work. Signed archive and devices remain |
+| Provider E2E | Pass for current web gate | 2026-07-16 staging: public **3/3**, owner **4/4**, admin **2/2**, hosted Stripe checkout **1/1**, and full refund **1/1** passed. The Stripe helper handles prefilled email summaries and the current agent-disclosure control. Broader public/guest/owner/admin **11/11** was recorded 2026-07-15. Signed archive and devices remain |
 | Physical iPhone | In progress | Cap production auth (Apple returning, Google new/returning, Account sign-out UI) verified 2026-07-15; full matrix + signed archive still required before internal TestFlight |
 
 ## Release blockers
@@ -37,13 +37,13 @@ closed only when its implementation and required validation are complete.
 | CI-001 | P1 | Release gates | Repository had no checked-in CI workflow | CI enforces health, typecheck, tests, build, and CodeQL | Complete |
 | IOS-006 | P1 | Device scope | Xcode target currently declares iPhone and iPad while v1 scope is iPhone-only | Target, metadata, screenshots, and QA matrix align to iPhone-only v1 | Complete |
 | DOC-001 | P1 | Documentation | Production guidance mixes current Cloudflare/Railway, Replit, and obsolete Netlify references | One canonical environment/release path; historical alternatives clearly labeled or removed | Complete |
-| TST-001 | P1 | Release QA | No completed staging E2E, native archive, or physical-device release matrix | Customer, owner, and full admin workflows pass required web/native tests | In progress: staging public/guest/owner/admin **11/11**; Stripe helper HTML/`E2E_API_URL` fix landed; Cap production auth smoke partial; **next = physical matrix + signed archive** (see below) |
+| TST-001 | P1 | Release QA | No completed staging E2E, native archive, or physical-device release matrix | Customer, owner, and full admin workflows pass required web/native tests | In progress: web staging gate passes, including hosted Stripe payment and refund; Cap production auth smoke partial; **remaining = signed archive + physical matrix** (see below) |
 
 ## Next session — TestFlight gate (TST-001)
 
-Do this in order on a clean tree at `main` (commit `d4307de1` or later):
+Do this in order from a clean `develop` tree for staging. Promote the verified commit to `main` only for the production candidate.
 
-1. **Staging Stripe E2E (optional but close TST-001 web gap)**
+1. **Staging Stripe E2E — passed 2026-07-16; rerun before promotion**
 
 ```bash
 E2E_BASE_URL=https://staging.townhub.io \

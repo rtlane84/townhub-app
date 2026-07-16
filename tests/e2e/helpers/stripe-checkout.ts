@@ -113,10 +113,13 @@ async function completeStripeHostedCheckout(
   });
 
   const emailField = page.getByRole("textbox", { name: /^email$/i });
-  await emailField.waitFor({ state: "visible", timeout: 30_000 });
-  const currentEmail = await emailField.inputValue().catch(() => "");
-  if (!currentEmail.trim()) {
-    await emailField.fill(guest?.email ?? "e2e.stripe.guest@example.com");
+  // Checkout renders a non-editable email summary when the session already
+  // has customer_email. Only fill the field when Stripe exposes an input.
+  if ((await emailField.count()) === 1 && (await emailField.isVisible())) {
+    const currentEmail = await emailField.inputValue().catch(() => "");
+    if (!currentEmail.trim()) {
+      await emailField.fill(guest?.email ?? "e2e.stripe.guest@example.com");
+    }
   }
 
   // Link "save info" can require phone and complicate the card accordion.
@@ -257,6 +260,18 @@ async function completeStripeHostedCheckout(
       .first()
       .fill("12345")
       .catch(() => {});
+  }
+
+  const agentDisclosure = page.getByRole("checkbox", {
+    name: /I am an AI agent acting on behalf of someone else/i,
+  });
+  if (await agentDisclosure.isVisible().catch(() => false)) {
+    if (!(await agentDisclosure.isChecked().catch(() => false))) {
+      await agentDisclosure.evaluate((element) => {
+        (element as HTMLInputElement).click();
+      });
+      await expect(agentDisclosure).toBeChecked();
+    }
   }
 
   // Prefer the primary Pay submit — avoid matching "Pay with card" / Apple Pay.
