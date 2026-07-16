@@ -52,7 +52,7 @@ Tests fail fast in global setup if the API is not reachable.
 | Variable            | Default                  | Purpose                                      |
 | ------------------- | ------------------------ | -------------------------------------------- |
 | `E2E_BASE_URL`      | `http://localhost:23032` | Playwright `baseURL`                         |
-| `E2E_API_URL`       | `http://localhost:8080`  | Direct API calls in helpers                  |
+| `E2E_API_URL`       | `http://localhost:8080`  | Direct API host for `pageApiJson` and helpers (required for staging/production — SPA hosts return HTML for `/api/*`) |
 | `E2E_BUSINESS_SLUG` | *(auto-discover)*        | Pin a specific storefront for checkout tests |
 | `E2E_STRIPE_CHECKOUT` | *(unset)*              | Set to `1` to run Stripe card checkout + refund workflows |
 
@@ -174,7 +174,7 @@ Stripe card checkout and refund workflows run only when `E2E_STRIPE_CHECKOUT=1` 
 
 Without that, pay-at-pickup smoke tests still run; Stripe workflow specs skip with a clear message.
 
-As of July 14, 2026, the staging Sandbox Connect account and online payment mode are ready. The remaining Stripe workflow issue is Playwright compatibility with Stripe's current hosted Checkout card-field iframe structure; no live payment was made.
+As of July 15, 2026: staging Sandbox Connect + online payments are ready. Authed helper calls against `E2E_BASE_URL` alone used to hit the SPA (`staging.townhub.io/api` → HTML); `pageApiJson` now always uses `E2E_API_URL`. Remaining risk is Playwright fill of Stripe hosted Checkout card iframes.
 
 ## Debugging failures
 

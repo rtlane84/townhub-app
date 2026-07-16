@@ -17,8 +17,8 @@ closed only when its implementation and required validation are complete.
 | Frontend tests | Pass | 298/298 across 90 suites |
 | API tests | Pass | 448/448 across 146 suites when permitted to open the temporary localhost listener used by the rate-limit test |
 | Production build | Pass | Bundled Vite production build and unsigned iPhone-simulator Release build |
-| Provider E2E | Partial pass | 2026-07-15 staging: public/guest/owner/admin **11/11** passed after regenerating owner+admin storage state (`E2E_BASE_URL=https://staging.townhub.io`). Stripe checkout workflow failed early (owner business list returned HTML not JSON — investigate separately). Signed archive and devices remain |
-| Physical iPhone | Not run | Required before internal TestFlight |
+| Provider E2E | Partial pass | 2026-07-15 staging: public/guest/owner/admin **11/11** passed after regenerating owner+admin storage state (`E2E_BASE_URL=https://staging.townhub.io`). Stripe checkout workflow failed early because Playwright `pageApiJson` called relative `/api` on the SPA host (`staging.townhub.io/api` → HTML); fix routes API calls via `E2E_API_URL`. Hosted Checkout iframe fill may still need work. Signed archive and devices remain |
+| Physical iPhone | In progress | Cap production auth (Apple returning, Google new/returning, Account sign-out UI) verified 2026-07-15; full matrix + signed archive still required before internal TestFlight |
 
 ## Release blockers
 
@@ -26,7 +26,7 @@ closed only when its implementation and required validation are complete.
 |---|---|---|---|---|---|
 | IOS-001 | P0 | Native packaging | Capacitor `server.url` loads remotely deployed executable web code | TestFlight/App Store builds bundle reviewed Vite assets and call only the selected remote API | Complete |
 | IOS-002 | P0 | Account lifecycle | No in-app account-deletion workflow or API exists | Authenticated, idempotent deletion request and audited anonymization/provider cleanup flow | Complete: contract/API/UI/schema/runbook live; staging customer provider-cleanup rehearsal recorded 2026-07-15 (Clerk delete, token/pref purge, anonymize+DISABLE, request COMPLETED); owner/Stripe/Apple paths remain checklist-driven for first real case |
-| IOS-003 | P0 | Authentication | iOS offers Google social login without Sign in with Apple | Equivalent Sign in with Apple path configured through Clerk and native return flow | Complete: native ASAuthorization Apple + GIDSignIn Google with Clerk token exchange; Production first-time and returning Apple verified 2026-07-15 (SignUp-first then SignIn; bot CAPTCHA off for Cap) |
+| IOS-003 | P0 | Authentication | iOS offers Google social login without Sign in with Apple | Equivalent Sign in with Apple path configured through Clerk and native return flow | Complete: native ASAuthorization Apple + GIDSignIn Google with Clerk token exchange; Production returning Apple + Google new/returning verified 2026-07-15 (SignIn-first + fresh SignUp token; bot CAPTCHA off for Cap); brand-new Apple still needs a second Apple ID for formal smoke |
 | IOS-004 | P0 | Privacy | No app privacy manifest, legal routes, or verified App Store privacy inventory | Privacy manifest, privacy/terms/support pages, retention policy, and accurate disclosures | Complete: routes + PrivacyInfo; App Privacy published on TownHub Local (`6791258844`) 2026-07-15 (see `docs/APP_STORE_PRIVACY.md`); soft follow-ups = first-archive Privacy Report + optional counsel |
 | IOS-005 | P0 | Store billing | Owner Stripe Billing subscribe/change/portal flows are reachable from the shared app | Store builds retain plan status but suppress owner SaaS purchase and billing-management calls to action | Complete |
 | ENV-001 | P0 | Environments | Staging and production isolation is not implemented or verified | Separate domains, data, credentials, webhooks, storage, identity, payments, push, and monitoring | Complete: domains/data/Clerk/Stripe/Supabase isolation verified; Cloudflare Builds `develop`→`townhub-app` / `main`→`townhub-production`; Railway staging trigger set to `develop`, production remains `main`; production Google OAuth custom credentials + consent published 2026-07-15 |
@@ -36,7 +36,52 @@ closed only when its implementation and required validation are complete.
 | CI-001 | P1 | Release gates | Repository had no checked-in CI workflow | CI enforces health, typecheck, tests, build, and CodeQL | Complete |
 | IOS-006 | P1 | Device scope | Xcode target currently declares iPhone and iPad while v1 scope is iPhone-only | Target, metadata, screenshots, and QA matrix align to iPhone-only v1 | Complete |
 | DOC-001 | P1 | Documentation | Production guidance mixes current Cloudflare/Railway, Replit, and obsolete Netlify references | One canonical environment/release path; historical alternatives clearly labeled or removed | Complete |
-| TST-001 | P1 | Release QA | No completed staging E2E, native archive, or physical-device release matrix | Customer, owner, and full admin workflows pass required web/native tests | In progress: 2026-07-15 staging public/guest/owner/admin **11/11** passed (auth refreshed); Stripe card workflow still failing; signed archive + physical device remain |
+| TST-001 | P1 | Release QA | No completed staging E2E, native archive, or physical-device release matrix | Customer, owner, and full admin workflows pass required web/native tests | In progress: staging public/guest/owner/admin **11/11**; Stripe helper HTML/`E2E_API_URL` fix landed; Cap production auth smoke partial; **next = physical matrix + signed archive** (see below) |
+
+## Next session — TestFlight gate (TST-001)
+
+Do this in order on a clean tree at `main` (commit `d4307de1` or later):
+
+1. **Staging Stripe E2E (optional but close TST-001 web gap)**
+
+```bash
+E2E_BASE_URL=https://staging.townhub.io \
+E2E_API_URL=https://api-staging.townhub.io \
+E2E_STRIPE_CHECKOUT=1 \
+pnpm exec playwright test tests/e2e/workflows/stripe-checkout.spec.ts
+```
+
+Refresh owner auth storage first if sessions expired (`docs/PLAYWRIGHT_E2E.md`).
+
+2. **Internal TestFlight build (staging API)** — preferred first archive
+
+```bash
+set -a && source .env.native.staging && set +a
+pnpm --filter @workspace/townhub run ios:sync
+```
+
+Xcode: open `artifacts/townhub/ios/App/App.xcworkspace` → bump build number → Run on physical iPhone → smoke matrix below → **Product → Archive** → Validate → Upload to TestFlight.
+
+3. **App Store candidate (production API)** — after internal TF looks good
+
+```bash
+set -a && source .env.native.production && set +a
+pnpm --filter @workspace/townhub run ios:sync
+```
+
+Repeat smoke + archive with a new build number. Never submit a staging-targeted archive as the App Store binary.
+
+### Physical-device smoke (minimum for archive)
+
+- [ ] Fresh launch; home shows ClayTownHub branding/data
+- [ ] Apple returning user; Google; email; sign-out → Account shows real sign-in buttons (not skeleton)
+- [ ] Guest or signed-in browse → cart → pay-at-pickup or card (system browser return)
+- [ ] My Orders / List Your Business when signed in
+- [ ] Owner Business Hub (if testing owner) — subscription CTAs suppressed in app-store channel
+- [ ] Privacy / Terms / Help; Account deletion request UI reachable
+- [ ] Safe areas / bottom tabs; airplane-mode launch recovers
+
+Full matrix remains in `docs/IOS_APP.md` (Required physical-device matrix).
 
 ## Confirmed v1 product decisions
 
