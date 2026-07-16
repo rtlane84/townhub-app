@@ -95,6 +95,77 @@ describe("subscription notification event detection", () => {
     );
   });
 
+  it("does not emit trial-started on INCOMPLETE→TRIAL stripe_sync (checkout owns welcome)", () => {
+    const incomplete = {
+      ...baseSnapshot,
+      status: "INCOMPLETE",
+      stripeSubscriptionId: null as string | null,
+    };
+    const trial = {
+      ...baseSnapshot,
+      status: "TRIAL",
+      trialEndsAt: new Date("2026-07-30T00:00:00Z"),
+      stripeSubscriptionId: "sub_new",
+    };
+    assert.deepEqual(
+      detectSubscriptionNotificationEvents(incomplete, trial, {
+        type: "stripe_sync",
+        stripeEvent: "customer.subscription.updated",
+      }),
+      [],
+    );
+  });
+
+  it("does not emit welcome on INCOMPLETE→ACTIVE subscription.created (checkout owns welcome)", () => {
+    const incomplete = {
+      ...baseSnapshot,
+      status: "INCOMPLETE",
+      stripeSubscriptionId: null as string | null,
+    };
+    const active = { ...baseSnapshot, status: "ACTIVE", stripeSubscriptionId: "sub_new" };
+    assert.deepEqual(
+      detectSubscriptionNotificationEvents(incomplete, active, {
+        type: "stripe_sync",
+        stripeEvent: "customer.subscription.created",
+      }),
+      [],
+    );
+  });
+
+  it("still sends welcome only from checkout_completed for INCOMPLETE→TRIAL", () => {
+    const incomplete = {
+      ...baseSnapshot,
+      status: "INCOMPLETE",
+      stripeSubscriptionId: null as string | null,
+    };
+    const trial = {
+      ...baseSnapshot,
+      status: "TRIAL",
+      trialEndsAt: new Date("2026-07-30T00:00:00Z"),
+      stripeSubscriptionId: "sub_new",
+    };
+    assert.deepEqual(
+      detectSubscriptionNotificationEvents(incomplete, trial, { type: "checkout_completed" }),
+      ["SUBSCRIPTION_WELCOME"],
+    );
+  });
+
+  it("still emits trial-started when becoming trial from a non-incomplete status", () => {
+    const canceled = { ...baseSnapshot, status: "CANCELED" };
+    const trial = {
+      ...baseSnapshot,
+      status: "TRIAL",
+      trialEndsAt: new Date("2026-07-30T00:00:00Z"),
+    };
+    assert.deepEqual(
+      detectSubscriptionNotificationEvents(canceled, trial, {
+        type: "stripe_sync",
+        stripeEvent: "customer.subscription.updated",
+      }),
+      ["SUBSCRIPTION_TRIAL_STARTED"],
+    );
+  });
+
   it("detects activation, recurring payment, and payment failure transitions", () => {
     const trial = { ...baseSnapshot, status: "TRIAL" };
     const active = { ...baseSnapshot, status: "ACTIVE" };

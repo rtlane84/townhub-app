@@ -73,7 +73,9 @@ export function detectSubscriptionNotificationEvents(
     events.push("SUBSCRIPTION_CANCEL_SCHEDULED");
   }
 
-  if (becomingTrial) {
+  // INCOMPLETE → trial is owned by checkout_completed SUBSCRIPTION_WELCOME. Emitting
+  // TRIAL_STARTED here races with that webhook and double-emails the owner.
+  if (becomingTrial && beforeStatus !== "INCOMPLETE") {
     events.push("SUBSCRIPTION_TRIAL_STARTED");
   }
 
@@ -105,7 +107,9 @@ export function detectSubscriptionNotificationEvents(
   }
 
   // First Stripe subscription without checkout metadata (rare) — welcome once deduped downstream.
+  // Skip when before was INCOMPLETE: paid checkout activation is owned by checkout_completed.
   if (
+    beforeStatus !== "INCOMPLETE" &&
     !before?.stripeSubscriptionId &&
     after.stripeSubscriptionId &&
     ["ACTIVE", "TRIAL"].includes(afterStatus) &&
