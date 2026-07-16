@@ -2,6 +2,7 @@
 
 **Baseline commit:** `833f4f12`
 **Audit started:** July 14, 2026
+**Latest audit update:** July 16, 2026
 **Target:** controlled production web beta followed by iPhone TestFlight and App Store release
 
 This is the live release-blocker ledger. Dated audit reports under `docs/` are
@@ -13,10 +14,10 @@ closed only when its implementation and required validation are complete.
 | Check | Result | Evidence / limitation |
 |---|---|---|
 | Repository health | Pass | `pnpm run audit:health` |
-| Typecheck | Pass | `pnpm run typecheck` |
+| Typecheck | Pass | `pnpm run typecheck` — July 16 fix adds the package-local Node types needed by the API-client Node test |
 | Frontend tests | Pass | 298/298 across 90 suites |
-| API tests | Pass | 448/448 across 146 suites when permitted to open the temporary localhost listener used by the rate-limit test |
-| Production build | Pass | Bundled Vite production build and unsigned iPhone-simulator Release build |
+| API tests | Pass | 453/453 across 146 suites when permitted to open the temporary localhost listener used by the rate-limit test (July 16) |
+| Production build | Pass | `pnpm run build` passed July 16; bundled Vite production build and unsigned iPhone-simulator Release build are also recorded |
 | Provider E2E | Partial pass | 2026-07-15 staging: public/guest/owner/admin **11/11** passed after regenerating owner+admin storage state (`E2E_BASE_URL=https://staging.townhub.io`). Stripe checkout workflow failed early because Playwright `pageApiJson` called relative `/api` on the SPA host (`staging.townhub.io/api` → HTML); fix routes API calls via `E2E_API_URL`. Hosted Checkout iframe fill may still need work. Signed archive and devices remain |
 | Physical iPhone | In progress | Cap production auth (Apple returning, Google new/returning, Account sign-out UI) verified 2026-07-15; full matrix + signed archive still required before internal TestFlight |
 
