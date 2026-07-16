@@ -29,6 +29,28 @@ export function requiresStripeSubscription(plan: Pick<BillingPlanFields, "isBeta
   return !isComplimentaryPlan(plan);
 }
 
+/**
+ * Status when an admin assigns a plan outside Stripe.
+ * Paid plans without an existing Stripe subscription stay INCOMPLETE (features locked until owner checkout).
+ * Complimentary / beta plans unlock immediately.
+ * When a Stripe subscription already exists, keep the requested status (admin override).
+ */
+export function resolveAdminAssignedSubscriptionStatus(input: {
+  plan: Pick<BillingPlanFields, "isBeta" | "monthlyPrice" | "yearlyPrice"> & { trialDays?: number | null };
+  requestedStatus: string;
+  existingStripeSubscriptionId?: string | null;
+}): string {
+  if (isComplimentaryPlan(input.plan)) {
+    if (input.plan.isBeta) return "BETA";
+    const trialDays = input.plan.trialDays ?? 0;
+    return trialDays > 0 ? "TRIAL" : "ACTIVE";
+  }
+  if (!input.existingStripeSubscriptionId?.trim()) {
+    return "INCOMPLETE";
+  }
+  return input.requestedStatus;
+}
+
 export function planStripePriceId(
   plan: Pick<BillingPlanFields, "stripeMonthlyPriceId" | "stripeYearlyPriceId">,
   interval: BillingInterval,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useClerk, useUser } from "@clerk/react";
+import { useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetMyAccountDeletionRequestQueryKey,
@@ -7,8 +7,7 @@ import {
   useGetMyAccountDeletionRequest,
   useRequestMyAccountDeletion,
 } from "@workspace/api-client-react";
-import { AlertTriangle, CheckCircle2, UserRound } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +24,6 @@ function formatDate(value: string | Date): string {
 
 export default function Account() {
   const { user } = useUser();
-  const { openUserProfile } = useClerk();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [confirmation, setConfirmation] = useState("");
@@ -75,22 +73,12 @@ export default function Account() {
     <div className="container mx-auto max-w-2xl space-y-6 px-4 py-8 pb-28 sm:py-12">
       <div>
         <h1 className="font-serif text-3xl font-bold">Account</h1>
-        <p className="mt-1 text-muted-foreground">Manage your identity and TownHub data.</p>
+        <p className="mt-1 text-muted-foreground">
+          {user?.primaryEmailAddress?.emailAddress
+            ? `Manage TownHub account deletion for ${user.primaryEmailAddress.emailAddress}.`
+            : "Manage TownHub account deletion."}
+        </p>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <UserRound className="h-4 w-4" /> Profile
-          </CardTitle>
-          <CardDescription>{user?.primaryEmailAddress?.emailAddress}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="outline" onClick={() => openUserProfile()}>
-            Edit profile and security
-          </Button>
-        </CardContent>
-      </Card>
 
       <Card className="border-destructive/30">
         <CardHeader>
@@ -100,6 +88,7 @@ export default function Account() {
           <CardDescription>
             Request deletion of your account and associated personal data. Records that must be kept
             for payment, tax, fraud prevention, dispute, or other legal obligations may be retained.
+            Use Manage account in your profile menu to edit profile and security settings.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

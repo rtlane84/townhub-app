@@ -437,7 +437,10 @@ export default function AdminBusinesses() {
             <DialogTitle className="font-serif">Change Subscription Plan</DialogTitle>
           </DialogHeader>
           <div className="py-2 space-y-3">
-            <p className="text-sm text-muted-foreground">Select a plan to assign to this business. The subscription status will be set to Active.</p>
+            <p className="text-sm text-muted-foreground">
+              Select a plan to assign to this business. Paid plans stay incomplete until the owner
+              completes Stripe checkout; complimentary and beta plans unlock immediately.
+            </p>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Plan</label>
               <Select value={subPlanId} onValueChange={setSubPlanId}>

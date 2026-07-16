@@ -575,25 +575,33 @@ export default function Storefront() {
               </p>
             ) : null}
 
-            {/* Hours + Location — side by side on all widths */}
-            <div className="mt-5 grid grid-cols-2 gap-2.5">
-              <StorefrontHoursCard
-                structuredHours={businessHours.structuredHours}
-                fallbackHours={businessHours.fallbackHours}
-                hasHours={businessHours.hasHours}
-                phone={b.phone}
-                isMobileBusiness={isMobileBusiness}
-                availability={statusLine}
-                mobileStops={activeOrUpcomingLocations}
-                todayIso={today}
-              />
-              <StorefrontLocationCard
-                presence={presence}
-                address={b.address}
-                upcomingLocations={upcomingLocations}
-                todayIso={today}
-              />
-            </div>
+            {/* Hours + Location — side by side for fixed locations; location only for mobile */}
+            {isMobileBusiness ? (
+              <div className="mt-5">
+                <StorefrontLocationCard
+                  presence={presence}
+                  address={b.address}
+                  upcomingLocations={upcomingLocations}
+                  todayIso={today}
+                  availability={statusLine}
+                />
+              </div>
+            ) : (
+              <div className="mt-5 grid grid-cols-2 gap-2.5">
+                <StorefrontHoursCard
+                  structuredHours={businessHours.structuredHours}
+                  fallbackHours={businessHours.fallbackHours}
+                  hasHours={businessHours.hasHours}
+                  phone={b.phone}
+                />
+                <StorefrontLocationCard
+                  presence={presence}
+                  address={b.address}
+                  upcomingLocations={upcomingLocations}
+                  todayIso={today}
+                />
+              </div>
+            )}
 
         {/* Fulfillment notes */}
         {!isAppointmentMode &&

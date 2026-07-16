@@ -22,6 +22,7 @@ describe("storefront hero layout", () => {
     assert.match(source, /StorefrontHoursCard/);
     assert.match(source, /StorefrontLocationCard/);
     assert.match(source, /resolveStorefrontPresence/);
+    assert.match(source, /isMobileBusiness \?/);
   });
 
   it("keeps mode-aware commerce empty states", async () => {

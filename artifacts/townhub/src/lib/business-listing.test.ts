@@ -36,15 +36,24 @@ describe("business-listing public availability wiring", () => {
     );
   });
 
-  it("storefront hours card uses mobile public availability instead of fixed Closed/Hours not provided", () => {
+  it("storefront location card shows mobile availability; hours card remains for fixed businesses", () => {
+    const locationCard = readFileSync(
+      join(here, "../components/storefront-location-card.tsx"),
+      "utf8",
+    );
+    assert.match(locationCard, /Mobile business/);
+    assert.match(locationCard, /availability\.statusLabel/);
+    assert.match(locationCard, /No upcoming stops are posted yet/);
+
+    const storefront = readFileSync(join(here, "../pages/storefront.tsx"), "utf8");
+    assert.match(storefront, /isMobileBusiness \?/);
+    assert.match(storefront, /StorefrontLocationCard/);
+    assert.match(storefront, /availability=\{statusLine\}/);
+
     const hoursCard = readFileSync(
       join(here, "../components/storefront-hours-card.tsx"),
       "utf8",
     );
-    assert.match(hoursCard, /isMobileBusiness/);
-    assert.match(hoursCard, /Here now/);
-    assert.match(hoursCard, /Not currently at a scheduled stop/);
-    assert.match(hoursCard, /availability\.statusLabel/);
-    assert.match(hoursCard, /availability\.scheduleLabel/);
+    assert.match(hoursCard, /structuredHours/);
   });
 });

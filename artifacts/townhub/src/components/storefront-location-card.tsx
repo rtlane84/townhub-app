@@ -7,6 +7,8 @@ import {
   locationDirectionsUrl,
   type StorefrontPresence,
 } from "@/lib/storefront-presence";
+import type { StorefrontStatusLine } from "@/lib/business-listing";
+import { cn } from "@/lib/utils";
 import { MapPin, Navigation, Truck } from "lucide-react";
 
 type StorefrontLocationCardProps = {
@@ -15,6 +17,8 @@ type StorefrontLocationCardProps = {
   upcomingLocations: FoodTruckLocation[];
   todayIso: string;
   stopsAnchorId?: string;
+  /** Mobile businesses: show open-now / next-stop status from the hours card replacement. */
+  availability?: StorefrontStatusLine | null;
 };
 
 export function StorefrontLocationCard({
@@ -23,6 +27,7 @@ export function StorefrontLocationCard({
   upcomingLocations,
   todayIso,
   stopsAnchorId = "upcoming-stops",
+  availability = null,
 }: StorefrontLocationCardProps) {
   const trimmed = address?.trim() || null;
 
@@ -45,6 +50,23 @@ export function StorefrontLocationCard({
             <Truck className="h-4 w-4 text-primary" aria-hidden />
             Mobile business
           </p>
+          {availability ? (
+            <div className="space-y-0.5">
+              <p
+                className={cn(
+                  "text-sm font-semibold leading-snug",
+                  availability.isOpen ? "text-primary" : "text-foreground",
+                )}
+              >
+                {availability.statusLabel}
+              </p>
+              {availability.scheduleLabel ? (
+                <p className="text-xs font-medium leading-snug text-muted-foreground">
+                  {availability.scheduleLabel}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {upcomingLocations.length > 0 ? (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground">Next stop</p>

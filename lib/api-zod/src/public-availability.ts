@@ -342,8 +342,10 @@ function mobileAvailability(
   }
 
   if (usable.length > 0) {
+    // Past-only stops remain in the DB but are not upcoming — do not prompt
+    // customers to "see upcoming stops" when none exist.
     return {
-      statusLabel: "See upcoming stops",
+      statusLabel: "Not currently at a scheduled stop",
       scheduleLabel: null,
       isOpen: false,
       locationName: null,

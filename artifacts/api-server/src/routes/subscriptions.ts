@@ -20,6 +20,8 @@ import {
   createSubscriptionCheckoutSession,
   changeBusinessSubscriptionPlan,
   refreshBusinessSubscriptionFromStripe,
+  isComplimentaryPlan,
+  resolveAdminAssignedSubscriptionStatus,
 } from "../lib/stripe-billing";
 import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import {
@@ -309,15 +311,29 @@ adminRouter.put("/businesses/:id/subscription", async (req, res): Promise<void> 
   }
 
   const existing = await db.select().from(businessSubscriptionsTable).where(eq(businessSubscriptionsTable.businessId, businessId));
+  const existingSub = existing[0];
+
+  const status = resolveAdminAssignedSubscriptionStatus({
+    plan,
+    requestedStatus: parsed.data.status,
+    existingStripeSubscriptionId: existingSub?.stripeSubscriptionId,
+  });
 
   const values: Record<string, unknown> = {
     planId: parsed.data.planId,
-    status: parsed.data.status,
+    status,
   };
   if (parsed.data.trialEndsAt) values.trialEndsAt = new Date(parsed.data.trialEndsAt);
   if (parsed.data.renewalAt) values.renewalAt = new Date(parsed.data.renewalAt);
   if (parsed.data.notes !== undefined) values.notes = parsed.data.notes;
   if (parsed.data.billingInterval) values.billingInterval = parsed.data.billingInterval;
+
+  // Complimentary plans: set trial window when granting trial status and no explicit dates provided.
+  if (isComplimentaryPlan(plan) && status === "TRIAL" && !parsed.data.trialEndsAt && plan.trialDays > 0) {
+    const trialEndsAt = new Date(Date.now() + plan.trialDays * 24 * 60 * 60 * 1000);
+    values.trialEndsAt = trialEndsAt;
+    if (!parsed.data.renewalAt) values.renewalAt = trialEndsAt;
+  }
 
   let sub;
   if (existing.length > 0) {

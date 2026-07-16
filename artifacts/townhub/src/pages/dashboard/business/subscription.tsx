@@ -62,7 +62,6 @@ export default function BusinessSubscription() {
   const { toast } = useToast();
   const { business, isLoading: bizLoading } = useSelectedBusiness();
   const { syncOnce, invalidateBusinessHubQueries } = useSubscriptionStripeSync(business?.id);
-  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
   const [changePlanOpen, setChangePlanOpen] = useState(false);
   const [syncPending, setSyncPending] = useState(false);
   const [activationPhase, setActivationPhase] = useState<ActivationPhase>("idle");
@@ -198,12 +197,6 @@ export default function BusinessSubscription() {
     return "outline";
   }, [subscription, isCanceled, cancelScheduled]);
 
-  useEffect(() => {
-    if (subscription?.billingInterval) {
-      setBillingInterval(subscription.billingInterval);
-    }
-  }, [subscription?.billingInterval]);
-
   async function handleRefresh() {
     if (!business?.id) return;
     try {
@@ -215,7 +208,7 @@ export default function BusinessSubscription() {
 
   async function handleStartCheckout() {
     if (!business?.id || !subscription?.planId) return;
-    const interval = subscription.billingInterval ?? billingInterval;
+    const interval = subscription.billingInterval ?? "monthly";
     try {
       const result = await checkoutMutation.mutateAsync({
         id: business.id,
@@ -247,7 +240,8 @@ export default function BusinessSubscription() {
 
   const accessEndDate = subscription ? subscriptionAccessEndDate(subscription) : null;
   const canManageBilling = !storeDistribution && !complimentary && !!subscription?.stripeCustomerId;
-  const canChangePlan = !storeDistribution && !complimentary;
+  // Change Plan only after checkout is complete — before that, Start Free Trial uses the approved plan/interval.
+  const canChangePlan = !storeDistribution && !complimentary && !needsCheckout;
   const isRefreshing = isFetching || syncPending;
 
   useEffect(() => {
@@ -559,24 +553,9 @@ export default function BusinessSubscription() {
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
                       {subscription.plan.trialDays > 0
-                        ? `Start your ${subscription.plan.trialDays}-day free trial to activate paid features.`
-                        : "Complete checkout to activate your paid plan."}
+                        ? `Start your ${subscription.plan.trialDays}-day free trial on the ${formatBillingIntervalLabel(subscription.billingInterval)} ${subscription.plan.name} plan to activate paid features.`
+                        : `Complete checkout for the ${formatBillingIntervalLabel(subscription.billingInterval)} ${subscription.plan.name} plan to activate paid features.`}
                     </p>
-                    {(subscription.plan.yearlyPrice != null && subscription.plan.yearlyPrice > 0) && (
-                      <div className="flex gap-2">
-                        {(["monthly", "yearly"] as const).map((value) => (
-                          <Button
-                            key={value}
-                            type="button"
-                            size="sm"
-                            variant={billingInterval === value ? "default" : "outline"}
-                            onClick={() => setBillingInterval(value)}
-                          >
-                            {value === "monthly" ? "Monthly" : "Yearly"}
-                          </Button>
-                        ))}
-                      </div>
-                    )}
                     <LoadingButton
                       onClick={() => void handleStartCheckout()}
                       loading={checkoutMutation.isPending}
@@ -587,25 +566,27 @@ export default function BusinessSubscription() {
                   </div>
                 )}
 
-                {!storeDistribution && <div className="flex flex-wrap gap-2">
-                  {canChangePlan && business?.id && (
-                    <Button variant="default" onClick={() => setChangePlanOpen(true)}>
-                      Change Plan
-                    </Button>
-                  )}
-                  {canManageBilling && (
-                    <LoadingButton
-                      variant="outline"
-                      onClick={() => void handleOpenPortal()}
-                      loading={portalMutation.isPending}
-                      loadingText="Opening…"
-                      className="gap-2"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Manage Billing
-                    </LoadingButton>
-                  )}
-                </div>}
+                {!storeDistribution && !needsCheckout && (
+                  <div className="flex flex-wrap gap-2">
+                    {canChangePlan && business?.id && (
+                      <Button variant="default" onClick={() => setChangePlanOpen(true)}>
+                        Change Plan
+                      </Button>
+                    )}
+                    {canManageBilling && (
+                      <LoadingButton
+                        variant="outline"
+                        onClick={() => void handleOpenPortal()}
+                        loading={portalMutation.isPending}
+                        loadingText="Opening…"
+                        className="gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Manage Billing
+                      </LoadingButton>
+                    )}
+                  </div>
+                )}
 
                 {!storeDistribution && !needsCheckout && !complimentary && !subscription.stripeCustomerId && (
                   <p className="text-sm text-muted-foreground">
@@ -617,17 +598,17 @@ export default function BusinessSubscription() {
                   <p className="text-sm text-muted-foreground">
                     {storeDistribution
                       ? "Contact the platform administrator if you need help with your plan."
-                      : "To move to a paid plan, use Change Plan or contact the platform administrator."}
+                      : "Contact the platform administrator to move to a paid plan."}
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            {!storeDistribution && business?.id && (
+            {!storeDistribution && business?.id && canChangePlan && (
               <ChangePlanDialog
                 businessId={business.id}
                 currentPlanId={subscription.planId}
-                currentInterval={subscription.billingInterval ?? billingInterval}
+                currentInterval={subscription.billingInterval ?? "monthly"}
                 open={changePlanOpen}
                 onOpenChange={setChangePlanOpen}
               />

@@ -40,6 +40,7 @@ export {
   planStripePriceId,
   pickStripeSubscriptionToSync,
   requiresStripeSubscription,
+  resolveAdminAssignedSubscriptionStatus,
   resolveSubscriptionStatusFromStripe,
   subscriptionNeedsCheckout,
   trialDaysRemaining,

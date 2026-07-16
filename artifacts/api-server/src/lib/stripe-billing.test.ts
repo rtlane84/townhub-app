@@ -9,6 +9,7 @@ import {
   parseSubscriptionCheckoutBusinessId,
   planStripePriceId,
   requiresStripeSubscription,
+  resolveAdminAssignedSubscriptionStatus,
   resolveSubscriptionStatusFromStripe,
   subscriptionNeedsCheckout,
   trialDaysRemaining,
@@ -50,6 +51,46 @@ describe("stripe billing plan helpers", () => {
     assert.equal(isComplimentaryPlan(samplePlan({ monthlyPrice: "0", yearlyPrice: "0" })), true);
     assert.equal(requiresStripeSubscription(samplePlan()), true);
     assert.equal(requiresStripeSubscription(samplePlan({ monthlyPrice: "0", yearlyPrice: "0" })), false);
+  });
+
+  it("derives admin-assigned subscription status without unlocking paid plans early", () => {
+    assert.equal(
+      resolveAdminAssignedSubscriptionStatus({
+        plan: samplePlan(),
+        requestedStatus: "ACTIVE",
+        existingStripeSubscriptionId: null,
+      }),
+      "INCOMPLETE",
+    );
+    assert.equal(
+      resolveAdminAssignedSubscriptionStatus({
+        plan: samplePlan(),
+        requestedStatus: "ACTIVE",
+        existingStripeSubscriptionId: "sub_existing",
+      }),
+      "ACTIVE",
+    );
+    assert.equal(
+      resolveAdminAssignedSubscriptionStatus({
+        plan: samplePlan({ isBeta: true }),
+        requestedStatus: "ACTIVE",
+      }),
+      "BETA",
+    );
+    assert.equal(
+      resolveAdminAssignedSubscriptionStatus({
+        plan: samplePlan({ monthlyPrice: "0", yearlyPrice: "0", trialDays: 14 }),
+        requestedStatus: "ACTIVE",
+      }),
+      "TRIAL",
+    );
+    assert.equal(
+      resolveAdminAssignedSubscriptionStatus({
+        plan: samplePlan({ monthlyPrice: "0", yearlyPrice: "0", trialDays: 0 }),
+        requestedStatus: "ACTIVE",
+      }),
+      "ACTIVE",
+    );
   });
 
   it("resolves Stripe price IDs by billing interval", () => {

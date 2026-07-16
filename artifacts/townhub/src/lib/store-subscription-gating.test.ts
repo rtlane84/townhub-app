@@ -15,8 +15,8 @@ describe("store subscription gating", () => {
   it("prevents store builds from opening owner checkout or billing portal UI", () => {
     assert.match(subscriptionPage, /storeDistribution \|\| params\.get\("open"\) !== "billing"/);
     assert.match(subscriptionPage, /!storeDistribution && needsCheckout/);
-    assert.match(subscriptionPage, /!storeDistribution && <div className="flex flex-wrap gap-2">/);
-    assert.match(subscriptionPage, /!storeDistribution && business\?\.id/);
+    assert.match(subscriptionPage, /!storeDistribution && !needsCheckout/);
+    assert.match(subscriptionPage, /!storeDistribution && business\?\.id && canChangePlan/);
   });
 
   it("uses approval-email setup language in store builds", () => {

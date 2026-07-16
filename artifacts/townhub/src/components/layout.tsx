@@ -3,7 +3,7 @@ import { UserButton, useUser, SignInButton } from "@clerk/react";
 import {
   ShoppingBag, Store, LayoutDashboard, ShieldCheck, PlusCircle,
   Wrench, Menu, ExternalLink, Calendar, Truck, Package, HelpCircle, ArrowLeft,
-  UserRound,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useCart } from "./cart-context";
@@ -45,6 +45,22 @@ function PlatformLogo({ className, sizePx }: { className?: string; sizePx?: numb
       className={cn("text-primary shrink-0", className)}
       style={{ width: displaySize, height: displaySize }}
     />
+  );
+}
+
+const accountPageHref = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/account` || "/account";
+
+function HeaderUserButton() {
+  return (
+    <UserButton appearance={clerkUserButtonAppearance}>
+      <UserButton.MenuItems>
+        <UserButton.Link
+          label="Delete TownHub account"
+          labelIcon={<AlertTriangle className="h-4 w-4" aria-hidden />}
+          href={accountPageHref}
+        />
+      </UserButton.MenuItems>
+    </UserButton>
   );
 }
 
@@ -213,14 +229,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </SignInButton>
                   )}
                   {!hideHeaderAccount && clerkLoaded && isSignedIn && (
-                    <div className="flex items-center gap-1">
-                      <Button asChild variant="ghost" size="icon">
-                        <Link href="/account" aria-label="Account settings">
-                          <UserRound className="h-5 w-5" />
-                        </Link>
-                      </Button>
-                      <UserButton appearance={clerkUserButtonAppearance} />
-                    </div>
+                    <HeaderUserButton />
                   )}
                 </div>
               </div>
@@ -389,14 +398,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
 
             {!hideHeaderAccount && clerkLoaded && isSignedIn && (
-              <div className="flex items-center gap-1">
-                <Button asChild variant="ghost" size="icon">
-                  <Link href="/account" aria-label="Account settings">
-                    <UserRound className="h-5 w-5" />
-                  </Link>
-                </Button>
-                <UserButton appearance={clerkUserButtonAppearance} />
-              </div>
+              <HeaderUserButton />
             )}
 
             {/* Mobile hamburger — hidden in Capacitor (bottom tabs replace it) */}
