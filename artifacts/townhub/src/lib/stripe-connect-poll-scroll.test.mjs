@@ -18,6 +18,15 @@ describe("stripe focus scroll + poll limits", () => {
     assert.match(scrollHelper, /scrollTo/);
   });
 
+  it("retries Payments focus after Settings layout settles", () => {
+    const settings = readFileSync(
+      join(dir, "../pages/dashboard/business/settings.tsx"),
+      "utf8",
+    );
+    assert.match(settings, /1400/);
+    assert.match(settings, /isNativeApp\(\) \? "auto"/);
+  });
+
   it("caps Connect polling and skips when tab is hidden", () => {
     assert.match(card, /maxTicks = 8/);
     assert.match(card, /visibilityState === "hidden"/);

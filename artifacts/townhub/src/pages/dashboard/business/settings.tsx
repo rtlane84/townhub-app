@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useLocation } from "wouter";
 import { useUpdateBusiness, getGetMyBusinessQueryKey, getGetBusinessBySlugQueryKey } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { DashboardPageHeader } from "@/components/dashboard-page-header";
@@ -33,6 +34,7 @@ import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picke
 import { PaymentModeSelector } from "@/components/payment-mode-selector";
 import { BusinessStripePaymentsCard } from "@/components/business-stripe-payments-card";
 import { scrollElementIntoNearestContainer } from "@/lib/scroll-into-container";
+import { isNativeApp } from "@/lib/native-platform";
 import { StorefrontModeSelector } from "@/components/storefront-mode-selector";
 import { ImageField } from "@/components/image-field";
 import { StorefrontUrlField } from "@/components/storefront-url-field";
@@ -149,6 +151,7 @@ function Field({
 }
 
 export default function BusinessSettings() {
+  const [location] = useLocation();
   const { selectedBusinessId, business, ownedBusinesses, isLoading } = useSelectedBusiness();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -159,7 +162,7 @@ export default function BusinessSettings() {
     if (typeof window === "undefined") return false;
     const params = new URLSearchParams(window.location.search);
     return params.get("stripe") === "return";
-  }, []);
+  }, [location]);
   const shouldFocusStripe = useMemo(() => {
     if (typeof window === "undefined") return false;
     const params = new URLSearchParams(window.location.search);
@@ -167,17 +170,31 @@ export default function BusinessSettings() {
       params.get("stripeFocus") === "1" ||
       params.get("stripe") === "return"
     );
-  }, []);
+  }, [location]);
 
   useEffect(() => {
-    if (!shouldFocusStripe || !business) return;
-    const timer = window.setTimeout(() => {
+    if (!shouldFocusStripe || !business || isLoading) return;
+
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
       const el = document.getElementById("stripe-payments");
       if (!el) return;
-      scrollElementIntoNearestContainer(el, { behavior: "smooth", offsetPx: 16 });
-    }, 150);
-    return () => window.clearTimeout(timer);
-  }, [shouldFocusStripe, business?.id]);
+      // Instant on Cap — smooth scroll often no-ops or races layout in WKWebView.
+      scrollElementIntoNearestContainer(el, {
+        behavior: isNativeApp() ? "auto" : "smooth",
+        offsetPx: 16,
+      });
+    };
+
+    // Settings is long; images/sections finish after first paint. Retry so we
+    // still land on Payments after layout settles (without scrollIntoView).
+    const timers = [0, 100, 300, 700, 1400].map((ms) => window.setTimeout(run, ms));
+    return () => {
+      cancelled = true;
+      for (const id of timers) window.clearTimeout(id);
+    };
+  }, [shouldFocusStripe, business?.id, isLoading]);
 
   const setForm = (
     updater: FormState | ((prev: FormState) => FormState),
@@ -837,11 +854,11 @@ export default function BusinessSettings() {
                       : null}
                   </SettingsSection>
                 ) : null}
-
-                {business ? (
-                  <BusinessStripePaymentsCard businessId={business.id} stripeReturn={stripeReturn} />
-                ) : null}
               </>
+            ) : null}
+
+            {business ? (
+              <BusinessStripePaymentsCard businessId={business.id} stripeReturn={stripeReturn} />
             ) : null}
           </>
         )}

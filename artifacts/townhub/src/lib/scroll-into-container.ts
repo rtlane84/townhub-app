@@ -15,14 +15,18 @@ export function scrollElementIntoNearestContainer(
     findScrollParent(target);
 
   if (!scrollRoot) {
-    // Web fallback: still avoid block:"start" which can tug fixed chrome.
+    // Web fallback: nearest avoids yanking fixed chrome as hard as block:start.
     target.scrollIntoView({ behavior, block: "nearest", inline: "nearest" });
     return;
   }
 
   const rootRect = scrollRoot.getBoundingClientRect();
   const targetRect = target.getBoundingClientRect();
-  const nextTop = scrollRoot.scrollTop + (targetRect.top - rootRect.top) - offsetPx;
+  const delta = targetRect.top - rootRect.top - offsetPx;
+  // Skip tiny adjustments — avoids jitter when already roughly in view mid-retry.
+  if (Math.abs(delta) < 8) return;
+
+  const nextTop = scrollRoot.scrollTop + delta;
   scrollRoot.scrollTo({ top: Math.max(0, nextTop), behavior });
 }
 
