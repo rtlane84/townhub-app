@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   Home,
@@ -58,6 +58,11 @@ export function NativeBottomTabBar() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const { isSignedIn, isLoaded: clerkLoaded, user } = useUser();
+  // Cap sign-out can briefly (or stuck) report isLoaded=false; once Clerk has
+  // loaded once, keep showing sign-in controls instead of the skeleton forever.
+  const clerkEverLoadedRef = useRef(false);
+  if (clerkLoaded) clerkEverLoadedRef.current = true;
+  const showSignedOutAuth = clerkLoaded || clerkEverLoadedRef.current;
   const { signOut } = useClerk();
   const unregisterDevice = useUnregisterDevice();
   const {
@@ -354,7 +359,7 @@ export function NativeBottomTabBar() {
             <div className="mt-3 space-y-3">
               {!isSignedIn ? (
                 <div className="space-y-3 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-black/[0.04]">
-                  {clerkLoaded ? (
+                  {showSignedOutAuth ? (
                     <>
                       <NativeSocialSignInButtons />
                       <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
