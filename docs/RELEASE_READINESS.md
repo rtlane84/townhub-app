@@ -19,7 +19,7 @@ closed only when its implementation and required validation are complete.
 | API tests | Pass | 453/453 across 146 suites when permitted to open the temporary localhost listener used by the rate-limit test (July 16) |
 | Production build | Pass | `pnpm run build` passed July 16; bundled Vite production build and unsigned iPhone-simulator Release build are also recorded |
 | Provider E2E | Pass for current web gate | 2026-07-16 staging: public **3/3**, owner **4/4**, admin **2/2**, hosted Stripe checkout **1/1**, and full refund **1/1** passed. The Stripe helper handles prefilled email summaries and the current agent-disclosure control. Broader public/guest/owner/admin **11/11** was recorded 2026-07-15. Signed archive and devices remain |
-| Physical iPhone | In progress | Cap production auth (Apple returning, Google new/returning, Account sign-out UI) verified 2026-07-15; full matrix + signed archive still required before internal TestFlight |
+| Physical iPhone | In progress | Cap production auth (Apple returning, Google new/returning, Account sign-out UI) verified 2026-07-15. Staging native env gate, bundle preparation, and unsigned Release build passed 2026-07-16; local keychain currently has zero valid signing identities, so Apple Distribution certificate refresh + full matrix + signed archive remain required before internal TestFlight |
 
 ## Release blockers
 
