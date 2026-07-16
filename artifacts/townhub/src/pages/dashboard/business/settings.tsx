@@ -159,6 +159,26 @@ export default function BusinessSettings() {
     const params = new URLSearchParams(window.location.search);
     return params.get("stripe") === "return";
   }, []);
+  const shouldFocusStripe = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    return (
+      params.get("stripeFocus") === "1" ||
+      params.get("stripe") === "return" ||
+      window.location.hash === "#stripe-payments"
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!shouldFocusStripe || !business) return;
+    const timer = window.setTimeout(() => {
+      document.getElementById("stripe-payments")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [shouldFocusStripe, business?.id]);
 
   const setForm = (
     updater: FormState | ((prev: FormState) => FormState),

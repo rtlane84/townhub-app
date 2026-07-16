@@ -20,7 +20,8 @@ function parseBusinessId(raw: string | string[]): number {
 }
 
 function settingsReturnUrl(businessId: number): string {
-  return `${getAppBaseUrl()}/dashboard/business/settings?stripe=return&businessId=${businessId}`;
+  // HTTPS bounce required by Stripe Account Links; page deep-links into Cap.
+  return `${getAppBaseUrl()}/native-stripe-connect-return/?businessId=${businessId}`;
 }
 
 // GET /api/businesses/:businessId/stripe/status

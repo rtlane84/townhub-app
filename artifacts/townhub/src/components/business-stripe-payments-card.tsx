@@ -1,5 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
+import { App } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { openStripeCheckoutUrl } from "@/lib/capacitor-shell";
+import { isNativeApp } from "@/lib/native-platform";
 import {
   useGetBusinessStripeStatus,
   useStartBusinessStripeConnect,
@@ -53,18 +56,43 @@ function connectErrorMessage(err: unknown): string {
   return "Please try again.";
 }
 
+const NATIVE_CONNECT_PENDING_KEY = "townhub.nativeStripeConnectPending";
+
 export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: status, isLoading, refetch } = useGetBusinessStripeStatus(businessId, {
+  const { data: status, isLoading, isFetching, refetch } = useGetBusinessStripeStatus(businessId, {
     query: { enabled: businessId > 0, queryKey: getGetBusinessStripeStatusQueryKey(businessId) },
   });
+
+  const refreshConnectStatus = useCallback(
+    async (opts?: { quiet?: boolean }) => {
+      await refetch();
+      queryClient.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetBusinessQueryKey(businessId) });
+      queryClient.invalidateQueries({ queryKey: getGetBusinessStripeStatusQueryKey(businessId) });
+      if (!opts?.quiet) {
+        toast({
+          title: "Payment status refreshed",
+          description: "Pulled the latest Stripe connection state.",
+        });
+      }
+    },
+    [businessId, queryClient, refetch, toast],
+  );
 
   const startConnect = useStartBusinessStripeConnect({
     mutation: {
       onSuccess: (result) => {
         if (result.url) {
+          if (isNativeApp()) {
+            try {
+              sessionStorage.setItem(NATIVE_CONNECT_PENDING_KEY, String(businessId));
+            } catch {
+              // ignore
+            }
+          }
           openStripeCheckoutUrl(result.url);
         }
       },
@@ -80,14 +108,55 @@ export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) 
 
   useEffect(() => {
     if (!stripeReturn) return;
-    void refetch();
-    queryClient.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetBusinessQueryKey(businessId) });
+    void refreshConnectStatus({ quiet: true });
     toast({
       title: "Returned from Stripe",
       description: "Refreshing your payment connection status…",
     });
-  }, [stripeReturn, businessId, refetch, queryClient, toast]);
+  }, [stripeReturn, refreshConnectStatus, toast]);
+
+  // Cap: Stripe returns via HTTPS bounce → deep link, or the user closes the
+  // in-app browser. Refetch when the app is active again after Connect.
+  useEffect(() => {
+    if (!isNativeApp() || businessId <= 0) return;
+
+    const maybeRefresh = () => {
+      let pending: string | null = null;
+      try {
+        pending = sessionStorage.getItem(NATIVE_CONNECT_PENDING_KEY);
+      } catch {
+        pending = null;
+      }
+      if (pending !== String(businessId) && !stripeReturn) return;
+      try {
+        sessionStorage.removeItem(NATIVE_CONNECT_PENDING_KEY);
+      } catch {
+        // ignore
+      }
+      void refreshConnectStatus({ quiet: true });
+    };
+
+    const browserSub = Browser.addListener("browserFinished", maybeRefresh);
+    const appSub = App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) maybeRefresh();
+    });
+
+    return () => {
+      void browserSub.then((h) => h.remove());
+      void appSub.then((h) => h.remove());
+    };
+  }, [businessId, refreshConnectStatus, stripeReturn]);
+
+  // While Stripe is still verifying, poll so owners don't need to tab-switch.
+  useEffect(() => {
+    if (status?.paymentStatus !== "pending" && status?.paymentStatus !== "restricted") {
+      return;
+    }
+    const id = window.setInterval(() => {
+      void refreshConnectStatus({ quiet: true });
+    }, 12_000);
+    return () => window.clearInterval(id);
+  }, [status?.paymentStatus, refreshConnectStatus]);
 
   const connected = status?.paymentStatus === "connected";
   const pending = status?.paymentStatus === "pending" || status?.paymentStatus === "restricted";
@@ -104,7 +173,7 @@ export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) 
   }
 
   return (
-    <Card>
+    <Card id="stripe-payments" data-testid="stripe-payments-card">
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <CreditCard className="h-4 w-4" />
@@ -147,6 +216,9 @@ export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) 
             ) : (
               <p className="text-sm text-muted-foreground">
                 Connect Stripe to accept online card payments. Pay-at-pickup orders still work without Stripe.
+                {pending
+                  ? " Stripe may still be verifying — use Refresh status or wait a moment."
+                  : null}
               </p>
             )}
 
@@ -181,17 +253,21 @@ export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) 
                 </LoadingButton>
               )}
 
-              {pending && !connected ? (
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    void refetch();
-                    queryClient.invalidateQueries({ queryKey: getGetBusinessStripeStatusQueryKey(businessId) });
-                  }}
-                >
-                  Refresh status
-                </Button>
-              ) : null}
+              <Button
+                variant="ghost"
+                disabled={isFetching}
+                onClick={() => void refreshConnectStatus()}
+                data-testid="button-refresh-stripe-status"
+              >
+                {isFetching ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Refreshing…
+                  </>
+                ) : (
+                  "Refresh status"
+                )}
+              </Button>
             </div>
           </>
         )}
