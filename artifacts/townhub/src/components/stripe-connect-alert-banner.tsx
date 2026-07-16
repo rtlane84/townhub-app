@@ -47,11 +47,7 @@ export function StripeConnectAlertBanner() {
               size="sm"
               className="h-8"
               data-testid="stripe-connect-banner-settings"
-              onClick={() =>
-                setLocation(
-                  `/dashboard/business/settings?stripeFocus=1&businessId=${business?.id ?? ""}`,
-                )
-              }
+              onClick={() => setLocation("/dashboard/business/settings")}
             >
               Open Settings
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />

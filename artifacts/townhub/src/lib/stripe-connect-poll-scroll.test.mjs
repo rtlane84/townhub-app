@@ -5,26 +5,25 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const dir = dirname(fileURLToPath(import.meta.url));
-const scrollHelper = readFileSync(join(dir, "scroll-into-container.ts"), "utf8");
 const card = readFileSync(
   join(dir, "../components/business-stripe-payments-card.tsx"),
   "utf8",
 );
+const settings = readFileSync(
+  join(dir, "../pages/dashboard/business/settings.tsx"),
+  "utf8",
+);
+const banner = readFileSync(
+  join(dir, "../components/stripe-connect-alert-banner.tsx"),
+  "utf8",
+);
 
-describe("stripe focus scroll + poll limits", () => {
-  it("avoids Element.scrollIntoView for native focus", () => {
-    assert.match(scrollHelper, /scrollElementIntoNearestContainer/);
-    assert.match(scrollHelper, /data-native-scroll-root/);
-    assert.match(scrollHelper, /scrollTo/);
-  });
-
-  it("retries Payments focus after Settings layout settles", () => {
-    const settings = readFileSync(
-      join(dir, "../pages/dashboard/business/settings.tsx"),
-      "utf8",
-    );
-    assert.match(settings, /1400/);
-    assert.match(settings, /isNativeApp\(\) \? "auto"/);
+describe("stripe Connect Settings UX", () => {
+  it("opens Settings without scroll-to-Payments focus", () => {
+    assert.match(banner, /setLocation\("\/dashboard\/business\/settings"\)/);
+    assert.doesNotMatch(banner, /stripeFocus/);
+    assert.doesNotMatch(settings, /shouldFocusStripe/);
+    assert.doesNotMatch(settings, /scrollIntoView|scrollElementIntoNearestContainer/);
   });
 
   it("caps Connect polling and skips when tab is hidden", () => {

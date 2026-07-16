@@ -37,7 +37,6 @@
         var qs = new URLSearchParams();
         qs.set("stripe", "return");
         if (businessId) qs.set("businessId", businessId);
-        qs.set("stripeFocus", "1");
         var search = "?" + qs.toString();
         var path = "/dashboard/business/settings" + search;
         var deepLink = "townhub:/" + path;

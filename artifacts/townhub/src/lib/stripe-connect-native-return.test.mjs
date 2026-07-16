@@ -30,8 +30,9 @@ describe("Stripe Connect native return UX", () => {
     assert.match(card, /NATIVE_CONNECT_PENDING_KEY/);
   });
 
-  it("banner deep-links to Payments on Settings", () => {
-    assert.match(banner, /stripeFocus=1/);
+  it("banner opens Settings without Payments focus params", () => {
+    assert.match(banner, /setLocation\("\/dashboard\/business\/settings"\)/);
+    assert.doesNotMatch(banner, /stripeFocus/);
     assert.doesNotMatch(banner, /#stripe-payments/);
   });
 
