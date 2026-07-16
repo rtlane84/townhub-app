@@ -71,13 +71,18 @@ Existing test data may remain in staging. Do not copy it into production unless 
 For a staging TestFlight build:
 
 ```bash
-DEPLOYMENT_ENVIRONMENT=staging \
-VITE_DISTRIBUTION_CHANNEL=app-store \
-pnpm run release:check-env -- --environment staging --component native
-pnpm --filter @workspace/townhub run ios:sync
+pnpm release:ios:bump-build
+pnpm release:ios:staging
 ```
 
-For the App Store production candidate, rebuild with production values, increment the iOS build number, archive again, and repeat the native smoke matrix. Do not promote a staging-targeted binary to production review.
+For the App Store production candidate:
+
+```bash
+pnpm release:ios:bump-build
+pnpm release:ios:production
+```
+
+Day-to-day branch flow, versioning, and when a new IPA is required: [RELEASE_PROCESS.md](./RELEASE_PROCESS.md). Do not promote a staging-targeted binary to production review.
 
 ## Isolation verification
 

@@ -11,6 +11,11 @@
     "audit:health": "pnpm --filter @workspace/scripts run health",
     "audit:health:bundle": "pnpm --filter @workspace/townhub run build && pnpm --filter @workspace/scripts run health -- --bundle",
     "release:check-env": "node scripts/validate-release-env.mjs",
+    "release:ios:staging": "node scripts/ios-prepare.mjs staging",
+    "release:ios:production": "node scripts/ios-prepare.mjs production",
+    "release:ios:bump-build": "node scripts/bump-ios-version.mjs --build",
+    "release:ios:set-version": "node scripts/bump-ios-version.mjs --marketing",
+    "release:ios:open": "pnpm --filter @workspace/townhub run ios:open",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug"

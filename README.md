@@ -81,6 +81,7 @@ Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 cha
 | [docs/SETUP.md](docs/SETUP.md) | Full local setup, env vars, providers, troubleshooting |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design for developers |
 | [SECURITY.md](SECURITY.md) | Auth, authorization, and security model |
+| [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) | Day-to-day web + iOS release flow, versioning, and scripts |
 | [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) | Current release blockers and validation evidence |
 | [PRODUCTION.md](PRODUCTION.md) | Production deployment and verification checklist |
 | [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md) | Staging and production isolation |

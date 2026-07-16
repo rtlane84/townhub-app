@@ -56,20 +56,22 @@ Refresh owner auth storage first if sessions expired (`docs/PLAYWRIGHT_E2E.md`).
 2. **Internal TestFlight build (staging API)** — preferred first archive
 
 ```bash
-set -a && source .env.native.staging && set +a
-pnpm --filter @workspace/townhub run ios:sync
+pnpm release:ios:bump-build
+pnpm release:ios:staging
+pnpm release:ios:open
 ```
 
-Xcode: open `artifacts/townhub/ios/App/App.xcworkspace` → bump build number → Run on physical iPhone → smoke matrix below → **Product → Archive** → Validate → Upload to TestFlight.
+Xcode: Run on physical iPhone → smoke matrix below → **Product → Archive** → Validate → Upload to TestFlight. Day-to-day process: [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
 
 3. **App Store candidate (production API)** — after internal TF looks good
 
 ```bash
-set -a && source .env.native.production && set +a
-pnpm --filter @workspace/townhub run ios:sync
+pnpm release:ios:bump-build
+pnpm release:ios:production
+pnpm release:ios:open
 ```
 
-Repeat smoke + archive with a new build number. Never submit a staging-targeted archive as the App Store binary.
+Repeat smoke + archive. Never submit a staging-targeted archive as the App Store binary.
 
 ### Physical-device smoke (minimum for archive)
 

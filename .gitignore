@@ -32,6 +32,8 @@ node_modules
 .env
 .env.local
 .env.*.local
+.env.native.staging
+.env.native.production
 
 # misc
 /.sass-cache

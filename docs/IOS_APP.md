@@ -37,14 +37,21 @@ The API must allow the fixed bundled WebView origin:
 NATIVE_ALLOWED_ORIGINS=capacitor://localhost
 ```
 
-Validate the selected environment before syncing:
+Validate the selected environment before syncing (or use the release prepare scripts):
+
+```bash
+pnpm release:ios:staging
+# or: pnpm release:ios:production
+```
+
+Equivalent manual steps:
 
 ```bash
 pnpm run release:check-env -- --environment staging --component native
 pnpm --filter @workspace/townhub run ios:sync
 ```
 
-`ios:sync` builds the Vite application and copies `dist/public` into the native project. Any React code, help copy, legal copy, build-time variable, Capacitor configuration, plugin, entitlement, or bundled asset change requires a new iOS build and App Store Connect upload. A website deploy alone does not update an installed app.
+`ios:sync` builds the Vite application and copies `dist/public` into the native project. Any React code, help copy, legal copy, build-time variable, Capacitor configuration, plugin, entitlement, or bundled asset change requires a new iOS build and App Store Connect upload. A website deploy alone does not update an installed app. See [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) for day-to-day branch and versioning rules.
 
 ## Environment targeting
 
@@ -159,17 +166,33 @@ Before archive, verify in Xcode:
 - Release configuration uses the expected entitlements
 - privacy manifest is present in the built product
 
+## Day-to-day releases
+
+For branch flow (`develop` → staging, `main` → production), when a new IPA is required, version numbering, and the full script cheat sheet, see [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
+
+Quick prepare commands (replaces manual `source .env.native.*` + `ios:sync`):
+
+```bash
+pnpm release:ios:bump-build          # every App Store Connect upload
+pnpm release:ios:staging             # TestFlight → staging API
+# or
+pnpm release:ios:production          # App Store candidate → production API
+pnpm release:ios:open
+```
+
+Then smoke on a physical iPhone and use **Product → Archive** in Xcode.
+
 ## TestFlight workflow
 
 1. Enroll in the Apple Developer Program and create the App ID/App Store Connect record.
 2. Configure Clerk, Apple, APNs, staging API CORS, Sentry, and all staging providers.
-3. Run repository release gates and the native environment check.
-4. Run `ios:sync`, open the workspace, and build Release for a generic iOS device.
-5. Test on a physical iPhone before archiving.
+3. Run `pnpm release:ios:bump-build` then `pnpm release:ios:staging` (loads `.env.native.staging`, runs the native env gate, and `ios:sync`).
+4. Open the workspace with `pnpm release:ios:open` and build Release for a generic iOS device or physical iPhone.
+5. Test on a physical iPhone before archiving (matrix below).
 6. Archive with **Product → Archive**, validate, and upload.
 7. Complete App Privacy, privacy/support URLs, age rating, export compliance, screenshots, review notes, and a review account that exposes customer, owner, and admin behavior as appropriate.
 8. Complete internal TestFlight, then external beta review if used.
-9. Rebuild against production for the App Store candidate and repeat the smoke matrix.
+9. Rebuild against production with `pnpm release:ios:production` (and bump build again) for the App Store candidate; repeat the smoke matrix. Never submit a staging-targeted archive.
 
 ## Required physical-device matrix
 

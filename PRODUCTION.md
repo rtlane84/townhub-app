@@ -394,7 +394,7 @@ Post-beta hardening and scaling items — not blockers for first-town launch aft
 | Guest token TTL / revocation | v2 tokens expire after 90 days (legacy v1 still accepted); shorter TTL or server-side revocation can wait until post-beta |
 | Schema change rollback | Drizzle `push` workflow has no in-repo migrations — run pre-push dumps and restore drills before large schema changes at scale ([DATABASE_BACKUP_AND_RECOVERY.md](docs/DATABASE_BACKUP_AND_RECOVERY.md)) |
 
-Active development tracking lives in **Linear**. Release blockers and validation evidence live in [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md).
+Active development tracking lives in **Linear**. Release blockers and validation evidence live in [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md). Day-to-day promote / TestFlight / versioning steps live in [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md).
 
 ---
 
@@ -402,6 +402,7 @@ Active development tracking lives in **Linear**. Release blockers and validation
 
 - [docs/SETUP.md](docs/SETUP.md) — local development
 - [SECURITY.md](SECURITY.md) — authorization model
+- [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) — day-to-day web + iOS release flow and scripts
 - [docs/DATABASE_BACKUP_AND_RECOVERY.md](docs/DATABASE_BACKUP_AND_RECOVERY.md) — backup, restore, and recovery plan
 - [docs/PRODUCTION_MONITORING.md](docs/PRODUCTION_MONITORING.md) — health and ops logging
 - [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) — notification flows
