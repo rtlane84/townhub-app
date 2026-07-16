@@ -147,14 +147,28 @@ export function BusinessStripePaymentsCard({ businessId, stripeReturn }: Props) 
     };
   }, [businessId, refreshConnectStatus, stripeReturn]);
 
-  // While Stripe is still verifying, poll so owners don't need to tab-switch.
+  // Poll only while this Settings Payments card is mounted AND Connect is
+  // still pending/restricted. Other pages do not run this effect. Caps +
+  // visibility checks keep background churn low.
   useEffect(() => {
     if (status?.paymentStatus !== "pending" && status?.paymentStatus !== "restricted") {
       return;
     }
+
+    let ticks = 0;
+    const maxTicks = 8; // ~8 * 20s ≈ 2.5 minutes, then stop
     const id = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+        return;
+      }
+      ticks += 1;
+      if (ticks > maxTicks) {
+        window.clearInterval(id);
+        return;
+      }
       void refreshConnectStatus({ quiet: true });
-    }, 12_000);
+    }, 20_000);
+
     return () => window.clearInterval(id);
   }, [status?.paymentStatus, refreshConnectStatus]);
 

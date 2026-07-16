@@ -49,7 +49,7 @@ export function StripeConnectAlertBanner() {
               data-testid="stripe-connect-banner-settings"
               onClick={() =>
                 setLocation(
-                  `/dashboard/business/settings?stripeFocus=1&businessId=${business?.id ?? ""}#stripe-payments`,
+                  `/dashboard/business/settings?stripeFocus=1&businessId=${business?.id ?? ""}`,
                 )
               }
             >

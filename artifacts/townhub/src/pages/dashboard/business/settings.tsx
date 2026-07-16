@@ -32,6 +32,7 @@ import type { BusinessDayHours, PaymentMode, BusinessType, StorefrontMode, Order
 import { ColorPickerField, ColorPreviewSwatches } from "@/components/color-picker-field";
 import { PaymentModeSelector } from "@/components/payment-mode-selector";
 import { BusinessStripePaymentsCard } from "@/components/business-stripe-payments-card";
+import { scrollElementIntoNearestContainer } from "@/lib/scroll-into-container";
 import { StorefrontModeSelector } from "@/components/storefront-mode-selector";
 import { ImageField } from "@/components/image-field";
 import { StorefrontUrlField } from "@/components/storefront-url-field";
@@ -164,18 +165,16 @@ export default function BusinessSettings() {
     const params = new URLSearchParams(window.location.search);
     return (
       params.get("stripeFocus") === "1" ||
-      params.get("stripe") === "return" ||
-      window.location.hash === "#stripe-payments"
+      params.get("stripe") === "return"
     );
   }, []);
 
   useEffect(() => {
     if (!shouldFocusStripe || !business) return;
     const timer = window.setTimeout(() => {
-      document.getElementById("stripe-payments")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      const el = document.getElementById("stripe-payments");
+      if (!el) return;
+      scrollElementIntoNearestContainer(el, { behavior: "smooth", offsetPx: 16 });
     }, 150);
     return () => window.clearTimeout(timer);
   }, [shouldFocusStripe, business?.id]);

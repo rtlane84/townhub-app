@@ -32,7 +32,7 @@ describe("Stripe Connect native return UX", () => {
 
   it("banner deep-links to Payments on Settings", () => {
     assert.match(banner, /stripeFocus=1/);
-    assert.match(banner, /#stripe-payments/);
+    assert.doesNotMatch(banner, /#stripe-payments/);
   });
 
   it("HTTPS bounce deep-links into Cap Settings", () => {
