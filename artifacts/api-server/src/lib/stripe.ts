@@ -21,12 +21,14 @@ export type CreateStripeCheckoutSessionInput = {
   successUrl: string;
   cancelUrl: string;
   metadata: Record<string, string>;
+  /** Prefills Checkout email when provided (guest or signed-in customer). */
+  customerEmail?: string | null;
 };
 
 export async function createStripeCheckoutSession(
   input: CreateStripeCheckoutSessionInput,
 ): Promise<{ url: string | null; sessionId: string | null; mockMode: boolean }> {
-  const { lineItems, connectedAccountId, successUrl, cancelUrl, metadata } = input;
+  const { lineItems, connectedAccountId, successUrl, cancelUrl, metadata, customerEmail } = input;
 
   if (!stripe) {
     if (!isMockCheckoutAllowed()) {
@@ -38,6 +40,8 @@ export async function createStripeCheckoutSession(
       mockMode: true,
     };
   }
+
+  const trimmedEmail = customerEmail?.trim();
 
   // Omit payment_method_types so Stripe dynamic payment methods apply
   // (Dashboard-configured methods). Do not hardcode ["card"].
@@ -55,6 +59,7 @@ export async function createStripeCheckoutSession(
       metadata,
       success_url: successUrl,
       cancel_url: cancelUrl,
+      ...(trimmedEmail ? { customer_email: trimmedEmail } : {}),
     },
     {
       stripeAccount: connectedAccountId,

@@ -174,7 +174,7 @@ Stripe card checkout and refund workflows run only when `E2E_STRIPE_CHECKOUT=1` 
 
 Without that, pay-at-pickup smoke tests still run; Stripe workflow specs skip with a clear message.
 
-As of July 15, 2026: staging Sandbox Connect + online payments are ready. Authed helper calls against `E2E_BASE_URL` alone used to hit the SPA (`staging.townhub.io/api` → HTML); `pageApiJson` now always uses `E2E_API_URL`. Remaining risk is Playwright fill of Stripe hosted Checkout card iframes.
+As of July 15, 2026: staging Sandbox Connect + online payments are ready. Authed helper calls against `E2E_BASE_URL` alone used to hit the SPA (`staging.townhub.io/api` → HTML); `pageApiJson` now always uses `E2E_API_URL`. Hosted Checkout uses Stripe’s Accordion payment UI — the helper selects **Card**, fills email if needed, then card iframes (not the older always-visible card frame).
 
 ## Debugging failures
 

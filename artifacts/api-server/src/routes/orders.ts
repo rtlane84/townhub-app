@@ -1119,6 +1119,7 @@ router.post("/checkout/intents", async (req, res): Promise<void> => {
     connectedAccountId: business.stripeConnectedAccountId,
     successUrl,
     cancelUrl,
+    customerEmail: d.customerEmail.trim(),
     metadata: {
       pendingCheckoutId: String(pending.id),
       connectedAccountId: business.stripeConnectedAccountId,

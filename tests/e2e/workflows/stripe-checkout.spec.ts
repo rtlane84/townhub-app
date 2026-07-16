@@ -24,6 +24,7 @@ test.describe("Stripe checkout workflow", () => {
     page,
     browser,
   }) => {
+    test.setTimeout(180_000);
     const ownerContext = await createAuthedApiContext(browser, ownerAuthStatePath());
     const ownerPage = await ownerContext.newPage();
     const stripeBusiness = await findOwnerStripeCheckoutBusiness(ownerPage);
