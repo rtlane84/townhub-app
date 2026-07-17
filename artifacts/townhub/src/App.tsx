@@ -2,7 +2,11 @@ import { useEffect, useRef, useState, Suspense, type ComponentType } from "react
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useAuth, AuthenticateWithRedirectCallback } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
-import { resolveClerkPublishableKey, resolveClerkProxyUrl } from "@/lib/clerk-config";
+import {
+  resolveClerkPublishableKey,
+  resolveClerkProxyUrl,
+  resolveClerkStandardBrowser,
+} from "@/lib/clerk-config";
 import { clerkAuthAppearance, nativeClerkAuthAppearance as nativeClerkAuthBase } from "@/lib/clerk-appearance";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
@@ -87,6 +91,7 @@ const clerkPubKey = resolveClerkPublishableKey();
 // Empty in dev (Clerk loads from its CDN directly). Auto-populated in prod by Replit.
 // Native app-store builds must never use a localhost proxy — see clerk-config.ts.
 const clerkProxyUrl = resolveClerkProxyUrl();
+const clerkStandardBrowser = resolveClerkStandardBrowser();
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function stripBase(path: string): string {
@@ -421,6 +426,7 @@ function ClerkProviderWithRoutes() {
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
+      standardBrowser={clerkStandardBrowser}
       appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}

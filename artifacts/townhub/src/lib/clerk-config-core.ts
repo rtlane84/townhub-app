@@ -34,3 +34,11 @@ export function resolveClerkProxyUrlForRuntime(options: {
     return undefined;
   }
 }
+
+/**
+ * Clerk must not rely on standard browser cookies inside a Capacitor WebView.
+ * Native mode lets Clerk use its non-browser session persistence instead.
+ */
+export function resolveClerkStandardBrowserForRuntime(isNative: boolean): boolean {
+  return !isNative;
+}

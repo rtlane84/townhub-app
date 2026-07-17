@@ -5,6 +5,7 @@ import { getApiBaseUrl } from "@/lib/api-base-url";
 import { initCapacitorShell } from "@/lib/capacitor-shell";
 import { promoteNativeSsoPathParamsToSearch } from "@/lib/native-oauth";
 import { isNativeApp } from "@/lib/native-platform";
+import { initializeNativeClerkTokenTransport } from "@/lib/native-clerk-token-transport";
 import App from "./App";
 import "./index.css";
 
@@ -20,6 +21,10 @@ if (isNativeApp() && !apiBaseUrl) {
   );
 }
 
-initCapacitorShell();
+async function bootstrap(): Promise<void> {
+  await initializeNativeClerkTokenTransport();
+  initCapacitorShell();
+  createRoot(document.getElementById("root")!).render(<App />);
+}
 
-createRoot(document.getElementById("root")!).render(<App />);
+void bootstrap();

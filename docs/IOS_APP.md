@@ -82,7 +82,7 @@ Apple uses the **native `ASAuthorization` sheet** — no browser, no redirect:
 
 1. `AuthSession.appleSignIn()` (in the `@townhub/capacitor-auth-session` plugin, `AuthenticationServices` — a built-in framework, no external SDK) presents the Apple sheet and returns the **identity token** (JWT). A **nonce** is required; without it Clerk rejects with “not authorized”.
 2. Clerk token exchange uses **`oauth_token_apple`**. Production treats each Apple token as one-shot: **SignIn first** (returning users). If Clerk reports transferable / no account, present Apple **again** for a fresh token and **`signUp.create`** with that token. Do not `transfer: true` or reuse the first token — both fail on Production.
-3. `clerk.setActive({ session })` establishes the session in the WebView.
+3. `clerk.setActive({ session })` establishes the session in the WebView. The app initializes Clerk with `standardBrowser: false` on native and persists Clerk's rotating native client token in the iOS Keychain so the session can be restored after app termination.
 
 **Required config for the token to verify (staging + production):**
 
@@ -218,6 +218,7 @@ Then smoke on a physical iPhone and use **Product → Archive** in Xcode.
 | Google button missing on iOS | Rebuild with this branch; Google is shown again via native GIDSignIn. |
 | Google Sign-In config error on tap | Set `VITE_GOOGLE_IOS_CLIENT_ID` + `VITE_GOOGLE_SERVER_CLIENT_ID` in `.env.native.staging`, re-run `ios:sync`, and enable Clerk Google **custom credentials** with the Web client. |
 | Google Sign-In sheet fails / no callback | Confirm `Info.plist` has `GIDClientID` and the reversed iOS client URL scheme; AppDelegate must call `GIDSignIn.sharedInstance.handle(url)`. |
+| Signed out whenever the app is closed | Confirm the native bundle initializes Clerk with `standardBrowser: false` and includes the Keychain-backed Clerk client-token transport, then rebuild and reinstall/update the TestFlight app. A web deploy alone cannot change the bundled Clerk configuration. |
 | `x.map` / `x.filter` is not a function on native | List API payload wasn’t an array. Public pages use `asArray()`. Re-check Cap Cookies/Http are disabled. |
 | Generic “TownHub” branding / empty home data / “Loading sign-in…” forever | Native bundle missing `VITE_API_BASE_URL` and/or baked-in `VITE_CLERK_PROXY_URL` from root `.env`. Source `.env.native.staging` (see `.env.native.staging.example`), confirm `ios:sync` preflight passes, rebuild from Xcode. Home should show **ClayTownHub** when API is reachable. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |

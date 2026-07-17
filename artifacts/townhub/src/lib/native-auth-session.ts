@@ -44,10 +44,17 @@ export interface GoogleSignInResult {
   name?: string;
 }
 
+export interface ClerkClientTokenResult {
+  token: string | null;
+}
+
 export interface AuthSessionPlugin {
   openAuthSession(options: OpenAuthSessionOptions): Promise<OpenAuthSessionResult>;
   appleSignIn(options?: AppleSignInOptions): Promise<AppleSignInResult>;
   googleSignIn(options: GoogleSignInOptions): Promise<GoogleSignInResult>;
+  getClerkClientToken(): Promise<ClerkClientTokenResult>;
+  saveClerkClientToken(options: { token: string }): Promise<void>;
+  clearClerkClientToken(): Promise<void>;
 }
 
 export const AuthSession = registerPlugin<AuthSessionPlugin>("AuthSession", {
@@ -61,5 +68,8 @@ export const AuthSession = registerPlugin<AuthSessionPlugin>("AuthSession", {
     googleSignIn: async () => {
       throw new Error("AuthSession.googleSignIn is only available in the native app.");
     },
+    getClerkClientToken: async () => ({ token: null }),
+    saveClerkClientToken: async () => undefined,
+    clearClerkClientToken: async () => undefined,
   }),
 });

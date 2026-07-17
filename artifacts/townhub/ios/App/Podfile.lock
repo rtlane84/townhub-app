@@ -130,7 +130,7 @@ SPEC CHECKSUMS:
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
   PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  TownhubCapacitorAuthSession: ee3012df22db3577cc8df71c415c5fefd1a28aa5
+  TownhubCapacitorAuthSession: d2890fe28a406bcc8f3b151e7837d32f3dfe2986
 
 PODFILE CHECKSUM: d8f66bd1712c1497ded867763cbe998a3f592177
 

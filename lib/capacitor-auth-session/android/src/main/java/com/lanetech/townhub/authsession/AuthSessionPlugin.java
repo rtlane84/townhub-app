@@ -15,4 +15,19 @@ public class AuthSessionPlugin extends Plugin {
     public void openAuthSession(PluginCall call) {
         call.reject("AuthSession.openAuthSession is not implemented on Android yet", "AUTH_UNSUPPORTED");
     }
+
+    @PluginMethod
+    public void getClerkClientToken(PluginCall call) {
+        call.reject("Clerk token storage is not implemented on Android yet", "AUTH_UNSUPPORTED");
+    }
+
+    @PluginMethod
+    public void saveClerkClientToken(PluginCall call) {
+        call.reject("Clerk token storage is not implemented on Android yet", "AUTH_UNSUPPORTED");
+    }
+
+    @PluginMethod
+    public void clearClerkClientToken(PluginCall call) {
+        call.reject("Clerk token storage is not implemented on Android yet", "AUTH_UNSUPPORTED");
+    }
 }

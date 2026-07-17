@@ -2,11 +2,13 @@ import { isNativeApp } from "@/lib/native-platform";
 import {
   resolveClerkPublishableKeyForRuntime,
   resolveClerkProxyUrlForRuntime,
+  resolveClerkStandardBrowserForRuntime,
 } from "@/lib/clerk-config-core";
 
 export {
   resolveClerkPublishableKeyForRuntime,
   resolveClerkProxyUrlForRuntime,
+  resolveClerkStandardBrowserForRuntime,
 } from "@/lib/clerk-config-core";
 
 /** Clerk publishable key for the current runtime. */
@@ -24,4 +26,9 @@ export function resolveClerkProxyUrl(): string | undefined {
     proxyUrl: import.meta.env.VITE_CLERK_PROXY_URL,
     isNative: isNativeApp(),
   });
+}
+
+/** Whether Clerk can use normal browser-cookie session handling. */
+export function resolveClerkStandardBrowser(): boolean {
+  return resolveClerkStandardBrowserForRuntime(isNativeApp());
 }
