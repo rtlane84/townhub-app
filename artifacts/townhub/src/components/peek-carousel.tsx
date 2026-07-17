@@ -102,25 +102,29 @@ export function PeekCarousel({
 
       <div className="mt-3 flex items-center justify-between gap-3">
         <div
-          className="flex min-h-9 items-center gap-1.5"
-          role="tablist"
+          className="flex min-h-11 items-center"
+          role="group"
           aria-label={label ? `${label} slides` : "Slides"}
         >
           {Array.from({ length: snapCount }).map((_, index) => (
             <button
               key={index}
               type="button"
-              role="tab"
-              aria-selected={index === selected}
               aria-label={`Go to slide ${index + 1}`}
-              className={cn(
-                "h-2 rounded-full transition-all",
-                index === selected
-                  ? "w-5 bg-primary"
-                  : "w-2 bg-muted-foreground/25",
-              )}
+              aria-current={index === selected ? "true" : undefined}
+              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => api?.scrollTo(index)}
-            />
+            >
+              <span
+                className={cn(
+                  "h-2 rounded-full transition-all",
+                  index === selected
+                    ? "w-5 bg-primary"
+                    : "w-2 bg-muted-foreground/40",
+                )}
+                aria-hidden
+              />
+            </button>
           ))}
         </div>
         <div className="flex items-center gap-2">
@@ -128,7 +132,7 @@ export function PeekCarousel({
             type="button"
             variant="outline"
             size="icon"
-            className="h-9 w-9 shrink-0 rounded-full"
+            className="h-11 w-11 shrink-0 rounded-full"
             disabled={!canPrev}
             onClick={() => api?.scrollPrev()}
             aria-label="Previous"
@@ -139,7 +143,7 @@ export function PeekCarousel({
             type="button"
             variant="outline"
             size="icon"
-            className="h-9 w-9 shrink-0 rounded-full"
+            className="h-11 w-11 shrink-0 rounded-full"
             disabled={!canNext}
             onClick={() => api?.scrollNext()}
             aria-label="Next"

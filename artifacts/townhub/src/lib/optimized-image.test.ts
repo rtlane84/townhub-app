@@ -26,9 +26,9 @@ describe("optimized-image", () => {
   });
 
   it("builds responsive srcset descriptors", () => {
-    const srcSet = buildOptimizedSrcSet(supabaseUrl, [640, 1280], "avif");
+    const srcSet = buildOptimizedSrcSet(supabaseUrl, [640, 1280], "webp");
     assert.match(srcSet, /640w/);
     assert.match(srcSet, /1280w/);
-    assert.match(srcSet, /fm=avif/);
+    assert.match(srcSet, /fm=webp/);
   });
 });

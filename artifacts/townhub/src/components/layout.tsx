@@ -26,14 +26,27 @@ import { NativeBottomTabBar } from "@/components/native-bottom-tab-bar";
 import { NativePullToRefresh } from "@/components/native-pull-to-refresh";
 import { triggerTabChangeHaptic } from "@/lib/native-haptics";
 import { useKitchenDisplayMode } from "@/hooks/kitchen-display-mode";
+import { OptimizedMediaImage } from "@/components/optimized-media-image";
+import { LOGO_IMAGE_WIDTHS } from "@/lib/optimized-image";
 
-function PlatformLogo({ className, sizePx }: { className?: string; sizePx?: number }) {
+function PlatformLogo({
+  className,
+  sizePx,
+  eager = false,
+}: {
+  className?: string;
+  sizePx?: number;
+  eager?: boolean;
+}) {
   const { logoUrl, platformName, logoSizePx } = usePlatformBranding();
   const displaySize = sizePx ?? logoSizePx;
   if (logoUrl) {
     return (
-      <img
+      <OptimizedMediaImage
         src={logoUrl}
+        widths={LOGO_IMAGE_WIDTHS}
+        sizes={`${displaySize}px`}
+        eager={eager}
         alt={platformName}
         className={cn("object-contain shrink-0", className)}
         style={{ width: displaySize, height: displaySize }}
@@ -200,7 +213,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   href="/"
                   className="flex max-w-[min(70vw,16rem)] items-center justify-center gap-2 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
                 >
-                  <PlatformLogo sizePx={nativeHeaderLogoPx} />
+                  <PlatformLogo sizePx={nativeHeaderLogoPx} eager />
                   <PlatformBrandMark name={platformName} compact />
                 </Link>
 
@@ -242,7 +255,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               href="/"
               className="flex items-center gap-2 transition-opacity hover:opacity-80 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
             >
-              <PlatformLogo sizePx={nativeHeaderLogoPx} />
+              <PlatformLogo sizePx={nativeHeaderLogoPx} eager />
               <PlatformBrandMark
                 name={platformName}
                 className="text-lg sm:text-xl"
@@ -596,13 +609,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {footerTagline}
               </p>
               <p className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                <Link href="/help" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
+                <Link href="/help" className="font-medium text-primary transition-colors hover:text-primary/80 underline-offset-4 hover:underline">
                   Help Center
                 </Link>
-                <Link href="/privacy-policy" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
+                <Link href="/privacy-policy" className="font-medium text-primary transition-colors hover:text-primary/80 underline-offset-4 hover:underline">
                   Privacy
                 </Link>
-                <Link href="/terms-of-service" className="font-medium text-primary/80 transition-colors hover:text-primary underline-offset-4 hover:underline">
+                <Link href="/terms-of-service" className="font-medium text-primary transition-colors hover:text-primary/80 underline-offset-4 hover:underline">
                   Terms
                 </Link>
               </p>

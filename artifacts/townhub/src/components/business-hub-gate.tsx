@@ -9,7 +9,7 @@ export function BusinessHubGate({ children }: { children: ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-8">
+      <div className="flex min-h-[calc(100dvh-var(--site-header-height,4rem))] items-center justify-center p-8">
         <Skeleton className="h-8 w-56" />
       </div>
     );

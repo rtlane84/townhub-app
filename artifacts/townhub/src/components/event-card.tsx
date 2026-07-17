@@ -3,6 +3,8 @@ import { Calendar, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatEventSchedule } from "@/lib/event-dates";
 import { cn } from "@/lib/utils";
+import { OptimizedMediaImage } from "@/components/optimized-media-image";
+import { CARD_IMAGE_WIDTHS } from "@/lib/optimized-image";
 
 export const EVENT_TYPE_COLORS: Record<string, string> = {
   COMMUNITY: "bg-blue-500/10 text-blue-700",
@@ -17,9 +19,10 @@ export const EVENT_TYPE_COLORS: Record<string, string> = {
 interface EventCardProps {
   event: Event;
   showFeaturedBadge?: boolean;
+  priority?: boolean;
 }
 
-export function EventCard({ event, showFeaturedBadge = false }: EventCardProps) {
+export function EventCard({ event, showFeaturedBadge = false, priority = false }: EventCardProps) {
   const schedule = formatEventSchedule(event);
   const datePill = schedule.split("·")[0]?.trim() || schedule;
 
@@ -33,11 +36,12 @@ export function EventCard({ event, showFeaturedBadge = false }: EventCardProps) 
     >
       {event.imageUrl ? (
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-          <img
+          <OptimizedMediaImage
             src={event.imageUrl}
+            widths={CARD_IMAGE_WIDTHS}
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 82vw"
+            priority={priority}
             alt=""
-            loading="lazy"
-            decoding="async"
             className="h-full w-full object-cover"
           />
           <div className="absolute left-2.5 top-2.5">

@@ -234,10 +234,11 @@ export default function Businesses() {
                 label="Featured businesses"
                 itemClassName="basis-[72%] sm:basis-[40%] lg:basis-[28%]"
               >
-                {featuredBusinesses.map((business) => (
+                {featuredBusinesses.map((business, index) => (
                   <FeaturedBusinessCard
                     key={business.id}
                     business={business}
+                    priority={index === 0}
                   />
                 ))}
               </PeekCarousel>
@@ -252,10 +253,11 @@ export default function Businesses() {
               All businesses
             </h2>
             <ul className="space-y-2.5">
-              {visibleBusinesses.map((business) => (
+              {visibleBusinesses.map((business, index) => (
                 <BusinessDirectoryRow
                   key={business.id}
                   business={business}
+                  priority={featuredBusinesses.length === 0 && index === 0}
                 />
               ))}
             </ul>

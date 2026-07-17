@@ -22,7 +22,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePlatformBranding } from "@/components/theme-provider";
 import {
   customerHelp,
@@ -34,6 +33,7 @@ import {
   type HelpFaq,
 } from "@/lib/help-content";
 import { isStoreDistribution } from "@/lib/distribution-channel";
+import { cn } from "@/lib/utils";
 
 const audienceCopy: Record<HelpAudience, { title: string; description: string }> = {
   customer: {
@@ -108,22 +108,38 @@ export default function Help() {
         </p>
       </header>
 
-      <Tabs
-        value={audience}
-        onValueChange={(value) => setAudience(value as HelpAudience)}
-        className="mt-8"
+      <div
+        className="mx-auto mt-8 grid h-12 w-full max-w-md grid-cols-2 rounded-xl bg-muted p-1"
+        role="group"
+        aria-label="Choose help audience"
       >
-        <TabsList className="mx-auto grid h-12 w-full max-w-md grid-cols-2 rounded-xl">
-          <TabsTrigger value="customer" className="h-10 gap-2" data-testid="help-tab-customer">
-            <ShoppingBag className="h-4 w-4" aria-hidden />
-            Customers
-          </TabsTrigger>
-          <TabsTrigger value="owner" className="h-10 gap-2" data-testid="help-tab-owner">
-            <Store className="h-4 w-4" aria-hidden />
-            Business owners
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+        {(
+          [
+            { value: "customer" as const, label: "Customers", icon: ShoppingBag },
+            { value: "owner" as const, label: "Business owners", icon: Store },
+          ] as const
+        ).map(({ value, label, icon: Icon }) => {
+          const selected = audience === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => setAudience(value)}
+              className={cn(
+                "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors",
+                selected
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-foreground/80 hover:text-foreground",
+              )}
+              data-testid={`help-tab-${value}`}
+            >
+              <Icon className="h-4 w-4" aria-hidden />
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
       <section className="mx-auto mt-6 max-w-3xl rounded-2xl border bg-card p-4 shadow-sm sm:p-5" aria-label="Search help">
         <div className="flex items-start gap-3">

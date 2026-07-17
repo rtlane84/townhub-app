@@ -119,7 +119,13 @@ export default function FoodTruckMapCanvas({ trucks }: { trucks: FoodTruckMapPoi
         />
         <MapViewportControls points={trucks} />
         {trucks.map((truck) => (
-          <Marker key={truck.id} position={[truck.lat, truck.lng]} icon={truckMarkerIcon}>
+          <Marker
+            key={truck.id}
+            position={[truck.lat, truck.lng]}
+            icon={truckMarkerIcon}
+            title={`${truck.businessName ?? "Mobile business"} at ${truck.locationName}`}
+            alt={`${truck.businessName ?? "Mobile business"} map marker`}
+          >
             <Popup className="food-truck-map-popup" minWidth={220}>
               <FoodTruckMapPopup truck={truck} />
             </Popup>

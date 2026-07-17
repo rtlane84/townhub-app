@@ -50,6 +50,8 @@ import { formatFoodTruckTimeWindow } from "@/lib/food-truck-utils";
 import { LISTING_CARD_CLASS, PAGE_CONTAINER } from "@/lib/design-tokens";
 import { asArray } from "@/lib/as-array";
 import { cn } from "@/lib/utils";
+import { OptimizedMediaImage } from "@/components/optimized-media-image";
+import { THUMBNAIL_IMAGE_WIDTHS } from "@/lib/optimized-image";
 
 /**
  * Homepage IA (refined native layout):
@@ -282,13 +284,13 @@ export default function Home() {
                 >
                   <CardContent className="flex items-start gap-3 p-3.5">
                     {h.imageUrl ? (
-                      <img
+                      <OptimizedMediaImage
                         src={h.imageUrl}
+                        widths={THUMBNAIL_IMAGE_WIDTHS}
+                        sizes="56px"
                         alt={h.title}
                         width={56}
                         height={56}
-                        loading="lazy"
-                        decoding="async"
                         className="h-14 w-14 shrink-0 rounded-xl object-cover"
                       />
                     ) : (

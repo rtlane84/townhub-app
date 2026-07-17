@@ -1,10 +1,10 @@
 import {
   useCallback,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -12,6 +12,9 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { ResponsiveHeroImage } from "@/components/responsive-hero-image";
+import { OptimizedMediaImage } from "@/components/optimized-media-image";
+import { Button } from "@/components/ui/button";
+import { CARD_IMAGE_WIDTHS } from "@/lib/optimized-image";
 import {
   heroImageObjectClasses,
   heroHorizontalJustifyClass,
@@ -23,8 +26,6 @@ import {
 } from "@/lib/platform-branding";
 import type { TownPhotoSlide } from "@/lib/town-photos";
 import { cn } from "@/lib/utils";
-
-const AUTO_ADVANCE_MS = 5000;
 
 type TownPhotoCarouselProps = {
   slides: TownPhotoSlide[];
@@ -40,7 +41,7 @@ type TownPhotoCarouselProps = {
 };
 
 /**
- * Homepage town-photo carousel with swipe, page dots, and ~5s auto-advance.
+ * Homepage town-photo carousel with manual swipe and keyboard controls.
  * Single-slide collections hide controls; empty collections render nothing.
  */
 export function TownPhotoCarousel({
@@ -55,10 +56,9 @@ export function TownPhotoCarousel({
   className,
 }: TownPhotoCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
+  const [selected, setSelected] = useState(0);
   const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set());
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const pauseUntilRef = useRef(0);
-  const multi = slides.length > 1;
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -78,24 +78,17 @@ export function TownPhotoCarousel({
     });
   }, []);
 
-  const pauseAutoAdvance = useCallback(() => {
-    pauseUntilRef.current = Date.now() + AUTO_ADVANCE_MS;
-  }, []);
-
   useEffect(() => {
-    if (!api || !multi || prefersReducedMotion) return;
-
-    const timer = window.setInterval(() => {
-      if (Date.now() < pauseUntilRef.current) return;
-      if (api.canScrollNext()) {
-        api.scrollNext();
-      } else {
-        api.scrollTo(0);
-      }
-    }, AUTO_ADVANCE_MS);
-
-    return () => window.clearInterval(timer);
-  }, [api, multi, prefersReducedMotion]);
+    if (!api) return;
+    const sync = () => setSelected(api.selectedScrollSnap());
+    sync();
+    api.on("select", sync);
+    api.on("reInit", sync);
+    return () => {
+      api.off("select", sync);
+      api.off("reInit", sync);
+    };
+  }, [api]);
 
   if (slides.length === 0) return null;
 
@@ -119,9 +112,6 @@ export function TownPhotoCarousel({
       aria-roledescription="carousel"
       aria-label={`${platformName} town photos`}
       className={cn("relative", className)}
-      onPointerDown={pauseAutoAdvance}
-      onTouchStart={pauseAutoAdvance}
-      onKeyDown={pauseAutoAdvance}
     >
       <Carousel
         setApi={setApi}
@@ -146,6 +136,7 @@ export function TownPhotoCarousel({
               >
                 <ResponsiveHeroImage
                   src={slide.url}
+                  priority={index === 0}
                   className={cn(
                     "absolute inset-0 h-full w-full",
                     heroImageObjectClasses(heroImageFit, heroImagePosition),
@@ -163,8 +154,10 @@ export function TownPhotoCarousel({
                       heroHorizontalJustifyClass(overlayAlign),
                     )}
                   >
-                    <img
+                    <OptimizedMediaImage
                       src={overlayImageUrl}
+                      widths={CARD_IMAGE_WIDTHS}
+                      sizes="(min-width: 768px) 40vw, 70vw"
                       alt=""
                       aria-hidden
                       className={cn(
@@ -185,6 +178,58 @@ export function TownPhotoCarousel({
           ))}
         </CarouselContent>
       </Carousel>
+
+      {showControls ? (
+        <div className="absolute right-2 top-2 z-[4] flex items-center gap-1.5" aria-label="Town photo controls">
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="h-11 w-11 rounded-full bg-background/90 shadow-sm backdrop-blur-sm"
+            onClick={() => api?.scrollPrev()}
+            aria-label="Previous town photo"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden />
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="h-11 w-11 rounded-full bg-background/90 shadow-sm backdrop-blur-sm"
+            onClick={() => api?.scrollNext()}
+            aria-label="Next town photo"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden />
+          </Button>
+        </div>
+      ) : null}
+
+      {showControls ? (
+        <div
+          className="absolute left-2 top-2 z-[4] flex items-center"
+          role="group"
+          aria-label="Choose a town photo"
+        >
+          {visibleSlides.map((slide, index) => (
+            <button
+              key={slide.id}
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`Show town photo ${index + 1}`}
+              aria-current={index === selected ? "true" : undefined}
+              onClick={() => api?.scrollTo(index)}
+            >
+              <span
+                className={cn(
+                  "h-2.5 rounded-full shadow-sm transition-all",
+                  index === selected ? "w-6 bg-white" : "w-2.5 bg-white/65",
+                )}
+                aria-hidden
+              />
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {footer ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] flex flex-col items-center px-3 pb-2.5 sm:px-4 sm:pb-3">
