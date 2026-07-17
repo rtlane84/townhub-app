@@ -1,5 +1,10 @@
 import { readFileSync } from "node:fs";
 import { createPrivateKey, sign } from "node:crypto";
+import {
+  connect as connectHttp2,
+  constants as http2Constants,
+  type IncomingHttpHeaders,
+} from "node:http2";
 import { logger } from "../logger";
 import type {
   PushDeliveryProvider,
@@ -122,52 +127,89 @@ async function postApnsNotification(input: {
     ...(message.data ?? {}),
   };
 
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        authorization: `bearer ${jwt}`,
-        "apns-topic": config.bundleId,
-        "apns-push-type": "alert",
-        "apns-priority": "10",
-        ...(message.collapseKey
-          ? { "apns-collapse-id": message.collapseKey.slice(0, 64) }
-          : {}),
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(payload),
+  return new Promise((resolve) => {
+    const session = connectHttp2(`https://${host}`);
+    let responseHeaders: IncomingHttpHeaders | null = null;
+    let responseBody = "";
+    let settled = false;
+
+    const finish = (result: Omit<PushSendResult, "userId" | "platform">): void => {
+      if (settled) return;
+      settled = true;
+      session.close();
+      resolve(result);
+    };
+
+    const fail = (err: unknown): void => {
+      if (settled) return;
+      const error = err instanceof Error ? err.message : "APNs request failed";
+      logger.error({ err, tokenPrefix: token.slice(0, 8) }, "APNs send failed");
+      settled = true;
+      session.destroy();
+      resolve({ token, status: "FAILED", error });
+    };
+
+    session.once("error", fail);
+    session.setTimeout(15_000, () => {
+      fail(new Error("APNs request timed out"));
     });
 
-    if (response.status === 200) {
-      const apnsId = response.headers.get("apns-id") ?? undefined;
-      return { token, status: "SENT", providerMessageId: apnsId };
-    }
+    const request = session.request({
+      [http2Constants.HTTP2_HEADER_METHOD]: "POST",
+      [http2Constants.HTTP2_HEADER_PATH]: new URL(url).pathname,
+      authorization: `bearer ${jwt}`,
+      "apns-topic": config.bundleId,
+      "apns-push-type": "alert",
+      "apns-priority": "10",
+      ...(message.collapseKey
+        ? { "apns-collapse-id": message.collapseKey.slice(0, 64) }
+        : {}),
+      "content-type": "application/json",
+    });
 
-    let reason = `APNs HTTP ${response.status}`;
-    try {
-      const body = (await response.json()) as { reason?: string };
-      if (body.reason) reason = body.reason;
-    } catch {
-      // ignore parse errors
-    }
+    request.setEncoding("utf8");
+    request.on("response", (headers) => {
+      responseHeaders = headers;
+    });
+    request.on("data", (chunk: string) => {
+      responseBody += chunk;
+    });
+    request.once("error", fail);
+    request.once("end", () => {
+      const status = Number(responseHeaders?.[http2Constants.HTTP2_HEADER_STATUS] ?? 0);
+      if (status === 200) {
+        const apnsId = responseHeaders?.["apns-id"];
+        finish({
+          token,
+          status: "SENT",
+          providerMessageId: typeof apnsId === "string" ? apnsId : undefined,
+        });
+        return;
+      }
 
-    const invalid =
-      response.status === 410 ||
-      reason === "BadDeviceToken" ||
-      reason === "Unregistered" ||
-      reason === "ExpiredToken" ||
-      reason === "DeviceTokenNotForTopic";
+      let reason = `APNs HTTP ${status || "unknown"}`;
+      try {
+        const body = JSON.parse(responseBody) as { reason?: string };
+        if (body.reason) reason = body.reason;
+      } catch {
+        // Keep the HTTP status fallback when APNs returns no JSON body.
+      }
 
-    return {
-      token,
-      status: invalid ? "INVALID_TOKEN" : "FAILED",
-      error: reason,
-    };
-  } catch (err) {
-    const error = err instanceof Error ? err.message : "APNs request failed";
-    logger.error({ err, tokenPrefix: token.slice(0, 8) }, "APNs send failed");
-    return { token, status: "FAILED", error };
-  }
+      const invalid =
+        status === 410 ||
+        reason === "BadDeviceToken" ||
+        reason === "Unregistered" ||
+        reason === "ExpiredToken" ||
+        reason === "DeviceTokenNotForTopic";
+
+      finish({
+        token,
+        status: invalid ? "INVALID_TOKEN" : "FAILED",
+        error: reason,
+      });
+    });
+    request.end(JSON.stringify(payload));
+  });
 }
 
 export function createApnsPushProvider(): PushDeliveryProvider {

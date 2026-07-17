@@ -1,11 +1,20 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { isApnsConfigured, resetApnsJwtCache } from "./push/apns-provider.ts";
 import { isFcmConfigured } from "./push/fcm-provider.ts";
 import { isWebPushConfigured } from "./push/web-push-provider.ts";
 import { getPushProviderForPlatform } from "./push/index.ts";
 
 describe("push providers", () => {
+  it("uses an HTTP/2 transport for APNs", () => {
+    const source = readFileSync(new URL("./push/apns-provider.ts", import.meta.url), "utf8");
+
+    assert.match(source, /from "node:http2"/);
+    assert.match(source, /connectHttp2\(/);
+    assert.doesNotMatch(source, /await fetch\(/);
+  });
+
   it("resolves platform adapters", () => {
     assert.equal(getPushProviderForPlatform("IOS")?.id, "apns");
     assert.equal(getPushProviderForPlatform("ANDROID")?.id, "fcm");
