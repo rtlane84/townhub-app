@@ -123,8 +123,10 @@ export function TownPhotoCarousel({
         className="w-full"
       >
         <CarouselContent className="-ml-0">
-          {visibleSlides.map((slide, index) => (
-            <CarouselItem key={slide.id} className="pl-0 basis-full">
+          {visibleSlides.map((slide, index) => {
+            const isActive = index === selected;
+            return (
+              <CarouselItem key={slide.id} className="pl-0 basis-full">
               <figure
                 className="relative aspect-[16/9] overflow-hidden rounded-[1.35rem] bg-gradient-to-br from-primary/15 via-primary/5 to-background shadow-[0_6px_24px_-10px_rgba(15,23,42,0.14)]"
                 aria-roledescription="slide"
@@ -134,20 +136,22 @@ export function TownPhotoCarousel({
                     : `Town photo ${index + 1} of ${visibleSlides.length}`
                 }
               >
-                <ResponsiveHeroImage
-                  src={slide.url}
-                  priority={index === 0}
-                  className={cn(
-                    "absolute inset-0 h-full w-full",
-                    heroImageObjectClasses(heroImageFit, heroImagePosition),
-                  )}
-                  onError={() => markFailed(slide.id)}
-                />
+                {isActive ? (
+                  <ResponsiveHeroImage
+                    src={slide.url}
+                    priority={index === 0}
+                    className={cn(
+                      "absolute inset-0 h-full w-full",
+                      heroImageObjectClasses(heroImageFit, heroImagePosition),
+                    )}
+                    onError={() => markFailed(slide.id)}
+                  />
+                ) : null}
                 <span className="sr-only">
                   {slide.caption || `${platformName} town photo`}
                 </span>
 
-                {overlayImageUrl ? (
+                {overlayImageUrl && isActive ? (
                   <div
                     className={cn(
                       "pointer-events-none absolute inset-0 z-[1] flex items-center px-4 pb-12 pt-5 md:px-6 md:pb-14",
@@ -158,6 +162,8 @@ export function TownPhotoCarousel({
                       src={overlayImageUrl}
                       widths={CARD_IMAGE_WIDTHS}
                       sizes="(min-width: 768px) 40vw, 70vw"
+                      width={640}
+                      height={640}
                       alt=""
                       aria-hidden
                       className={cn(
@@ -174,60 +180,34 @@ export function TownPhotoCarousel({
                   </figcaption>
                 ) : null}
               </figure>
-            </CarouselItem>
-          ))}
+              </CarouselItem>
+            );
+          })}
         </CarouselContent>
       </Carousel>
 
       {showControls ? (
-        <div className="absolute right-2 top-2 z-[4] flex items-center gap-1.5" aria-label="Town photo controls">
+        <div className="pointer-events-none absolute inset-y-0 inset-x-2 z-[4] flex items-center justify-between" aria-label="Town photo controls">
           <Button
             type="button"
             variant="secondary"
             size="icon"
-            className="h-11 w-11 rounded-full bg-background/90 shadow-sm backdrop-blur-sm"
+            className="pointer-events-auto h-11 w-11 rounded-full border border-border/70 bg-background/90 shadow-sm backdrop-blur-sm"
             onClick={() => api?.scrollPrev()}
             aria-label="Previous town photo"
           >
-            <ChevronLeft className="h-5 w-5" aria-hidden />
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
           </Button>
           <Button
             type="button"
             variant="secondary"
             size="icon"
-            className="h-11 w-11 rounded-full bg-background/90 shadow-sm backdrop-blur-sm"
+            className="pointer-events-auto h-11 w-11 rounded-full border border-border/70 bg-background/90 shadow-sm backdrop-blur-sm"
             onClick={() => api?.scrollNext()}
             aria-label="Next town photo"
           >
-            <ChevronRight className="h-5 w-5" aria-hidden />
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
           </Button>
-        </div>
-      ) : null}
-
-      {showControls ? (
-        <div
-          className="absolute left-2 top-2 z-[4] flex items-center"
-          role="group"
-          aria-label="Choose a town photo"
-        >
-          {visibleSlides.map((slide, index) => (
-            <button
-              key={slide.id}
-              type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={`Show town photo ${index + 1}`}
-              aria-current={index === selected ? "true" : undefined}
-              onClick={() => api?.scrollTo(index)}
-            >
-              <span
-                className={cn(
-                  "h-2.5 rounded-full shadow-sm transition-all",
-                  index === selected ? "w-6 bg-white" : "w-2.5 bg-white/65",
-                )}
-                aria-hidden
-              />
-            </button>
-          ))}
         </div>
       ) : null}
 

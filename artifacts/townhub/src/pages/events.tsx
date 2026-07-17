@@ -47,7 +47,7 @@ function EventsViewToggle({
               "inline-flex items-center justify-center gap-1.5 rounded-[8px] px-2 text-[13px] font-semibold transition-all",
               active
                 ? "bg-card text-platform-heading shadow-[0_1px_3px_rgba(15,23,42,0.12)]"
-                : "text-muted-foreground hover:text-foreground",
+                : "text-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />

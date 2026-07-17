@@ -117,7 +117,6 @@ export function FeaturedBusinessCard({
       <Link
         href={storefrontHref}
         className="flex min-h-0 min-w-0 flex-1 flex-col"
-        aria-label={`View ${business.name}`}
       >
         <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted">
           {hero ? (

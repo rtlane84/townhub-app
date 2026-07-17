@@ -115,6 +115,9 @@ describe("frontend load performance wiring", () => {
     assert.match(carousel, /aria-label="Previous town photo"/);
     assert.match(carousel, /aria-label="Next town photo"/);
     assert.match(carousel, /h-11 w-11/);
+    assert.match(carousel, /const isActive = index === selected/);
+    assert.match(carousel, /width=\{640\}/);
+    assert.match(carousel, /height=\{640\}/);
   });
 
   it("allows viewport zoom and reserves a stable route-loading height", async () => {
@@ -153,6 +156,6 @@ describe("frontend load performance wiring", () => {
     assert.match(peek, /h-11 w-11/);
     assert.match(map, /title=\{`\$\{truck\.businessName/);
     assert.match(map, /alt=\{`\$\{truck\.businessName/);
-    assert.match(businesses, /aria-label=\{`View \$\{business\.name\}`\}/);
+    assert.doesNotMatch(businesses, /className="flex min-h-0 min-w-0 flex-1 flex-col"\s+aria-label=/);
   });
 });
