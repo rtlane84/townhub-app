@@ -112,8 +112,8 @@ describe("frontend load performance wiring", () => {
     );
     assert.doesNotMatch(carousel, /setInterval|AUTO_ADVANCE/);
     assert.match(carousel, /priority=\{index === 0\}/);
-    assert.match(carousel, /aria-label="Previous town photo"/);
-    assert.match(carousel, /aria-label="Next town photo"/);
+    assert.match(carousel, /aria-label=\{`Show town photo \$\{index \+ 1\}`\}/);
+    assert.match(carousel, /aria-label="Choose a town photo"/);
     assert.match(carousel, /h-11 w-11/);
     assert.match(carousel, /const isActive = index === selected/);
     assert.match(carousel, /width=\{640\}/);
