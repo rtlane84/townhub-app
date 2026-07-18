@@ -97,6 +97,8 @@ export function HeroStage({
           <img
             src={overlayImageUrl ?? undefined}
             alt={overlayAlt}
+            width={640}
+            height={640}
             className={cn(
               "h-auto w-auto object-contain drop-shadow-xl",
               heroOverlaySizeClasses(overlaySize),

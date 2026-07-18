@@ -88,14 +88,74 @@ describe("frontend load performance wiring", () => {
       new URL("../components/responsive-hero-image.tsx", import.meta.url),
       "utf8",
     );
+    const responsiveMedia = await readFile(
+      new URL("../components/optimized-media-image.tsx", import.meta.url),
+      "utf8",
+    );
     assert.match(hero, /TownPhotoCarousel/);
     assert.match(hero, /resolveTownPhotoSlides/);
     assert.doesNotMatch(hero, /link\.rel = "preload"/);
     assert.match(carousel, /ResponsiveHeroImage/);
     assert.match(carousel, /heroImageObjectClasses/);
-    assert.match(responsive, /<picture>/);
-    assert.match(responsive, /image\/avif/);
-    assert.match(responsive, /image\/webp/);
-    assert.match(responsive, /buildOptimizedMediaUrl/);
+    assert.match(responsive, /OptimizedMediaImage/);
+    assert.match(responsiveMedia, /buildOptimizedSrcSet/);
+    assert.match(responsiveMedia, /"webp"/);
+    assert.match(responsiveMedia, /loading=\{priority \|\| eager \? "eager" : "lazy"\}/);
+    assert.match(responsiveMedia, /fetchPriority=\{priority \? "high" : eager \? "auto" : "low"\}/);
+    assert.doesNotMatch(responsive, /avif/i);
+  });
+
+  it("keeps the homepage carousel manual and only prioritizes the initial slide", async () => {
+    const carousel = await readFile(
+      new URL("../components/town-photo-carousel.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.doesNotMatch(carousel, /setInterval|AUTO_ADVANCE/);
+    assert.match(carousel, /priority=\{index === 0\}/);
+    assert.match(carousel, /aria-label="Previous town photo"/);
+    assert.match(carousel, /aria-label="Next town photo"/);
+    assert.match(carousel, /h-11 w-11/);
+    assert.match(carousel, /const isActive = index === selected/);
+    assert.match(carousel, /width=\{640\}/);
+    assert.match(carousel, /height=\{640\}/);
+  });
+
+  it("allows viewport zoom and reserves a stable route-loading height", async () => {
+    const html = await readFile(new URL("../../index.html", import.meta.url), "utf8");
+    const loader = await readFile(
+      new URL("../components/route-page-loader.tsx", import.meta.url),
+      "utf8",
+    );
+    const dashboard = await readFile(
+      new URL("../components/dashboard-layout.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.doesNotMatch(html, /maximum-scale/);
+    assert.match(loader, /100dvh/);
+    assert.match(dashboard, /min-h-\[calc\(100dvh-var\(--site-header-height,4rem\)\)\]/);
+  });
+
+  it("uses named controls without incomplete tab semantics", async () => {
+    const help = await readFile(new URL("../pages/help.tsx", import.meta.url), "utf8");
+    const peek = await readFile(
+      new URL("../components/peek-carousel.tsx", import.meta.url),
+      "utf8",
+    );
+    const map = await readFile(
+      new URL("../components/food-truck-map-canvas.tsx", import.meta.url),
+      "utf8",
+    );
+    const businesses = await readFile(
+      new URL("../components/business-directory.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.doesNotMatch(help, /TabsTrigger|TabsList/);
+    assert.match(help, /aria-pressed=\{selected\}/);
+    assert.doesNotMatch(peek, /role="tab"/);
+    assert.match(peek, /aria-current/);
+    assert.match(peek, /h-11 w-11/);
+    assert.match(map, /title=\{`\$\{truck\.businessName/);
+    assert.match(map, /alt=\{`\$\{truck\.businessName/);
+    assert.doesNotMatch(businesses, /className="flex min-h-0 min-w-0 flex-1 flex-col"\s+aria-label=/);
   });
 });

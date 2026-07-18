@@ -10,6 +10,8 @@ import {
 } from "@/lib/business-listing";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OptimizedMediaImage } from "@/components/optimized-media-image";
+import { THUMBNAIL_IMAGE_WIDTHS } from "@/lib/optimized-image";
 
 type HomePopularBusinessesProps = {
   businesses: Business[];
@@ -47,15 +49,15 @@ function BusinessRow({ business }: { business: Business }) {
   return (
     <li>
       <div className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-card p-2.5 transition-colors hover:bg-muted/30">
-        <Link href={storefrontHref} className="shrink-0">
+        <Link href={storefrontHref} className="shrink-0" aria-label={`View ${business.name}`}>
           <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-muted">
             {thumb ? (
-              <img
+              <OptimizedMediaImage
                 src={thumb}
+                widths={THUMBNAIL_IMAGE_WIDTHS}
+                sizes="56px"
                 alt=""
                 className="h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-primary/40">
@@ -76,7 +78,7 @@ function BusinessRow({ business }: { business: Business }) {
             <p
               className={cn(
                 "mt-1 text-xs font-semibold",
-                status.isOpen ? "text-emerald-600" : "text-red-600",
+                status.isOpen ? "text-emerald-700" : "text-red-600",
               )}
             >
               {status.label}

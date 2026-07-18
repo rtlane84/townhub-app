@@ -92,8 +92,8 @@ export default function FoodTrucks() {
                 label="Today’s trucks"
                 itemClassName="basis-[72%] sm:basis-[40%] lg:basis-[28%]"
               >
-                {todayTrucks.map((truck) => (
-                  <FoodTruckTodayCard key={truck.id} truck={truck} />
+                {todayTrucks.map((truck, index) => (
+                  <FoodTruckTodayCard key={truck.id} truck={truck} priority={index === 0} />
                 ))}
               </PeekCarousel>
             ) : (

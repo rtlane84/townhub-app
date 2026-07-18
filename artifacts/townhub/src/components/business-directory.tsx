@@ -15,8 +15,10 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OptimizedMediaImage } from "@/components/optimized-media-image";
+import { CARD_IMAGE_WIDTHS, THUMBNAIL_IMAGE_WIDTHS } from "@/lib/optimized-image";
 
-const OPEN_STATUS_CLASS = "text-emerald-600";
+const OPEN_STATUS_CLASS = "text-emerald-700";
 const CLOSED_STATUS_CLASS = "text-red-600";
 
 function openStatusClass(isOpen: boolean) {
@@ -27,10 +29,12 @@ function BusinessThumb({
   business,
   className,
   rounded = "rounded-xl",
+  priority = false,
 }: {
   business: Business;
   className?: string;
   rounded?: string;
+  priority?: boolean;
 }) {
   const src = business.heroImageUrl || business.logoUrl;
   return (
@@ -42,12 +46,13 @@ function BusinessThumb({
       )}
     >
       {src ? (
-        <img
+        <OptimizedMediaImage
           src={src}
+          widths={THUMBNAIL_IMAGE_WIDTHS}
+          sizes="68px"
+          priority={priority}
           alt=""
           className="h-full w-full object-cover"
-          loading="lazy"
-          decoding="async"
         />
       ) : (
         <div
@@ -93,7 +98,13 @@ function ListingCtaButton({
   );
 }
 
-export function FeaturedBusinessCard({ business }: { business: Business }) {
+export function FeaturedBusinessCard({
+  business,
+  priority = false,
+}: {
+  business: Business;
+  priority?: boolean;
+}) {
   const categoryLine = getBusinessCategoryLine(business);
   const statusLine = getStorefrontStatusLine(business);
   const imageBadge = getBusinessStorefrontBadge(business);
@@ -103,15 +114,19 @@ export function FeaturedBusinessCard({ business }: { business: Business }) {
 
   return (
     <article className="flex h-full w-full flex-col overflow-hidden rounded-[1.25rem] border border-black/[0.05] bg-card shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]">
-      <Link href={storefrontHref} className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <Link
+        href={storefrontHref}
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
+      >
         <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted">
           {hero ? (
-            <img
+            <OptimizedMediaImage
               src={hero}
+              widths={CARD_IMAGE_WIDTHS}
+              sizes="(min-width: 1024px) 28vw, (min-width: 640px) 40vw, 72vw"
+              priority={priority}
               alt=""
               className="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
             />
           ) : (
             <div
@@ -191,7 +206,13 @@ export function FeaturedBusinessesSkeleton({ count = 3 }: { count?: number }) {
   );
 }
 
-export function BusinessDirectoryRow({ business }: { business: Business }) {
+export function BusinessDirectoryRow({
+  business,
+  priority = false,
+}: {
+  business: Business;
+  priority?: boolean;
+}) {
   const categoryLine = getBusinessCategoryLine(business);
   const statusLine = getStorefrontStatusLine(business);
   const storefrontBadge = getBusinessStorefrontBadge(business);
@@ -201,11 +222,12 @@ export function BusinessDirectoryRow({ business }: { business: Business }) {
   return (
     <li>
       <div className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-card p-2.5 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
-        <Link href={storefrontHref} className="shrink-0">
+        <Link href={storefrontHref} className="shrink-0" aria-label={`View ${business.name}`}>
           <BusinessThumb
             business={business}
             className="h-[4.25rem] w-[4.25rem]"
             rounded="rounded-[0.9rem]"
+            priority={priority}
           />
         </Link>
 

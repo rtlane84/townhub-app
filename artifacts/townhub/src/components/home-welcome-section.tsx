@@ -55,7 +55,7 @@ function CompactWeatherCard({
           {weather.current.summary}
         </p>
         {today ? (
-          <p className="mt-0.5 text-[9px] text-muted-foreground/80">
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
             H: {Math.round(today.highF)}° L: {Math.round(today.lowF)}°
           </p>
         ) : null}

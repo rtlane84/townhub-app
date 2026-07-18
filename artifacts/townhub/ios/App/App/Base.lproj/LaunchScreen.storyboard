@@ -14,8 +14,18 @@
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <!-- Solid canvas only — logo appears in the React animated splash. -->
-                        <color key="backgroundColor" red="0.95686274509803926" green="0.96078431372549022" blue="0.97254901960784312" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" image="Splash" translatesAutoresizingMaskIntoConstraints="NO" id="jpJ-kf-CzI">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" red="0.06274509803921569" green="0.35294117647058826" blue="0.61960784313725492" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="jpJ-kf-CzI" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="1FX-Ks-8Ta"/>
+                            <constraint firstAttribute="bottom" secondItem="jpJ-kf-CzI" secondAttribute="bottom" id="6tq-yB-FYH"/>
+                            <constraint firstItem="jpJ-kf-CzI" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="Mmb-Po-ZZB"/>
+                            <constraint firstAttribute="trailing" secondItem="jpJ-kf-CzI" secondAttribute="trailing" id="jCG-qQ-x8D"/>
+                        </constraints>
                     </view>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -23,4 +33,7 @@
             <point key="canvasLocation" x="53" y="375"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="Splash" width="2732" height="2732"/>
+    </resources>
 </document>

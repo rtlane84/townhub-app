@@ -62,7 +62,7 @@ function SummaryCard({
           </span>
           <p
             className={cn(
-              "min-w-0 whitespace-nowrap text-[8px] font-bold uppercase leading-none tracking-[0.02em] sm:text-[9px]",
+              "min-w-0 whitespace-nowrap text-[10px] font-bold uppercase leading-none tracking-[0.02em] sm:text-[11px]",
               tagClassName,
             )}
           >
@@ -221,9 +221,9 @@ export function TodayInTownSection({
         ) : (
           <SummaryCard
             tag="On the move"
-            tagClassName="text-sky-600"
+            tagClassName="text-sky-700"
             icon={<Truck className="h-3 w-3" />}
-            iconTint="bg-sky-500/12 text-sky-600"
+            iconTint="bg-sky-500/12 text-sky-700"
             href="/food-trucks"
           >
             {truckCount > 0 ? (
@@ -259,9 +259,9 @@ export function TodayInTownSection({
         ) : (
           <SummaryCard
             tag="Events"
-            tagClassName="text-emerald-600"
+            tagClassName="text-emerald-700"
             icon={<CalendarDays className="h-3 w-3" />}
-            iconTint="bg-emerald-500/12 text-emerald-600"
+            iconTint="bg-emerald-500/12 text-emerald-700"
             href="/events"
           >
             {weekCount > 0 ? (
@@ -288,9 +288,9 @@ export function TodayInTownSection({
         ) : (
           <SummaryCard
             tag="Marketplace"
-            tagClassName="text-orange-600"
+            tagClassName="text-orange-700"
             icon={<Store className="h-3 w-3" />}
-            iconTint="bg-orange-500/12 text-orange-600"
+            iconTint="bg-orange-500/12 text-orange-700"
             href="/businesses"
           >
             {hasMarketplaceStats ? (

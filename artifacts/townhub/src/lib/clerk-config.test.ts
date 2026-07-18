@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveClerkProxyUrlForRuntime } from "./clerk-config-core.ts";
+import {
+  resolveClerkProxyUrlForRuntime,
+  resolveClerkStandardBrowserForRuntime,
+} from "./clerk-config-core.ts";
 
 test("resolveClerkProxyUrlForRuntime ignores proxy on native", () => {
   assert.equal(
@@ -30,4 +33,12 @@ test("resolveClerkProxyUrlForRuntime keeps HTTPS proxy on web", () => {
     }),
     "https://staging.townhub.io/api/__clerk",
   );
+});
+
+test("resolveClerkStandardBrowserForRuntime disables browser cookies on native", () => {
+  assert.equal(resolveClerkStandardBrowserForRuntime(true), false);
+});
+
+test("resolveClerkStandardBrowserForRuntime keeps browser mode on web", () => {
+  assert.equal(resolveClerkStandardBrowserForRuntime(false), true);
 });

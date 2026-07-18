@@ -6,33 +6,25 @@ import {
   resolveOwnerDeliverableEmail,
 } from "./owner-email";
 import { isSyntheticClerkEmail } from "./relink-clerk-user-shared";
+import { isPostgresUniqueViolation } from "./postgres-error";
+import { logOperationalFailure } from "./operational-log";
 
 export class ClerkUserDesyncError extends Error {
+  /** Server-only diagnostic fields — never include in HTTP responses. */
   readonly currentClerkUserId: string;
   readonly localUserId: string;
-  readonly email: string;
   readonly relinkCommand: string;
 
-  constructor(currentClerkUserId: string, localUser: Pick<User, "id" | "email">) {
+  constructor(currentClerkUserId: string, localUser: Pick<User, "id">) {
     const relinkCommand =
       `pnpm --filter @workspace/api-server run relink-clerk-user -- ` +
       `--from-clerk-user-id=${localUser.id} --clerk-user-id=${currentClerkUserId}`;
-    super(
-      `Clerk user ID ${currentClerkUserId} does not match local user ${localUser.id}. ` +
-        `Run: ${relinkCommand}`,
-    );
+    super("Clerk user identity does not match the linked TownHub account.");
     this.name = "ClerkUserDesyncError";
     this.currentClerkUserId = currentClerkUserId;
     this.localUserId = localUser.id;
-    this.email = localUser.email;
     this.relinkCommand = relinkCommand;
   }
-}
-
-function isUniqueViolation(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  const code = (err as { code?: string }).code;
-  return code === "23505";
 }
 
 function sessionClaimsEmail(
@@ -85,7 +77,7 @@ export async function ensureDbUserForClerkSession(input: {
       .returning();
     return created;
   } catch (err) {
-    if (!isUniqueViolation(err)) throw err;
+    if (!isPostgresUniqueViolation(err)) throw err;
 
     const [byEmail] = await db
       .select()
@@ -95,7 +87,13 @@ export async function ensureDbUserForClerkSession(input: {
     if (byEmail && byEmail.id !== userId) {
       // Always surface as a typed conflict so /auth/me returns 409 (not a
       // opaque 500). Production clients hide nav until role is resolved.
-      throw new ClerkUserDesyncError(userId, byEmail);
+      const desync = new ClerkUserDesyncError(userId, byEmail);
+      logOperationalFailure("clerk_user_desync", {
+        currentClerkUserId: desync.currentClerkUserId,
+        localUserId: desync.localUserId,
+        relinkCommand: desync.relinkCommand,
+      });
+      throw desync;
     }
 
     const [raceWinner] = await db.select().from(usersTable).where(eq(usersTable.id, userId));

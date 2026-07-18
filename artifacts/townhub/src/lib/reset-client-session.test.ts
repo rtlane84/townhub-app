@@ -95,4 +95,11 @@ describe("platform branding defaults and splash hold", () => {
     assert.match(splashSource, /SPLASH_THEME_SAFETY_MS/);
     assert.match(splashSource, /minHoldElapsed\s*&&\s*!themeLoading/);
   });
+
+  it("uses a short static native splash image", () => {
+    assert.match(splashSource, /SPLASH_HOLD_MS\s*=\s*1200/);
+    assert.match(splashSource, /renders no visual overlay of its own/);
+    assert.match(splashSource, /return null/);
+    assert.doesNotMatch(splashSource, /\bmotion\./);
+  });
 });

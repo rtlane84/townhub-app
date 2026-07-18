@@ -2,6 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import { getAuth } from "@clerk/express";
 import { usersTable } from "@workspace/db";
 import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
+import { CLERK_USER_DESYNC_PUBLIC_RESPONSE } from "../lib/clerk-user-desync-public";
 import { respondIfUserDisabled } from "../lib/user-account-status";
 
 export type UserRole = "CUSTOMER" | "BUSINESS_OWNER" | "ADMIN";
@@ -33,12 +34,7 @@ export async function requireAuth(
     });
   } catch (err) {
     if (err instanceof ClerkUserDesyncError) {
-      res.status(409).json({
-        error: err.message,
-        currentClerkUserId: err.currentClerkUserId,
-        localUserId: err.localUserId,
-        relinkCommand: err.relinkCommand,
-      });
+      res.status(409).json(CLERK_USER_DESYNC_PUBLIC_RESPONSE);
       return;
     }
     throw err;

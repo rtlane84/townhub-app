@@ -2,6 +2,7 @@ import Foundation
 import AuthenticationServices
 import Capacitor
 import GoogleSignIn
+import Security
 
 /**
  * Native auth helpers for TownHub Capacitor:
@@ -16,12 +17,78 @@ public class AuthSessionPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthentication
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "openAuthSession", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "appleSignIn", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "googleSignIn", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "googleSignIn", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getClerkClientToken", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "saveClerkClientToken", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clearClerkClientToken", returnType: CAPPluginReturnPromise)
     ]
 
     private var session: ASWebAuthenticationSession?
     private var retainedSelf: AuthSessionPlugin?
     private var appleSignInCall: CAPPluginCall?
+    private let clerkTokenAccount = "clerk-client-token"
+
+    private var clerkTokenService: String {
+        return (Bundle.main.bundleIdentifier ?? "com.lanetech.townhub") + ".auth"
+    }
+
+    // MARK: - Clerk native client token (Keychain)
+
+    @objc func getClerkClientToken(_ call: CAPPluginCall) {
+        var query = clerkTokenQuery()
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &item)
+        if status == errSecItemNotFound {
+            call.resolve(["token": NSNull()])
+            return
+        }
+        guard status == errSecSuccess,
+              let data = item as? Data,
+              let token = String(data: data, encoding: .utf8) else {
+            call.reject("Could not read the saved Clerk session", "AUTH_STORAGE_READ")
+            return
+        }
+        call.resolve(["token": token])
+    }
+
+    @objc func saveClerkClientToken(_ call: CAPPluginCall) {
+        guard let token = call.getString("token"), !token.isEmpty,
+              let data = token.data(using: .utf8) else {
+            call.reject("Must provide a Clerk client token", "AUTH_STORAGE_INPUT")
+            return
+        }
+
+        SecItemDelete(clerkTokenQuery() as CFDictionary)
+        var item = clerkTokenQuery()
+        item[kSecValueData as String] = data
+        item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        let status = SecItemAdd(item as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            call.reject("Could not save the Clerk session", "AUTH_STORAGE_WRITE")
+            return
+        }
+        call.resolve()
+    }
+
+    @objc func clearClerkClientToken(_ call: CAPPluginCall) {
+        let status = SecItemDelete(clerkTokenQuery() as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            call.reject("Could not clear the saved Clerk session", "AUTH_STORAGE_DELETE")
+            return
+        }
+        call.resolve()
+    }
+
+    private func clerkTokenQuery() -> [String: Any] {
+        return [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: clerkTokenService,
+            kSecAttrAccount as String: clerkTokenAccount
+        ]
+    }
 
     @objc func openAuthSession(_ call: CAPPluginCall) {
         guard let urlString = call.getString("url"), let url = URL(string: urlString) else {

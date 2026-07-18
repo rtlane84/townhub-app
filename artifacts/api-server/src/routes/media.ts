@@ -152,7 +152,7 @@ router.get("/media/optimize", async (req, res): Promise<void> => {
     });
 
     res.setHeader("Content-Type", optimized.contentType);
-    res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400");
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.setHeader("Vary", "Accept");
     res.send(optimized.buffer);
   } catch (err) {

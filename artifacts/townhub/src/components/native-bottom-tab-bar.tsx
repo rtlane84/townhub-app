@@ -26,6 +26,7 @@ import {
   getGetAdminBootstrapStatusQueryKey,
 } from "@workspace/api-client-react";
 import { unregisterNativePushDevice } from "@/lib/native-push";
+import { clearNativeClerkClientToken } from "@/lib/native-clerk-token-transport";
 import { cn } from "@/lib/utils";
 import { isAccountRoute, isNavActive } from "@/lib/native-platform";
 import {
@@ -156,6 +157,7 @@ export function NativeBottomTabBar() {
       // ClerkQueryClientCacheInvalidator via resetClientSessionState.
       setAuthTokenGetter(null);
       await signOut();
+      await clearNativeClerkClientToken();
       closeAccount();
       setLocation("/");
     } catch {

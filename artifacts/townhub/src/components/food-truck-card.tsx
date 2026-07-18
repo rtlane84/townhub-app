@@ -8,8 +8,16 @@ import {
   formatFoodTruckTimeWindow,
 } from "@/lib/food-truck-utils";
 import { cn } from "@/lib/utils";
+import { OptimizedMediaImage } from "@/components/optimized-media-image";
+import { CARD_IMAGE_WIDTHS } from "@/lib/optimized-image";
 
-export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusiness }) {
+export function FoodTruckTodayCard({
+  truck,
+  priority = false,
+}: {
+  truck: FoodTruckLocationWithBusiness;
+  priority?: boolean;
+}) {
   const timeWindow = formatFoodTruckTimeWindow(truck.startTime, truck.endTime);
   const description = truck.locationNotes?.trim() || truck.businessDescription?.trim();
   const slug = truck.businessSlug ?? String(truck.businessId);
@@ -22,12 +30,13 @@ export function FoodTruckTodayCard({ truck }: { truck: FoodTruckLocationWithBusi
       <Link href={storefrontHref} className="block min-w-0">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {hero ? (
-            <img
+            <OptimizedMediaImage
               src={hero}
+              widths={CARD_IMAGE_WIDTHS}
+              sizes="(min-width: 1024px) 28vw, (min-width: 640px) 40vw, 72vw"
+              priority={priority}
               alt=""
               className="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-primary/5 text-primary/40">

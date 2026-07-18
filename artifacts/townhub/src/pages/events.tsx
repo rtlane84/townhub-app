@@ -47,7 +47,7 @@ function EventsViewToggle({
               "inline-flex items-center justify-center gap-1.5 rounded-[8px] px-2 text-[13px] font-semibold transition-all",
               active
                 ? "bg-card text-platform-heading shadow-[0_1px_3px_rgba(15,23,42,0.12)]"
-                : "text-muted-foreground hover:text-foreground",
+                : "text-foreground hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
@@ -218,8 +218,8 @@ export default function Events() {
               />
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {eventsOnSelectedDay.map((event) => (
-                  <EventCard key={event.id} event={event} showFeaturedBadge />
+                {eventsOnSelectedDay.map((event, index) => (
+                  <EventCard key={event.id} event={event} showFeaturedBadge priority={index === 0} />
                 ))}
               </div>
             )}
@@ -249,8 +249,8 @@ export default function Events() {
                 </button>
               </div>
               <PeekCarousel label="Featured events">
-                {featured.map((event) => (
-                  <EventCard key={event.id} event={event} showFeaturedBadge />
+                {featured.map((event, index) => (
+                  <EventCard key={event.id} event={event} showFeaturedBadge priority={index === 0} />
                 ))}
               </PeekCarousel>
             </section>
@@ -264,8 +264,13 @@ export default function Events() {
               All events
             </h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {sortedEvents.map((event) => (
-                <EventCard key={event.id} event={event} showFeaturedBadge />
+              {sortedEvents.map((event, index) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  showFeaturedBadge
+                  priority={featured.length === 0 && index === 0}
+                />
               ))}
             </div>
           </section>

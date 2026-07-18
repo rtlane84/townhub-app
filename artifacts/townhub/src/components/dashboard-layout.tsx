@@ -249,7 +249,7 @@ function BusinessDashboardLayoutInner({ children }: { children: React.ReactNode 
   return (
     <div
       className={cn(
-        "flex min-h-0 md:min-h-[calc(100vh-var(--site-header-height,4rem))] print:block print:min-h-0",
+        "flex min-h-[calc(100dvh-var(--site-header-height,4rem))] print:block print:min-h-0",
         kitchenModeActive && "min-h-[100dvh]",
       )}
     >

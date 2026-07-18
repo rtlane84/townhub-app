@@ -3,6 +3,8 @@ import type { Event } from "@workspace/api-client-react";
 import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OptimizedMediaImage } from "@/components/optimized-media-image";
+import { THUMBNAIL_IMAGE_WIDTHS } from "@/lib/optimized-image";
 
 type HomeFeaturedEventsProps = {
   events: Event[];
@@ -54,12 +56,12 @@ function EventRow({ event }: { event: Event }) {
       >
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-muted">
           {event.imageUrl ? (
-            <img
+            <OptimizedMediaImage
               src={event.imageUrl}
+              widths={THUMBNAIL_IMAGE_WIDTHS}
+              sizes="56px"
               alt=""
               className="h-full w-full object-cover"
-              loading="lazy"
-              decoding="async"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-primary/40">
