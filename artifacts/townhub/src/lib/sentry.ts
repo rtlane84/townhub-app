@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/react";
 import type { Breadcrumb, ErrorEvent, EventHint } from "@sentry/react";
+import { sanitizeSentryEventText, sanitizeSentryText } from "./sentry-scrub";
 
 const SENSITIVE_KEY_PATTERN =
   /password|passwd|token|authorization|auth|secret|stripe|api[_-]?key|bearer|cookie|session|cvv|card/i;
@@ -19,7 +20,15 @@ function scrubValue(key: string, value: unknown): unknown {
     return "[Redacted]";
   }
 
-  if (value && typeof value === "object" && !Array.isArray(value)) {
+  if (typeof value === "string") {
+    return sanitizeSentryText(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => scrubValue("item", item));
+  }
+
+  if (value && typeof value === "object") {
     return scrubObject(value as Record<string, unknown>);
   }
 
@@ -50,6 +59,8 @@ function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb {
 }
 
 function scrubEvent(event: ErrorEvent): ErrorEvent {
+  sanitizeSentryEventText(event);
+
   if (event.extra) {
     event.extra = scrubObject(event.extra);
   }
@@ -67,6 +78,20 @@ function scrubEvent(event: ErrorEvent): ErrorEvent {
     delete event.request.headers;
     delete event.request.data;
     delete event.request.query_string;
+  }
+
+  if (event.tags) {
+    for (const [key, value] of Object.entries(event.tags)) {
+      if (isSensitiveKey(key)) {
+        event.tags[key] = "[Redacted]";
+      } else if (typeof value === "string") {
+        event.tags[key] = sanitizeSentryText(value);
+      }
+    }
+  }
+
+  if (event.user) {
+    event.user = event.user.id ? { id: event.user.id } : undefined;
   }
 
   return event;

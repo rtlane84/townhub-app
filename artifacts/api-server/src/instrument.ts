@@ -8,6 +8,7 @@
 import * as Sentry from "@sentry/node";
 import { getDefaultIntegrationsWithoutPerformance } from "@sentry/node";
 import type { ErrorEvent, EventHint } from "@sentry/node";
+import { sanitizeSentryEventText, sanitizeSentryText } from "./lib/sentry-scrub";
 
 const release =
   process.env.APP_VERSION?.trim() ||
@@ -26,7 +27,15 @@ function scrubValue(key: string, value: unknown): unknown {
     return "[Redacted]";
   }
 
-  if (value && typeof value === "object" && !Array.isArray(value)) {
+  if (typeof value === "string") {
+    return sanitizeSentryText(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => scrubValue("item", item));
+  }
+
+  if (value && typeof value === "object") {
     return scrubObject(value as Record<string, unknown>);
   }
 
@@ -42,6 +51,8 @@ function scrubObject(record: Record<string, unknown>): Record<string, unknown> {
 }
 
 function scrubEvent(event: ErrorEvent): ErrorEvent {
+  sanitizeSentryEventText(event);
+
   if (event.extra) {
     event.extra = scrubObject(event.extra);
   }
@@ -59,6 +70,16 @@ function scrubEvent(event: ErrorEvent): ErrorEvent {
     delete event.request.headers;
     delete event.request.data;
     delete event.request.query_string;
+  }
+
+  if (event.tags) {
+    for (const [key, value] of Object.entries(event.tags)) {
+      if (isSensitiveKey(key)) {
+        event.tags[key] = "[Redacted]";
+      } else if (typeof value === "string") {
+        event.tags[key] = sanitizeSentryText(value);
+      }
+    }
   }
 
   if (event.user) {

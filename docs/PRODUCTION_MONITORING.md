@@ -55,11 +55,11 @@ Team `t570646` (Uptime + Errors + Telemetry) is configured to maximize free moni
 
 | Area | Status | Notes |
 |---|---|---|
-| Uptime monitors | Live | Production + staging API `/health` (status + keyword body), production + staging frontend; prior `townhub.io` monitor retained. Email alerts enabled. Call/SMS/push need paid upgrade. Free SSL/domain monitors are not available without upgrade. |
+| Uptime monitors | Partial | Live dashboard audit on 2026-07-17 confirmed only `https://api.townhub.io/health` (3-minute checks, e-mail alerts). The Better Stack plan currently requires an upgrade before additional production/staging frontend or API monitors can be created. |
 | Test alert | Acknowledged | Monitor `api.townhub.io/health` test alert received by owner (2026-07-15). |
 | Status page | Deferred | Creating a status page redirected to billing/features; stay on free Pay as you go — do not purchase bundles just for OPS-002. Revisit after free-plan status-page entitlement is clear. |
-| Errors (Sentry-compatible) | Live | `TownHub Frontend` + `TownHub API` apps live. Railway `SENTRY_DSN` (staging+production) and Cloudflare Builds `VITE_SENTRY_DSN` (staging+production triggers) point at Better Stack. Events tagged `environment=staging|production` via `DEPLOYMENT_ENVIRONMENT` (API + Vite build). Do not commit DSNs. |
-| Logs (Railway → Telemetry) | Live | Source `TownHub Railway API logs` (HTTP, Europe). Railway [Locomotive](https://railway.com/deploy/locomotive) sidecars: `locomotive` (staging) and `locomotive-production` (production), each watching the TownHub API service with `LOCOMOTIVE_WEBHOOK_MODE=betterstack`. Live Tail verified with `/health` request lines and an ingest marker (2026-07-15). Use an **account-scoped** Railway API token (`LOCOMOTIVE_RAILWAY_API_KEY`); tokens live only in Railway/Better Stack secrets. |
+| Errors (Sentry-compatible) | Live; privacy fix pending deployment | `TownHub Frontend` + `TownHub API` apps receive staging and production events. A 2026-07-17 audit found PII/provider identifiers embedded in exception-message text; the repository now sanitizes exception grouping fields, request URLs, fingerprints, breadcrumbs, tags, and structured context. Deploy and verify a controlled synthetic event before treating this item as complete. Do not commit DSNs. |
+| Logs (Railway → Telemetry) | Not connected | The Better Stack team had no Telemetry source during the 2026-07-17 live audit, despite an earlier 2026-07-15 verification. Recreate the source, rotate/update its ingest credential in both Railway Locomotive sidecars, and verify new staging and production markers in Live Tail. Use an **account-scoped** Railway API token (`LOCOMOTIVE_RAILWAY_API_KEY`); tokens live only in Railway/Better Stack secrets. |
 
 Dashboards: [Monitors](https://uptime.betterstack.com/team/t570646/monitors), [Errors applications](https://errors.betterstack.com/team/t570646/applications), [Log sources](https://telemetry.betterstack.com/team/t570646/sources).
 
@@ -147,7 +147,7 @@ Tag events with **`DEPLOYMENT_ENVIRONMENT`** (`staging` or `production`) so Bett
 - Optional release tags: `APP_VERSION`, `GIT_COMMIT_SHA`, `VITE_APP_VERSION`, `VITE_GIT_COMMIT_SHA`
 - Development-only tests: `GET /api/debug/sentry` and `/debug/sentry`; neither route is mounted in production
 
-Verify one event from each staging surface and confirm routing to the primary operator. TownHub scrubs request headers, cookies, bodies, query strings, credentials, payment fields, and common secret keys. Do not add customer PII, tokens, provider identifiers, or secrets to Sentry context manually. A stable signed-in user ID and route/business identifiers may be attached for diagnosis and must be reflected accurately in privacy disclosures.
+Verify one event from each staging surface and confirm routing to the primary operator. TownHub scrubs request headers, cookies, bodies, query strings and URL values, exception-message text, credentials, payment fields, common secret keys, e-mail addresses, and Clerk-style provider identifiers. Do not add customer PII, tokens, provider identifiers, or secrets to Sentry context manually. A stable signed-in user ID and route/business identifiers may be attached for diagnosis and must be reflected accurately in privacy disclosures.
 
 When a DSN is absent, the app continues without sending events. Admin Operations Center reports only whether Sentry is configured and never exposes the DSN.
 
