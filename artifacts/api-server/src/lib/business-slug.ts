@@ -5,13 +5,10 @@ import {
   normalizeBusinessSlugInput,
   slugifyBusinessName,
 } from "@workspace/api-zod";
+import { isPostgresUniqueViolation } from "./postgres-error";
 
 export { slugifyBusinessName, normalizeBusinessSlugInput, isReservedBusinessSlug };
-
-export function isPostgresUniqueViolation(err: unknown): boolean {
-  if (!err || typeof err !== "object") return false;
-  return (err as { code?: string }).code === "23505";
-}
+export { isPostgresUniqueViolation };
 
 export async function isBusinessSlugTaken(slug: string): Promise<boolean> {
   const [row] = await db

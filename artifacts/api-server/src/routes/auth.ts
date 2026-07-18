@@ -13,6 +13,7 @@ import {
 } from "../lib/business-access";
 import { resolveSelectedBusinessId } from "../lib/business-selection";
 import { ClerkUserDesyncError, ensureDbUserForClerkSession } from "../lib/ensure-db-user";
+import { CLERK_USER_DESYNC_PUBLIC_RESPONSE } from "../lib/clerk-user-desync-public";
 import { isAdminBootstrapComplete } from "../lib/admin-bootstrap";
 import { respondIfUserDisabled } from "../lib/user-account-status";
 import { RequestMyAccountDeletionBody } from "@workspace/api-zod";
@@ -54,12 +55,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     });
   } catch (err) {
     if (err instanceof ClerkUserDesyncError) {
-      res.status(409).json({
-        error: err.message,
-        currentClerkUserId: err.currentClerkUserId,
-        localUserId: err.localUserId,
-        relinkCommand: err.relinkCommand,
-      });
+      res.status(409).json(CLERK_USER_DESYNC_PUBLIC_RESPONSE);
       return;
     }
     throw err;
@@ -310,12 +306,7 @@ router.post("/admin/bootstrap", async (req, res): Promise<void> => {
     });
   } catch (err) {
     if (err instanceof ClerkUserDesyncError) {
-      res.status(409).json({
-        error: err.message,
-        currentClerkUserId: err.currentClerkUserId,
-        localUserId: err.localUserId,
-        relinkCommand: err.relinkCommand,
-      });
+      res.status(409).json(CLERK_USER_DESYNC_PUBLIC_RESPONSE);
       return;
     }
     throw err;
