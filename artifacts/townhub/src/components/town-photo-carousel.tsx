@@ -187,7 +187,7 @@ export function TownPhotoCarousel({
 
       {showControls ? (
         <div
-          className="absolute right-1 top-1/2 z-[4] flex -translate-y-1/2 flex-col items-center rounded-full bg-black/20 py-0.5 backdrop-blur-[2px]"
+          className="absolute right-1 top-1/2 z-[4] flex -translate-y-1/2 flex-col items-center"
           role="group"
           aria-label="Choose a town photo"
         >
@@ -195,15 +195,15 @@ export function TownPhotoCarousel({
             <button
               key={slide.id}
               type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="-my-1.5 flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={`Show town photo ${index + 1}`}
               aria-current={index === selected ? "true" : undefined}
               onClick={() => api?.scrollTo(index)}
             >
               <span
                 className={cn(
-                  "h-2 rounded-full shadow-sm transition-all",
-                  index === selected ? "w-2 bg-white" : "w-1.5 bg-white/65",
+                  "h-2 w-2 rounded-full transition-all",
+                  index === selected ? "bg-white" : "bg-cyan-900/80",
                 )}
                 aria-hidden
               />
