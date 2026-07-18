@@ -4,7 +4,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -187,27 +186,29 @@ export function TownPhotoCarousel({
       </Carousel>
 
       {showControls ? (
-        <div className="pointer-events-none absolute inset-y-0 inset-x-2 z-[4] flex items-center justify-between" aria-label="Town photo controls">
-          <Button
-            type="button"
-            variant="secondary"
-            size="icon"
-            className="pointer-events-auto h-11 w-11 rounded-full border border-border/70 bg-background/90 shadow-sm backdrop-blur-sm"
-            onClick={() => api?.scrollPrev()}
-            aria-label="Previous town photo"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="icon"
-            className="pointer-events-auto h-11 w-11 rounded-full border border-border/70 bg-background/90 shadow-sm backdrop-blur-sm"
-            onClick={() => api?.scrollNext()}
-            aria-label="Next town photo"
-          >
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-          </Button>
+        <div
+          className="absolute right-1 top-1/2 z-[4] flex -translate-y-1/2 flex-col items-center rounded-full bg-black/20 py-0.5 backdrop-blur-[2px]"
+          role="group"
+          aria-label="Choose a town photo"
+        >
+          {visibleSlides.map((slide, index) => (
+            <button
+              key={slide.id}
+              type="button"
+              className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`Show town photo ${index + 1}`}
+              aria-current={index === selected ? "true" : undefined}
+              onClick={() => api?.scrollTo(index)}
+            >
+              <span
+                className={cn(
+                  "h-2 rounded-full shadow-sm transition-all",
+                  index === selected ? "w-2 bg-white" : "w-1.5 bg-white/65",
+                )}
+                aria-hidden
+              />
+            </button>
+          ))}
         </div>
       ) : null}
 
