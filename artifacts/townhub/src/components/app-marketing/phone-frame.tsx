@@ -45,12 +45,7 @@ export function PhoneFrame({
       )}
       style={{ aspectRatio: ratio }}
     >
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-5 md:h-6 bg-primary rounded-b-3xl z-20 flex justify-center items-center"
-        aria-hidden
-      >
-        <div className="w-10 md:w-12 h-1 md:h-1.5 bg-gray-800 rounded-full" />
-      </div>
+      {/* Screenshots include a real status bar; skip a fake notch overlay. */}
       <img
         src={src}
         alt={alt}
@@ -60,10 +55,6 @@ export function PhoneFrame({
       />
       <div
         className="absolute inset-0 pointer-events-none rounded-[2.1rem] md:rounded-[2.6rem] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)] z-30"
-        aria-hidden
-      />
-      <div
-        className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/10 to-transparent pointer-events-none z-30"
         aria-hidden
       />
     </div>
