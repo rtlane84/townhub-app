@@ -26,7 +26,19 @@ import { formatCivilDateInTimeZone } from "@workspace/api-zod";
 
 const ADMIN_HIGHLIGHTS_KEY = ["admin", "highlights"];
 
-const BLANK: HighlightInput = {
+type HighlightFormState = {
+  title: string;
+  description: string;
+  imageUrl: string;
+  startDate: string;
+  endDate: string;
+  buttonText: string;
+  buttonUrl: string;
+  active: boolean;
+  sortOrder: number;
+};
+
+const BLANK: HighlightFormState = {
   title: "",
   description: "",
   imageUrl: "",
@@ -63,7 +75,7 @@ export default function AdminHighlights() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Highlight | null>(null);
-  const [form, setForm] = useState<HighlightInput>({ ...BLANK, startDate: today, endDate: today });
+  const [form, setForm] = useState<HighlightFormState>({ ...BLANK, startDate: today, endDate: today });
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   function invalidate() {
@@ -115,12 +127,18 @@ export default function AdminHighlights() {
   }
 
   function handleSave() {
+    // Send null (not undefined) so partial updates actually clear nullable fields.
+    const clearable = (value: string | undefined | null) => {
+      const trimmed = (value ?? "").trim();
+      return trimmed.length > 0 ? trimmed : null;
+    };
     const data: HighlightInput = {
       ...form,
-      description: form.description || undefined,
-      imageUrl: form.imageUrl || undefined,
-      buttonText: form.buttonText || undefined,
-      buttonUrl: form.buttonUrl || undefined,
+      title: form.title.trim(),
+      description: clearable(form.description),
+      imageUrl: clearable(form.imageUrl),
+      buttonText: clearable(form.buttonText),
+      buttonUrl: clearable(form.buttonUrl),
     };
     if (editing) {
       updateHighlight.mutate({ id: editing.id, data });
@@ -129,7 +147,7 @@ export default function AdminHighlights() {
     }
   }
 
-  function f(key: keyof HighlightInput) {
+  function f(key: keyof HighlightFormState) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((prev) => ({ ...prev, [key]: key === "sortOrder" ? parseInt(e.target.value, 10) || 0 : e.target.value }));
   }
@@ -211,7 +229,7 @@ export default function AdminHighlights() {
             </div>
             <ImageField
               surface="highlight"
-              value={form.imageUrl ?? ""}
+              value={form.imageUrl}
               onChange={(imageUrl) => setForm((prev) => ({ ...prev, imageUrl }))}
               testId="highlight-image"
             />

@@ -75,10 +75,11 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
     hint: "Optional image for the community events calendar.",
   },
   highlight: {
-    label: "Highlight image",
-    recommendedSize: "800 × 800 px (square)",
+    label: "Spotlight image",
+    recommendedSize: "400 × 400 px (square)",
     aspectClass: "aspect-square",
-    hint: "Thumbnail on the homepage highlights section.",
+    previewMaxClass: "max-w-[7.5rem]",
+    hint: "Small square thumbnail on homepage Spotlight cards (~56×56 display).",
   },
   "platform-logo": {
     label: "Platform logo",

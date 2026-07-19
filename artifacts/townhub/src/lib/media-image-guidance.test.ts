@@ -28,6 +28,19 @@ describe("media-image-guidance", () => {
     assert.match(product.fileLine, /5 MB/);
   });
 
+  it("matches spotlight guidance to the small homepage thumbnail", () => {
+    const highlight = IMAGE_SURFACE_GUIDANCE.highlight;
+    assert.equal(highlight.label, "Spotlight image");
+    assert.match(highlight.recommendedSize, /400 × 400 px \(square\)/);
+    assert.equal(highlight.aspectClass, "aspect-square");
+    assert.equal(highlight.previewMaxClass, "max-w-[7.5rem]");
+    assert.match(highlight.hint ?? "", /Spotlight cards/i);
+
+    const formatted = formatImageSurfaceGuidance("highlight");
+    assert.match(formatted.recommendedLine, /400 × 400 px \(square\)/);
+    assert.doesNotMatch(formatted.recommendedLine, /800 × 800/);
+  });
+
   it("uses contain preview for logos and cover for heroes", () => {
     assert.equal(IMAGE_SURFACE_GUIDANCE["business-logo"].previewFit, "contain");
     assert.equal(IMAGE_SURFACE_GUIDANCE["platform-logo"].previewFit, "contain");
