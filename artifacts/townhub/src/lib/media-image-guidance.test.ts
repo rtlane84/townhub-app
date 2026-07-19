@@ -28,17 +28,29 @@ describe("media-image-guidance", () => {
     assert.match(product.fileLine, /5 MB/);
   });
 
-  it("matches spotlight guidance to the small homepage thumbnail", () => {
+  it("matches spotlight guidance to the homepage landscape thumbnail", () => {
     const highlight = IMAGE_SURFACE_GUIDANCE.highlight;
     assert.equal(highlight.label, "Spotlight image");
-    assert.match(highlight.recommendedSize, /400 × 400 px \(square\)/);
-    assert.equal(highlight.aspectClass, "aspect-square");
-    assert.equal(highlight.previewMaxClass, "max-w-[7.5rem]");
-    assert.match(highlight.hint ?? "", /Spotlight cards/i);
+    assert.match(highlight.recommendedSize, /800 × 600 px \(4:3\)/);
+    assert.equal(highlight.aspectClass, "aspect-[4/3]");
+    assert.equal(highlight.previewMaxClass, "max-w-[10rem]");
+    assert.match(highlight.hint ?? "", /Landscape thumbnail/i);
 
     const formatted = formatImageSurfaceGuidance("highlight");
-    assert.match(formatted.recommendedLine, /400 × 400 px \(square\)/);
-    assert.doesNotMatch(formatted.recommendedLine, /800 × 800/);
+    assert.match(formatted.recommendedLine, /800 × 600 px \(4:3\)/);
+    assert.doesNotMatch(formatted.recommendedLine, /square/i);
+  });
+
+  it("homepage Spotlight thumbnails use a 4:3 frame", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { fileURLToPath } = await import("node:url");
+    const { dirname, join } = await import("node:path");
+    const here = dirname(fileURLToPath(import.meta.url));
+    const home = readFileSync(join(here, "../pages/home.tsx"), "utf8");
+    assert.match(home, /h-\[3\.75rem\] w-20/);
+    assert.match(home, /width=\{80\}/);
+    assert.match(home, /height=\{60\}/);
+    assert.doesNotMatch(home, /spotlightItems\.map[\s\S]*h-14 w-14/);
   });
 
   it("uses contain preview for logos and cover for heroes", () => {

@@ -76,10 +76,10 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
   },
   highlight: {
     label: "Spotlight image",
-    recommendedSize: "400 × 400 px (square)",
-    aspectClass: "aspect-square",
-    previewMaxClass: "max-w-[7.5rem]",
-    hint: "Small square thumbnail on homepage Spotlight cards (~56×56 display).",
+    recommendedSize: "800 × 600 px (4:3)",
+    aspectClass: "aspect-[4/3]",
+    previewMaxClass: "max-w-[10rem]",
+    hint: "Landscape thumbnail on homepage Spotlight cards.",
   },
   "platform-logo": {
     label: "Platform logo",

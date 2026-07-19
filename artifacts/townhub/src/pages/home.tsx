@@ -287,14 +287,14 @@ export default function Home() {
                       <OptimizedMediaImage
                         src={h.imageUrl}
                         widths={THUMBNAIL_IMAGE_WIDTHS}
-                        sizes="56px"
+                        sizes="80px"
                         alt={h.title}
-                        width={56}
-                        height={56}
-                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                        width={80}
+                        height={60}
+                        className="h-[3.75rem] w-20 shrink-0 rounded-xl object-cover"
                       />
                     ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <div className="flex h-[3.75rem] w-20 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <Sparkles className="h-5 w-5" />
                       </div>
                     )}
