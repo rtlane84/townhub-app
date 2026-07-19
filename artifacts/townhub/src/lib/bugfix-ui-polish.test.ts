@@ -45,6 +45,7 @@ describe("event list layout", () => {
     assert.match(eventListRow, /object-cover/);
     assert.match(eventListRow, /formatEventSchedule/);
     assert.match(eventListRow, /event\.location/);
+    assert.match(eventListRow, /truncateEventDescription/);
 
     const eventsPage = readFileSync(
       new URL("../pages/events.tsx", import.meta.url),
@@ -64,7 +65,8 @@ describe("event list layout", () => {
     assert.match(eventCard, /uniform\?: boolean/);
     assert.match(eventCard, /aspect-\[4\/3\]/);
     assert.match(eventCard, /truncateEventDescription/);
-    assert.match(eventCard, /min-h-\[2\.5rem\] line-clamp-2/);
+    // No reserved title/description blocks — spacing stays tight on short content.
+    assert.doesNotMatch(eventCard, /min-h-\[2\.5rem\]/);
   });
 });
 

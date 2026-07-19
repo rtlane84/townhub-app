@@ -22,8 +22,8 @@ interface EventCardProps {
   showFeaturedBadge?: boolean;
   priority?: boolean;
   /**
-   * Featured-carousel layout: always shows a 4:3 media area and reserved
-   * title / location / description height so every slide shares the same height.
+   * Featured-carousel layout: always shows the 4:3 media area (placeholder
+   * when no image) so slides align; outer height equalizes via slide stretch.
    */
   uniform?: boolean;
 }
@@ -93,49 +93,23 @@ export function EventCard({
             </Badge>
           ) : null}
         </div>
-        <h3
-          className={cn(
-            "line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-platform-heading",
-            uniform && "min-h-[2.5rem]",
-          )}
-        >
+        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-platform-heading">
           {event.title}
         </h3>
-        <div className="mt-2 space-y-1 text-[12px] text-muted-foreground">
-          <div className="flex min-h-[1.125rem] items-center gap-1.5">
+        <div className="mt-1.5 space-y-1 text-[12px] text-muted-foreground">
+          <div className="flex items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden />
             <span className="truncate">{schedule}</span>
           </div>
-          {uniform ? (
-            <div
-              className={cn(
-                "flex min-h-[1.125rem] items-center gap-1.5",
-                !event.location && "invisible",
-              )}
-              aria-hidden={!event.location}
-            >
-              <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              <span className="truncate">{event.location ?? "Location"}</span>
-            </div>
-          ) : event.location ? (
+          {event.location ? (
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">{event.location}</span>
             </div>
           ) : null}
         </div>
-        {uniform ? (
-          <p
-            className={cn(
-              "mt-2.5 min-h-[2.5rem] line-clamp-2 text-[13px] leading-snug text-muted-foreground",
-              !descriptionPreview && "invisible",
-            )}
-            aria-hidden={!descriptionPreview}
-          >
-            {descriptionPreview || "Description"}
-          </p>
-        ) : descriptionPreview ? (
-          <p className="mt-2.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+        {descriptionPreview ? (
+          <p className="mt-2 line-clamp-2 text-[13px] leading-snug text-muted-foreground">
             {descriptionPreview}
           </p>
         ) : null}

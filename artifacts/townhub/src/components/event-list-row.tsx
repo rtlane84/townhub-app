@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import type { Event } from "@workspace/api-client-react";
 import { CalendarDays, MapPin } from "lucide-react";
 import { formatEventSchedule } from "@/lib/event-dates";
+import { truncateEventDescription } from "@/lib/event-description";
 import { cn } from "@/lib/utils";
 import { OptimizedMediaImage } from "@/components/optimized-media-image";
 import { THUMBNAIL_IMAGE_WIDTHS } from "@/lib/optimized-image";
@@ -26,6 +27,7 @@ export function EventListRow({
   priority = false,
 }: EventListRowProps) {
   const schedule = formatEventSchedule(event);
+  const descriptionPreview = truncateEventDescription(event.description);
 
   const body = (
     <>
@@ -57,6 +59,11 @@ export function EventListRow({
           <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
             <MapPin className="h-3 w-3 shrink-0" aria-hidden />
             <span className="truncate">{event.location}</span>
+          </p>
+        ) : null}
+        {descriptionPreview ? (
+          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/90">
+            {descriptionPreview}
           </p>
         ) : null}
       </div>
