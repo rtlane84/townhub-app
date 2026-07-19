@@ -544,6 +544,16 @@ html.native-app .native-pressable:active {
     color: #ffffff !important;
     font-weight: 500;
   }
+
+  /* Custom profile-menu items (Delete TownHub account) — Clerk defaults are low-contrast grey. */
+  .cl-userButtonPopoverCustomItemButton,
+  .cl-userButtonPopoverCustomItemButton span,
+  .cl-userButtonPopoverCustomItemButtonIconBox,
+  .cl-userButtonPopoverCustomItemButtonIconBox svg {
+    color: hsl(var(--destructive)) !important;
+    opacity: 1 !important;
+    font-weight: 500;
+  }
 }
 
 .food-truck-map .leaflet-container {

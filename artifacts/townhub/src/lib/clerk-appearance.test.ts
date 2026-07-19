@@ -26,4 +26,15 @@ describe("clerk auth appearance", () => {
     assert.match(css, /\.cl-socialButtonsBlockButtonText/);
     assert.match(css, /\.cl-formButtonPrimary/);
   });
+
+  it("renders custom profile-menu items as high-contrast destructive", async () => {
+    const source = await readFile(new URL("./clerk-appearance.ts", import.meta.url), "utf8");
+    assert.match(source, /userButtonPopoverCustomItemButton:\s*\n?\s*"!text-destructive/);
+    assert.match(source, /userButtonPopoverCustomItemButtonIconBox: "!text-destructive !opacity-100"/);
+
+    const css = await readFile(new URL("../index.css", import.meta.url), "utf8");
+    assert.match(css, /\.cl-userButtonPopoverCustomItemButton/);
+    assert.match(css, /\.cl-userButtonPopoverCustomItemButtonIconBox/);
+    assert.match(css, /color: hsl\(var\(--destructive\)\) !important/);
+  });
 });
