@@ -7,7 +7,7 @@ import {
   resolveClerkProxyUrl,
   resolveClerkStandardBrowser,
 } from "@/lib/clerk-config";
-import { clerkAuthAppearance, nativeClerkAuthAppearance as nativeClerkAuthBase } from "@/lib/clerk-appearance";
+import { clerkAuthAppearance } from "@/lib/clerk-appearance";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -23,6 +23,7 @@ import { AnimatedSplash } from "@/components/animated-splash";
 
 import { RoutePageLoader } from "@/components/route-page-loader";
 import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
+import { NativeEmailSignInForm, NativeEmailSignUpForm } from "@/components/native-email-auth";
 import { isNativeApp } from "@/lib/native-platform";
 import {
   buildNativeSsoDeepLinkFromLocation,
@@ -112,15 +113,6 @@ const clerkAppearance = {
   },
 };
 
-/** Sign-in/up pages: native base + logo options (OAuth hidden via nativeClerkAuthBase). */
-const nativeClerkAuthAppearance = {
-  ...nativeClerkAuthBase,
-  options: {
-    logoPlacement: "inside" as const,
-    logoLinkUrl: basePath || "/",
-  },
-};
-
 function SignInPage() {
   const native = isNativeApp();
   const { isSignedIn, isLoaded } = useAuth();
@@ -144,12 +136,16 @@ function SignInPage() {
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-4">
         {native ? <NativeSocialSignInButtons /> : null}
-        <SignIn
-          routing="path"
-          path={`${basePath}/sign-in`}
-          signUpUrl={`${basePath}/sign-up`}
-          appearance={native ? nativeClerkAuthAppearance : clerkAppearance}
-        />
+        {native ? (
+          <NativeEmailSignInForm />
+        ) : (
+          <SignIn
+            routing="path"
+            path={`${basePath}/sign-in`}
+            signUpUrl={`${basePath}/sign-up`}
+            appearance={clerkAppearance}
+          />
+        )}
       </div>
     </div>
   );
@@ -178,12 +174,16 @@ function SignUpPage() {
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-md space-y-4">
         {native ? <NativeSocialSignInButtons /> : null}
-        <SignUp
-          routing="path"
-          path={`${basePath}/sign-up`}
-          signInUrl={`${basePath}/sign-in`}
-          appearance={native ? nativeClerkAuthAppearance : clerkAppearance}
-        />
+        {native ? (
+          <NativeEmailSignUpForm />
+        ) : (
+          <SignUp
+            routing="path"
+            path={`${basePath}/sign-up`}
+            signInUrl={`${basePath}/sign-in`}
+            appearance={clerkAppearance}
+          />
+        )}
       </div>
     </div>
   );

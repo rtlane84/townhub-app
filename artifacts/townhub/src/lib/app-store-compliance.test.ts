@@ -45,6 +45,28 @@ describe("App Store compliance wiring", () => {
     );
   });
 
+  it("uses custom email forms on native sign-in/up (no Clerk prebuilt UI)", () => {
+    assert.match(appSource, /NativeEmailSignInForm/);
+    assert.match(appSource, /NativeEmailSignUpForm/);
+    assert.match(
+      appSource,
+      /function SignInPage[\s\S]*native \? \(\s*<NativeEmailSignInForm/,
+    );
+    assert.match(
+      appSource,
+      /function SignUpPage[\s\S]*native \? \(\s*<NativeEmailSignUpForm/,
+    );
+    const emailAuth = readFileSync(
+      `${srcRoot}/components/native-email-auth.tsx`,
+      "utf8",
+    );
+    assert.match(emailAuth, /useSignIn/);
+    assert.match(emailAuth, /useSignUp/);
+    assert.match(emailAuth, /signIn\.create/);
+    assert.match(emailAuth, /prepareEmailAddressVerification/);
+    assert.doesNotMatch(emailAuth, /from "@clerk\/react"/);
+  });
+
   it("provides in-app account deletion and legal routes", () => {
     assert.match(appSource, /ProtectedRoute path="\/account"/);
     assert.match(appSource, /path="\/privacy-policy"/);
