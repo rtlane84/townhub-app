@@ -28,8 +28,9 @@ function clerkErrorMessage(err: unknown): string {
  * components — so `<SignIn />` throws "Clerk was not loaded with Ui components".
  * Hooks (`useSignIn`) still work, same as Apple/Google token exchange.
  *
- * New devices often get Client Trust `needs_second_factor` (email_code) after
- * password — handle that OTP step instead of failing closed.
+ * New devices often get Client Trust `needs_client_trust` or legacy
+ * `needs_second_factor` (email_code) after password — handle that OTP step
+ * instead of failing closed.
  */
 export function NativeEmailSignInForm({ className }: { className?: string }) {
   const { isLoaded, signIn, setActive } = useSignIn();
@@ -79,7 +80,11 @@ export function NativeEmailSignInForm({ className }: { className?: string }) {
         return;
       }
 
-      if (result.status === "needs_second_factor") {
+      // Client Trust (new devices) returns needs_client_trust; MFA returns needs_second_factor.
+      if (
+        result.status === "needs_client_trust" ||
+        result.status === "needs_second_factor"
+      ) {
         const emailCodeFactor = result.supportedSecondFactors?.find(
           (factor) => factor.strategy === "email_code",
         );
@@ -92,10 +97,14 @@ export function NativeEmailSignInForm({ className }: { className?: string }) {
           setCode("");
           return;
         }
+        setError(
+          `Additional verification is required (${result.status}), but no email code option is available. Try Apple or Google, or complete sign-in on the website.`,
+        );
+        return;
       }
 
       setError(
-        "Additional verification is required for this account. Try Apple or Google, or complete sign-in on the website.",
+        `Additional verification is required (${result.status ?? "unknown"}). Try Apple or Google, or complete sign-in on the website.`,
       );
     } catch (err) {
       setError(clerkErrorMessage(err));
