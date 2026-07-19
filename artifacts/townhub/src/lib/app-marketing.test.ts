@@ -73,6 +73,9 @@ describe("app marketing page", () => {
     assert.match(phoneFrame, /loading = "lazy"/);
     assert.match(phoneFrame, /aspectRatio/);
     assert.match(phoneFrame, /object-cover/);
+    // Notch scales with frame width (not fixed h-5/h-6) so all sizes match.
+    assert.match(phoneFrame, /width: "34%"/);
+    assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
   });
 
   it("sets Apple Smart App Banner metadata from config", () => {

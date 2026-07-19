@@ -7,13 +7,8 @@ const SIZE_CLASS = {
   xl: "w-[320px]",
 } as const;
 
-/** Width / height for aspect-ratio (phone chrome proportions). */
-const SIZE_RATIO = {
-  sm: 180 / 389,
-  md: 240 / 519,
-  lg: 280 / 605,
-  xl: 320 / 692,
-} as const;
+/** Matches marketing screenshot proportions (~1284×2778). */
+const FRAME_ASPECT = 9 / 19.5;
 
 type PhoneFrameProps = {
   src: string;
@@ -31,21 +26,34 @@ export function PhoneFrame({
   className,
   loading = "lazy",
 }: PhoneFrameProps) {
-  const ratio = SIZE_RATIO[size];
-
   return (
     <div
       className={cn(
         "relative border-[6px] border-primary bg-primary shadow-2xl overflow-hidden shrink-0 flex",
         "rounded-[2.5rem] md:rounded-[3rem]",
         "motion-safe:transition-transform",
-        "aspect-[9/19.5]",
         SIZE_CLASS[size],
         className,
       )}
-      style={{ aspectRatio: ratio }}
+      style={{ aspectRatio: FRAME_ASPECT }}
     >
-      {/* Screenshots include a real status bar; skip a fake notch overlay. */}
+      {/* Proportional notch: scales with frame width so every size matches. */}
+      <div
+        className="absolute top-0 left-1/2 z-20 flex items-center justify-center bg-primary"
+        style={{
+          width: "34%",
+          aspectRatio: "3.4 / 1",
+          transform: "translateX(-50%)",
+          borderBottomLeftRadius: "45%",
+          borderBottomRightRadius: "45%",
+        }}
+        aria-hidden
+      >
+        <div
+          className="rounded-full bg-gray-800"
+          style={{ width: "42%", height: "14%" }}
+        />
+      </div>
       <img
         src={src}
         alt={alt}
@@ -55,6 +63,10 @@ export function PhoneFrame({
       />
       <div
         className="absolute inset-0 pointer-events-none rounded-[2.1rem] md:rounded-[2.6rem] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)] z-30"
+        aria-hidden
+      />
+      <div
+        className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/10 to-transparent pointer-events-none z-30"
         aria-hidden
       />
     </div>
