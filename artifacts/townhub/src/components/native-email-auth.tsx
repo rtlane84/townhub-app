@@ -27,14 +27,28 @@ function clerkErrorMessage(err: unknown): string {
  * Native Clerk uses `standardBrowser: false`, which does not load prebuilt UI
  * components — so `<SignIn />` throws "Clerk was not loaded with Ui components".
  * Hooks (`useSignIn`) still work, same as Apple/Google token exchange.
+ *
+ * New devices often get Client Trust `needs_second_factor` (email_code) after
+ * password — handle that OTP step instead of failing closed.
  */
 export function NativeEmailSignInForm({ className }: { className?: string }) {
   const { isLoaded, signIn, setActive } = useSignIn();
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [needsEmailCode, setNeedsEmailCode] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function finishSignIn(sessionId: string | null | undefined) {
+    if (!sessionId || !setActive) {
+      setError("Sign-in succeeded but no session was created. Please try again.");
+      return;
+    }
+    await setActive({ session: sessionId });
+    setLocation(consumePostAuthRedirect() ?? "/");
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -42,23 +56,134 @@ export function NativeEmailSignInForm({ className }: { className?: string }) {
     setPending(true);
     setError(null);
     try {
-      const result = await signIn.create({
+      let result = await signIn.create({
         identifier: email.trim(),
         password,
       });
-      if (result.status === "complete" && result.createdSessionId) {
-        await setActive({ session: result.createdSessionId });
-        setLocation(consumePostAuthRedirect() ?? "/");
+
+      // Some Clerk configs leave password as an explicit first-factor step.
+      if (result.status === "needs_first_factor") {
+        const passwordFactor = result.supportedFirstFactors?.find(
+          (factor) => factor.strategy === "password",
+        );
+        if (passwordFactor) {
+          result = await signIn.attemptFirstFactor({
+            strategy: "password",
+            password,
+          });
+        }
+      }
+
+      if (result.status === "complete") {
+        await finishSignIn(result.createdSessionId);
         return;
       }
+
+      if (result.status === "needs_second_factor") {
+        const emailCodeFactor = result.supportedSecondFactors?.find(
+          (factor) => factor.strategy === "email_code",
+        );
+        if (emailCodeFactor && "emailAddressId" in emailCodeFactor) {
+          await signIn.prepareSecondFactor({
+            strategy: "email_code",
+            emailAddressId: emailCodeFactor.emailAddressId,
+          });
+          setNeedsEmailCode(true);
+          setCode("");
+          return;
+        }
+      }
+
       setError(
-        "Additional verification is required. Try Apple or Google, or complete sign-in on the website.",
+        "Additional verification is required for this account. Try Apple or Google, or complete sign-in on the website.",
       );
     } catch (err) {
       setError(clerkErrorMessage(err));
     } finally {
       setPending(false);
     }
+  }
+
+  async function onVerifyCode(e: FormEvent) {
+    e.preventDefault();
+    if (!isLoaded || !signIn || pending) return;
+    setPending(true);
+    setError(null);
+    try {
+      const result = await signIn.attemptSecondFactor({
+        strategy: "email_code",
+        code: code.trim(),
+      });
+      if (result.status === "complete") {
+        await finishSignIn(result.createdSessionId);
+        return;
+      }
+      setError("Could not verify that code. Check your email and try again.");
+    } catch (err) {
+      setError(clerkErrorMessage(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (needsEmailCode) {
+    return (
+      <form
+        onSubmit={(e) => void onVerifyCode(e)}
+        className={cn("space-y-3 rounded-[1.25rem] border border-black/[0.05] bg-card p-4 shadow-sm", className)}
+        data-testid="native-email-sign-in-verify"
+      >
+        <div>
+          <h1 className="font-serif text-xl font-semibold tracking-tight text-foreground">
+            Verify it&apos;s you
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Enter the verification code we sent to {email.trim() || "your email"}.
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <label htmlFor="native-signin-code" className="text-sm font-medium">
+            Verification code
+          </label>
+          <Input
+            id="native-signin-code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            required
+            disabled={pending}
+          />
+        </div>
+        {error ? (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <LoadingButton
+          type="submit"
+          className="w-full min-h-[48px]"
+          loading={pending}
+          disabled={!code.trim()}
+          loadingText="Verifying…"
+        >
+          Verify and sign in
+        </LoadingButton>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full"
+          disabled={pending}
+          onClick={() => {
+            setNeedsEmailCode(false);
+            setCode("");
+            setError(null);
+          }}
+        >
+          Back
+        </Button>
+      </form>
+    );
   }
 
   return (
@@ -169,6 +294,10 @@ export function NativeEmailSignUpForm({ className }: { className?: string }) {
     try {
       const result = await signUp.attemptEmailAddressVerification({ code: code.trim() });
       if (result.status === "complete" && result.createdSessionId) {
+        if (!setActive) {
+          setError("Account verified but no session was created. Please try again.");
+          return;
+        }
         await setActive({ session: result.createdSessionId });
         setLocation(consumePostAuthRedirect() ?? "/");
         return;

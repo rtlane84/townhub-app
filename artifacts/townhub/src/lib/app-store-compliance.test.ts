@@ -63,6 +63,8 @@ describe("App Store compliance wiring", () => {
     assert.match(emailAuth, /useSignIn/);
     assert.match(emailAuth, /useSignUp/);
     assert.match(emailAuth, /signIn\.create/);
+    assert.match(emailAuth, /prepareSecondFactor/);
+    assert.match(emailAuth, /attemptSecondFactor/);
     assert.match(emailAuth, /prepareEmailAddressVerification/);
     assert.doesNotMatch(emailAuth, /from "@clerk\/react"/);
   });
