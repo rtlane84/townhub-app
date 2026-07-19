@@ -21,6 +21,10 @@ import {
   type EventSubmitFieldErrors,
   type EventSubmitFormValues,
 } from "@/lib/event-submit";
+import {
+  EVENT_DESCRIPTION_CARD_HINT,
+  EVENT_DESCRIPTION_CARD_MAX_LENGTH,
+} from "@/lib/event-description";
 import { cn } from "@/lib/utils";
 import { isNativeApp } from "@/lib/native-platform";
 import { triggerNativeHaptic } from "@/lib/native-haptics";
@@ -193,10 +197,16 @@ export function EventSubmitForm({ onCancel, onSubmitted, className }: EventSubmi
               value={form.description}
               onChange={(e) => patchField("description", e.target.value)}
               rows={3}
+              maxLength={EVENT_DESCRIPTION_CARD_MAX_LENGTH}
               placeholder="What should people know?"
               className="min-h-[5rem]"
               data-testid="input-event-description"
             />
+            <p className="mt-1 text-xs text-muted-foreground">
+              {EVENT_DESCRIPTION_CARD_HINT}
+              {" · "}
+              {form.description.length}/{EVENT_DESCRIPTION_CARD_MAX_LENGTH}
+            </p>
           </div>
         </section>
 

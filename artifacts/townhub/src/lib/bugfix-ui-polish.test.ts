@@ -63,6 +63,31 @@ describe("event list layout", () => {
     );
     assert.match(eventCard, /uniform\?: boolean/);
     assert.match(eventCard, /aspect-\[4\/3\]/);
+    assert.match(eventCard, /truncateEventDescription/);
+    assert.match(eventCard, /min-h-\[2\.5rem\] line-clamp-2/);
+  });
+});
+
+describe("event description card limit", () => {
+  it("exports a 120-character card limit used by admin and submit forms", async () => {
+    const { EVENT_DESCRIPTION_CARD_MAX_LENGTH, truncateEventDescription } =
+      await import("./event-description.ts");
+    assert.equal(EVENT_DESCRIPTION_CARD_MAX_LENGTH, 120);
+    assert.equal(truncateEventDescription("short"), "short");
+    assert.ok(truncateEventDescription("a".repeat(200)).length <= 120);
+
+    const adminEvents = readFileSync(
+      new URL("../pages/dashboard/admin/events.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(adminEvents, /EVENT_DESCRIPTION_CARD_MAX_LENGTH/);
+    assert.match(adminEvents, /maxLength=\{EVENT_DESCRIPTION_CARD_MAX_LENGTH\}/);
+
+    const submitForm = readFileSync(
+      new URL("../components/event-submit-form.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(submitForm, /maxLength=\{EVENT_DESCRIPTION_CARD_MAX_LENGTH\}/);
   });
 });
 

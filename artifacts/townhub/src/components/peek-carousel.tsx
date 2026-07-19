@@ -67,7 +67,7 @@ export function PeekCarousel({
               itemClassName,
             )}
           >
-            {children[0]}
+            <div className="flex h-full w-full min-w-0 flex-col">{children[0]}</div>
           </div>
         </div>
       </div>
@@ -95,7 +95,7 @@ export function PeekCarousel({
               itemClassName,
             )}
           >
-            {child}
+            <div className="flex h-full w-full min-w-0 flex-col">{child}</div>
           </CarouselItem>
         ))}
       </CarouselContent>
