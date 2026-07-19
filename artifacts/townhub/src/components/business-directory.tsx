@@ -4,6 +4,7 @@ import { Store } from "lucide-react";
 import {
   getBusinessCategoryLine,
   getBusinessListingCta,
+  getBusinessOpenStatus,
   getBusinessStorefrontBadge,
   getStorefrontStatusLine,
   type BusinessListingCta,
@@ -185,6 +186,7 @@ export function BusinessDirectoryRow({
   priority?: boolean;
 }) {
   const categoryLine = getBusinessCategoryLine(business);
+  const openStatus = getBusinessOpenStatus(business);
   const storefrontBadge = getBusinessStorefrontBadge(business);
   const cta = getBusinessListingCta(business);
   const storefrontHref = `/businesses/${business.slug}`;
@@ -211,16 +213,30 @@ export function BusinessDirectoryRow({
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {categoryLine}
           </p>
-          {/* Reserve badge line height so rows match with or without Order/Book online. */}
-          <p
-            className={cn(
-              "mt-1 min-h-[1rem] text-xs font-medium leading-4",
-              storefrontBadge ? "text-primary" : "invisible",
-            )}
-            aria-hidden={!storefrontBadge}
-          >
-            {storefrontBadge ?? "Order online"}
-          </p>
+          <div className="mt-1 space-y-0.5 text-xs">
+            {/* Status only — no "Opens at…" / "Next stop…" schedule line. */}
+            <p
+              className={cn(
+                "min-h-[1rem] truncate font-semibold leading-4",
+                openStatus
+                  ? openStatusClass(openStatus.isOpen)
+                  : "invisible",
+              )}
+              aria-hidden={!openStatus}
+            >
+              {openStatus?.label ?? "Closed"}
+            </p>
+            {/* Reserve badge line height so rows match with or without Order/Book online. */}
+            <p
+              className={cn(
+                "min-h-[1rem] font-medium leading-4",
+                storefrontBadge ? "text-primary" : "invisible",
+              )}
+              aria-hidden={!storefrontBadge}
+            >
+              {storefrontBadge ?? "Order online"}
+            </p>
+          </div>
         </Link>
 
         {cta ? <ListingCtaButton cta={cta} /> : null}
