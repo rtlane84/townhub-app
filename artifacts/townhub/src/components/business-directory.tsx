@@ -203,6 +203,7 @@ export function BusinessDirectoryRow({
             rounded="rounded-[0.9rem]"
             sizes="68px"
             priority={priority}
+            framed
           />
         </Link>
 

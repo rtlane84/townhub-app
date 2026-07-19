@@ -64,6 +64,7 @@ function BusinessRow({ business }: { business: Business }) {
             className="h-[4.25rem] w-[4.25rem]"
             rounded="rounded-[0.9rem]"
             sizes="68px"
+            framed
           />
         </Link>
 
