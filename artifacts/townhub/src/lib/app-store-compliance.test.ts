@@ -9,6 +9,14 @@ const socialSource = readFileSync(
   `${srcRoot}/components/native-google-sign-in-button.tsx`,
   "utf8",
 );
+const tabBarSource = readFileSync(
+  `${srcRoot}/components/native-bottom-tab-bar.tsx`,
+  "utf8",
+);
+const nativeAwareSignInSource = readFileSync(
+  `${srcRoot}/components/native-aware-sign-in.tsx`,
+  "utf8",
+);
 const accountSource = readFileSync(`${srcRoot}/pages/account.tsx`, "utf8");
 const iosRoot = fileURLToPath(new URL("../../ios/App/App/", import.meta.url));
 const privacyManifest = readFileSync(`${iosRoot}/PrivacyInfo.xcprivacy`, "utf8");
@@ -23,6 +31,18 @@ describe("App Store compliance wiring", () => {
     assert.match(socialSource, /authenticateWithGoogleOneTap/);
     assert.match(socialSource, /AuthSession\.googleSignIn/);
     assert.match(entitlements, /com\.apple\.developer\.applesignin/);
+  });
+
+  it("routes native email sign-in to the in-app sign-in page", () => {
+    assert.match(tabBarSource, /href="\/sign-in"/);
+    assert.match(tabBarSource, /Sign In with email/);
+    assert.doesNotMatch(tabBarSource, /SignInButton mode=/);
+    assert.match(nativeAwareSignInSource, /setLocation\("\/sign-in"\)/);
+    // Native branch navigates; web branch may still use Clerk modal.
+    assert.match(
+      nativeAwareSignInSource,
+      /if \(native\) \{[\s\S]*setLocation\("\/sign-in"\)[\s\S]*\}[\s\S]*SignInButton mode="modal"/,
+    );
   });
 
   it("provides in-app account deletion and legal routes", () => {

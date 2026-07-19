@@ -157,7 +157,12 @@ export function ImageField({
           <img
             src={previewSrc}
             alt={`${fieldLabel} preview`}
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full h-full",
+              guidance.previewFit === "contain"
+                ? "object-contain p-1.5 bg-card"
+                : "object-cover",
+            )}
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-muted-foreground py-5 px-3 text-center">

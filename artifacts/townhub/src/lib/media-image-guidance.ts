@@ -15,6 +15,12 @@ export interface ImageSurfaceGuidance {
   aspectClass: string;
   /** Optional max-width for the preview frame in settings UIs. */
   previewMaxClass?: string;
+  /**
+   * How the settings ImageField preview should fit the frame.
+   * Logos use contain so they match public storefront/directory display;
+   * heroes and photos default to cover.
+   */
+  previewFit?: "contain" | "cover";
   hint?: string;
 }
 
@@ -33,6 +39,7 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
     recommendedSize: "400 × 400 px (square)",
     aspectClass: "aspect-square",
     previewMaxClass: "max-w-[7.5rem]",
+    previewFit: "contain",
     hint: "Appears on your storefront and business listings.",
   },
   "business-hero": {
@@ -52,6 +59,7 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
     label: "Hero overlay image",
     recommendedSize: "1200 × 600 px transparent PNG",
     aspectClass: "aspect-[2/1]",
+    previewFit: "contain",
     hint: "Transparent logo + text that sits over the hero background. Never cropped.",
   },
   "homepage-town-photo": {
@@ -77,6 +85,7 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
     recommendedSize: "200 × 200 px (square)",
     aspectClass: "aspect-square",
     previewMaxClass: "max-w-[7.5rem]",
+    previewFit: "contain",
     hint: "Shown in the site header and footer.",
   },
 };

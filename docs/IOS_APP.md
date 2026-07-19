@@ -66,6 +66,8 @@ See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 Native sign-in on iOS offers **Apple**, **Google**, and **email**.
 
+Apple and Google use native system sheets + Clerk token exchange. **Email** uses the in-app `/sign-in` page (Clerk embedded SignIn with OAuth buttons hidden). Do not open Clerk’s `SignInButton mode="modal"` from the Account drawer or other sheets on native — closing the sheet races the modal in WKWebView and email sign-in appears broken while Apple/Google still work.
+
 ### Why not browser-based OAuth on iOS
 
 The web Clerk SDK (`@clerk/react`) completes OAuth via a cookie/handshake in the **same browser context** and needs to redirect back to an **https origin**. The Capacitor app can't provide one: Capacitor serves the bundle over the custom `capacitor://localhost` scheme, and WKWebView reserves `http`/`https` so `server.iosScheme` cannot be set to https. Consequences we verified on-device:

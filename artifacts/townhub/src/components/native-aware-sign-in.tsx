@@ -1,7 +1,7 @@
 import { SignInButton } from "@clerk/react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
-import { nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
 import { isNativeApp } from "@/lib/native-platform";
 import { cn } from "@/lib/utils";
 
@@ -20,8 +20,8 @@ type NativeAwareSignInProps = {
 
 /**
  * Web: Clerk modal with Google + email.
- * Native: Safari Apple/Google OAuth + email-only Clerk modal.
- * Clerk’s in-WebView Google button triggers Google’s “access blocked” policy error.
+ * Native: Apple/Google native sheets + email via in-app `/sign-in` page
+ * (avoids Clerk modal racing with Account drawer / sheets in WKWebView).
  */
 export function NativeAwareSignIn({
   label,
@@ -34,21 +34,23 @@ export function NativeAwareSignIn({
   onEmailClick,
 }: NativeAwareSignInProps) {
   const native = isNativeApp();
+  const [, setLocation] = useLocation();
 
   if (native) {
     return (
       <div className={cn("space-y-3", className)}>
         <NativeSocialSignInButtons />
-        <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
-          <Button
-            size={size}
-            variant={variant}
-            className={cn("w-full", buttonClassName)}
-            onClick={onEmailClick}
-          >
-            {children ?? emailLabel ?? label}
-          </Button>
-        </SignInButton>
+        <Button
+          size={size}
+          variant={variant}
+          className={cn("w-full", buttonClassName)}
+          onClick={() => {
+            onEmailClick?.();
+            setLocation("/sign-in");
+          }}
+        >
+          {children ?? emailLabel ?? label}
+        </Button>
       </div>
     );
   }

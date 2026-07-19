@@ -18,7 +18,7 @@ import {
   UserRound,
   ScrollText,
 } from "lucide-react";
-import { SignInButton, useClerk, useUser } from "@clerk/react";
+import { useClerk, useUser } from "@clerk/react";
 import {
   setAuthTokenGetter,
   useUnregisterDevice,
@@ -44,7 +44,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
-import { nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
 
 type TabItem = {
   href: string;
@@ -364,11 +363,11 @@ export function NativeBottomTabBar() {
                   {showSignedOutAuth ? (
                     <>
                       <NativeSocialSignInButtons />
-                      <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
-                        <Button className="w-full min-h-[48px]" onClick={closeAccount}>
+                      <Link href="/sign-in" onClick={closeAccount}>
+                        <Button className="w-full min-h-[48px]">
                           Sign In with email
                         </Button>
-                      </SignInButton>
+                      </Link>
                     </>
                   ) : (
                     <div className="space-y-3" aria-busy="true" aria-label="Loading sign-in">

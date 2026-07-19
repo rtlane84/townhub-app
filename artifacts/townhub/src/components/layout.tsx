@@ -13,7 +13,7 @@ import { hidesStorefrontCart } from "@workspace/api-zod";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
 import { useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
-import { clerkUserButtonAppearance, nativeClerkAuthAppearance } from "@/lib/clerk-appearance";
+import { clerkUserButtonAppearance } from "@/lib/clerk-appearance";
 import { isNativeApp } from "@/lib/native-platform";
 import { NativeSocialSignInButtons } from "@/components/native-google-sign-in-button";
 import { usePlatformBranding } from "@/components/theme-provider";
@@ -237,9 +237,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     </Link>
                   )}
                   {!hideHeaderAccount && clerkLoaded && !isSignedIn && (
-                    <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
+                    <Link href="/sign-in">
                       <Button size="sm">Sign In</Button>
-                    </SignInButton>
+                    </Link>
                   )}
                   {!hideHeaderAccount && clerkLoaded && isSignedIn && (
                     <HeaderUserButton />
@@ -400,9 +400,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {!hideHeaderAccount && clerkLoaded && !isSignedIn && (
               isNativeApp() ? (
-                <SignInButton mode="modal" appearance={nativeClerkAuthAppearance}>
+                <Link href="/sign-in">
                   <Button size="sm">Sign In</Button>
-                </SignInButton>
+                </Link>
               ) : (
                 <SignInButton mode="modal">
                   <Button size="sm">Sign In</Button>
@@ -544,14 +544,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {clerkLoaded && !isSignedIn && (
                     <div className="pt-3 border-t mt-3 space-y-3">
                       {isNativeApp() ? <NativeSocialSignInButtons /> : null}
-                      <SignInButton
-                        mode="modal"
-                        appearance={isNativeApp() ? nativeClerkAuthAppearance : undefined}
-                      >
-                        <Button className="w-full" onClick={close}>
-                          {isNativeApp() ? "Sign In with email" : "Sign In"}
-                        </Button>
-                      </SignInButton>
+                      {isNativeApp() ? (
+                        <Link href="/sign-in" onClick={close}>
+                          <Button className="w-full">Sign In with email</Button>
+                        </Link>
+                      ) : (
+                        <SignInButton mode="modal">
+                          <Button className="w-full" onClick={close}>
+                            Sign In
+                          </Button>
+                        </SignInButton>
+                      )}
                     </div>
                   )}
 

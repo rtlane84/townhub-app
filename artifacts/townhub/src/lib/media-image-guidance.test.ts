@@ -28,6 +28,25 @@ describe("media-image-guidance", () => {
     assert.match(product.fileLine, /5 MB/);
   });
 
+  it("uses contain preview for logos and cover for heroes", () => {
+    assert.equal(IMAGE_SURFACE_GUIDANCE["business-logo"].previewFit, "contain");
+    assert.equal(IMAGE_SURFACE_GUIDANCE["platform-logo"].previewFit, "contain");
+    assert.equal(IMAGE_SURFACE_GUIDANCE["homepage-hero-overlay"].previewFit, "contain");
+    assert.equal(IMAGE_SURFACE_GUIDANCE["business-hero"].previewFit, undefined);
+    assert.equal(IMAGE_SURFACE_GUIDANCE["homepage-hero"].previewFit, undefined);
+  });
+
+  it("ImageField preview respects surface previewFit", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { fileURLToPath } = await import("node:url");
+    const { dirname, join } = await import("node:path");
+    const here = dirname(fileURLToPath(import.meta.url));
+    const source = readFileSync(join(here, "../components/image-field.tsx"), "utf8");
+    assert.match(source, /previewFit === "contain"/);
+    assert.match(source, /object-contain/);
+    assert.match(source, /object-cover/);
+  });
+
   it("accepts supported image mime types only", () => {
     assert.equal(isAcceptedImageMimeType("image/jpeg"), true);
     assert.equal(isAcceptedImageMimeType("image/png"), true);
