@@ -38,7 +38,7 @@ import {
   formatBusinessTypeLabel,
   hidesStorefrontCart,
   formatCivilDateInTimeZone,
-  filterCurrentOrUpcomingMobileStops,
+  filterFutureMobileStops,
 } from "@workspace/api-zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -225,16 +225,16 @@ export default function Storefront() {
 
   const now = new Date();
   const today = formatCivilDateInTimeZone(now, timezone);
-  const activeOrUpcomingLocations = filterCurrentOrUpcomingMobileStops(
+  // Next / Upcoming lists: stops that have not started yet (exclude the active "here now" stop).
+  const upcomingLocations = filterFutureMobileStops(
     foodTruckLocations,
     now,
     timezone,
-  );
-  const upcomingLocations = activeOrUpcomingLocations.slice(0, 5);
+  ).slice(0, 5);
   const statusLine = getStorefrontStatusLine(b, {
     timeZone: timezone,
     now,
-    mobileLocations: activeOrUpcomingLocations,
+    mobileLocations: foodTruckLocations,
   });
 
   const specials = products.filter((p) => p.featured && p.available !== false);
