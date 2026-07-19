@@ -827,6 +827,8 @@ html.native-app .native-pressable:active {
   --primary: 219 60% 15%;
   --primary-foreground: 0 0% 100%;
   --muted-foreground: 215 14% 34%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
 }
 
 /* Do not inherit platform-heading navy onto dark marketing panels. */

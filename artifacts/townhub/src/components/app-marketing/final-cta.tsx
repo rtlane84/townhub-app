@@ -29,18 +29,18 @@ export function AppMarketingFinalCta() {
             </p>
           </div>
 
-          <div className="lg:w-1/2 relative h-[500px] md:h-[600px] w-full mt-8 lg:mt-0">
+          <div className="lg:w-1/2 relative h-[500px] md:h-[600px] w-full min-w-0 mt-8 lg:mt-0 overflow-hidden">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md flex justify-center">
               <div
                 className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-150 z-0"
                 aria-hidden
               />
-              <div className="translate-x-12 md:translate-x-20 rotate-6 translate-y-12 z-10">
+              <div className="translate-x-8 sm:translate-x-12 md:translate-x-20 rotate-6 translate-y-12 z-10">
                 <PhoneFrame
                   src={otherScreen}
                   alt="Featured local businesses on TownHub"
                   size="lg"
-                  className="opacity-80 scale-90 blur-[2px]"
+                  className="w-[min(240px,55vw)] opacity-80 scale-90 blur-[2px]"
                 />
               </div>
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-12 md:-translate-y-20 -rotate-2 z-20">
@@ -48,7 +48,7 @@ export function AppMarketingFinalCta() {
                   src={homeScreen}
                   alt="TownHub home screen"
                   size="xl"
-                  className="shadow-2xl"
+                  className="w-[min(280px,70vw)] max-w-[320px] shadow-2xl"
                 />
               </div>
             </div>

@@ -49,7 +49,7 @@ export function AppMarketingShowcase() {
     if (!container) return;
 
     const handleScroll = () => {
-      const itemWidth = Math.min(container.clientWidth * 0.85, 300);
+      const itemWidth = Math.min(container.clientWidth - 32, 300);
       const newIndex = Math.round(container.scrollLeft / Math.max(itemWidth, 1));
       setActiveIndex(Math.min(Math.max(newIndex, 0), showcaseItems.length - 1));
     };
@@ -76,17 +76,16 @@ export function AppMarketingShowcase() {
 
       <div
         ref={scrollContainerRef}
-        className="w-full flex overflow-x-auto snap-x snap-mandatory pb-12 pt-4 app-marketing-hide-scrollbar px-4 md:px-0 md:justify-center"
+        className="w-full flex overflow-x-auto overscroll-x-contain snap-x snap-mandatory pb-12 pt-4 app-marketing-hide-scrollbar px-4 md:px-0 md:justify-center"
         tabIndex={0}
         role="region"
         aria-label="App screenshot gallery"
       >
-        <div className="flex gap-4 md:gap-8 min-w-max mx-auto md:px-4">
+        <div className="flex gap-4 md:gap-8 w-max mx-auto md:px-4">
           {showcaseItems.map((item) => (
             <div
               key={item.title}
-              className="snap-center shrink-0 motion-safe:transition-transform motion-safe:duration-500 motion-safe:hover:-translate-y-4 flex flex-col items-center"
-              style={{ width: "calc(85vw)", maxWidth: "300px" }}
+              className="snap-center shrink-0 w-[260px] sm:w-[280px] md:w-[300px] motion-safe:transition-transform motion-safe:duration-500 motion-safe:hover:-translate-y-4 flex flex-col items-center"
             >
               <PhoneFrame src={item.src} alt={item.title} size="lg" />
               <div className="text-center mt-6 px-2">

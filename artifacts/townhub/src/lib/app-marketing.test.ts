@@ -71,8 +71,8 @@ describe("app marketing page", () => {
       "utf8",
     );
     assert.match(phoneFrame, /loading = "lazy"/);
-    assert.match(phoneFrame, /width=\{dims\.width\}/);
-    assert.match(phoneFrame, /height=\{dims\.height\}/);
+    assert.match(phoneFrame, /aspectRatio/);
+    assert.match(phoneFrame, /object-cover/);
   });
 
   it("sets Apple Smart App Banner metadata from config", () => {

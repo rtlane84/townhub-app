@@ -1,17 +1,18 @@
 import { cn } from "@/lib/utils";
 
 const SIZE_CLASS = {
-  sm: "w-[180px] h-[389px]",
-  md: "w-[240px] h-[519px]",
-  lg: "w-[280px] h-[605px]",
-  xl: "w-[320px] h-[692px]",
+  sm: "w-[180px]",
+  md: "w-[240px]",
+  lg: "w-[280px]",
+  xl: "w-[320px]",
 } as const;
 
-const SIZE_PX = {
-  sm: { width: 180, height: 389 },
-  md: { width: 240, height: 519 },
-  lg: { width: 280, height: 605 },
-  xl: { width: 320, height: 692 },
+/** Width / height for aspect-ratio (phone chrome proportions). */
+const SIZE_RATIO = {
+  sm: 180 / 389,
+  md: 240 / 519,
+  lg: 280 / 605,
+  xl: 320 / 692,
 } as const;
 
 type PhoneFrameProps = {
@@ -30,7 +31,7 @@ export function PhoneFrame({
   className,
   loading = "lazy",
 }: PhoneFrameProps) {
-  const dims = SIZE_PX[size];
+  const ratio = SIZE_RATIO[size];
 
   return (
     <div
@@ -38,10 +39,11 @@ export function PhoneFrame({
         "relative border-[6px] border-primary bg-primary shadow-2xl overflow-hidden shrink-0 flex",
         "rounded-[2.5rem] md:rounded-[3rem]",
         "motion-safe:transition-transform",
+        "aspect-[9/19.5]",
         SIZE_CLASS[size],
         className,
       )}
-      style={{ width: dims.width, height: dims.height }}
+      style={{ aspectRatio: ratio }}
     >
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-5 md:h-6 bg-primary rounded-b-3xl z-20 flex justify-center items-center"
@@ -52,8 +54,6 @@ export function PhoneFrame({
       <img
         src={src}
         alt={alt}
-        width={dims.width}
-        height={dims.height}
         loading={loading}
         decoding="async"
         className="w-full h-full object-cover object-top z-10 relative bg-white"

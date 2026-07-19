@@ -21,26 +21,26 @@ export function AppMarketingForBusinesses() {
     "inline-flex items-center justify-center bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white rounded-xl px-6 py-3.5 font-semibold motion-safe:transition-all group shadow-sm text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
   return (
-    <section id="businesses" className="py-24 bg-white border-t border-gray-100 scroll-mt-24">
+    <section id="businesses" className="py-24 bg-white border-t border-gray-100 scroll-mt-24 overflow-x-hidden">
       <div className="container mx-auto px-4 md:px-8 max-w-[1280px]">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          <div className="w-full lg:w-1/2 relative order-1">
+          <div className="w-full lg:w-1/2 relative order-1 overflow-hidden">
             <div
               className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-150 -z-10"
               aria-hidden
             />
-            <div className="flex justify-center items-end gap-4 sm:gap-6 scale-[0.72] sm:scale-90 md:scale-100 origin-center">
+            <div className="w-full px-2 sm:px-4 flex justify-center items-end gap-3 sm:gap-5">
               <PhoneFrame
                 src={bizMenu}
                 alt="Business Hub navigation menu"
                 size="lg"
-                className="shadow-2xl"
+                className="w-[42%] max-w-[160px] sm:max-w-[200px] md:max-w-[240px] lg:max-w-[280px] shadow-2xl"
               />
               <PhoneFrame
                 src={bizOverview}
                 alt="Business Hub overview with orders and revenue"
                 size="lg"
-                className="shadow-2xl"
+                className="w-[42%] max-w-[160px] sm:max-w-[200px] md:max-w-[240px] lg:max-w-[280px] shadow-2xl"
               />
             </div>
           </div>

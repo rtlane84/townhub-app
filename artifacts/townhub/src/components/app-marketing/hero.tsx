@@ -36,7 +36,7 @@ export function AppMarketingHero() {
             </p>
           </div>
 
-          <div className="relative min-h-[560px] md:min-h-[720px] flex justify-center items-center mt-8 lg:mt-0 lg:translate-x-12">
+          <div className="relative min-h-[480px] sm:min-h-[560px] md:min-h-[720px] flex justify-center items-center mt-8 lg:mt-0 overflow-hidden lg:overflow-visible">
             <div
               className="absolute inset-0 bg-gradient-to-tr from-townhub-blue/5 to-townhub-orange/5 rounded-full blur-3xl -z-10 scale-110"
               aria-hidden
@@ -48,10 +48,11 @@ export function AppMarketingHero() {
                 alt="TownHub home screen showing today's community highlights"
                 size="xl"
                 loading="eager"
+                className="w-[min(280px,72vw)] max-w-[320px]"
               />
             </div>
 
-            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 rotate-6 translate-x-12 z-0 opacity-90 blur-[1px]">
+            <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 rotate-6 translate-x-8 z-0 opacity-90 blur-[1px]">
               <PhoneFrame
                 src={businessDetail}
                 alt="TownHub business storefront for a local bakery"
