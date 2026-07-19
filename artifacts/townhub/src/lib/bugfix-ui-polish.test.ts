@@ -29,6 +29,43 @@ describe("peek carousel single-item width", () => {
   });
 });
 
+describe("event list layout", () => {
+  it("uses compact EventListRow for homepage and All events; uniform featured carousel", () => {
+    const homeFeatured = readFileSync(
+      new URL("../components/home-featured-events.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(homeFeatured, /EventListRow/);
+    assert.match(homeFeatured, /h-\[3\.75rem\] w-20/);
+
+    const eventListRow = readFileSync(
+      new URL("../components/event-list-row.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(eventListRow, /object-cover/);
+    assert.match(eventListRow, /formatEventSchedule/);
+    assert.match(eventListRow, /event\.location/);
+
+    const eventsPage = readFileSync(
+      new URL("../pages/events.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(eventsPage, /EventListRow/);
+    assert.match(
+      eventsPage,
+      /itemClassName="basis-\[72%\] sm:basis-\[40%\] lg:basis-\[28%\]"/,
+    );
+    assert.match(eventsPage, /uniform/);
+
+    const eventCard = readFileSync(
+      new URL("../components/event-card.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(eventCard, /uniform\?: boolean/);
+    assert.match(eventCard, /aspect-\[4\/3\]/);
+  });
+});
+
 describe("event submit wording", () => {
   it("uses Submit Event as the primary action label", () => {
     assert.match(eventSubmitSource, />\s*Submit Event\s*</);

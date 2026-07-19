@@ -1,5 +1,5 @@
 import type { Event } from "@workspace/api-client-react";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, CalendarDays, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatEventSchedule } from "@/lib/event-dates";
 import { cn } from "@/lib/utils";
@@ -20,11 +20,45 @@ interface EventCardProps {
   event: Event;
   showFeaturedBadge?: boolean;
   priority?: boolean;
+  /**
+   * Featured-carousel layout: always shows a 4:3 media area, reserved title /
+   * location height, and no description — so every slide shares the same height.
+   */
+  uniform?: boolean;
 }
 
-export function EventCard({ event, showFeaturedBadge = false, priority = false }: EventCardProps) {
+export function EventCard({
+  event,
+  showFeaturedBadge = false,
+  priority = false,
+  uniform = false,
+}: EventCardProps) {
   const schedule = formatEventSchedule(event);
   const datePill = schedule.split("·")[0]?.trim() || schedule;
+
+  const media = (
+    <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted">
+      {event.imageUrl ? (
+        <OptimizedMediaImage
+          src={event.imageUrl}
+          widths={CARD_IMAGE_WIDTHS}
+          sizes="(min-width: 1024px) 28vw, (min-width: 640px) 40vw, 72vw"
+          priority={priority}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-primary/5 text-primary/40">
+          <CalendarDays className="h-10 w-10" aria-hidden />
+        </div>
+      )}
+      <div className="absolute left-2.5 top-2.5">
+        <span className="inline-flex items-center rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-semibold text-platform-heading shadow-sm backdrop-blur-sm">
+          {datePill}
+        </span>
+      </div>
+    </div>
+  );
 
   return (
     <article
@@ -34,24 +68,13 @@ export function EventCard({ event, showFeaturedBadge = false, priority = false }
       )}
       data-testid={`event-card-${event.id}`}
     >
-      {event.imageUrl ? (
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-          <OptimizedMediaImage
-            src={event.imageUrl}
-            widths={CARD_IMAGE_WIDTHS}
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 82vw"
-            priority={priority}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute left-2.5 top-2.5">
-            <span className="inline-flex items-center rounded-full bg-white/95 px-2.5 py-0.5 text-[11px] font-semibold text-platform-heading shadow-sm backdrop-blur-sm">
-              {datePill}
-            </span>
-          </div>
-        </div>
-      ) : null}
-      <div className={cn("flex flex-1 flex-col p-3.5", !event.imageUrl && "pt-3.5")}>
+      {uniform ? media : event.imageUrl ? media : null}
+      <div
+        className={cn(
+          "flex flex-1 flex-col p-3.5",
+          !uniform && !event.imageUrl && "pt-3.5",
+        )}
+      >
         <div className="mb-2 flex flex-wrap items-center gap-1.5">
           <span
             className={cn(
@@ -67,7 +90,12 @@ export function EventCard({ event, showFeaturedBadge = false, priority = false }
             </Badge>
           ) : null}
         </div>
-        <h3 className="line-clamp-2 text-[15px] font-semibold tracking-tight text-platform-heading">
+        <h3
+          className={cn(
+            "line-clamp-2 text-[15px] font-semibold tracking-tight text-platform-heading",
+            uniform && "min-h-[2.5rem]",
+          )}
+        >
           {event.title}
         </h3>
         <div className="mt-2 space-y-1 text-[12px] text-muted-foreground">
@@ -75,14 +103,25 @@ export function EventCard({ event, showFeaturedBadge = false, priority = false }
             <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden />
             <span className="truncate">{schedule}</span>
           </div>
-          {event.location ? (
+          {uniform ? (
+            <div
+              className={cn(
+                "flex min-h-[1.125rem] items-center gap-1.5",
+                !event.location && "invisible",
+              )}
+              aria-hidden={!event.location}
+            >
+              <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              <span className="truncate">{event.location ?? "Location"}</span>
+            </div>
+          ) : event.location ? (
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
               <span className="truncate">{event.location}</span>
             </div>
           ) : null}
         </div>
-        {event.description ? (
+        {!uniform && event.description ? (
           <p className="mt-2.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
             {event.description}
           </p>
