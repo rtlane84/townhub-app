@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import {
   useGetPlatformTheme,
   getGetPlatformThemeQueryKey,
@@ -37,6 +38,7 @@ import {
   DEFAULT_PLATFORM_TIMEZONE,
   resolvePlatformTimeZone,
 } from "@workspace/api-zod";
+import { isAppMarketingPath } from "@/lib/app-marketing-meta";
 
 export type PlatformBranding = {
   theme: PlatformTheme | undefined;
@@ -100,6 +102,7 @@ export function PlatformThemeProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const [location] = useLocation();
   const cachedTheme = useMemo(() => readCachedPlatformTheme(), []);
   const [themeWaitTimedOut, setThemeWaitTimedOut] = useState(false);
 
@@ -165,6 +168,8 @@ export function PlatformThemeProvider({
   }, [theme]);
 
   useEffect(() => {
+    if (isAppMarketingPath(location)) return;
+
     document.title = branding.platformName;
     const description = branding.metaDescription;
     const metaDescription = document.querySelector('meta[name="description"]');
@@ -181,7 +186,7 @@ export function PlatformThemeProvider({
     if (ogDescription) {
       ogDescription.setAttribute("content", description);
     }
-  }, [branding.platformName, branding.metaDescription]);
+  }, [branding.platformName, branding.metaDescription, location]);
 
   return (
     <PlatformBrandingContext.Provider value={branding}>

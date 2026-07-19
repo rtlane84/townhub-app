@@ -47,6 +47,19 @@ describe("frontend load performance wiring", () => {
     assert.doesNotMatch(source, /import Home from "@\/pages\/home"/);
   });
 
+  it("lazy-loads the public /app marketing page", async () => {
+    const source = await readFile(
+      new URL("../App.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(
+      source,
+      /const AppMarketing = lazyWithRetry\(\(\) => import\("@\/pages\/app-marketing"\)\)/,
+    );
+    assert.match(source, /<SuspenseRoute path="\/app" component=\{AppMarketing\}/);
+    assert.doesNotMatch(source, /import AppMarketing from "@\/pages\/app-marketing"/);
+  });
+
   it("loads Leaflet only from the map canvas chunk", async () => {
     const mapSection = await readFile(
       new URL("../components/food-truck-map.tsx", import.meta.url),

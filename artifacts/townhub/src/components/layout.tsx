@@ -21,6 +21,7 @@ import { resolveHeaderMinHeightPx, SITE_HEADER_HEIGHT_CSS_VAR, NATIVE_BOTTOM_TAB
 import { PlatformBrandMark } from "@/components/platform-brand-mark";
 import { useNavAuthState } from "@/hooks/use-nav-auth-state";
 import { isDashboardRoute } from "@/lib/native-platform";
+import { isAppMarketingPath } from "@/lib/app-marketing-meta";
 import { useNativeBottomTabs, useNativePlatform, useNativePullToRefresh } from "@/hooks/use-native-platform";
 import { NativeBottomTabBar } from "@/components/native-bottom-tab-bar";
 import { NativePullToRefresh } from "@/components/native-pull-to-refresh";
@@ -176,6 +177,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const listYourBusinessActive = isNavActive("/list-your-business");
   /** Account lives in the native bottom tab sheet — hide duplicate header auth. */
   const hideHeaderAccount = isNative && showNativeTabs;
+
+  /** Public `/app` marketing page owns its own chrome — skip marketplace shell. */
+  if (isAppMarketingPath(location)) {
+    return <>{children}</>;
+  }
 
   return (
     <div

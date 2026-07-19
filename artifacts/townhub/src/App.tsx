@@ -51,6 +51,7 @@ const TermsOfService = lazyWithRetry(() => import("@/pages/terms-of-service"));
 const FoodTrucks = lazyWithRetry(() => import("@/pages/food-trucks"));
 const Setup = lazyWithRetry(() => import("@/pages/setup"));
 const ListYourBusiness = lazyWithRetry(() => import("@/pages/list-your-business"));
+const AppMarketing = lazyWithRetry(() => import("@/pages/app-marketing"));
 const DebugSentryPage = lazyWithRetry(() => import("@/pages/debug-sentry"));
 
 const BusinessOverview = lazyWithRetry(() => import("@/pages/dashboard/business/overview"));
@@ -448,6 +449,7 @@ function ClerkProviderWithRoutes() {
               <Switch>
                 {/* Public routes */}
                 <SuspenseRoute path="/" component={Home} />
+                <SuspenseRoute path="/app" component={AppMarketing} />
                 <SuspenseRoute path="/events" component={Events} />
                 <SuspenseRoute path="/food-trucks" component={FoodTrucks} />
                 <SuspenseRoute path="/businesses" component={Businesses} />

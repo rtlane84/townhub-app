@@ -225,7 +225,7 @@ export default function AdminHighlights() {
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Description</label>
-              <Textarea value={form.description} onChange={f("description")} rows={2} />
+              <Textarea value={form.description ?? ""} onChange={f("description")} rows={2} />
             </div>
             <ImageField
               surface="highlight"
@@ -246,11 +246,11 @@ export default function AdminHighlights() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Button Label</label>
-                <Input value={form.buttonText} onChange={f("buttonText")} placeholder="Shop Now" />
+                <Input value={form.buttonText ?? ""} onChange={f("buttonText")} placeholder="Shop Now" />
               </div>
               <div>
                 <label className="text-sm font-medium mb-1.5 block">Button URL</label>
-                <Input value={form.buttonUrl} onChange={f("buttonUrl")} placeholder="/businesses" />
+                <Input value={form.buttonUrl ?? ""} onChange={f("buttonUrl")} placeholder="/businesses" />
               </div>
             </div>
             <div>
