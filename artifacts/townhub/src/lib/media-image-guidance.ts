@@ -70,9 +70,9 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
   },
   event: {
     label: "Event image",
-    recommendedSize: "1200 × 675 px (16:9)",
-    aspectClass: "aspect-[16/9]",
-    hint: "Optional image for the community events calendar.",
+    recommendedSize: "1200 × 900 px (4:3)",
+    aspectClass: "aspect-[4/3]",
+    hint: "Optional image for featured and all-events listings.",
   },
   highlight: {
     label: "Spotlight image",

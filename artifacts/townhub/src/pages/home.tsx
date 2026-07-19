@@ -419,9 +419,10 @@ export default function Home() {
                             src={truck.businessLogoUrl}
                             alt={`${truck.businessName} logo`}
                             size="sm"
+                            ringClassName="ring-0 border-[3px] border-card shadow-[0_4px_16px_-4px_rgba(15,23,42,0.25)]"
                           />
                         ) : (
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-[3px] border-card bg-primary/10 shadow-[0_4px_16px_-4px_rgba(15,23,42,0.25)]">
                             <Truck className="h-5 w-5 text-primary" />
                           </div>
                         )}

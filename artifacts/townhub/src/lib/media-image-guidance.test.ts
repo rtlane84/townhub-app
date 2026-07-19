@@ -28,6 +28,16 @@ describe("media-image-guidance", () => {
     assert.match(product.fileLine, /5 MB/);
   });
 
+  it("matches event guidance to the 4:3 featured and list thumbnails", () => {
+    const event = IMAGE_SURFACE_GUIDANCE.event;
+    assert.match(event.recommendedSize, /1200 × 900 px \(4:3\)/);
+    assert.equal(event.aspectClass, "aspect-[4/3]");
+    assert.doesNotMatch(event.recommendedSize, /16:9/);
+
+    const formatted = formatImageSurfaceGuidance("event");
+    assert.match(formatted.recommendedLine, /1200 × 900 px \(4:3\)/);
+  });
+
   it("matches spotlight guidance to the homepage landscape thumbnail", () => {
     const highlight = IMAGE_SURFACE_GUIDANCE.highlight;
     assert.equal(highlight.label, "Spotlight image");
@@ -51,6 +61,22 @@ describe("media-image-guidance", () => {
     assert.match(home, /width=\{80\}/);
     assert.match(home, /height=\{60\}/);
     assert.doesNotMatch(home, /spotlightItems\.map[\s\S]*h-14 w-14/);
+  });
+
+  it("On the Move logos keep circular shape with framed border and shadow", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { fileURLToPath } = await import("node:url");
+    const { dirname, join } = await import("node:path");
+    const here = dirname(fileURLToPath(import.meta.url));
+    const home = readFileSync(join(here, "../pages/home.tsx"), "utf8");
+    assert.match(
+      home,
+      /BusinessLogoBadge[\s\S]*ringClassName="ring-0 border-\[3px\] border-card shadow-\[0_4px_16px_-4px_rgba\(15,23,42,0\.25\)\]"/,
+    );
+    assert.match(
+      home,
+      /rounded-full border-\[3px\] border-card bg-primary\/10 shadow-\[0_4px_16px_-4px_rgba\(15,23,42,0\.25\)\]/,
+    );
   });
 
   it("uses contain preview for logos and cover for heroes", () => {
