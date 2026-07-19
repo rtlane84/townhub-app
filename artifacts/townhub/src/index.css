@@ -47,6 +47,10 @@
 
   --color-platform-button: hsl(var(--platform-button, var(--primary)));
 
+  --color-townhub-blue: hsl(var(--townhub-blue));
+  --color-townhub-orange: hsl(var(--townhub-orange));
+  --color-townhub-green: hsl(var(--townhub-green));
+
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
@@ -145,6 +149,11 @@
   --accent: 38 92% 52%;
   --accent-foreground: 221 83% 18%;
 
+  /* `/app` marketing accents (fixed brand tokens for that page) */
+  --townhub-blue: 221 79% 48%;
+  --townhub-orange: 25 95% 53%;
+  --townhub-green: 142 76% 36%;
+
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
 
@@ -207,6 +216,14 @@
 @layer base {
   * {
     @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
   body {
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary/20 selection:text-primary;
@@ -783,4 +800,41 @@ html.native-app .native-pressable:active {
 [data-testid="kitchen-mobile-board"],
 [data-testid="kitchen-display-board"]:not([data-fullscreen="true"]) {
   touch-action: pan-y;
+}
+
+/* `/app` marketing page helpers */
+.app-marketing-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.app-marketing-hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.app-marketing {
+  --background: 220 33% 98%;
+  --foreground: 219 60% 15%;
+  --primary: 219 60% 15%;
+  --primary-foreground: 0 0% 100%;
+  --muted-foreground: 215 14% 34%;
+}
+
+/* Do not inherit platform-heading navy onto dark marketing panels. */
+.app-marketing h1,
+.app-marketing h2,
+.app-marketing h3,
+.app-marketing h4,
+.app-marketing h5,
+.app-marketing h6 {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-marketing .motion-safe\:transition-transform,
+  .app-marketing .motion-safe\:hover\:-translate-y-1:hover,
+  .app-marketing .motion-safe\:hover\:-translate-y-4:hover,
+  .app-marketing .motion-safe\:hover\:scale-\[1\.02\]:hover {
+    transform: none !important;
+    transition: none !important;
+  }
 }

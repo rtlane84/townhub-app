@@ -29,6 +29,7 @@ describe("App Store compliance wiring", () => {
     assert.match(appSource, /ProtectedRoute path="\/account"/);
     assert.match(appSource, /path="\/privacy-policy"/);
     assert.match(appSource, /path="\/terms-of-service"/);
+    assert.match(appSource, /path="\/app"/);
     assert.match(accountSource, /Request account deletion/);
   });
 
