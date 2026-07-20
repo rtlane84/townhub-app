@@ -10,6 +10,13 @@ const SIZE_CLASS = {
 /** Matches marketing screenshot proportions (~1284×2778). */
 const FRAME_ASPECT = 9 / 19.5;
 
+/** Shared dual-phone row sizing (shop + business sections). */
+export const PHONE_FRAME_DUAL_CLASS =
+  "w-[47%] max-w-[210px] sm:max-w-[250px] md:max-w-[280px] lg:max-w-[300px]";
+
+/** Shared single-phone sizing (hero, residents, showcase, CTA). */
+export const PHONE_FRAME_SINGLE_CLASS = "w-[min(300px,78vw)] max-w-[320px]";
+
 type PhoneFrameProps = {
   src: string;
   alt: string;
@@ -29,46 +36,48 @@ export function PhoneFrame({
   return (
     <div
       className={cn(
-        "relative border-[6px] border-primary bg-primary shadow-2xl overflow-hidden shrink-0 flex",
-        "rounded-[2.5rem] md:rounded-[3rem]",
+        "relative bg-primary shadow-2xl shrink-0 box-border",
+        // Radius as % of frame size so small phones do not clip the bottom nav.
+        "rounded-[12%]",
+        "p-[2.4%]",
         "motion-safe:transition-transform",
         SIZE_CLASS[size],
         className,
       )}
       style={{ aspectRatio: FRAME_ASPECT }}
     >
-      {/* Proportional notch: scales with frame width so every size matches. */}
-      <div
-        className="absolute top-0 left-1/2 z-20 flex items-center justify-center bg-primary"
-        style={{
-          width: "34%",
-          aspectRatio: "3.4 / 1",
-          transform: "translateX(-50%)",
-          borderBottomLeftRadius: "45%",
-          borderBottomRightRadius: "45%",
-        }}
-        aria-hidden
-      >
+      <div className="relative h-full w-full overflow-hidden rounded-[10%] bg-white">
+        <img
+          src={src}
+          alt={alt}
+          loading={loading}
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover object-top bg-white"
+        />
+
+        {/* Top-bezel notch — matches the good marketing reference. */}
         <div
-          className="rounded-full bg-gray-800"
-          style={{ width: "42%", height: "14%" }}
+          className="absolute left-1/2 z-20 -translate-x-1/2 bg-primary flex items-center justify-center"
+          style={{
+            top: 0,
+            width: "34%",
+            aspectRatio: "2.85 / 1",
+            borderBottomLeftRadius: "42%",
+            borderBottomRightRadius: "42%",
+          }}
+          aria-hidden
+        >
+          <div
+            className="rounded-full bg-gray-800/90"
+            style={{ width: "40%", height: "16%" }}
+          />
+        </div>
+
+        <div
+          className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0_0_12px_rgba(0,0,0,0.08)] z-30"
+          aria-hidden
         />
       </div>
-      <img
-        src={src}
-        alt={alt}
-        loading={loading}
-        decoding="async"
-        className="w-full h-full object-cover object-top z-10 relative bg-white"
-      />
-      <div
-        className="absolute inset-0 pointer-events-none rounded-[2.1rem] md:rounded-[2.6rem] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)] z-30"
-        aria-hidden
-      />
-      <div
-        className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/10 to-transparent pointer-events-none z-30"
-        aria-hidden
-      />
     </div>
   );
 }

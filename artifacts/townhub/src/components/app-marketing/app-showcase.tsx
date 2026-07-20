@@ -87,7 +87,7 @@ export function AppMarketingShowcase() {
               key={item.title}
               className="snap-center shrink-0 w-[260px] sm:w-[280px] md:w-[300px] motion-safe:transition-transform motion-safe:duration-500 motion-safe:hover:-translate-y-4 flex flex-col items-center"
             >
-              <PhoneFrame src={item.src} alt={item.title} size="lg" />
+              <PhoneFrame src={item.src} alt={item.title} size="lg" className="w-full max-w-[300px]" />
               <div className="text-center mt-6 px-2">
                 <p className="font-bold text-primary text-xl mb-2 font-serif">{item.title}</p>
                 <p className="text-gray-600 text-[15px] font-sans">{item.description}</p>

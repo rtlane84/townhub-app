@@ -73,8 +73,10 @@ describe("app marketing page", () => {
     assert.match(phoneFrame, /loading = "lazy"/);
     assert.match(phoneFrame, /aspectRatio/);
     assert.match(phoneFrame, /object-cover/);
-    // Notch scales with frame width (not fixed h-5/h-6) so all sizes match.
+    // Top-bezel notch scales with frame width; corner radius is %-based.
     assert.match(phoneFrame, /width: "34%"/);
+    assert.match(phoneFrame, /borderBottomLeftRadius/);
+    assert.match(phoneFrame, /rounded-\[12%\]/);
     assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
   });
 

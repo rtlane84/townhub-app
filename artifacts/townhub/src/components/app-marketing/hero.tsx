@@ -1,5 +1,5 @@
 import { MapPin } from "lucide-react";
-import { PhoneFrame } from "@/components/app-marketing/phone-frame";
+import { PhoneFrame, PHONE_FRAME_SINGLE_CLASS } from "@/components/app-marketing/phone-frame";
 import { AppStoreButton, PlayStoreButton } from "@/components/app-marketing/store-buttons";
 import { appMarketingConfig } from "@/lib/app-marketing-config";
 import heroHome from "@/assets/app-marketing/hero-home-desktop.png";
@@ -48,7 +48,7 @@ export function AppMarketingHero() {
                 alt="TownHub home screen showing today's community highlights"
                 size="xl"
                 loading="eager"
-                className="w-[min(280px,72vw)] max-w-[320px]"
+                className={PHONE_FRAME_SINGLE_CLASS}
               />
             </div>
 
@@ -58,6 +58,7 @@ export function AppMarketingHero() {
                 alt="TownHub business storefront for a local bakery"
                 size="lg"
                 loading="eager"
+                className="w-[260px]"
               />
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { Calendar, MapPin, Store } from "lucide-react";
-import { PhoneFrame } from "@/components/app-marketing/phone-frame";
+import { PhoneFrame, PHONE_FRAME_SINGLE_CLASS } from "@/components/app-marketing/phone-frame";
 import eventsScreen from "@/assets/app-marketing/home-spotlight-explore.png";
 
 const residentPoints = [
@@ -22,7 +22,7 @@ export function AppMarketingForResidents() {
               src={eventsScreen}
               alt="TownHub home screen with community spotlight and events"
               size="xl"
-              className="w-[min(280px,72vw)] max-w-[320px] shadow-2xl"
+              className={`${PHONE_FRAME_SINGLE_CLASS} shadow-2xl`}
             />
           </div>
           <div className="lg:w-1/2">

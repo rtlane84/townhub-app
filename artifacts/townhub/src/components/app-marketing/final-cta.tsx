@@ -1,7 +1,8 @@
-import { PhoneFrame } from "@/components/app-marketing/phone-frame";
+import { PhoneFrame, PHONE_FRAME_SINGLE_CLASS } from "@/components/app-marketing/phone-frame";
 import { AppStoreButton, PlayStoreButton } from "@/components/app-marketing/store-buttons";
 import { TownhubLogoMark } from "@/components/app-marketing/townhub-logo-mark";
 import { appMarketingConfig } from "@/lib/app-marketing-config";
+import { cn } from "@/lib/utils";
 import homeScreen from "@/assets/app-marketing/home-today-in-clay.png";
 import otherScreen from "@/assets/app-marketing/home-featured-businesses.png";
 
@@ -40,7 +41,7 @@ export function AppMarketingFinalCta() {
                   src={otherScreen}
                   alt="Featured local businesses on TownHub"
                   size="lg"
-                  className="w-[min(240px,55vw)] opacity-80 scale-90 blur-[2px]"
+                  className={cn(PHONE_FRAME_SINGLE_CLASS, "opacity-80 scale-90 blur-[2px]")}
                 />
               </div>
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-12 md:-translate-y-20 -rotate-2 z-20">
@@ -48,7 +49,7 @@ export function AppMarketingFinalCta() {
                   src={homeScreen}
                   alt="TownHub home screen"
                   size="xl"
-                  className="w-[min(280px,70vw)] max-w-[320px] shadow-2xl"
+                  className={cn(PHONE_FRAME_SINGLE_CLASS, "shadow-2xl")}
                 />
               </div>
             </div>

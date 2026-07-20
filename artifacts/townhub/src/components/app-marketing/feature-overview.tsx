@@ -1,5 +1,6 @@
 import { Store, Calendar, Truck, Bell, ShoppingBag, Sun } from "lucide-react";
-import { PhoneFrame } from "@/components/app-marketing/phone-frame";
+import { PhoneFrame, PHONE_FRAME_DUAL_CLASS } from "@/components/app-marketing/phone-frame";
+import { cn } from "@/lib/utils";
 import orderLocal from "@/assets/app-marketing/order-summary-checkout.png";
 import businessDetail from "@/assets/app-marketing/business-detail-order-local.png";
 
@@ -129,18 +130,18 @@ export function AppMarketingFeatureOverview() {
             </ul>
           </div>
 
-          <div className="relative z-10 w-full min-w-0 px-4 sm:px-6 md:px-4 flex justify-center items-end gap-3 sm:gap-5">
+          <div className="relative z-10 w-full min-w-0 px-2 sm:px-4 flex justify-center items-end gap-2.5 sm:gap-4">
             <PhoneFrame
               src={businessDetail}
               alt="Local bakery storefront on TownHub"
               size="lg"
-              className="w-[40%] max-w-[150px] sm:max-w-[190px] md:max-w-[230px] lg:max-w-[280px] shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+              className={cn(PHONE_FRAME_DUAL_CLASS, "shadow-[0_20px_50px_rgba(0,0,0,0.35)]")}
             />
             <PhoneFrame
               src={orderLocal}
               alt="Order summary and pay at pickup on TownHub"
               size="lg"
-              className="w-[40%] max-w-[150px] sm:max-w-[190px] md:max-w-[230px] lg:max-w-[280px] shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+              className={cn(PHONE_FRAME_DUAL_CLASS, "shadow-[0_20px_50px_rgba(0,0,0,0.35)]")}
             />
           </div>
         </div>
