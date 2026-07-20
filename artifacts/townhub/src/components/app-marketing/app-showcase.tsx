@@ -3,6 +3,7 @@ import { PhoneFrame } from "@/components/app-marketing/phone-frame";
 import homeScreen from "@/assets/app-marketing/home-today-in-clay.png";
 import eventsScreen from "@/assets/app-marketing/events-featured-carousel.png";
 import businessesScreen from "@/assets/app-marketing/businesses-local-directory.png";
+import businessDetail from "@/assets/app-marketing/business-detail-duck-donuts.png";
 import accountScreen from "@/assets/app-marketing/account-welcome-sign-in.png";
 import trucksOnTheMove from "@/assets/app-marketing/trucks-on-the-move.png";
 import trucksTodaysMap from "@/assets/app-marketing/trucks-todays-map.png";
@@ -22,6 +23,11 @@ const showcaseItems = [
     src: businessesScreen,
     title: "Business Discovery",
     description: "Explore local shops, restaurants, and services.",
+  },
+  {
+    src: businessDetail,
+    title: "Order from Local Favorites",
+    description: "Open a storefront, browse the menu, and place pickup orders in a few taps.",
   },
   {
     src: trucksOnTheMove,
