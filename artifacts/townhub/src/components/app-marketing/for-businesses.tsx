@@ -25,7 +25,7 @@ export function AppMarketingForBusinesses() {
     <section id="businesses" className="py-24 bg-white border-t border-gray-100 scroll-mt-24 overflow-x-hidden">
       <div className="container mx-auto px-4 md:px-8 max-w-[1280px]">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          <div className="w-full lg:w-1/2 relative order-1 overflow-hidden">
+          <div className="w-full lg:w-1/2 relative order-1 overflow-visible">
             <div
               className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-150 -z-10"
               aria-hidden

@@ -77,6 +77,8 @@ describe("app marketing page", () => {
     assert.match(phoneFrame, /border-\[6px\]/);
     assert.match(phoneFrame, /rounded-b-3xl/);
     assert.match(phoneFrame, /width: "33\.333%"/);
+    // Corner radius scales with width so small dual phones match the good large-frame silhouette.
+    assert.match(phoneFrame, /rounded-\[min\(2\.5rem,14%\)\]/);
     assert.doesNotMatch(phoneFrame, /viewBox=/);
     assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
   });
