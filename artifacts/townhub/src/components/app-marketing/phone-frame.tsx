@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 
+/** Replit-style fixed widths; height comes from aspect-ratio so className width overrides stay correct. */
 const SIZE_CLASS = {
   sm: "w-[180px]",
   md: "w-[240px]",
@@ -7,7 +8,7 @@ const SIZE_CLASS = {
   xl: "w-[320px]",
 } as const;
 
-/** Matches marketing screenshot proportions (~1284×2778). */
+/** Matches marketing screenshots (~1284×2778) and Replit lg 280×605. */
 const FRAME_ASPECT = 9 / 19.5;
 
 /** Shared dual-phone row sizing (shop + business sections). */
@@ -26,32 +27,6 @@ type PhoneFrameProps = {
   loading?: "eager" | "lazy";
 };
 
-/**
- * Classic iPhone-style top notch (attached to bezel), not a floating Dynamic Island.
- * viewBox tuned to the approved marketing reference: wide U-cutout + speaker + camera.
- */
-function PhoneNotch() {
-  return (
-    <svg
-      className="absolute left-1/2 top-0 z-20 -translate-x-1/2 text-primary pointer-events-none"
-      style={{ width: "40%" }}
-      viewBox="0 0 210 32"
-      fill="none"
-      aria-hidden
-    >
-      <path
-        fill="currentColor"
-        d="M0 0h210v2.5c0 2.2-1.2 5.5-4.2 10.2C201.5 19.5 190 32 168 32H42C20 32 8.5 19.5 4.2 12.7 1.2 8 0 4.7 0 2.5V0Z"
-      />
-      {/* Speaker */}
-      <rect x="68" y="11" width="52" height="5" rx="2.5" fill="#111827" />
-      {/* Camera */}
-      <circle cx="138" cy="13.5" r="4.2" fill="#0a0a0a" />
-      <circle cx="138" cy="13.5" r="1.6" fill="#1e293b" />
-    </svg>
-  );
-}
-
 export function PhoneFrame({
   src,
   alt,
@@ -62,30 +37,40 @@ export function PhoneFrame({
   return (
     <div
       className={cn(
-        "relative bg-primary shadow-2xl shrink-0 box-border",
-        // Softer %-radius so screen content (status bar / nav) is not clipped.
-        "rounded-[11%]",
-        "p-[2%]",
+        "relative border-[6px] border-primary bg-primary shadow-2xl overflow-hidden shrink-0 flex",
+        "rounded-[2.5rem] md:rounded-[3rem]",
         "motion-safe:transition-transform",
         SIZE_CLASS[size],
         className,
       )}
       style={{ aspectRatio: FRAME_ASPECT }}
     >
-      <div className="relative h-full w-full overflow-hidden rounded-[9.5%] bg-white">
-        <img
-          src={src}
-          alt={alt}
-          loading={loading}
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-top bg-white"
-        />
-        <PhoneNotch />
+      {/* Replit-style attached notch, sized as % of frame so every size matches. */}
+      <div
+        className="absolute top-0 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center bg-primary rounded-b-3xl"
+        style={{ width: "33.333%", aspectRatio: "4 / 1" }}
+        aria-hidden
+      >
         <div
-          className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0_0_12px_rgba(0,0,0,0.08)] z-30"
-          aria-hidden
+          className="rounded-full bg-gray-800"
+          style={{ width: "55%", height: "22%" }}
         />
       </div>
+      <img
+        src={src}
+        alt={alt}
+        loading={loading}
+        decoding="async"
+        className="relative z-10 h-full w-full bg-white object-cover object-top"
+      />
+      <div
+        className="pointer-events-none absolute inset-0 z-30 rounded-[2.1rem] md:rounded-[2.6rem] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 z-30 h-24 bg-gradient-to-b from-white/10 to-transparent"
+        aria-hidden
+      />
     </div>
   );
 }

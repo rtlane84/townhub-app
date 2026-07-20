@@ -73,10 +73,11 @@ describe("app marketing page", () => {
     assert.match(phoneFrame, /loading = "lazy"/);
     assert.match(phoneFrame, /aspectRatio/);
     assert.match(phoneFrame, /object-cover/);
-    // Classic attached U-notch (SVG), not a floating Dynamic Island pill.
-    assert.match(phoneFrame, /viewBox="0 0 210 32"/);
-    assert.match(phoneFrame, /PhoneNotch/);
-    assert.doesNotMatch(phoneFrame, /borderRadius: "999px"/);
+    // Replit-style border bezel + proportional attached CSS notch (no SVG / no fixed h-5).
+    assert.match(phoneFrame, /border-\[6px\]/);
+    assert.match(phoneFrame, /rounded-b-3xl/);
+    assert.match(phoneFrame, /width: "33\.333%"/);
+    assert.doesNotMatch(phoneFrame, /viewBox=/);
     assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
   });
 
