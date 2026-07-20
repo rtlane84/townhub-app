@@ -106,15 +106,20 @@ describe("app marketing page", () => {
     assert.doesNotMatch(forBusinesses, /List Your Business/);
   });
 
-  it("loads Plausible only on production deployments", () => {
+  it("loads Plausible via NPM only on production deployments", () => {
     const plausibleSource = readFileSync(`${srcRoot}/lib/plausible.ts`, "utf8");
     const mainSource = readFileSync(`${srcRoot}/main.tsx`, "utf8");
     const html = readFileSync(`${srcRoot}/../index.html`, "utf8");
-    assert.match(plausibleSource, /plausible\.io\/js\/pa-QspO1x-1P0rzKko6jqTXY\.js/);
+    const packageJson = readFileSync(`${srcRoot}/../package.json`, "utf8");
+    assert.match(packageJson, /@plausible-analytics\/tracker/);
+    assert.match(plausibleSource, /@plausible-analytics\/tracker/);
+    assert.match(plausibleSource, /PRODUCTION_DOMAIN = "townhub\.io"/);
+    assert.match(plausibleSource, /domain: PRODUCTION_DOMAIN/);
     assert.match(plausibleSource, /VITE_DEPLOYMENT_ENVIRONMENT/);
     assert.match(plausibleSource, /deploymentEnvironment !== "production"/);
     assert.match(mainSource, /initPlausible\(\)/);
     assert.doesNotMatch(html, /plausible\.io/);
+    assert.doesNotMatch(plausibleSource, /createElement\("script"\)/);
   });
 
   it("sets Apple Smart App Banner metadata from config", () => {
