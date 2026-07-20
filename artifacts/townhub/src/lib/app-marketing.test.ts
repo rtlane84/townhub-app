@@ -106,6 +106,12 @@ describe("app marketing page", () => {
     assert.doesNotMatch(forBusinesses, /List Your Business/);
   });
 
+  it("includes Plausible analytics in the document head", () => {
+    const html = readFileSync(`${srcRoot}/../index.html`, "utf8");
+    assert.match(html, /plausible\.io\/js\/pa-ECV-o4PbY5Xh8XmFh37xF\.js/);
+    assert.match(html, /plausible\.init\(\)/);
+  });
+
   it("sets Apple Smart App Banner metadata from config", () => {
     const metaSource = readFileSync(`${srcRoot}/lib/app-marketing-meta.ts`, "utf8");
     assert.match(metaSource, /apple-itunes-app/);
