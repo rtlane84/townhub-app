@@ -106,6 +106,17 @@ describe("app marketing page", () => {
     assert.doesNotMatch(forBusinesses, /List Your Business/);
   });
 
+  it("loads Plausible only on production deployments", () => {
+    const plausibleSource = readFileSync(`${srcRoot}/lib/plausible.ts`, "utf8");
+    const mainSource = readFileSync(`${srcRoot}/main.tsx`, "utf8");
+    const html = readFileSync(`${srcRoot}/../index.html`, "utf8");
+    assert.match(plausibleSource, /plausible\.io\/js\/pa-QspO1x-1P0rzKko6jqTXY\.js/);
+    assert.match(plausibleSource, /VITE_DEPLOYMENT_ENVIRONMENT/);
+    assert.match(plausibleSource, /deploymentEnvironment !== "production"/);
+    assert.match(mainSource, /initPlausible\(\)/);
+    assert.doesNotMatch(html, /plausible\.io/);
+  });
+
   it("sets Apple Smart App Banner metadata from config", () => {
     const metaSource = readFileSync(`${srcRoot}/lib/app-marketing-meta.ts`, "utf8");
     assert.match(metaSource, /apple-itunes-app/);
