@@ -77,6 +77,14 @@ export function applyAppMarketingMeta(): () => void {
     property: "og:image",
     content: absoluteUrl(ogImagePath),
   });
+  upsertMeta('meta[property="og:image:width"]', {
+    property: "og:image:width",
+    content: "1280",
+  });
+  upsertMeta('meta[property="og:image:height"]', {
+    property: "og:image:height",
+    content: "720",
+  });
   upsertMeta('meta[name="twitter:card"]', {
     name: "twitter:card",
     content: "summary_large_image",
@@ -88,6 +96,10 @@ export function applyAppMarketingMeta(): () => void {
   upsertMeta('meta[name="twitter:description"]', {
     name: "twitter:description",
     content: metaDescription,
+  });
+  upsertMeta('meta[name="twitter:image"]', {
+    name: "twitter:image",
+    content: absoluteUrl(ogImagePath),
   });
   upsertMeta('meta[name="apple-itunes-app"]', {
     name: "apple-itunes-app",
