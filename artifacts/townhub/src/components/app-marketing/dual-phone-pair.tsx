@@ -1,4 +1,4 @@
-import { PhoneFrame, PHONE_FRAME_DUAL_CLASS } from "@/components/app-marketing/phone-frame";
+import { PhoneFrame, PHONE_FRAME_DUAL_CLASS, PHONE_FRAME_SINGLE_CLASS } from "@/components/app-marketing/phone-frame";
 import { cn } from "@/lib/utils";
 
 type DualPhonePairProps = {
@@ -10,7 +10,7 @@ type DualPhonePairProps = {
 };
 
 /**
- * Mobile: overlapping peek so both screens stay visible without a wide row.
+ * Mobile: one centered phone (readable, no overflow).
  * Desktop (lg+): side-by-side dual row.
  */
 export function DualPhonePair({
@@ -21,27 +21,14 @@ export function DualPhonePair({
 }: DualPhonePairProps) {
   return (
     <div className={cn("relative z-10 w-full min-w-0 overflow-hidden", className)}>
-      {/* Mobile / tablet: overlap peek (hero-style), clipped to avoid horizontal scroll */}
-      <div className="relative mx-auto flex h-[440px] w-full max-w-[360px] justify-center sm:h-[500px] lg:hidden">
-        <div className="absolute left-[38%] top-[6%] z-0 rotate-6 opacity-95">
-          <PhoneFrame
-            src={back.src}
-            alt={back.alt}
-            size="lg"
-            className="w-[min(200px,52vw)] sm:w-[220px]"
-          />
-        </div>
-        <div className="absolute left-0 top-0 z-10 -rotate-2">
-          <PhoneFrame
-            src={front.src}
-            alt={front.alt}
-            size="xl"
-            className={cn(
-              "w-[min(260px,68vw)] sm:w-[min(280px,70vw)] max-w-[300px]",
-              desktopShadowClassName,
-            )}
-          />
-        </div>
+      {/* Mobile / tablet: single phone only */}
+      <div className="flex justify-center px-4 lg:hidden">
+        <PhoneFrame
+          src={front.src}
+          alt={front.alt}
+          size="xl"
+          className={cn(PHONE_FRAME_SINGLE_CLASS, desktopShadowClassName)}
+        />
       </div>
 
       {/* Desktop: side-by-side */}
