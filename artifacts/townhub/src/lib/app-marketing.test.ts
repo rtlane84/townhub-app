@@ -96,12 +96,19 @@ describe("app marketing page", () => {
       `${srcRoot}/components/app-marketing/for-businesses.tsx`,
       "utf8",
     );
-    // One phone on mobile; both side-by-side from lg up.
+    // Mobile: overlapping peek of both phones; desktop: side-by-side from lg up.
     assert.match(dualPair, /lg:hidden/);
     assert.match(dualPair, /hidden[\s\S]*lg:flex/);
-    assert.match(dualPair, /PHONE_FRAME_SINGLE_CLASS/);
+    assert.match(dualPair, /rotate-6/);
+    assert.match(dualPair, /-rotate-2/);
+    assert.match(dualPair, /overflow-hidden/);
+    assert.match(dualPair, /back\.src/);
+    assert.match(dualPair, /front\.src/);
+    assert.doesNotMatch(dualPair, /PHONE_FRAME_SINGLE_CLASS/);
     assert.match(featureOverview, /DualPhonePair/);
     assert.match(forBusinesses, /DualPhonePair/);
+    // Copy stays above phones on mobile.
+    assert.match(forBusinesses, /order-1 lg:order-2/);
     // List Your Business CTA hidden for now.
     assert.doesNotMatch(forBusinesses, /List Your Business/);
   });
