@@ -4,6 +4,7 @@ import { format, isToday } from "date-fns";
 import { useListEvents } from "@workspace/api-client-react";
 import { Calendar as CalendarIcon, CalendarDays, List, Plus } from "lucide-react";
 import { EventCard } from "@/components/event-card";
+import { EventListRow } from "@/components/event-list-row";
 import { EventSubmitForm } from "@/components/event-submit-form";
 import { EventsCalendar } from "@/components/events-calendar";
 import { NativeEmptyState } from "@/components/native-empty-state";
@@ -248,9 +249,18 @@ export default function Events() {
                   View all
                 </button>
               </div>
-              <PeekCarousel label="Featured events">
+              <PeekCarousel
+                label="Featured events"
+                itemClassName="basis-[72%] sm:basis-[40%] lg:basis-[28%]"
+              >
                 {featured.map((event, index) => (
-                  <EventCard key={event.id} event={event} showFeaturedBadge priority={index === 0} />
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    showFeaturedBadge
+                    uniform
+                    priority={index === 0}
+                  />
                 ))}
               </PeekCarousel>
             </section>
@@ -263,16 +273,15 @@ export default function Events() {
             >
               All events
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="space-y-2.5">
               {sortedEvents.map((event, index) => (
-                <EventCard
+                <EventListRow
                   key={event.id}
                   event={event}
-                  showFeaturedBadge
                   priority={featured.length === 0 && index === 0}
                 />
               ))}
-            </div>
+            </ul>
           </section>
         </div>
       )}

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { evaluatePublicAvailability, filterCurrentOrUpcomingMobileStops } from "../../../../lib/api-zod/src/public-availability.ts";
+import { evaluatePublicAvailability, filterCurrentOrUpcomingMobileStops, filterFutureMobileStops } from "../../../../lib/api-zod/src/public-availability.ts";
 import { getZonedParts } from "../../../../lib/api-zod/src/timezone.ts";
 
 const TZ = "America/New_York";
@@ -448,5 +448,122 @@ describe("filterCurrentOrUpcomingMobileStops", () => {
     const during = atZone("2026-07-13", "20:00");
     const filtered = filterCurrentOrUpcomingMobileStops(stops, during, TZ);
     assert.equal(filtered.length, 1);
+  });
+});
+
+describe("filterFutureMobileStops", () => {
+  it("excludes the active-only stop from next/upcoming", () => {
+    const stops = [
+      {
+        locationDate: "2026-07-19",
+        startTime: "10:00",
+        endTime: "23:00",
+        isActive: true,
+        locationName: "Old IGA Parking Lot",
+      },
+    ];
+    const during = atZone("2026-07-19", "14:00");
+    const future = filterFutureMobileStops(stops, during, TZ);
+    assert.deepEqual(future, []);
+  });
+
+  it("returns later stops when one is active now", () => {
+    const stops = [
+      {
+        locationDate: "2026-07-19",
+        startTime: "10:00",
+        endTime: "14:00",
+        isActive: true,
+        locationName: "Morning lot",
+      },
+      {
+        locationDate: "2026-07-19",
+        startTime: "17:00",
+        endTime: "21:00",
+        isActive: true,
+        locationName: "Evening lot",
+      },
+      {
+        locationDate: "2026-07-20",
+        startTime: "11:00",
+        endTime: "14:00",
+        isActive: true,
+        locationName: "Tomorrow",
+      },
+    ];
+    const duringMorning = atZone("2026-07-19", "12:00");
+    const future = filterFutureMobileStops(stops, duringMorning, TZ);
+    assert.deepEqual(
+      future.map((s) => s.locationName),
+      ["Evening lot", "Tomorrow"],
+    );
+  });
+
+  it("treats today's stop as future before startTime", () => {
+    const stops = [
+      {
+        locationDate: "2026-07-19",
+        startTime: "10:00",
+        endTime: "23:00",
+        isActive: true,
+        locationName: "Old IGA Parking Lot",
+      },
+    ];
+    const before = atZone("2026-07-19", "09:00");
+    const future = filterFutureMobileStops(stops, before, TZ);
+    assert.deepEqual(
+      future.map((s) => s.locationName),
+      ["Old IGA Parking Lot"],
+    );
+  });
+
+  it("excludes today's stop after it has ended", () => {
+    const stops = [
+      {
+        locationDate: "2026-07-19",
+        startTime: "10:00",
+        endTime: "14:00",
+        isActive: true,
+        locationName: "Ended",
+      },
+      {
+        locationDate: "2026-07-20",
+        startTime: "11:00",
+        endTime: "14:00",
+        isActive: true,
+        locationName: "Tomorrow",
+      },
+    ];
+    const after = atZone("2026-07-19", "15:00");
+    const future = filterFutureMobileStops(stops, after, TZ);
+    assert.deepEqual(
+      future.map((s) => s.locationName),
+      ["Tomorrow"],
+    );
+  });
+
+  it("sorts same-day future stops by start time", () => {
+    const stops = [
+      {
+        locationDate: "2026-07-19",
+        startTime: "18:00",
+        endTime: "21:00",
+        isActive: true,
+        locationName: "Evening",
+      },
+      {
+        locationDate: "2026-07-19",
+        startTime: "12:00",
+        endTime: "14:00",
+        isActive: true,
+        locationName: "Noon",
+      },
+    ];
+    const morning = atZone("2026-07-19", "09:00");
+    const future = filterFutureMobileStops(stops, morning, TZ);
+    assert.deepEqual(
+      future.map((s) => s.locationName),
+      ["Noon", "Evening"],
+    );
   });
 });

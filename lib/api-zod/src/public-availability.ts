@@ -102,6 +102,49 @@ export function filterCurrentOrUpcomingMobileStops<T extends PublicMobileStop>(
   return stops.filter((stop) => isMobileStopCurrentOrUpcoming(stop, now, timeZone));
 }
 
+/**
+ * True when a stop has not started yet (later today before startTime, or a future civil date).
+ * Excludes the stop currently containing now — those belong in status, not "next/upcoming".
+ */
+export function isMobileStopFuture(
+  stop: PublicMobileStop,
+  now: Date,
+  timeZone: string,
+): boolean {
+  if (!isUsableStop(stop)) return false;
+  const tz = resolvePlatformTimeZone(timeZone);
+  const today = formatCivilDateInTimeZone(now, tz);
+  const cmp = compareCivilDates(stop.locationDate, today);
+  if (cmp > 0) return true;
+  if (cmp < 0) return false;
+
+  const currentMinutes = getZonedMinutesOfDay(now, tz);
+  const start = parseHmToMinutes(stop.startTime);
+  const end = parseHmToMinutes(stop.endTime);
+  if (start != null && end != null && end <= start) return false;
+  // Timed stop later today — before startTime only.
+  if (start != null) return currentMinutes < start;
+  // Whole-day / end-only today: active status covers "here now"; not a future listing.
+  return false;
+}
+
+function compareMobileStopsBySchedule(a: PublicMobileStop, b: PublicMobileStop): number {
+  const byDate = compareCivilDates(a.locationDate, b.locationDate);
+  if (byDate !== 0) return byDate;
+  return (a.startTime ?? "").localeCompare(b.startTime ?? "");
+}
+
+/** Future stops only, sorted by date then start time. */
+export function filterFutureMobileStops<T extends PublicMobileStop>(
+  stops: readonly T[],
+  now: Date,
+  timeZone: string,
+): T[] {
+  return stops
+    .filter((stop) => isMobileStopFuture(stop, now, timeZone))
+    .sort(compareMobileStopsBySchedule);
+}
+
 function stopContainsNow(
   stop: PublicMobileStop,
   today: string,
@@ -240,25 +283,7 @@ function mobileAvailability(
     };
   }
 
-  const upcoming = usable
-    .filter((stop) => {
-      const cmp = compareCivilDates(stop.locationDate, today);
-      if (cmp > 0) return true;
-      if (cmp < 0) return false;
-      const start = parseHmToMinutes(stop.startTime);
-      const end = parseHmToMinutes(stop.endTime);
-      if (start != null && end != null && end <= start) return false;
-      if (start != null) return currentMinutes < start;
-      // Whole-day / open-ended today that isn't active already handled — treat as past.
-      if (start == null && end == null) return false;
-      if (start == null && end != null) return currentMinutes < end;
-      return false;
-    })
-    .sort((a, b) => {
-      const byDate = compareCivilDates(a.locationDate, b.locationDate);
-      if (byDate !== 0) return byDate;
-      return (a.startTime ?? "").localeCompare(b.startTime ?? "");
-    });
+  const upcoming = filterFutureMobileStops(usable, now, timeZone);
 
   const next = upcoming[0];
   if (next) {

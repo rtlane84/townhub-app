@@ -71,8 +71,39 @@ describe("app marketing page", () => {
       "utf8",
     );
     assert.match(phoneFrame, /loading = "lazy"/);
-    assert.match(phoneFrame, /width=\{dims\.width\}/);
-    assert.match(phoneFrame, /height=\{dims\.height\}/);
+    assert.match(phoneFrame, /aspectRatio/);
+    assert.match(phoneFrame, /object-cover/);
+    // Replit-style border bezel + proportional attached CSS notch (no SVG / no fixed h-5).
+    assert.match(phoneFrame, /border-\[6px\]/);
+    assert.match(phoneFrame, /rounded-b-3xl/);
+    assert.match(phoneFrame, /width: "33\.333%"/);
+    // Corner radius scales with width so small phones match the good large-frame silhouette.
+    assert.match(phoneFrame, /rounded-\[min\(2\.5rem,11%\)\]/);
+    assert.doesNotMatch(phoneFrame, /viewBox=/);
+    assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
+  });
+
+  it("uses DualPhonePair for shop and business sections", () => {
+    const dualPair = readFileSync(
+      `${srcRoot}/components/app-marketing/dual-phone-pair.tsx`,
+      "utf8",
+    );
+    const featureOverview = readFileSync(
+      `${srcRoot}/components/app-marketing/feature-overview.tsx`,
+      "utf8",
+    );
+    const forBusinesses = readFileSync(
+      `${srcRoot}/components/app-marketing/for-businesses.tsx`,
+      "utf8",
+    );
+    // One phone on mobile; both side-by-side from lg up.
+    assert.match(dualPair, /lg:hidden/);
+    assert.match(dualPair, /hidden[\s\S]*lg:flex/);
+    assert.match(dualPair, /PHONE_FRAME_SINGLE_CLASS/);
+    assert.match(featureOverview, /DualPhonePair/);
+    assert.match(forBusinesses, /DualPhonePair/);
+    // List Your Business CTA hidden for now.
+    assert.doesNotMatch(forBusinesses, /List Your Business/);
   });
 
   it("sets Apple Smart App Banner metadata from config", () => {

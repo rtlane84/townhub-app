@@ -16,7 +16,7 @@ export default function AppMarketingPage() {
   return (
     <div
       id="top"
-      className="app-marketing min-h-[100dvh] w-full flex flex-col font-sans bg-background text-foreground"
+      className="app-marketing min-h-[100dvh] w-full overflow-x-clip flex flex-col font-sans bg-background text-foreground"
     >
       <AppMarketingHeader />
       <main className="flex-1">

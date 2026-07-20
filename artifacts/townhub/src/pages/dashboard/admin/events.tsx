@@ -22,6 +22,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Calendar, Check, X } from "lucide-react";
 import { formatEventSchedule } from "@/lib/event-dates";
+import {
+  EVENT_DESCRIPTION_CARD_HINT,
+  EVENT_DESCRIPTION_CARD_MAX_LENGTH,
+} from "@/lib/event-description";
 import { ImageField } from "@/components/image-field";
 import { TimeRangePicker, coerceFormTime } from "@/components/time-picker";
 import { isEndTimeAfterStart, normalizeOptionalTime } from "@workspace/api-zod";
@@ -389,7 +393,17 @@ export default function AdminEvents() {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium">Description</label>
-              <Textarea value={form.description} onChange={f("description")} rows={3} />
+              <Textarea
+                value={form.description}
+                onChange={f("description")}
+                rows={3}
+                maxLength={EVENT_DESCRIPTION_CARD_MAX_LENGTH}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                {EVENT_DESCRIPTION_CARD_HINT}
+                {" · "}
+                {(form.description ?? "").length}/{EVENT_DESCRIPTION_CARD_MAX_LENGTH}
+              </p>
             </div>
             <ImageField
               surface="event"

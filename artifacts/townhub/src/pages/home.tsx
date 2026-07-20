@@ -287,14 +287,14 @@ export default function Home() {
                       <OptimizedMediaImage
                         src={h.imageUrl}
                         widths={THUMBNAIL_IMAGE_WIDTHS}
-                        sizes="56px"
+                        sizes="80px"
                         alt={h.title}
-                        width={56}
-                        height={56}
-                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                        width={80}
+                        height={60}
+                        className="h-[3.75rem] w-20 shrink-0 rounded-xl object-cover"
                       />
                     ) : (
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <div className="flex h-[3.75rem] w-20 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <Sparkles className="h-5 w-5" />
                       </div>
                     )}
@@ -419,9 +419,10 @@ export default function Home() {
                             src={truck.businessLogoUrl}
                             alt={`${truck.businessName} logo`}
                             size="sm"
+                            ringClassName="ring-0 border-[3px] border-card shadow-[0_4px_16px_-4px_rgba(15,23,42,0.25)]"
                           />
                         ) : (
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-[3px] border-card bg-primary/10 shadow-[0_4px_16px_-4px_rgba(15,23,42,0.25)]">
                             <Truck className="h-5 w-5 text-primary" />
                           </div>
                         )}

@@ -2,14 +2,15 @@ import { PhoneFrame } from "@/components/app-marketing/phone-frame";
 import { AppStoreButton, PlayStoreButton } from "@/components/app-marketing/store-buttons";
 import { TownhubLogoMark } from "@/components/app-marketing/townhub-logo-mark";
 import { appMarketingConfig } from "@/lib/app-marketing-config";
-import homeScreen from "@/assets/app-marketing/home-today-in-clay.png";
-import otherScreen from "@/assets/app-marketing/home-featured-businesses.png";
+import { cn } from "@/lib/utils";
+import heroHome from "@/assets/app-marketing/hero-home-desktop.png";
+import businessDetail from "@/assets/app-marketing/business-detail-duck-donuts.png";
 
 export function AppMarketingFinalCta() {
   return (
-    <section className="py-24 bg-background relative overflow-hidden">
+    <section className="py-24 bg-background relative overflow-x-clip">
       <div className="container mx-auto px-4 md:px-8 max-w-[1280px] relative z-10">
-        <div className="bg-white rounded-[3rem] p-8 md:p-16 shadow-xl border border-gray-100 flex flex-col lg:flex-row items-center justify-between gap-12 overflow-hidden relative">
+        <div className="bg-white rounded-[3rem] p-8 md:p-16 shadow-xl border border-gray-100 flex flex-col lg:flex-row items-center justify-between gap-12 relative overflow-visible">
           <div className="lg:w-1/2 text-center lg:text-left relative z-10">
             <div className="mb-6 flex justify-center lg:justify-start">
               <TownhubLogoMark sizePx={28} wordmarkClassName="text-base" />
@@ -29,26 +30,30 @@ export function AppMarketingFinalCta() {
             </p>
           </div>
 
-          <div className="lg:w-1/2 relative h-[500px] md:h-[600px] w-full mt-8 lg:mt-0">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md flex justify-center">
+          {/* Dual-phone stack: back phone peeks clearly on mobile. */}
+          <div className="lg:w-1/2 relative w-full min-w-0 mt-4 lg:mt-0 overflow-visible">
+            <div className="relative mx-auto w-full max-w-[380px] sm:max-w-[440px] h-[440px] sm:h-[520px] md:h-[580px]">
               <div
-                className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-150 z-0"
+                className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-125 z-0"
                 aria-hidden
               />
-              <div className="translate-x-12 md:translate-x-20 rotate-6 translate-y-12 z-10">
+              <div className="absolute left-[38%] sm:left-[34%] md:left-[28%] top-[8%] rotate-6 z-0 opacity-95">
                 <PhoneFrame
-                  src={otherScreen}
-                  alt="Featured local businesses on TownHub"
+                  src={businessDetail}
+                  alt="Featured local business on TownHub"
                   size="lg"
-                  className="opacity-80 scale-90 blur-[2px]"
+                  className={cn("w-[min(190px,50vw)] sm:w-[220px] md:w-[250px]")}
                 />
               </div>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-12 md:-translate-y-20 -rotate-2 z-20">
+              <div className="absolute left-0 sm:left-[2%] top-0 -rotate-2 z-10">
                 <PhoneFrame
-                  src={homeScreen}
+                  src={heroHome}
                   alt="TownHub home screen"
                   size="xl"
-                  className="shadow-2xl"
+                  className={cn(
+                    "w-[min(260px,68vw)] sm:w-[min(280px,72vw)] md:w-[min(300px,78vw)] max-w-[320px]",
+                    "shadow-2xl",
+                  )}
                 />
               </div>
             </div>

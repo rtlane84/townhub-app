@@ -23,17 +23,34 @@ describe("business-listing public availability wiring", () => {
     );
   });
 
-  it("directory cards render status and schedule on separate lines", () => {
+  it("list rows keep open status without schedule; featured cards keep both", () => {
     const directory = readFileSync(
       join(here, "../components/business-directory.tsx"),
       "utf8",
     );
+    // Featured cards still show open status + optional schedule on separate lines.
     assert.match(directory, /statusLine\.statusLabel/);
     assert.match(directory, /statusLine\.scheduleLabel/);
     assert.doesNotMatch(
       directory,
       /statusLine\.statusLabel[\s\S]{0,40}· \$\{statusLine\.scheduleLabel\}/,
     );
+    // Directory list rows show open status + reserved storefront badge, not schedule.
+    assert.match(directory, /getBusinessOpenStatus/);
+    assert.match(directory, /getBusinessStorefrontBadge/);
+    assert.match(directory, /function BusinessDirectoryRow[\s\S]*openStatus/);
+    assert.doesNotMatch(
+      directory,
+      /function BusinessDirectoryRow[\s\S]*scheduleLabel/,
+    );
+
+    const homePopular = readFileSync(
+      join(here, "../components/home-popular-businesses.tsx"),
+      "utf8",
+    );
+    assert.match(homePopular, /getBusinessOpenStatus/);
+    assert.match(homePopular, /getBusinessStorefrontBadge/);
+    assert.doesNotMatch(homePopular, /scheduleLabel/);
   });
 
   it("storefront location card shows mobile availability; hours card remains for fixed businesses", () => {

@@ -2762,13 +2762,13 @@ export const ListHighlightsResponse = zod.array(ListHighlightsResponseItem)
  */
 export const CreateHighlightBody = zod.object({
   "title": zod.string(),
-  "description": zod.string().optional(),
-  "imageUrl": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
   "startDate": zod.string(),
   "endDate": zod.string(),
-  "relatedBusinessId": zod.number().optional(),
-  "buttonText": zod.string().optional(),
-  "buttonUrl": zod.string().optional(),
+  "relatedBusinessId": zod.number().nullish(),
+  "buttonText": zod.string().nullish(),
+  "buttonUrl": zod.string().nullish(),
   "active": zod.boolean().optional(),
   "sortOrder": zod.number().optional()
 })
@@ -2806,13 +2806,13 @@ export const UpdateHighlightParams = zod.object({
 
 export const UpdateHighlightBody = zod.object({
   "title": zod.string(),
-  "description": zod.string().optional(),
-  "imageUrl": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
   "startDate": zod.string(),
   "endDate": zod.string(),
-  "relatedBusinessId": zod.number().optional(),
-  "buttonText": zod.string().optional(),
-  "buttonUrl": zod.string().optional(),
+  "relatedBusinessId": zod.number().nullish(),
+  "buttonText": zod.string().nullish(),
+  "buttonUrl": zod.string().nullish(),
   "active": zod.boolean().optional(),
   "sortOrder": zod.number().optional()
 })

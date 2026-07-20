@@ -29,6 +29,70 @@ describe("peek carousel single-item width", () => {
   });
 });
 
+describe("event list layout", () => {
+  it("uses compact EventListRow for homepage and All events; uniform featured carousel", () => {
+    const homeFeatured = readFileSync(
+      new URL("../components/home-featured-events.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(homeFeatured, /EventListRow/);
+    assert.match(homeFeatured, /h-\[3\.75rem\] w-20/);
+
+    const eventListRow = readFileSync(
+      new URL("../components/event-list-row.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(eventListRow, /object-cover/);
+    assert.match(eventListRow, /formatEventSchedule/);
+    assert.match(eventListRow, /event\.location/);
+    assert.match(eventListRow, /truncateEventDescription/);
+
+    const eventsPage = readFileSync(
+      new URL("../pages/events.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(eventsPage, /EventListRow/);
+    assert.match(
+      eventsPage,
+      /itemClassName="basis-\[72%\] sm:basis-\[40%\] lg:basis-\[28%\]"/,
+    );
+    assert.match(eventsPage, /uniform/);
+
+    const eventCard = readFileSync(
+      new URL("../components/event-card.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(eventCard, /uniform\?: boolean/);
+    assert.match(eventCard, /aspect-\[4\/3\]/);
+    assert.match(eventCard, /truncateEventDescription/);
+    // No reserved title/description blocks — spacing stays tight on short content.
+    assert.doesNotMatch(eventCard, /min-h-\[2\.5rem\]/);
+  });
+});
+
+describe("event description card limit", () => {
+  it("exports a 120-character card limit used by admin and submit forms", async () => {
+    const { EVENT_DESCRIPTION_CARD_MAX_LENGTH, truncateEventDescription } =
+      await import("./event-description.ts");
+    assert.equal(EVENT_DESCRIPTION_CARD_MAX_LENGTH, 120);
+    assert.equal(truncateEventDescription("short"), "short");
+    assert.ok(truncateEventDescription("a".repeat(200)).length <= 120);
+
+    const adminEvents = readFileSync(
+      new URL("../pages/dashboard/admin/events.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(adminEvents, /EVENT_DESCRIPTION_CARD_MAX_LENGTH/);
+    assert.match(adminEvents, /maxLength=\{EVENT_DESCRIPTION_CARD_MAX_LENGTH\}/);
+
+    const submitForm = readFileSync(
+      new URL("../components/event-submit-form.tsx", import.meta.url),
+      "utf8",
+    );
+    assert.match(submitForm, /maxLength=\{EVENT_DESCRIPTION_CARD_MAX_LENGTH\}/);
+  });
+});
+
 describe("event submit wording", () => {
   it("uses Submit Event as the primary action label", () => {
     assert.match(eventSubmitSource, />\s*Submit Event\s*</);

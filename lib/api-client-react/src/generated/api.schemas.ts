@@ -1215,13 +1215,18 @@ export interface Highlight {
 
 export interface HighlightInput {
   title: string;
-  description?: string;
-  imageUrl?: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
   startDate: string;
   endDate: string;
-  relatedBusinessId?: number;
-  buttonText?: string;
-  buttonUrl?: string;
+  /** @nullable */
+  relatedBusinessId?: number | null;
+  /** @nullable */
+  buttonText?: string | null;
+  /** @nullable */
+  buttonUrl?: string | null;
   active?: boolean;
   sortOrder?: number;
 }

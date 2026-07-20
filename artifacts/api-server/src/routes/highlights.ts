@@ -2,25 +2,12 @@ import { Router, type IRouter } from "express";
 import { db, highlightsTable } from "@workspace/db";
 import { eq, and, lte, gte } from "drizzle-orm";
 import { getAuth } from "@clerk/express";
-import { z } from "zod";
 import { requireAdmin } from "../middlewares/requireRole";
 import { getPlatformTimeZone } from "../lib/platform-timezone";
 import { formatCivilDateInTimeZone } from "@workspace/api-zod";
+import { highlightInputSchema } from "../lib/highlight-input";
 
 const router: IRouter = Router();
-
-const highlightInputSchema = z.object({
-  title: z.string().min(1),
-  description: z.string().optional(),
-  imageUrl: z.string().optional(),
-  startDate: z.string().min(1),
-  endDate: z.string().min(1),
-  relatedBusinessId: z.number().int().optional(),
-  buttonText: z.string().optional(),
-  buttonUrl: z.string().optional(),
-  active: z.boolean().optional().default(true),
-  sortOrder: z.number().int().optional().default(0),
-});
 
 function serializeHighlight(h: typeof highlightsTable.$inferSelect) {
   return {

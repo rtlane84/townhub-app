@@ -4332,19 +4332,19 @@ components:
         title:
           type: string
         description:
-          type: string
+          type: ["string", "null"]
         imageUrl:
-          type: string
+          type: ["string", "null"]
         startDate:
           type: string
         endDate:
           type: string
         relatedBusinessId:
-          type: integer
+          type: ["integer", "null"]
         buttonText:
-          type: string
+          type: ["string", "null"]
         buttonUrl:
-          type: string
+          type: ["string", "null"]
         active:
           type: boolean
         sortOrder:

@@ -28,6 +28,76 @@ describe("media-image-guidance", () => {
     assert.match(product.fileLine, /5 MB/);
   });
 
+  it("matches event guidance to the 4:3 featured and list thumbnails", () => {
+    const event = IMAGE_SURFACE_GUIDANCE.event;
+    assert.match(event.recommendedSize, /1200 × 900 px \(4:3\)/);
+    assert.equal(event.aspectClass, "aspect-[4/3]");
+    assert.doesNotMatch(event.recommendedSize, /16:9/);
+
+    const formatted = formatImageSurfaceGuidance("event");
+    assert.match(formatted.recommendedLine, /1200 × 900 px \(4:3\)/);
+  });
+
+  it("matches spotlight guidance to the homepage landscape thumbnail", () => {
+    const highlight = IMAGE_SURFACE_GUIDANCE.highlight;
+    assert.equal(highlight.label, "Spotlight image");
+    assert.match(highlight.recommendedSize, /800 × 600 px \(4:3\)/);
+    assert.equal(highlight.aspectClass, "aspect-[4/3]");
+    assert.equal(highlight.previewMaxClass, "max-w-[10rem]");
+    assert.match(highlight.hint ?? "", /Landscape thumbnail/i);
+
+    const formatted = formatImageSurfaceGuidance("highlight");
+    assert.match(formatted.recommendedLine, /800 × 600 px \(4:3\)/);
+    assert.doesNotMatch(formatted.recommendedLine, /square/i);
+  });
+
+  it("homepage Spotlight thumbnails use a 4:3 frame", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { fileURLToPath } = await import("node:url");
+    const { dirname, join } = await import("node:path");
+    const here = dirname(fileURLToPath(import.meta.url));
+    const home = readFileSync(join(here, "../pages/home.tsx"), "utf8");
+    assert.match(home, /h-\[3\.75rem\] w-20/);
+    assert.match(home, /width=\{80\}/);
+    assert.match(home, /height=\{60\}/);
+    assert.doesNotMatch(home, /spotlightItems\.map[\s\S]*h-14 w-14/);
+  });
+
+  it("On the Move logos keep circular shape with framed border and shadow", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { fileURLToPath } = await import("node:url");
+    const { dirname, join } = await import("node:path");
+    const here = dirname(fileURLToPath(import.meta.url));
+    const home = readFileSync(join(here, "../pages/home.tsx"), "utf8");
+    assert.match(
+      home,
+      /BusinessLogoBadge[\s\S]*ringClassName="ring-0 border-\[3px\] border-card shadow-\[0_4px_16px_-4px_rgba\(15,23,42,0\.25\)\]"/,
+    );
+    assert.match(
+      home,
+      /rounded-full border-\[3px\] border-card bg-primary\/10 shadow-\[0_4px_16px_-4px_rgba\(15,23,42,0\.25\)\]/,
+    );
+  });
+
+  it("uses contain preview for logos and cover for heroes", () => {
+    assert.equal(IMAGE_SURFACE_GUIDANCE["business-logo"].previewFit, "contain");
+    assert.equal(IMAGE_SURFACE_GUIDANCE["platform-logo"].previewFit, "contain");
+    assert.equal(IMAGE_SURFACE_GUIDANCE["homepage-hero-overlay"].previewFit, "contain");
+    assert.equal(IMAGE_SURFACE_GUIDANCE["business-hero"].previewFit, undefined);
+    assert.equal(IMAGE_SURFACE_GUIDANCE["homepage-hero"].previewFit, undefined);
+  });
+
+  it("ImageField preview respects surface previewFit", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { fileURLToPath } = await import("node:url");
+    const { dirname, join } = await import("node:path");
+    const here = dirname(fileURLToPath(import.meta.url));
+    const source = readFileSync(join(here, "../components/image-field.tsx"), "utf8");
+    assert.match(source, /previewFit === "contain"/);
+    assert.match(source, /object-contain/);
+    assert.match(source, /object-cover/);
+  });
+
   it("accepts supported image mime types only", () => {
     assert.equal(isAcceptedImageMimeType("image/jpeg"), true);
     assert.equal(isAcceptedImageMimeType("image/png"), true);

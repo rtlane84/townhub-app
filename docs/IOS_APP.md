@@ -66,6 +66,8 @@ See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 Native sign-in on iOS offers **Apple**, **Google**, and **email**.
 
+Apple and Google use native system sheets + Clerk token exchange. **Email** uses the in-app `/sign-in` page with a **custom email/password form** (`useSignIn` / `useSignUp` hooks). Do **not** render Clerk’s prebuilt `<SignIn />` / `<SignUp />` or `SignInButton mode="modal"` on native — with `standardBrowser: false`, Clerk does not load UI components, so those throw “Clerk was not loaded with Ui components”. Also avoid opening Clerk modals from the Account drawer (sheet close races the modal in WKWebView).
+
 ### Why not browser-based OAuth on iOS
 
 The web Clerk SDK (`@clerk/react`) completes OAuth via a cookie/handshake in the **same browser context** and needs to redirect back to an **https origin**. The Capacitor app can't provide one: Capacitor serves the bundle over the custom `capacitor://localhost` scheme, and WKWebView reserves `http`/`https` so `server.iosScheme` cannot be set to https. Consequences we verified on-device:
@@ -211,6 +213,8 @@ Then smoke on a physical iPhone and use **Product → Archive** in Xcode.
 | Blank or stale UI | Re-run `ios:sync`; verify bundled `public` assets and Release archive commit/build number |
 | API/CORS failure | `VITE_API_BASE_URL`, API availability, and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost` |
 | Apple sign-in fails after the sheet (token rejected) | Clerk → Apple must have **"Use custom credentials"** on with a valid Services ID / Team ID / Key ID / .p8 whose audience matches bundle `com.lanetech.townhub`. Shared dev credentials will fail the `oauth_token_apple` exchange. Ensure a nonce is sent. |
+| Email sign-in shows “Clerk was not loaded with Ui components” | Native uses `standardBrowser: false` — do not mount `<SignIn />`. Use the custom `NativeEmailSignInForm` / `NativeEmailSignUpForm` hooks. Rebuild the iOS bundle after this fix. |
+| Email/password asks for a verification code on iOS | Expected on new devices when Clerk Client Trust is on — enter the email OTP after password. Custom form must handle both `needs_client_trust` and `needs_second_factor`, then `prepareSecondFactor` / `attemptSecondFactor`. |
 | Apple first-time user: “not authorized” / “no account to transfer” | SignIn-first binds the token — get a **second** Apple sheet and SignUp with a fresh token (never transfer / reuse). Keep Production bot CAPTCHA off for Cap. |
 | Apple returning user: “not authorized” after SignUp-first | SignUp burns the token for existing Apple IDs — use SignIn-first instead. |
 | Web: signed in but no My Orders / List Your Business | `/api/auth/me` failed (often email already linked to another Clerk user ID after Apple creates a new identity). Check Network for `auth/me` 4xx/5xx; link Apple on the existing Clerk user or repair the DB id. |

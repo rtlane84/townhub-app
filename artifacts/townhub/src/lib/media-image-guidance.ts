@@ -15,6 +15,12 @@ export interface ImageSurfaceGuidance {
   aspectClass: string;
   /** Optional max-width for the preview frame in settings UIs. */
   previewMaxClass?: string;
+  /**
+   * How the settings ImageField preview should fit the frame.
+   * Logos use contain so they match public storefront/directory display;
+   * heroes and photos default to cover.
+   */
+  previewFit?: "contain" | "cover";
   hint?: string;
 }
 
@@ -33,6 +39,7 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
     recommendedSize: "400 × 400 px (square)",
     aspectClass: "aspect-square",
     previewMaxClass: "max-w-[7.5rem]",
+    previewFit: "contain",
     hint: "Appears on your storefront and business listings.",
   },
   "business-hero": {
@@ -52,6 +59,7 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
     label: "Hero overlay image",
     recommendedSize: "1200 × 600 px transparent PNG",
     aspectClass: "aspect-[2/1]",
+    previewFit: "contain",
     hint: "Transparent logo + text that sits over the hero background. Never cropped.",
   },
   "homepage-town-photo": {
@@ -62,21 +70,23 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
   },
   event: {
     label: "Event image",
-    recommendedSize: "1200 × 675 px (16:9)",
-    aspectClass: "aspect-[16/9]",
-    hint: "Optional image for the community events calendar.",
+    recommendedSize: "1200 × 900 px (4:3)",
+    aspectClass: "aspect-[4/3]",
+    hint: "Optional image for featured and all-events listings.",
   },
   highlight: {
-    label: "Highlight image",
-    recommendedSize: "800 × 800 px (square)",
-    aspectClass: "aspect-square",
-    hint: "Thumbnail on the homepage highlights section.",
+    label: "Spotlight image",
+    recommendedSize: "800 × 600 px (4:3)",
+    aspectClass: "aspect-[4/3]",
+    previewMaxClass: "max-w-[10rem]",
+    hint: "Landscape thumbnail on homepage Spotlight cards.",
   },
   "platform-logo": {
     label: "Platform logo",
     recommendedSize: "200 × 200 px (square)",
     aspectClass: "aspect-square",
     previewMaxClass: "max-w-[7.5rem]",
+    previewFit: "contain",
     hint: "Shown in the site header and footer.",
   },
 };

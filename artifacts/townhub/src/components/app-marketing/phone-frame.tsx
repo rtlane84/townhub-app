@@ -1,18 +1,22 @@
 import { cn } from "@/lib/utils";
 
+/** Replit-style fixed widths; height comes from aspect-ratio so className width overrides stay correct. */
 const SIZE_CLASS = {
-  sm: "w-[180px] h-[389px]",
-  md: "w-[240px] h-[519px]",
-  lg: "w-[280px] h-[605px]",
-  xl: "w-[320px] h-[692px]",
+  sm: "w-[180px]",
+  md: "w-[240px]",
+  lg: "w-[280px]",
+  xl: "w-[320px]",
 } as const;
 
-const SIZE_PX = {
-  sm: { width: 180, height: 389 },
-  md: { width: 240, height: 519 },
-  lg: { width: 280, height: 605 },
-  xl: { width: 320, height: 692 },
-} as const;
+/** Matches marketing screenshots (~1284×2778) and Replit lg 280×605. */
+const FRAME_ASPECT = 9 / 19.5;
+
+/** Shared dual-phone row sizing (shop + business sections). */
+export const PHONE_FRAME_DUAL_CLASS =
+  "w-[47%] max-w-[210px] sm:max-w-[250px] md:max-w-[280px] lg:max-w-[300px]";
+
+/** Shared single-phone sizing (hero, residents, showcase, CTA). */
+export const PHONE_FRAME_SINGLE_CLASS = "w-[min(300px,78vw)] max-w-[320px]";
 
 type PhoneFrameProps = {
   src: string;
@@ -30,40 +34,42 @@ export function PhoneFrame({
   className,
   loading = "lazy",
 }: PhoneFrameProps) {
-  const dims = SIZE_PX[size];
-
   return (
     <div
       className={cn(
         "relative border-[6px] border-primary bg-primary shadow-2xl overflow-hidden shrink-0 flex",
-        "rounded-[2.5rem] md:rounded-[3rem]",
+        // Width-relative radius matches the good large-phone silhouette on small phones.
+        "rounded-[min(2.5rem,11%)]",
         "motion-safe:transition-transform",
         SIZE_CLASS[size],
         className,
       )}
-      style={{ width: dims.width, height: dims.height }}
+      style={{ aspectRatio: FRAME_ASPECT }}
     >
+      {/* Replit-style attached notch, sized as % of frame so every size matches. */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-5 md:h-6 bg-primary rounded-b-3xl z-20 flex justify-center items-center"
+        className="absolute top-0 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center bg-primary rounded-b-3xl"
+        style={{ width: "33.333%", aspectRatio: "4 / 1" }}
         aria-hidden
       >
-        <div className="w-10 md:w-12 h-1 md:h-1.5 bg-gray-800 rounded-full" />
+        <div
+          className="rounded-full bg-gray-800"
+          style={{ width: "55%", height: "22%" }}
+        />
       </div>
       <img
         src={src}
         alt={alt}
-        width={dims.width}
-        height={dims.height}
         loading={loading}
         decoding="async"
-        className="w-full h-full object-cover object-top z-10 relative bg-white"
+        className="relative z-10 h-full w-full bg-white object-cover object-top"
       />
       <div
-        className="absolute inset-0 pointer-events-none rounded-[2.1rem] md:rounded-[2.6rem] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)] z-30"
+        className="pointer-events-none absolute inset-0 z-30 rounded-[min(2.1rem,10%)] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]"
         aria-hidden
       />
       <div
-        className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/10 to-transparent pointer-events-none z-30"
+        className="pointer-events-none absolute inset-x-0 top-0 z-30 h-24 bg-gradient-to-b from-white/10 to-transparent"
         aria-hidden
       />
     </div>

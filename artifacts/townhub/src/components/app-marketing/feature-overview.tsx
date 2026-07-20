@@ -1,5 +1,5 @@
 import { Store, Calendar, Truck, Bell, ShoppingBag, Sun } from "lucide-react";
-import { PhoneFrame } from "@/components/app-marketing/phone-frame";
+import { DualPhonePair } from "@/components/app-marketing/dual-phone-pair";
 import orderLocal from "@/assets/app-marketing/order-summary-checkout.png";
 import businessDetail from "@/assets/app-marketing/business-detail-order-local.png";
 
@@ -85,7 +85,7 @@ export function AppMarketingFeatureOverview() {
           ))}
         </div>
 
-        <div className="mt-16 bg-primary rounded-[3rem] p-10 md:p-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center overflow-hidden relative">
+        <div className="mt-16 bg-primary rounded-[3rem] p-6 sm:p-10 md:p-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center overflow-hidden relative">
           <div
             className="absolute top-0 right-0 w-96 h-96 bg-townhub-blue rounded-full opacity-20 blur-3xl -translate-y-1/2 translate-x-1/3"
             aria-hidden
@@ -129,20 +129,18 @@ export function AppMarketingFeatureOverview() {
             </ul>
           </div>
 
-          <div className="relative z-10 flex justify-center items-end gap-4 sm:gap-6 scale-[0.72] sm:scale-90 md:scale-100 origin-bottom">
-            <PhoneFrame
-              src={businessDetail}
-              alt="Local bakery storefront on TownHub"
-              size="lg"
-              className="shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
-            />
-            <PhoneFrame
-              src={orderLocal}
-              alt="Order summary and pay at pickup on TownHub"
-              size="lg"
-              className="shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
-            />
-          </div>
+          <DualPhonePair
+            front={{
+              src: businessDetail,
+              alt: "Local bakery storefront on TownHub",
+            }}
+            back={{
+              src: orderLocal,
+              alt: "Order summary and pay at pickup on TownHub",
+            }}
+            desktopShadowClassName="shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+            className="px-2 sm:px-4"
+          />
         </div>
       </div>
     </section>

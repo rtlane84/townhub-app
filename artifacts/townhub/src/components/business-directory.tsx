@@ -4,6 +4,7 @@ import { Store } from "lucide-react";
 import {
   getBusinessCategoryLine,
   getBusinessListingCta,
+  getBusinessOpenStatus,
   getBusinessStorefrontBadge,
   getStorefrontStatusLine,
   type BusinessListingCta,
@@ -16,58 +17,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OptimizedMediaImage } from "@/components/optimized-media-image";
-import { CARD_IMAGE_WIDTHS, THUMBNAIL_IMAGE_WIDTHS } from "@/lib/optimized-image";
+import { CARD_IMAGE_WIDTHS } from "@/lib/optimized-image";
+import { BusinessLogoThumb } from "@/components/business-logo-thumb";
 
 const OPEN_STATUS_CLASS = "text-emerald-700";
 const CLOSED_STATUS_CLASS = "text-red-600";
 
 function openStatusClass(isOpen: boolean) {
   return isOpen ? OPEN_STATUS_CLASS : CLOSED_STATUS_CLASS;
-}
-
-function BusinessThumb({
-  business,
-  className,
-  rounded = "rounded-xl",
-  priority = false,
-}: {
-  business: Business;
-  className?: string;
-  rounded?: string;
-  priority?: boolean;
-}) {
-  const src = business.heroImageUrl || business.logoUrl;
-  return (
-    <div
-      className={cn(
-        "relative shrink-0 overflow-hidden bg-muted",
-        rounded,
-        className,
-      )}
-    >
-      {src ? (
-        <OptimizedMediaImage
-          src={src}
-          widths={THUMBNAIL_IMAGE_WIDTHS}
-          sizes="68px"
-          priority={priority}
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div
-          className="flex h-full w-full items-center justify-center bg-primary/5 text-primary/40"
-          style={businessHeroPlaceholderStyle(business.accentColor)}
-        >
-          <Store
-            className="h-7 w-7"
-            style={businessIconAccentStyle(business.accentColor)}
-            aria-hidden
-          />
-        </div>
-      )}
-    </div>
-  );
 }
 
 function ListingCtaButton({
@@ -109,16 +66,17 @@ export function FeaturedBusinessCard({
   const statusLine = getStorefrontStatusLine(business);
   const imageBadge = getBusinessStorefrontBadge(business);
   const cta = getBusinessListingCta(business);
-  const hero = business.heroImageUrl || business.logoUrl;
+  const hero = business.heroImageUrl;
   const storefrontHref = `/businesses/${business.slug}`;
 
   return (
-    <article className="flex h-full w-full flex-col overflow-hidden rounded-[1.25rem] border border-black/[0.05] bg-card shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]">
+    <article className="flex h-full w-full flex-col rounded-[1.25rem] border border-black/[0.05] bg-card shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]">
       <Link
         href={storefrontHref}
         className="flex min-h-0 min-w-0 flex-1 flex-col"
       >
-        <div className="relative aspect-[4/3] shrink-0 overflow-hidden bg-muted">
+        {/* Hero — overflow clipped here so the logo can hang over the content seam */}
+        <div className="relative aspect-[4/3] shrink-0 overflow-hidden rounded-t-[1.25rem] bg-muted">
           {hero ? (
             <OptimizedMediaImage
               src={hero}
@@ -141,12 +99,26 @@ export function FeaturedBusinessCard({
             </div>
           )}
           {imageBadge ? (
-            <span className="absolute bottom-2 left-2 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-semibold text-platform-heading shadow-sm">
+            <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-2 py-0.5 text-[10px] font-semibold text-platform-heading shadow-sm">
               {imageBadge}
             </span>
           ) : null}
         </div>
-        <div className="flex flex-1 flex-col space-y-1 px-3 pt-2.5 pb-1">
+        {/* Logo overlaps hero → content seam, matching storefront detail */}
+        <div className="relative z-10 -mt-6 ml-3">
+          <BusinessLogoThumb
+            logoUrl={business.logoUrl}
+            accentColor={business.accentColor}
+            alt=""
+            className="h-12 w-12"
+            rounded="rounded-[0.85rem]"
+            sizes="48px"
+            priority={priority}
+            framed
+            iconClassName="h-5 w-5"
+          />
+        </div>
+        <div className="flex flex-1 flex-col space-y-1 px-3 pt-1.5 pb-1">
           <h3 className="truncate text-[14px] font-semibold tracking-tight text-platform-heading">
             {business.name}
           </h3>
@@ -214,7 +186,7 @@ export function BusinessDirectoryRow({
   priority?: boolean;
 }) {
   const categoryLine = getBusinessCategoryLine(business);
-  const statusLine = getStorefrontStatusLine(business);
+  const openStatus = getBusinessOpenStatus(business);
   const storefrontBadge = getBusinessStorefrontBadge(business);
   const cta = getBusinessListingCta(business);
   const storefrontHref = `/businesses/${business.slug}`;
@@ -223,11 +195,15 @@ export function BusinessDirectoryRow({
     <li>
       <div className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-card p-2.5 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
         <Link href={storefrontHref} className="shrink-0" aria-label={`View ${business.name}`}>
-          <BusinessThumb
-            business={business}
+          <BusinessLogoThumb
+            logoUrl={business.logoUrl}
+            accentColor={business.accentColor}
+            alt=""
             className="h-[4.25rem] w-[4.25rem]"
             rounded="rounded-[0.9rem]"
+            sizes="68px"
             priority={priority}
+            framed
           />
         </Link>
 
@@ -238,35 +214,30 @@ export function BusinessDirectoryRow({
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {categoryLine}
           </p>
-          {(statusLine || storefrontBadge) ? (
-            <div className="mt-1 space-y-0.5 text-xs">
-              {statusLine ? (
-                <div className="space-y-0.5">
-                  <p
-                    className={cn(
-                      "font-semibold leading-snug",
-                      openStatusClass(statusLine.isOpen),
-                    )}
-                  >
-                    {statusLine.statusLabel}
-                  </p>
-                  {statusLine.scheduleLabel ? (
-                    <p
-                      className={cn(
-                        "font-medium leading-snug",
-                        openStatusClass(statusLine.isOpen),
-                      )}
-                    >
-                      {statusLine.scheduleLabel}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-              {storefrontBadge ? (
-                <p className="font-medium text-primary">{storefrontBadge}</p>
-              ) : null}
-            </div>
-          ) : null}
+          <div className="mt-1 space-y-0.5 text-xs">
+            {/* Status only — no "Opens at…" / "Next stop…" schedule line. */}
+            <p
+              className={cn(
+                "min-h-[1rem] truncate font-semibold leading-4",
+                openStatus
+                  ? openStatusClass(openStatus.isOpen)
+                  : "invisible",
+              )}
+              aria-hidden={!openStatus}
+            >
+              {openStatus?.label ?? "Closed"}
+            </p>
+            {/* Reserve badge line height so rows match with or without Order/Book online. */}
+            <p
+              className={cn(
+                "min-h-[1rem] font-medium leading-4",
+                storefrontBadge ? "text-primary" : "invisible",
+              )}
+              aria-hidden={!storefrontBadge}
+            >
+              {storefrontBadge ?? "Order online"}
+            </p>
+          </div>
         </Link>
 
         {cta ? <ListingCtaButton cta={cta} /> : null}

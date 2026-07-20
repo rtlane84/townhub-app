@@ -3,15 +3,22 @@ import type { Business } from "@workspace/api-client-react";
 import { Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeEmptyState } from "@/components/native-empty-state";
+import { BusinessLogoThumb } from "@/components/business-logo-thumb";
 import {
   getBusinessCategoryLine,
   getBusinessListingCta,
   getBusinessOpenStatus,
+  getBusinessStorefrontBadge,
 } from "@/lib/business-listing";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OptimizedMediaImage } from "@/components/optimized-media-image";
-import { THUMBNAIL_IMAGE_WIDTHS } from "@/lib/optimized-image";
+
+const OPEN_STATUS_CLASS = "text-emerald-700";
+const CLOSED_STATUS_CLASS = "text-red-600";
+
+function openStatusClass(isOpen: boolean) {
+  return isOpen ? OPEN_STATUS_CLASS : CLOSED_STATUS_CLASS;
+}
 
 type HomePopularBusinessesProps = {
   businesses: Business[];
@@ -27,7 +34,7 @@ function PopularBusinessesSkeleton({ count = 3 }: { count?: number }) {
           key={index}
           className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-card p-2.5"
         >
-          <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
+          <Skeleton className="h-[4.25rem] w-[4.25rem] shrink-0 rounded-[0.9rem]" />
           <div className="min-w-0 flex-1 space-y-2">
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-3 w-1/3" />
@@ -40,9 +47,9 @@ function PopularBusinessesSkeleton({ count = 3 }: { count?: number }) {
 }
 
 function BusinessRow({ business }: { business: Business }) {
-  const status = getBusinessOpenStatus(business);
   const categoryLine = getBusinessCategoryLine(business);
-  const thumb = business.logoUrl || business.heroImageUrl;
+  const openStatus = getBusinessOpenStatus(business);
+  const storefrontBadge = getBusinessStorefrontBadge(business);
   const cta = getBusinessListingCta(business);
   const storefrontHref = `/businesses/${business.slug}`;
 
@@ -50,40 +57,48 @@ function BusinessRow({ business }: { business: Business }) {
     <li>
       <div className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-card p-2.5 transition-colors hover:bg-muted/30">
         <Link href={storefrontHref} className="shrink-0" aria-label={`View ${business.name}`}>
-          <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-muted">
-            {thumb ? (
-              <OptimizedMediaImage
-                src={thumb}
-                widths={THUMBNAIL_IMAGE_WIDTHS}
-                sizes="56px"
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-primary/40">
-                <Store className="h-6 w-6" aria-hidden />
-              </div>
-            )}
-          </div>
+          <BusinessLogoThumb
+            logoUrl={business.logoUrl}
+            accentColor={business.accentColor}
+            alt=""
+            className="h-[4.25rem] w-[4.25rem]"
+            rounded="rounded-[0.9rem]"
+            sizes="68px"
+            framed
+          />
         </Link>
 
-        <Link href={storefrontHref} className="min-w-0 flex-1">
+        <Link href={storefrontHref} className="min-w-0 flex-1 py-0.5">
           <p className="truncate text-[15px] font-semibold tracking-tight text-platform-heading">
             {business.name}
           </p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {categoryLine}
           </p>
-          {status ? (
+          <div className="mt-1 space-y-0.5 text-xs">
+            {/* Status only — no "Opens at…" / "Next stop…" schedule line. */}
             <p
               className={cn(
-                "mt-1 text-xs font-semibold",
-                status.isOpen ? "text-emerald-700" : "text-red-600",
+                "min-h-[1rem] truncate font-semibold leading-4",
+                openStatus
+                  ? openStatusClass(openStatus.isOpen)
+                  : "invisible",
               )}
+              aria-hidden={!openStatus}
             >
-              {status.label}
+              {openStatus?.label ?? "Closed"}
             </p>
-          ) : null}
+            {/* Reserve badge line height so rows match with or without Order/Book online. */}
+            <p
+              className={cn(
+                "min-h-[1rem] font-medium leading-4",
+                storefrontBadge ? "text-primary" : "invisible",
+              )}
+              aria-hidden={!storefrontBadge}
+            >
+              {storefrontBadge ?? "Order online"}
+            </p>
+          </div>
         </Link>
 
         {cta ? (
