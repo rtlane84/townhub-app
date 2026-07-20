@@ -82,7 +82,6 @@
     "wouter": "^3.3.5"
   },
   "dependencies": {
-    "@townhub/capacitor-auth-session": "workspace:*",
     "@capacitor/app": "^7.0.1",
     "@capacitor/browser": "^7.0.1",
     "@capacitor/core": "^7.2.0",
@@ -94,7 +93,9 @@
     "@capacitor/status-bar": "^7.0.6",
     "@clerk/react": "^6.10.4",
     "@clerk/themes": "^2.4.57",
+    "@plausible-analytics/tracker": "^0.4.5",
     "@sentry/react": "^10.63.0",
+    "@townhub/capacitor-auth-session": "workspace:*",
     "@workspace/api-zod": "workspace:*",
     "leaflet": "^1.9.4",
     "react-leaflet": "^5.0.0"
