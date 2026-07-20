@@ -345,7 +345,12 @@ export default function BusinessSettings() {
     );
   }
 
-  const isOrderingMode = isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
+  const isOrderingMode =
+    onlineOrderingAllowed &&
+    isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
+  const orderingLockedOnPlan =
+    !onlineOrderingAllowed &&
+    isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
 
   return (
     <BusinessDashboardLayout>
@@ -602,7 +607,14 @@ export default function BusinessSettings() {
                   Locked options require a plan upgrade. Display-only mode is always available.
                 </p>
               ) : null}
-              {!isOrderingMode ? (
+              {orderingLockedOnPlan ? (
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  Online ordering is not on your plan, so pickup, delivery, payment, and tax settings are
+                  hidden. Switch to Display only (or Appointment requests) to match your public page, or
+                  upgrade to configure ordering.
+                </p>
+              ) : null}
+              {!isOrderingMode && !orderingLockedOnPlan ? (
                 <p className="text-xs text-muted-foreground">
                   Switch to online ordering to configure pickup, delivery, payments, and tax.
                 </p>
