@@ -1,7 +1,5 @@
-import { Link } from "wouter";
-import { ArrowRight, Store, Package, ShoppingBag, Clock, Truck, Bell } from "lucide-react";
+import { Store, Package, ShoppingBag, Clock, Truck, Bell } from "lucide-react";
 import { DualPhonePair } from "@/components/app-marketing/dual-phone-pair";
-import { appMarketingConfig } from "@/lib/app-marketing-config";
 import bizOverview from "@/assets/app-marketing/business-hub-overview.png";
 import bizMenu from "@/assets/app-marketing/business-hub-drawer.png";
 
@@ -15,34 +13,12 @@ const businessPoints = [
 ] as const;
 
 export function AppMarketingForBusinesses() {
-  const signupIsInternal = appMarketingConfig.businessSignupUrl.startsWith("/");
-
-  const ctaClassName =
-    "inline-flex items-center justify-center bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white rounded-xl px-6 py-3.5 font-semibold motion-safe:transition-all group shadow-sm text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
-
   return (
     <section id="businesses" className="py-24 bg-white border-t border-gray-100 scroll-mt-24 overflow-x-hidden">
       <div className="container mx-auto px-4 md:px-8 max-w-[1280px]">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          <div className="w-full lg:w-1/2 relative order-1 overflow-visible">
-            <div
-              className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-150 -z-10"
-              aria-hidden
-            />
-            <DualPhonePair
-              front={{
-                src: bizMenu,
-                alt: "Business Hub navigation menu",
-              }}
-              back={{
-                src: bizOverview,
-                alt: "Business Hub overview with orders and revenue",
-              }}
-              className="px-1 sm:px-3"
-            />
-          </div>
-
-          <div className="w-full lg:w-1/2 relative z-10 order-2">
+          {/* Text first on mobile so phones never cover the headline. */}
+          <div className="w-full lg:w-1/2 relative z-10 order-1 lg:order-2">
             <div className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-medium text-sm mb-6 border border-blue-100">
               For Businesses
             </div>
@@ -55,7 +31,7 @@ export function AppMarketingForBusinesses() {
               media alone.
             </p>
 
-            <div className="space-y-6 mb-10">
+            <div className="space-y-6">
               {businessPoints.map((item) => (
                 <div key={item.text} className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 text-primary mt-0.5">
@@ -67,29 +43,23 @@ export function AppMarketingForBusinesses() {
                 </div>
               ))}
             </div>
+          </div>
 
-            {signupIsInternal ? (
-              <Link href={appMarketingConfig.businessSignupUrl} className={ctaClassName}>
-                List Your Business
-                <ArrowRight
-                  className="w-4 h-4 ml-2 motion-safe:group-hover:translate-x-1 motion-safe:transition-transform"
-                  aria-hidden
-                />
-              </Link>
-            ) : (
-              <a
-                href={appMarketingConfig.businessSignupUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={ctaClassName}
-              >
-                List Your Business
-                <ArrowRight
-                  className="w-4 h-4 ml-2 motion-safe:group-hover:translate-x-1 motion-safe:transition-transform"
-                  aria-hidden
-                />
-              </a>
-            )}
+          <div className="w-full lg:w-1/2 relative order-2 lg:order-1 overflow-hidden">
+            <div
+              className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-150 -z-10"
+              aria-hidden
+            />
+            <DualPhonePair
+              front={{
+                src: bizOverview,
+                alt: "Business Hub overview with orders and revenue",
+              }}
+              back={{
+                src: bizMenu,
+                alt: "Business Hub navigation menu",
+              }}
+            />
           </div>
         </div>
       </div>

@@ -83,7 +83,7 @@ describe("app marketing page", () => {
     assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
   });
 
-  it("uses DualPhonePair for shop and business sections on mobile", () => {
+  it("uses DualPhonePair for shop and business sections", () => {
     const dualPair = readFileSync(
       `${srcRoot}/components/app-marketing/dual-phone-pair.tsx`,
       "utf8",
@@ -96,10 +96,14 @@ describe("app marketing page", () => {
       `${srcRoot}/components/app-marketing/for-businesses.tsx`,
       "utf8",
     );
+    // One phone on mobile; both side-by-side from lg up.
     assert.match(dualPair, /lg:hidden/);
     assert.match(dualPair, /hidden[\s\S]*lg:flex/);
+    assert.match(dualPair, /PHONE_FRAME_SINGLE_CLASS/);
     assert.match(featureOverview, /DualPhonePair/);
     assert.match(forBusinesses, /DualPhonePair/);
+    // List Your Business CTA hidden for now.
+    assert.doesNotMatch(forBusinesses, /List Your Business/);
   });
 
   it("sets Apple Smart App Banner metadata from config", () => {
