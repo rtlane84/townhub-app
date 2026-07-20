@@ -3,14 +3,14 @@ import { AppStoreButton, PlayStoreButton } from "@/components/app-marketing/stor
 import { TownhubLogoMark } from "@/components/app-marketing/townhub-logo-mark";
 import { appMarketingConfig } from "@/lib/app-marketing-config";
 import { cn } from "@/lib/utils";
-import homeScreen from "@/assets/app-marketing/home-today-in-clay.png";
-import otherScreen from "@/assets/app-marketing/home-featured-businesses.png";
+import heroHome from "@/assets/app-marketing/hero-home-desktop.png";
+import businessDetail from "@/assets/app-marketing/business-detail-duck-donuts.png";
 
 export function AppMarketingFinalCta() {
   return (
-    <section className="py-24 bg-background relative overflow-hidden">
+    <section className="py-24 bg-background relative overflow-x-clip">
       <div className="container mx-auto px-4 md:px-8 max-w-[1280px] relative z-10">
-        <div className="bg-white rounded-[3rem] p-8 md:p-16 shadow-xl border border-gray-100 flex flex-col lg:flex-row items-center justify-between gap-12 overflow-hidden relative">
+        <div className="bg-white rounded-[3rem] p-8 md:p-16 shadow-xl border border-gray-100 flex flex-col lg:flex-row items-center justify-between gap-12 relative">
           <div className="lg:w-1/2 text-center lg:text-left relative z-10">
             <div className="mb-6 flex justify-center lg:justify-start">
               <TownhubLogoMark sizePx={28} wordmarkClassName="text-base" />
@@ -30,23 +30,27 @@ export function AppMarketingFinalCta() {
             </p>
           </div>
 
-          <div className="lg:w-1/2 relative h-[500px] md:h-[600px] w-full min-w-0 mt-8 lg:mt-0 overflow-hidden">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md flex justify-center">
+          {/* Dual-phone stack; overflow visible so tops/bottoms are not clipped. */}
+          <div className="lg:w-1/2 relative w-full min-w-0 mt-4 lg:mt-0">
+            <div className="relative mx-auto w-full max-w-[340px] sm:max-w-[400px] h-[440px] sm:h-[520px] md:h-[580px]">
               <div
-                className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-150 z-0"
+                className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-125 z-0"
                 aria-hidden
               />
-              <div className="translate-x-8 sm:translate-x-12 md:translate-x-20 rotate-6 translate-y-12 z-10">
+              <div className="absolute left-[20%] sm:left-[24%] top-[10%] rotate-6 z-0 opacity-85">
                 <PhoneFrame
-                  src={otherScreen}
-                  alt="Featured local businesses on TownHub"
+                  src={businessDetail}
+                  alt="Featured local business on TownHub"
                   size="lg"
-                  className={cn(PHONE_FRAME_SINGLE_CLASS, "opacity-80 scale-90 blur-[2px]")}
+                  className={cn(
+                    "w-[min(210px,55vw)] sm:w-[230px] md:w-[250px]",
+                    "opacity-90 blur-[0.5px]",
+                  )}
                 />
               </div>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-12 md:-translate-y-20 -rotate-2 z-20">
+              <div className="absolute left-0 sm:left-[2%] top-0 -rotate-2 z-10">
                 <PhoneFrame
-                  src={homeScreen}
+                  src={heroHome}
                   alt="TownHub home screen"
                   size="xl"
                   className={cn(PHONE_FRAME_SINGLE_CLASS, "shadow-2xl")}

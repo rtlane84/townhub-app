@@ -26,6 +26,32 @@ type PhoneFrameProps = {
   loading?: "eager" | "lazy";
 };
 
+/**
+ * Classic iPhone-style top notch (attached to bezel), not a floating Dynamic Island.
+ * viewBox tuned to the approved marketing reference: wide U-cutout + speaker + camera.
+ */
+function PhoneNotch() {
+  return (
+    <svg
+      className="absolute left-1/2 top-0 z-20 -translate-x-1/2 text-primary pointer-events-none"
+      style={{ width: "40%" }}
+      viewBox="0 0 210 32"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        fill="currentColor"
+        d="M0 0h210v2.5c0 2.2-1.2 5.5-4.2 10.2C201.5 19.5 190 32 168 32H42C20 32 8.5 19.5 4.2 12.7 1.2 8 0 4.7 0 2.5V0Z"
+      />
+      {/* Speaker */}
+      <rect x="68" y="11" width="52" height="5" rx="2.5" fill="#111827" />
+      {/* Camera */}
+      <circle cx="138" cy="13.5" r="4.2" fill="#0a0a0a" />
+      <circle cx="138" cy="13.5" r="1.6" fill="#1e293b" />
+    </svg>
+  );
+}
+
 export function PhoneFrame({
   src,
   alt,
@@ -37,16 +63,16 @@ export function PhoneFrame({
     <div
       className={cn(
         "relative bg-primary shadow-2xl shrink-0 box-border",
-        // Radius as % of frame size so small phones do not clip the bottom nav.
-        "rounded-[12%]",
-        "p-[2.4%]",
+        // Softer %-radius so screen content (status bar / nav) is not clipped.
+        "rounded-[11%]",
+        "p-[2%]",
         "motion-safe:transition-transform",
         SIZE_CLASS[size],
         className,
       )}
       style={{ aspectRatio: FRAME_ASPECT }}
     >
-      <div className="relative h-full w-full overflow-hidden rounded-[10%] bg-white">
+      <div className="relative h-full w-full overflow-hidden rounded-[9.5%] bg-white">
         <img
           src={src}
           alt={alt}
@@ -54,25 +80,7 @@ export function PhoneFrame({
           decoding="async"
           className="absolute inset-0 h-full w-full object-cover object-top bg-white"
         />
-
-        {/* Top-bezel notch — matches the good marketing reference. */}
-        <div
-          className="absolute left-1/2 z-20 -translate-x-1/2 bg-primary flex items-center justify-center"
-          style={{
-            top: 0,
-            width: "34%",
-            aspectRatio: "2.85 / 1",
-            borderBottomLeftRadius: "42%",
-            borderBottomRightRadius: "42%",
-          }}
-          aria-hidden
-        >
-          <div
-            className="rounded-full bg-gray-800/90"
-            style={{ width: "40%", height: "16%" }}
-          />
-        </div>
-
+        <PhoneNotch />
         <div
           className="absolute inset-0 pointer-events-none rounded-[inherit] shadow-[inset_0_0_12px_rgba(0,0,0,0.08)] z-30"
           aria-hidden

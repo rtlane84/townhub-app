@@ -73,10 +73,10 @@ describe("app marketing page", () => {
     assert.match(phoneFrame, /loading = "lazy"/);
     assert.match(phoneFrame, /aspectRatio/);
     assert.match(phoneFrame, /object-cover/);
-    // Top-bezel notch scales with frame width; corner radius is %-based.
-    assert.match(phoneFrame, /width: "34%"/);
-    assert.match(phoneFrame, /borderBottomLeftRadius/);
-    assert.match(phoneFrame, /rounded-\[12%\]/);
+    // Classic attached U-notch (SVG), not a floating Dynamic Island pill.
+    assert.match(phoneFrame, /viewBox="0 0 210 32"/);
+    assert.match(phoneFrame, /PhoneNotch/);
+    assert.doesNotMatch(phoneFrame, /borderRadius: "999px"/);
     assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
   });
 

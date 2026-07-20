@@ -2,6 +2,7 @@ import { MapPin } from "lucide-react";
 import { PhoneFrame, PHONE_FRAME_SINGLE_CLASS } from "@/components/app-marketing/phone-frame";
 import { AppStoreButton, PlayStoreButton } from "@/components/app-marketing/store-buttons";
 import { appMarketingConfig } from "@/lib/app-marketing-config";
+import { cn } from "@/lib/utils";
 import heroHome from "@/assets/app-marketing/hero-home-desktop.png";
 import businessDetail from "@/assets/app-marketing/business-detail-duck-donuts.png";
 
@@ -36,30 +37,36 @@ export function AppMarketingHero() {
             </p>
           </div>
 
-          <div className="relative min-h-[480px] sm:min-h-[560px] md:min-h-[720px] flex justify-center items-center mt-8 lg:mt-0 overflow-hidden lg:overflow-visible">
+          {/* Dual-phone composition on all breakpoints (matches desktop two-shot). */}
+          <div className="relative w-full min-h-[420px] sm:min-h-[520px] md:min-h-[640px] lg:min-h-[720px] flex justify-center items-center mt-8 lg:mt-0">
             <div
               className="absolute inset-0 bg-gradient-to-tr from-townhub-blue/5 to-townhub-orange/5 rounded-full blur-3xl -z-10 scale-110"
               aria-hidden
             />
 
-            <div className="relative z-10 md:-rotate-3 motion-safe:transition-transform motion-safe:hover:-rotate-1 motion-safe:duration-700 motion-safe:ease-out">
-              <PhoneFrame
-                src={heroHome}
-                alt="TownHub home screen showing today's community highlights"
-                size="xl"
-                loading="eager"
-                className={PHONE_FRAME_SINGLE_CLASS}
-              />
-            </div>
+            <div className="relative w-full max-w-[340px] sm:max-w-[400px] h-[420px] sm:h-[520px] md:h-[640px] lg:h-[700px]">
+              <div className="absolute left-[18%] sm:left-[22%] top-[8%] rotate-6 z-0 opacity-90">
+                <PhoneFrame
+                  src={businessDetail}
+                  alt="TownHub business storefront for a local bakery"
+                  size="lg"
+                  loading="eager"
+                  className={cn(
+                    "w-[min(220px,58vw)] sm:w-[240px] md:w-[260px]",
+                    "blur-[0.5px]",
+                  )}
+                />
+              </div>
 
-            <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 rotate-6 translate-x-8 z-0 opacity-90 blur-[1px]">
-              <PhoneFrame
-                src={businessDetail}
-                alt="TownHub business storefront for a local bakery"
-                size="lg"
-                loading="eager"
-                className="w-[260px]"
-              />
+              <div className="absolute left-0 sm:left-[4%] top-0 -rotate-2 z-10 motion-safe:transition-transform motion-safe:hover:-rotate-1 motion-safe:duration-700">
+                <PhoneFrame
+                  src={heroHome}
+                  alt="TownHub home screen showing today's community highlights"
+                  size="xl"
+                  loading="eager"
+                  className={cn(PHONE_FRAME_SINGLE_CLASS, "shadow-2xl")}
+                />
+              </div>
             </div>
           </div>
         </div>
