@@ -77,10 +77,29 @@ describe("app marketing page", () => {
     assert.match(phoneFrame, /border-\[6px\]/);
     assert.match(phoneFrame, /rounded-b-3xl/);
     assert.match(phoneFrame, /width: "33\.333%"/);
-    // Corner radius scales with width so small dual phones match the good large-frame silhouette.
-    assert.match(phoneFrame, /rounded-\[min\(2\.5rem,14%\)\]/);
+    // Corner radius scales with width so small phones match the good large-frame silhouette.
+    assert.match(phoneFrame, /rounded-\[min\(2\.5rem,11%\)\]/);
     assert.doesNotMatch(phoneFrame, /viewBox=/);
     assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
+  });
+
+  it("uses DualPhonePair for shop and business sections on mobile", () => {
+    const dualPair = readFileSync(
+      `${srcRoot}/components/app-marketing/dual-phone-pair.tsx`,
+      "utf8",
+    );
+    const featureOverview = readFileSync(
+      `${srcRoot}/components/app-marketing/feature-overview.tsx`,
+      "utf8",
+    );
+    const forBusinesses = readFileSync(
+      `${srcRoot}/components/app-marketing/for-businesses.tsx`,
+      "utf8",
+    );
+    assert.match(dualPair, /lg:hidden/);
+    assert.match(dualPair, /hidden[\s\S]*lg:flex/);
+    assert.match(featureOverview, /DualPhonePair/);
+    assert.match(forBusinesses, /DualPhonePair/);
   });
 
   it("sets Apple Smart App Banner metadata from config", () => {

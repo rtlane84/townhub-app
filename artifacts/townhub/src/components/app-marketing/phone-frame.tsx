@@ -38,8 +38,8 @@ export function PhoneFrame({
     <div
       className={cn(
         "relative border-[6px] border-primary bg-primary shadow-2xl overflow-hidden shrink-0 flex",
-        // Width-relative radius matches the good large-phone silhouette on small dual phones.
-        "rounded-[min(2.5rem,14%)]",
+        // Width-relative radius matches the good large-phone silhouette on small phones.
+        "rounded-[min(2.5rem,11%)]",
         "motion-safe:transition-transform",
         SIZE_CLASS[size],
         className,
@@ -65,7 +65,7 @@ export function PhoneFrame({
         className="relative z-10 h-full w-full bg-white object-cover object-top"
       />
       <div
-        className="pointer-events-none absolute inset-0 z-30 rounded-[min(2.1rem,12%)] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]"
+        className="pointer-events-none absolute inset-0 z-30 rounded-[min(2.1rem,10%)] shadow-[inset_0_0_15px_rgba(0,0,0,0.1)]"
         aria-hidden
       />
       <div

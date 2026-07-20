@@ -1,8 +1,7 @@
 import { Link } from "wouter";
 import { ArrowRight, Store, Package, ShoppingBag, Clock, Truck, Bell } from "lucide-react";
-import { PhoneFrame, PHONE_FRAME_DUAL_CLASS } from "@/components/app-marketing/phone-frame";
+import { DualPhonePair } from "@/components/app-marketing/dual-phone-pair";
 import { appMarketingConfig } from "@/lib/app-marketing-config";
-import { cn } from "@/lib/utils";
 import bizOverview from "@/assets/app-marketing/business-hub-overview.png";
 import bizMenu from "@/assets/app-marketing/business-hub-drawer.png";
 
@@ -30,20 +29,17 @@ export function AppMarketingForBusinesses() {
               className="absolute inset-0 bg-townhub-blue/5 rounded-full blur-3xl scale-150 -z-10"
               aria-hidden
             />
-            <div className="w-full px-1 sm:px-3 flex justify-center items-end gap-2.5 sm:gap-4">
-              <PhoneFrame
-                src={bizMenu}
-                alt="Business Hub navigation menu"
-                size="lg"
-                className={cn(PHONE_FRAME_DUAL_CLASS, "shadow-2xl")}
-              />
-              <PhoneFrame
-                src={bizOverview}
-                alt="Business Hub overview with orders and revenue"
-                size="lg"
-                className={cn(PHONE_FRAME_DUAL_CLASS, "shadow-2xl")}
-              />
-            </div>
+            <DualPhonePair
+              front={{
+                src: bizMenu,
+                alt: "Business Hub navigation menu",
+              }}
+              back={{
+                src: bizOverview,
+                alt: "Business Hub overview with orders and revenue",
+              }}
+              className="px-1 sm:px-3"
+            />
           </div>
 
           <div className="w-full lg:w-1/2 relative z-10 order-2">
