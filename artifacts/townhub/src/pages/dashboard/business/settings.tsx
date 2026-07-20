@@ -4,6 +4,7 @@ import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { DashboardPageHeader } from "@/components/dashboard-page-header";
 import { SettingsSection, SettingsToggleRow } from "@/components/settings-section";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
+import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -149,6 +150,9 @@ function Field({
 
 export default function BusinessSettings() {
   const { selectedBusinessId, business, ownedBusinesses, isLoading } = useSelectedBusiness();
+  const { hasFeature } = useBusinessFeatureAccess();
+  const onlineOrderingAllowed = hasFeature("online_ordering");
+  const appointmentRequestsAllowed = hasFeature("appointment_requests");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [form, setFormState] = useState<FormState>({ ...EMPTY });
@@ -590,7 +594,14 @@ export default function BusinessSettings() {
                   }))
                 }
                 idPrefix="business-settings-storefront"
+                onlineOrderingAllowed={onlineOrderingAllowed}
+                appointmentRequestsAllowed={appointmentRequestsAllowed}
               />
+              {!onlineOrderingAllowed || !appointmentRequestsAllowed ? (
+                <p className="text-xs text-muted-foreground">
+                  Locked options require a plan upgrade. Display-only mode is always available.
+                </p>
+              ) : null}
               {!isOrderingMode ? (
                 <p className="text-xs text-muted-foreground">
                   Switch to online ordering to configure pickup, delivery, payments, and tax.

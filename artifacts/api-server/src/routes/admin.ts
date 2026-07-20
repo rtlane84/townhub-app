@@ -11,7 +11,9 @@ import {
   AssignBusinessOwnerBody,
   GetAdminSystemHealthResponse,
 } from "@workspace/api-zod";
-import { serializeBusiness } from "./businesses";
+import { serializeBusiness, serializeBusinessWithEntitlements } from "./businesses";
+import { mapBusinessesHaveFeature } from "../lib/business-features";
+import { SUBSCRIPTION_FEATURE_KEYS } from "../lib/subscription-feature-keys";
 import { getPlatformTimeZone } from "../lib/platform-timezone";
 import { buildSystemHealthReport, buildFallbackHealthReport } from "../lib/system-health";
 import { logOperationalFailure } from "../lib/operational-log";
@@ -106,7 +108,18 @@ router.get("/admin/businesses", async (_req, res): Promise<void> => {
     .orderBy(businessesTable.name);
 
   const timeZone = await getPlatformTimeZone();
-  res.json(businesses.map((business) => serializeBusiness(business, { timeZone })));
+  const entitledById = await mapBusinessesHaveFeature(
+    businesses.map((business) => business.id),
+    SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
+  );
+  res.json(
+    businesses.map((business) =>
+      serializeBusiness(business, {
+        timeZone,
+        onlineOrderingEntitled: entitledById.get(business.id) === true,
+      }),
+    ),
+  );
 });
 
 // PATCH /api/admin/users/:id/role
@@ -291,7 +304,7 @@ router.patch(
       .set({ role: "BUSINESS_OWNER" })
       .where(eq(usersTable.id, parsed.data.ownerId));
 
-    res.json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
+    res.json(await serializeBusinessWithEntitlements(business, { timeZone: await getPlatformTimeZone() }));
   },
 );
 

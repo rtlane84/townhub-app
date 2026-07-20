@@ -320,12 +320,13 @@ Subscription plans map to features via `plan_features` → `subscription_feature
 
 | Feature key | Gates |
 |-------------|-------|
-| `online_ordering` | `POST /api/orders` (pay at pickup), `POST /api/checkout/intents` (card) |
+| `online_ordering` | `POST /api/orders` (pay at pickup), `POST /api/checkout/intents` (card), public cart via `onlineOrderingEntitled` |
 | `appointment_requests` | `POST /api/appointment-requests` |
+| `email_notifications` / `sms_notifications` | Owner operational email/SMS delivery + Notifications UI (not critical Stripe emails) |
 
 `GET /api/businesses/:id/feature-access` returns the owner-facing report. Frontend `BusinessFeatureAccessProvider` reads this for UI gating; API enforces independently.
 
-Businesses without a subscription record receive all active features (backward compatibility). Complimentary/beta plans and inactive subscription statuses may restrict features.
+Businesses without a subscription record receive **no** plan features. A plan with zero `plan_features` rows also grants none — map features explicitly for every public plan. Complimentary/beta plans and inactive subscription statuses may further restrict features. Public cart UI requires both `storefrontMode === ORDERING` and `online_ordering` entitlement (`Business.onlineOrderingEntitled`).
 
 ---
 

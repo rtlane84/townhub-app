@@ -522,6 +522,9 @@ export interface Business {
      * @nullable
      */
   orderingUnavailableReason?: string | null;
+  /** Whether the business subscription plan includes the online_ordering feature. Public cart/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours/schedule open state).
+   */
+  onlineOrderingEntitled?: boolean;
   /** Public directory/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.
    */
   publicAvailability?: PublicAvailabilitySummary | null;

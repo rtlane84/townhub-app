@@ -110,8 +110,11 @@ export async function getPlanFeatures(planId: number): Promise<SerializedSubscri
 
 /**
  * Single source of truth for which features a business may use.
- * When a plan has no mapped features yet, all active catalog features are allowed
- * so existing deployments keep working until an admin configures mappings.
+ *
+ * Strict entitlement rules (required for Presence vs Orders packaging):
+ * - No subscription row → no features
+ * - Restricted subscription status (paid) → no features
+ * - Plan with zero mapped features → no features (admins must map plan_features explicitly)
  */
 export async function getBusinessFeatureKeys(businessId: number): Promise<Set<string>> {
   const [subscription] = await db
@@ -120,7 +123,7 @@ export async function getBusinessFeatureKeys(businessId: number): Promise<Set<st
     .where(eq(businessSubscriptionsTable.businessId, businessId));
 
   if (!subscription) {
-    return listActiveFeatureKeys();
+    return new Set();
   }
 
   const plan = await findPlanById(subscription.planId);
@@ -130,12 +133,27 @@ export async function getBusinessFeatureKeys(businessId: number): Promise<Set<st
     return new Set();
   }
 
-  const planKeys = await getPlanFeatureKeys(subscription.planId);
-  if (planKeys.size === 0) {
-    return listActiveFeatureKeys();
-  }
+  return getPlanFeatureKeys(subscription.planId);
+}
 
-  return planKeys;
+/** Batch online_ordering entitlement for public business payloads. */
+export async function mapBusinessesHaveFeature(
+  businessIds: number[],
+  featureKey: SubscriptionFeatureKey | string,
+): Promise<Map<number, boolean>> {
+  const result = new Map<number, boolean>();
+  const uniqueIds = [...new Set(businessIds.filter((id) => Number.isFinite(id)))];
+  for (const id of uniqueIds) {
+    result.set(id, false);
+  }
+  if (uniqueIds.length === 0) return result;
+
+  await Promise.all(
+    uniqueIds.map(async (businessId) => {
+      result.set(businessId, await businessHasFeature(businessId, featureKey));
+    }),
+  );
+  return result;
 }
 
 export async function businessHasFeature(

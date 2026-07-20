@@ -54,8 +54,11 @@ describe("business-features module", () => {
     );
     assert.match(source, /getBusinessFeatureKeys/);
     assert.match(source, /businessHasFeature/);
+    assert.match(source, /mapBusinessesHaveFeature/);
     assert.match(source, /getPlanFeatures/);
     assert.match(source, /setPlanFeatures/);
     assert.match(source, /buildBusinessFeatureAccessReport/);
+    assert.match(source, /No subscription row → no features/);
+    assert.match(source, /Plan with zero mapped features → no features/);
   });
 });

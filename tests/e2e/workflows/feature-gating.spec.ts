@@ -42,16 +42,9 @@ test.describe("Feature gating workflow", () => {
       await setOnlineOrderingEnabled(page, planId, false);
 
       await gotoStorefront(guestPage, checkoutBusiness.slug);
-      await addFirstProductToCart(guestPage, checkoutBusiness);
-      await openCartFromStorefront(guestPage);
-      await fillGuestCheckoutForm(guestPage);
-      await submitPayAtPickupCheckout(guestPage);
-
-      await expect(
-        guestPage.getByText("Failed to place order. Please try again.").first(),
-      ).toBeVisible({
-        timeout: 20_000,
-      });
+      // Cart and add-to-cart must be hidden when the plan lacks online_ordering —
+      // not only fail at checkout.
+      await expect(guestPage.getByRole("button", { name: /^Add$/i })).toHaveCount(0);
 
       const blockedResponse = await fetch(`${e2eApiUrl()}/api/orders`, {
         method: "POST",

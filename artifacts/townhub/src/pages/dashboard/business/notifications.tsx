@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
+import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -112,6 +113,9 @@ type DeliveryForm = NotificationDeliveryForm;
 
 export default function BusinessNotifications() {
   const { selectedBusinessId, business, isLoading } = useSelectedBusiness();
+  const { hasFeature } = useBusinessFeatureAccess();
+  const emailNotificationsAllowed = hasFeature("email_notifications");
+  const smsNotificationsAllowed = hasFeature("sms_notifications");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const prefs = useNotificationPrefs(selectedBusinessId ?? undefined);
@@ -385,6 +389,7 @@ export default function BusinessNotifications() {
           </p>
         </div>
 
+        {emailNotificationsAllowed ? (
         <NotificationProviderCard
           title="Email"
           description={`Operational alerts. ${channelHelperText}`}
@@ -439,7 +444,9 @@ export default function BusinessNotifications() {
             }
           />
         </NotificationProviderCard>
+        ) : null}
 
+        {smsNotificationsAllowed ? (
         <NotificationProviderCard
           title="SMS"
           description={`Operational alerts. ${channelHelperText}`}
@@ -494,6 +501,7 @@ export default function BusinessNotifications() {
             }
           />
         </NotificationProviderCard>
+        ) : null}
 
         <NotificationProviderCard
           title="Free phone notifications"

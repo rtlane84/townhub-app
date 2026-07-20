@@ -57,6 +57,11 @@ import {
 } from "../lib/business-slug";
 import { evaluateBusinessOrderingAvailability } from "../lib/business-commerce-eligibility";
 import { getPlatformTimeZone } from "../lib/platform-timezone";
+import {
+  businessHasFeature,
+  mapBusinessesHaveFeature,
+} from "../lib/business-features";
+import { SUBSCRIPTION_FEATURE_KEYS } from "../lib/subscription-feature-keys";
 
 const router: IRouter = Router();
 
@@ -66,6 +71,8 @@ export function serializeBusiness(
     mobileLocations?: FoodTruckLocationWindow[];
     timeZone?: string;
     now?: Date;
+    /** Plan entitlement for online_ordering. Defaults to true when omitted (owner paths that set it explicitly should pass it). */
+    onlineOrderingEntitled?: boolean;
   },
 ) {
   const paymentMode = resolvePaymentMode(b);
@@ -94,6 +101,7 @@ export function serializeBusiness(
     now,
     timeZone,
   );
+  const onlineOrderingEntitled = options?.onlineOrderingEntitled ?? true;
 
   return {
     id: b.id,
@@ -158,6 +166,7 @@ export function serializeBusiness(
     orderingEnabled: b.orderingEnabled ?? true,
     orderingAvailable: availability.available,
     orderingUnavailableReason: availability.reason,
+    onlineOrderingEntitled,
     publicAvailability,
     accentColor: b.accentColor,
     buttonColor: b.buttonColor,
@@ -174,6 +183,7 @@ export function serializePublicBusiness(
     mobileLocations?: FoodTruckLocationWindow[];
     timeZone?: string;
     now?: Date;
+    onlineOrderingEntitled?: boolean;
   },
 ) {
   const {
@@ -199,6 +209,38 @@ export function serializePublicBusiness(
     ...publicBusiness
   } = serializeBusiness(b, options);
   return publicBusiness;
+}
+
+async function serializeBusinessWithEntitlements(
+  b: typeof businessesTable.$inferSelect,
+  options?: {
+    mobileLocations?: FoodTruckLocationWindow[];
+    timeZone?: string;
+    now?: Date;
+  },
+) {
+  const onlineOrderingEntitled = await businessHasFeature(
+    b.id,
+    SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
+  );
+  return serializeBusiness(b, { ...options, onlineOrderingEntitled });
+}
+
+export { serializeBusinessWithEntitlements };
+
+async function serializePublicBusinessWithEntitlements(
+  b: typeof businessesTable.$inferSelect,
+  options?: {
+    mobileLocations?: FoodTruckLocationWindow[];
+    timeZone?: string;
+    now?: Date;
+  },
+) {
+  const onlineOrderingEntitled = await businessHasFeature(
+    b.id,
+    SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
+  );
+  return serializePublicBusiness(b, { ...options, onlineOrderingEntitled });
 }
 
 async function loadMobileLocationsForBusiness(
@@ -295,11 +337,16 @@ router.get("/businesses", async (req, res): Promise<void> => {
   }
 
   const timeZone = await getPlatformTimeZone();
+  const entitledById = await mapBusinessesHaveFeature(
+    businesses.map((business) => business.id),
+    SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
+  );
   res.json(
     businesses.map((business) =>
       serializePublicBusiness(business, {
         mobileLocations: mobileLocationsByBusiness.get(business.id),
         timeZone,
+        onlineOrderingEntitled: entitledById.get(business.id) === true,
       }),
     ),
   );
@@ -395,7 +442,7 @@ router.post("/businesses/register", requireAdmin, async (req, res): Promise<void
     .onConflictDoUpdate({ target: usersTable.id, set: { role: "BUSINESS_OWNER" } });
 
   req.log.info({ adminId: userId, businessId: business.id, slug }, "Business registered by admin");
-  res.status(201).json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
+  res.status(201).json(await serializeBusinessWithEntitlements(business, { timeZone: await getPlatformTimeZone() }));
 });
 
 // GET /api/marketplace/stats — public homepage stats
@@ -486,7 +533,7 @@ router.get("/businesses/checkout/:businessId", async (req, res): Promise<void> =
       ? await loadMobileLocationsForBusiness(business.id)
       : undefined;
   const timeZone = await getPlatformTimeZone();
-  res.json(serializePublicBusiness(business, { mobileLocations, timeZone }));
+  res.json(await serializePublicBusinessWithEntitlements(business, { mobileLocations, timeZone }));
 });
 
 // GET /api/businesses/:slug — storefront
@@ -545,7 +592,7 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
   const timeZone = await getPlatformTimeZone();
 
   res.json({
-    business: serializePublicBusiness(business, { mobileLocations, timeZone }),
+    business: await serializePublicBusinessWithEntitlements(business, { mobileLocations, timeZone }),
     categories,
     products: products.map((p) =>
       serializeProduct(p, optionGroupsByProduct.get(p.id) ?? []),
@@ -622,7 +669,7 @@ router.post("/businesses/manage", requireAdmin, async (req, res): Promise<void> 
     throw err;
   }
 
-  res.status(201).json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
+  res.status(201).json(await serializeBusinessWithEntitlements(business, { timeZone: await getPlatformTimeZone() }));
 });
 
 // GET /api/businesses/manage/:id
@@ -640,7 +687,7 @@ router.get("/businesses/manage/:id", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  res.json(serializeBusiness(access.business, { timeZone: await getPlatformTimeZone() }));
+  res.json(await serializeBusinessWithEntitlements(access.business, { timeZone: await getPlatformTimeZone() }));
 });
 
 // PATCH /api/businesses/manage/:id
@@ -799,6 +846,74 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     updateData.orderingAvailabilityMode = (d as Record<string, unknown>).orderingAvailabilityMode;
   if ((d as Record<string, unknown>).orderingEnabled !== undefined)
     updateData.orderingEnabled = (d as Record<string, unknown>).orderingEnabled;
+
+  const [
+    onlineOrderingEntitled,
+    emailNotificationsEntitled,
+    smsNotificationsEntitled,
+    appointmentRequestsEntitled,
+  ] = await Promise.all([
+    businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING),
+    businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.EMAIL_NOTIFICATIONS),
+    businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.SMS_NOTIFICATIONS),
+    businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.APPOINTMENT_REQUESTS),
+  ]);
+
+  const requestedMode = updateData.storefrontMode as string | undefined;
+  if (requestedMode === "ORDERING" && !onlineOrderingEntitled) {
+    res.status(403).json({
+      error: "Online ordering is not included in your plan. Upgrade to enable the ordering storefront.",
+    });
+    return;
+  }
+  if (requestedMode === "APPOINTMENT" && !appointmentRequestsEntitled) {
+    res.status(403).json({
+      error: "Appointment requests are not included in your plan.",
+    });
+    return;
+  }
+
+  // Downgrade safety: if plan lost online ordering, force display-only mode.
+  if (!onlineOrderingEntitled) {
+    const currentMode = resolveStorefrontMode({
+      type: (updateData.type as string | undefined) ?? access.business.type,
+      storefrontMode:
+        (updateData.storefrontMode as typeof access.business.storefrontMode | undefined) ??
+        access.business.storefrontMode,
+    });
+    if (currentMode === "ORDERING") {
+      updateData.storefrontMode = appointmentRequestsEntitled ? "APPOINTMENT" : "INFORMATION";
+    }
+  }
+
+  const enablingEmail =
+    updateData.notifyNewOrdersByEmail === true ||
+    updateData.notifyAppointmentRequestsByEmail === true;
+  if (enablingEmail && !emailNotificationsEntitled) {
+    res.status(403).json({
+      error: "Email notifications are not included in your plan.",
+    });
+    return;
+  }
+  if (!emailNotificationsEntitled) {
+    updateData.notifyNewOrdersByEmail = false;
+    updateData.notifyAppointmentRequestsByEmail = false;
+  }
+
+  const enablingSms =
+    updateData.notifyNewOrdersBySms === true ||
+    updateData.notifyAppointmentRequestsBySms === true;
+  if (enablingSms && !smsNotificationsEntitled) {
+    res.status(403).json({
+      error: "SMS notifications are not included in your plan.",
+    });
+    return;
+  }
+  if (!smsNotificationsEntitled) {
+    updateData.notifyNewOrdersBySms = false;
+    updateData.notifyAppointmentRequestsBySms = false;
+  }
+
   if ((d as Record<string, unknown>).websiteUrl !== undefined) {
     const raw = (d as Record<string, unknown>).websiteUrl;
     updateData.websiteUrl =
@@ -831,7 +946,12 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
       return;
     }
 
-    res.json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
+    res.json(
+      serializeBusiness(business, {
+        timeZone: await getPlatformTimeZone(),
+        onlineOrderingEntitled,
+      }),
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     req.log?.error({ err, businessId: params.data.id }, "Failed to update business");
