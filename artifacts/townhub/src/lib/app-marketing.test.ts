@@ -122,6 +122,13 @@ describe("app marketing page", () => {
     assert.doesNotMatch(plausibleSource, /createElement\("script"\)/);
   });
 
+  it("exposes a static Open Graph image for social crawlers", () => {
+    const html = readFileSync(`${srcRoot}/../index.html`, "utf8");
+    assert.match(html, /property="og:image"/);
+    assert.match(html, /https:\/\/townhub\.io\/opengraph\.jpg/);
+    assert.match(html, /name="twitter:image"/);
+  });
+
   it("sets Apple Smart App Banner metadata from config", () => {
     const metaSource = readFileSync(`${srcRoot}/lib/app-marketing-meta.ts`, "utf8");
     assert.match(metaSource, /apple-itunes-app/);
