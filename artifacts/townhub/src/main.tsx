@@ -1,4 +1,5 @@
 import "@/lib/sentry";
+import { initPlausible } from "@/lib/plausible";
 import { createRoot } from "react-dom/client";
 import { setBaseUrl } from "@workspace/api-client-react";
 import { getApiBaseUrl } from "@/lib/api-base-url";
@@ -11,6 +12,8 @@ import "./index.css";
 
 // Path-encoded SSO remounts promote into ?search before Clerk boots.
 promoteNativeSsoPathParamsToSearch();
+
+initPlausible();
 
 const apiBaseUrl = getApiBaseUrl();
 setBaseUrl(apiBaseUrl || null);
