@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -39,6 +40,7 @@ import {
   ColorPreviewSwatches,
 } from "@/components/color-picker-field";
 import { ImageField } from "@/components/image-field";
+import { HeroPreviewFrame } from "@/components/hero-preview-frame";
 import { PlatformBrandMark } from "@/components/platform-brand-mark";
 import { TownPhotosEditor } from "@/components/town-photos-editor";
 import { PLATFORM_THEME_DEFAULTS } from "@/lib/theme-colors";
@@ -57,17 +59,24 @@ import {
   DEFAULT_SHOW_SHOP_BUTTON,
   buildBrandingPayload,
   DEFAULT_LOGO_SIZE_PX,
+  HERO_BUTTON_PLACEMENT_OPTIONS,
   HERO_IMAGE_FIT_OPTIONS,
   HERO_IMAGE_POSITION_OPTIONS,
+  HERO_OVERLAY_ALIGN_OPTIONS,
+  HERO_OVERLAY_SIZE_OPTIONS,
   heroImageFitHelperText,
   LOGO_SIZE_PRESETS,
   resolveFooterTagline,
+  resolveShopCtaLabel,
   resolveTagline,
   resolveWeatherLocation,
   themeToBrandingFields,
   type BrandingFields,
+  type HeroButtonPlacement,
   type HeroImageFit,
   type HeroImagePosition,
+  type HeroOverlayAlign,
+  type HeroOverlaySize,
 } from "@/lib/platform-branding";
 import { DEFAULT_PLATFORM_TIMEZONE } from "@workspace/api-zod";
 
@@ -595,7 +604,7 @@ export default function AdminSettings() {
             <SettingsSection
               icon={Images}
               title="Town photos"
-              description="Choose the primary photo used as the homepage discovery backdrop."
+              description="Homepage carousel photos. Reorder, set a primary photo, and add optional captions."
             >
               <TownPhotosEditor
                 photos={townPhotos}
@@ -609,7 +618,7 @@ export default function AdminSettings() {
             <SettingsSection
               icon={ImageIcon}
               title="Homepage hero"
-              description="Fallback discovery backdrop used when no primary town photo is set."
+              description="Fallback hero image (used when no town photos are set), optional logo overlay, and call-to-action buttons."
             >
               <ImageField
                 surface="homepage-hero"
@@ -675,6 +684,157 @@ export default function AdminSettings() {
                 </div>
               </div>
 
+              <Separator />
+
+              <ImageField
+                surface="homepage-hero-overlay"
+                label="Overlay image (logo + text)"
+                value={branding.heroOverlayImageUrl}
+                onChange={(url) =>
+                  handleBrandingChange("heroOverlayImageUrl", url)
+                }
+                testId="homepage-hero-overlay"
+              />
+              <p className="text-xs text-muted-foreground -mt-3">
+                Optional transparent PNG. Sits on the background and is never
+                cropped.
+              </p>
+              <SettingsToggleRow
+                label="Show overlay on homepage"
+                description="Turn off to hide the overlay on town photos without deleting the image."
+                checked={branding.showHeroOverlay}
+                onCheckedChange={(value) =>
+                  handleBrandingChange("showHeroOverlay", value)
+                }
+              />
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="heroOverlaySize">Overlay size</Label>
+                  <Select
+                    value={branding.heroOverlaySize}
+                    onValueChange={(value) =>
+                      handleBrandingChange(
+                        "heroOverlaySize",
+                        value as HeroOverlaySize,
+                      )
+                    }
+                  >
+                    <SelectTrigger id="heroOverlaySize">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HERO_OVERLAY_SIZE_OPTIONS.map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="heroOverlayAlign">Overlay alignment</Label>
+                  <Select
+                    value={branding.heroOverlayAlign}
+                    onValueChange={(value) =>
+                      handleBrandingChange(
+                        "heroOverlayAlign",
+                        value as HeroOverlayAlign,
+                      )
+                    }
+                  >
+                    <SelectTrigger id="heroOverlayAlign">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {HERO_OVERLAY_ALIGN_OPTIONS.map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <SettingsToggleRow
+                  label="Shop button"
+                  description="Links to the marketplace directory."
+                  checked={branding.showShopButton}
+                  onCheckedChange={(value) =>
+                    handleBrandingChange("showShopButton", value)
+                  }
+                />
+                <SettingsToggleRow
+                  label="List Your Business"
+                  description="Invites owners to apply."
+                  checked={branding.showListBusinessButton}
+                  onCheckedChange={(value) =>
+                    handleBrandingChange("showListBusinessButton", value)
+                  }
+                />
+              </div>
+              <div className="max-w-xs space-y-2">
+                <Label htmlFor="heroButtonPlacement">Button placement</Label>
+                <Select
+                  value={branding.heroButtonPlacement}
+                  onValueChange={(value) =>
+                    handleBrandingChange(
+                      "heroButtonPlacement",
+                      value as HeroButtonPlacement,
+                    )
+                  }
+                >
+                  <SelectTrigger id="heroButtonPlacement">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HERO_BUTTON_PLACEMENT_OPTIONS.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {branding.heroImageUrl || branding.heroOverlayImageUrl ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Live preview</p>
+                  <HeroPreviewFrame
+                    heroImageUrl={branding.heroImageUrl || null}
+                    heroOverlayImageUrl={
+                      branding.showHeroOverlay
+                        ? branding.heroOverlayImageUrl || null
+                        : null
+                    }
+                    heroImageFit={branding.heroImageFit}
+                    heroImagePosition={branding.heroImagePosition}
+                    heroOverlaySize={branding.heroOverlaySize}
+                    heroOverlayAlign={branding.heroOverlayAlign}
+                    heroButtonPlacement={branding.heroButtonPlacement}
+                    buttons={
+                      branding.showShopButton ||
+                      branding.showListBusinessButton ? (
+                        <>
+                          {branding.showShopButton ? (
+                            <span className="inline-flex items-center rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-slate-900 shadow-xl ring-1 ring-black/5">
+                              {resolveShopCtaLabel({
+                                townName: branding.townName || null,
+                              })}
+                            </span>
+                          ) : null}
+                          {branding.showListBusinessButton ? (
+                            <span className="inline-flex items-center rounded-full border-2 bg-white/90 px-6 py-2.5 text-sm font-semibold text-foreground shadow-lg">
+                              List Your Business
+                            </span>
+                          ) : null}
+                        </>
+                      ) : null
+                    }
+                  />
+                </div>
+              ) : null}
             </SettingsSection>
 
             <SettingsSection

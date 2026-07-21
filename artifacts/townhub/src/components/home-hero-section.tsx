@@ -1,96 +1,114 @@
-import { CalendarDays, Store, Utensils, Wrench } from "lucide-react";
 import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 import { HomeSearchBar } from "@/components/home-search-bar";
-import { ResponsiveHeroImage } from "@/components/responsive-hero-image";
+import { TownPhotoCarousel } from "@/components/town-photo-carousel";
 import { usePlatformBranding } from "@/components/theme-provider";
+import { useNativePlatform } from "@/hooks/use-native-platform";
 import { PAGE_CONTAINER } from "@/lib/design-tokens";
-import { heroImageObjectClasses } from "@/lib/platform-branding";
 import { resolveTownPhotoSlides } from "@/lib/town-photos";
 import { cn } from "@/lib/utils";
 
-const QUICK_ROUTES = [
-  { label: "Shops", href: "/businesses", icon: Store },
-  { label: "Food", href: "/businesses?type=FOOD_VENDOR", icon: Utensils },
-  { label: "Events", href: "/events", icon: CalendarDays },
-  { label: "Services", href: "/businesses?type=SERVICE_PROVIDER", icon: Wrench },
-] as const;
-
 /**
- * Homepage discovery surface. The primary town photo supplies atmosphere while
- * search and the four routes make the marketplace's next steps immediately clear.
+ * Homepage hero — town-photo carousel with optional overlay/CTAs from platform settings.
+ * Falls back to the legacy single hero image when no town photos are configured.
  */
 export function HomeHeroSection() {
+  const { isNative } = useNativePlatform();
   const {
+    shopCtaLabel,
     heroImageUrl,
+    heroOverlayImageUrl,
     heroImageFit,
     heroImagePosition,
+    heroOverlaySize,
+    heroOverlayAlign,
+    showHeroOverlay,
+    showShopButton,
+    showListBusinessButton,
     platformName,
-    townName,
     townPhotos,
     themeLoading,
   } = usePlatformBranding();
-  const primaryPhoto = resolveTownPhotoSlides(townPhotos, heroImageUrl)[0];
-  const placeLabel = townName || platformName;
+
+  const slides = resolveTownPhotoSlides(townPhotos, heroImageUrl);
+  const showButtons =
+    !themeLoading && (showShopButton || showListBusinessButton);
+  const overlayUrl = showHeroOverlay ? heroOverlayImageUrl : null;
+
+  if (themeLoading && slides.length === 0) {
+    return (
+      <section
+        className={cn(
+          PAGE_CONTAINER,
+          isNative ? "pt-3 pb-1" : "pt-4 pb-2 md:pt-6 md:pb-3",
+        )}
+      >
+        <div
+          className="aspect-[16/9] animate-pulse rounded-[1.35rem] bg-muted/60"
+          aria-hidden
+        />
+      </section>
+    );
+  }
+
+  if (slides.length === 0 && !showButtons) {
+    return null;
+  }
 
   return (
     <section
-      aria-label={`${platformName} discovery`}
+      aria-label={`${platformName} homepage hero`}
       className={cn(
         PAGE_CONTAINER,
-        "pt-4 pb-2 md:pt-6 md:pb-3",
+        isNative ? "pt-3 pb-1" : "pt-4 pb-2 md:pt-6 md:pb-3",
       )}
     >
-      <div className="relative isolate overflow-hidden rounded-[1.5rem] border border-black/[0.05] bg-card px-4 py-5 shadow-[0_8px_32px_-14px_rgba(15,23,42,0.2)] sm:px-6 sm:py-6">
-        {primaryPhoto ? (
-          <ResponsiveHeroImage
-            src={primaryPhoto.url}
-            priority
-            className={cn(
-              "absolute inset-0 -z-20 h-full w-full opacity-35",
-              heroImageObjectClasses(heroImageFit, heroImagePosition),
-            )}
-          />
-        ) : null}
-        <div
-          className="absolute inset-0 -z-10 bg-gradient-to-r from-card via-card/95 to-card/55"
-          aria-hidden
+      {slides.length > 0 ? (
+        <TownPhotoCarousel
+          slides={slides}
+          platformName={platformName}
+          heroImageFit={heroImageFit}
+          heroImagePosition={heroImagePosition}
+          overlayImageUrl={overlayUrl}
+          overlaySize={heroOverlaySize}
+          overlayAlign={heroOverlayAlign}
+          footer={
+            <HomeSearchBar variant="hero" className="mx-auto w-full" />
+          }
         />
-
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-            Explore local
-          </p>
-          <h2 className="mt-1.5 max-w-xl font-serif text-3xl font-bold leading-[1.08] tracking-tight text-platform-heading sm:text-4xl">
-            Discover {placeLabel}, close to home.
-          </h2>
-          <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Find the shops, food, services, and events that make your town yours.
-          </p>
+      ) : (
+        <div className="relative aspect-[16/9] overflow-hidden rounded-[1.35rem] bg-gradient-to-br from-primary/15 via-primary/5 to-background">
+          <div className="absolute inset-x-3 bottom-3 z-[3] sm:inset-x-4 sm:bottom-4">
+            <HomeSearchBar variant="hero" className="mx-auto w-full" />
+          </div>
         </div>
+      )}
 
-        <HomeSearchBar variant="hero" className="mt-5 max-w-2xl" />
-
-        <nav className="mt-4 grid grid-cols-2 gap-2 sm:max-w-2xl sm:grid-cols-4" aria-label="Explore TownHub">
-          {QUICK_ROUTES.map(({ label, href, icon: Icon }) => (
-            <Link
-              key={label}
-              href={href}
-              className="group flex min-h-20 items-center gap-3 rounded-2xl border border-black/[0.07] bg-card/85 px-3 py-3 text-left shadow-sm transition-colors hover:bg-background active:scale-[0.98]"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Icon className="h-[1.125rem] w-[1.125rem]" strokeWidth={2} aria-hidden />
-              </span>
-              <span className="text-sm font-semibold text-platform-heading">
-                {label}
-              </span>
+      {showButtons ? (
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2.5">
+          {showShopButton ? (
+            <Link href="/businesses">
+              <Button
+                size="sm"
+                className="h-9 rounded-full border-0 bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-[0_4px_16px_-4px_rgba(30,58,138,0.45)] md:h-10 md:px-5 md:text-sm"
+              >
+                {shopCtaLabel}
+              </Button>
             </Link>
-          ))}
-        </nav>
-
-        {themeLoading ? (
-          <span className="sr-only">Loading local discovery options</span>
-        ) : null}
-      </div>
+          ) : null}
+          {showListBusinessButton ? (
+            <Link href="/list-your-business">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-9 rounded-full border-border/70 bg-card px-4 text-xs font-semibold text-foreground shadow-sm md:h-10 md:px-5 md:text-sm"
+              >
+                List Your Business
+              </Button>
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }

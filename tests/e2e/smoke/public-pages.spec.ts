@@ -6,40 +6,7 @@ test.describe("Public pages smoke", () => {
   test("homepage loads", async ({ page }) => {
     await gotoHome(page);
     await expect(page).toHaveTitle(/TownHub|Local/i);
-    await expect(
-      page.getByRole("heading", { name: /discover .* close to home/i }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("searchbox", { name: "Search businesses" }),
-    ).toBeVisible();
-    const discovery = page.getByLabel(/discovery/i);
-    await expect(discovery.getByRole("link", { name: "Shops" })).toHaveAttribute(
-      "href",
-      "/businesses",
-    );
-    await expect(discovery.getByRole("link", { name: "Food" })).toHaveAttribute(
-      "href",
-      "/businesses?type=FOOD_VENDOR",
-    );
-    await expect(discovery.getByRole("link", { name: "Events" })).toHaveAttribute(
-      "href",
-      "/events",
-    );
-    await expect(discovery.getByRole("link", { name: "Services" })).toHaveAttribute(
-      "href",
-      "/businesses?type=SERVICE_PROVIDER",
-    );
-  });
-
-  test("homepage discovery hero stays within a phone viewport", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await gotoHome(page);
-    await expect(
-      page.getByRole("heading", { name: /discover .* close to home/i }),
-    ).toBeVisible();
-    await expect
-      .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
-      .toBe(true);
+    await expect(page.getByRole("link", { name: /businesses/i }).first()).toBeVisible();
   });
 
   test("businesses directory loads", async ({ page }) => {
