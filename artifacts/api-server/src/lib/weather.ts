@@ -195,9 +195,10 @@ export async function fetchWeatherForecast(locationQuery: string): Promise<Weath
   };
 
   const alert = data.weatherAlerts?.alerts?.[0];
-  if (alert?.summary) {
+  const alertSummary = alert?.description ?? alert?.summary;
+  if (alert && alertSummary) {
     result.alert = {
-      summary: alert.summary,
+      summary: alertSummary,
       detailsUrl: alert.detailsUrl,
       severity: alert.severity,
     };

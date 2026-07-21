@@ -24,7 +24,12 @@ type WeatherKitResponse = {
     }>;
   };
   weatherAlerts?: {
-    alerts?: Array<{ summary?: string; detailsUrl?: string; severity?: string }>;
+    alerts?: Array<{
+      description?: string;
+      summary?: string;
+      detailsUrl?: string;
+      severity?: string;
+    }>;
   };
 };
 
