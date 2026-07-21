@@ -49,7 +49,11 @@ function getConfig(): WeatherKitConfig | null {
   const serviceId = process.env.WEATHERKIT_SERVICE_ID?.trim();
   const inlineKey = process.env.WEATHERKIT_PRIVATE_KEY?.trim();
   const keyPath = process.env.WEATHERKIT_PRIVATE_KEY_PATH?.trim();
-  let privateKeyPem = inlineKey?.replace(/\\n/g, "\n");
+  let privateKeyPem = inlineKey
+    ?.replace(/^([\"'])|([\"'])$/g, "")
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "")
+    .trim();
   if (!privateKeyPem && keyPath) {
     try {
       privateKeyPem = readFileSync(keyPath, "utf8");
