@@ -20,7 +20,7 @@ import businessHubImage from "@/assets/app-marketing/business-hub-overview.png";
 
 const applicationHref = "/list-your-business";
 
-const showcaseFeatures = [
+const casecaseFeatures = [
   "Business page & catalog",
   "Appointment requests",
   "Mobile business schedule",
@@ -168,7 +168,7 @@ export default function BusinessesForTownHub() {
       <section id="plans" className="border-y bg-muted/35 py-16">
         <div className="container mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Simple pricing</p><h2 className="mt-2 font-serif text-3xl font-bold">Choose the tools that fit how you work.</h2><p className="mt-3 text-muted-foreground">Both plans include a 14 day trial. Upgrade to ordering whenever your business is ready.</p></div>
-          <div className="mx-auto mt-10 grid max-w-4xl gap-6 md:grid-cols-2"><PlanCard name="Business Showcase" price="$20" yearly="$200" description="A public TownHub page for your hours, photos, products, menu, or services. Customers can browse, call, or request an appointment." features={showcaseFeatures} /><PlanCard name="Business Ordering" price="$40" yearly="$400" description="Everything in Business Showcase, plus pickup and delivery ordering that you manage from your dashboard." features={orderingFeatures} recommended /></div>
+          <div className="mx-auto mt-10 grid max-w-4xl gap-6 md:grid-cols-2"><PlanCard name="Business Showcase" price="$20" yearly="$200" description="A public TownHub page with your hours, photos, products, menu, or services. Customers can browse, call, or request an appointment. Includes a mobile location schedule if you move around town. Online ordering is not included." features={showcaseFeatures} /><PlanCard name="Business Ordering" price="$40" yearly="$400" description="Everything in the business showcase plan, plus online ordering and order management. Customers can place pickup or delivery orders. Food trucks and pop-ups can post where they are and take orders from that schedule. Everything is ran from your dashboard." features={orderingFeatures} recommended /></div>
           <p className="mt-6 text-center text-sm text-muted-foreground">Customer card payments are processed through Stripe for eligible ordering businesses; standard Stripe processing fees still apply.</p>
         </div>
       </section>
