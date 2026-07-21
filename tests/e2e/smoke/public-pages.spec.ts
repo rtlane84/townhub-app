@@ -21,6 +21,8 @@ test.describe("Public pages smoke", () => {
     await expect(page.getByText("Business Showcase", { exact: true })).toBeVisible();
     await expect(page.getByText("Business Ordering", { exact: true })).toBeVisible();
     await expect(page.getByText("Orders you manage", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /let customers know where to find you today/i })).toBeVisible();
+    await expect(page.getByRole("img", { name: /map showing where mobile businesses are today/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /list your business/i }).first()).toHaveAttribute("href", "/list-your-business");
     await expect(page.getByRole("link", { name: /message us on facebook/i }).first()).toHaveAttribute("href", "https://www.facebook.com/LaneTechLLC");
     await expect(page.locator("main").innerText()).resolves.not.toMatch(/[\-–—]/);

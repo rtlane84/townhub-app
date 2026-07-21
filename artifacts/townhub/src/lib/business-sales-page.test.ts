@@ -21,6 +21,10 @@ describe("business sales page", () => {
     assert.match(page, /Orders you manage/);
     assert.match(page, /Accept pickup and delivery orders when your business is ready/);
     assert.match(page, /lg:grid-cols-5/);
+    assert.match(page, /mobileBusinessMapImage/);
+    assert.match(page, /On the move/);
+    assert.match(page, /Let customers know where to find you today/);
+    assert.match(page, /TownHub map showing where mobile businesses are today/);
   });
 
   it("uses the app marketing visual language and a readable final CTA", () => {

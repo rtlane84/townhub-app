@@ -17,10 +17,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import storefrontImage from "@/assets/app-marketing/business-detail-order-local.png";
 import businessHubImage from "@/assets/app-marketing/business-hub-overview.png";
+import mobileBusinessMapImage from "@/assets/app-marketing/trucks-todays-map.png";
 
 const applicationHref = "/list-your-business";
 
-const casecaseFeatures = [
+const showcaseFeatures = [
   "Business page & catalog",
   "Appointment requests",
   "Mobile business schedule",
@@ -162,6 +163,33 @@ export default function BusinessesForTownHub() {
             const FeatureIcon = Icon as typeof Store;
             return <Card key={title as string}><CardContent className="p-5"><FeatureIcon className="h-6 w-6 text-primary" aria-hidden /><h3 className="mt-4 font-semibold">{title as string}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description as string}</p></CardContent></Card>;
           })}
+        </div>
+      </section>
+
+      <section className="bg-[#fafbfe] py-20">
+        <div className="container mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8">
+          <div className="order-2 lg:order-1">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">On the move</p>
+            <h2 className="mt-2 font-serif text-3xl font-bold sm:text-4xl">Let customers know where to find you today.</h2>
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600">
+              Food trucks, pop ups, and traveling businesses can post a daily and upcoming location schedule. Customers can see your next stop on the map before they head out.
+            </p>
+            <div className="mt-7 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <MapPinned className="h-6 w-6 text-primary" aria-hidden />
+                <h3 className="mt-3 font-semibold text-primary">Update your schedule</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Share where you are now and where customers can find you next.</p>
+              </div>
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <ShoppingBag className="h-6 w-6 text-primary" aria-hidden />
+                <h3 className="mt-3 font-semibold text-primary">Take orders when ready</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Business Ordering lets eligible mobile businesses take pickup or delivery orders from their schedule.</p>
+              </div>
+            </div>
+          </div>
+          <div className="order-1 lg:order-2">
+            <img src={mobileBusinessMapImage} alt="TownHub map showing where mobile businesses are today" className="w-full rounded-[2rem] border border-gray-100 bg-white shadow-xl" loading="lazy" />
+          </div>
         </div>
       </section>
 
