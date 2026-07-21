@@ -65,7 +65,7 @@ describe("app marketing page", () => {
     assert.match(heroSource, /loading="eager"/);
   });
 
-  it("lazy-loads below-the-fold phone frames by default", () => {
+  it("lazy-loads below-the-fold screenshots with the shared marketing treatment", () => {
     const phoneFrame = readFileSync(
       `${srcRoot}/components/app-marketing/phone-frame.tsx`,
       "utf8",
@@ -73,14 +73,11 @@ describe("app marketing page", () => {
     assert.match(phoneFrame, /loading = "lazy"/);
     assert.match(phoneFrame, /aspectRatio/);
     assert.match(phoneFrame, /object-cover/);
-    // Replit-style border bezel + proportional attached CSS notch (no SVG / no fixed h-5).
-    assert.match(phoneFrame, /border-\[6px\]/);
-    assert.match(phoneFrame, /rounded-b-3xl/);
-    assert.match(phoneFrame, /width: "33\.333%"/);
-    // Corner radius scales with width so small phones match the good large-frame silhouette.
-    assert.match(phoneFrame, /rounded-\[min\(2\.5rem,11%\)\]/);
+    // Match the polished screenshot cards on the business sales page.
+    assert.match(phoneFrame, /rounded-\[2rem\] border border-gray-100 bg-white shadow-xl/);
+    assert.match(phoneFrame, /shadow-\[inset_0_0_15px_rgba\(0,0,0,0\.06\)\]/);
     assert.doesNotMatch(phoneFrame, /viewBox=/);
-    assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
+    assert.doesNotMatch(phoneFrame, /border-\[6px\]|rounded-b-3xl/);
   });
 
   it("uses DualPhonePair for shop and business sections", () => {
