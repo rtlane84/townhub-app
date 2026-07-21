@@ -47,6 +47,18 @@ describe("app marketing page", () => {
     assert.match(agreementSource, /launch draft/);
   });
 
+  it("declares proprietary TownHub rights without claiming user business content", () => {
+    const termsSource = readFileSync(`${srcRoot}/pages/terms-of-service.tsx`, "utf8");
+    const packageJson = readFileSync(`${srcRoot}/../../../package.json`, "utf8");
+    const license = readFileSync(`${srcRoot}/../../../LICENSE`, "utf8");
+    assert.match(packageJson, /"license": "UNLICENSED"/);
+    assert.match(license, /Copyright \(c\) 2026 LaneTech/);
+    assert.match(termsSource, /TownHub intellectual property/);
+    assert.match(termsSource, /reverse engineer/);
+    assert.match(termsSource, /scrape or automatically extract data/);
+    assert.match(termsSource, /except for content submitted by\s+users or businesses/);
+  });
+
   it("skips marketplace chrome for the marketing page", () => {
     const layoutSource = readFileSync(`${srcRoot}/components/layout.tsx`, "utf8");
     assert.match(layoutSource, /isAppMarketingPath/);
