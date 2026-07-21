@@ -53,7 +53,7 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
     label: "Homepage hero image",
     recommendedSize: "1920 × 800 px (wide banner)",
     aspectClass: "aspect-[21/9]",
-    hint: "Fallback background when no town photos are uploaded.",
+    hint: "Fallback background when no town photos are uploaded for the discovery card.",
   },
   "homepage-hero-overlay": {
     label: "Hero overlay image",
@@ -66,7 +66,7 @@ export const IMAGE_SURFACE_GUIDANCE: Record<
     label: "Town photo",
     recommendedSize: "1600 × 900 px (16:9)",
     aspectClass: "aspect-[16/9]",
-    hint: "Homepage carousel slide. Use object-cover-safe crops; important subjects near center.",
+    hint: "Primary photo becomes the homepage discovery backdrop. Use object-cover-safe crops; important subjects near center.",
   },
   event: {
     label: "Event image",

@@ -93,10 +93,6 @@ describe("frontend load performance wiring", () => {
       new URL("../components/home-hero-section.tsx", import.meta.url),
       "utf8",
     );
-    const carousel = await readFile(
-      new URL("../components/town-photo-carousel.tsx", import.meta.url),
-      "utf8",
-    );
     const responsive = await readFile(
       new URL("../components/responsive-hero-image.tsx", import.meta.url),
       "utf8",
@@ -105,11 +101,13 @@ describe("frontend load performance wiring", () => {
       new URL("../components/optimized-media-image.tsx", import.meta.url),
       "utf8",
     );
-    assert.match(hero, /TownPhotoCarousel/);
+    assert.match(hero, /ResponsiveHeroImage/);
     assert.match(hero, /resolveTownPhotoSlides/);
+    assert.match(hero, /resolveTownPhotoSlides\(townPhotos, heroImageUrl\)\[0\]/);
+    assert.match(hero, /priority/);
+    assert.match(hero, /heroImageObjectClasses/);
+    assert.doesNotMatch(hero, /TownPhotoCarousel/);
     assert.doesNotMatch(hero, /link\.rel = "preload"/);
-    assert.match(carousel, /ResponsiveHeroImage/);
-    assert.match(carousel, /heroImageObjectClasses/);
     assert.match(responsive, /OptimizedMediaImage/);
     assert.match(responsiveMedia, /buildOptimizedSrcSet/);
     assert.match(responsiveMedia, /"webp"/);
@@ -118,19 +116,18 @@ describe("frontend load performance wiring", () => {
     assert.doesNotMatch(responsive, /avif/i);
   });
 
-  it("keeps the homepage carousel manual and only prioritizes the initial slide", async () => {
-    const carousel = await readFile(
-      new URL("../components/town-photo-carousel.tsx", import.meta.url),
+  it("uses a stable discovery surface with high-level marketplace routes", async () => {
+    const hero = await readFile(
+      new URL("../components/home-hero-section.tsx", import.meta.url),
       "utf8",
     );
-    assert.doesNotMatch(carousel, /setInterval|AUTO_ADVANCE/);
-    assert.match(carousel, /priority=\{index === 0\}/);
-    assert.match(carousel, /aria-label=\{`Show town photo \$\{index \+ 1\}`\}/);
-    assert.match(carousel, /aria-label="Choose a town photo"/);
-    assert.match(carousel, /h-11 w-11/);
-    assert.match(carousel, /const isActive = index === selected/);
-    assert.match(carousel, /width=\{640\}/);
-    assert.match(carousel, /height=\{640\}/);
+    assert.match(hero, /Discover \{placeLabel\}, close to home\./);
+    assert.match(hero, /href: "\/businesses"/);
+    assert.match(hero, /href: "\/businesses\?type=FOOD_VENDOR"/);
+    assert.match(hero, /href: "\/events"/);
+    assert.match(hero, /href: "\/businesses\?type=SERVICE_PROVIDER"/);
+    assert.match(hero, /aria-label="Explore TownHub"/);
+    assert.doesNotMatch(hero, /caption/);
   });
 
   it("allows viewport zoom and reserves a stable route-loading height", async () => {

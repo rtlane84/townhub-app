@@ -71,9 +71,8 @@ export function TownPhotosEditor({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Upload multiple town photos for the homepage carousel. Reorder, set a
-        primary photo, and optionally add a short caption. If empty, the single
-        homepage hero image below is used.
+        Choose a primary town photo for the homepage discovery backdrop. Keep
+        additional photos here for future use; if empty, the fallback image below is used.
       </p>
 
       {sorted.length > 0 ? (
@@ -178,7 +177,7 @@ export function TownPhotosEditor({
         </ul>
       ) : (
         <p className="rounded-xl border border-dashed border-border/80 bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
-          No town photos yet. Add one below to start the homepage carousel.
+          No town photos yet. Add one below for the homepage discovery backdrop.
         </p>
       )}
 

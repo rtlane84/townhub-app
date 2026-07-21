@@ -108,83 +108,48 @@ describe("platform branding hero settings", () => {
   });
 });
 
-describe("hero composition parity between live homepage and admin preview", () => {
-  it("live hero uses town-photo carousel; admin preview keeps HeroStage", async () => {
+describe("homepage discovery configuration", () => {
+  it("uses the primary town photo for discovery and removes obsolete admin controls", async () => {
     const homeHero = await readFile(
       new URL("../components/home-hero-section.tsx", import.meta.url),
       "utf8",
     );
-    const carousel = await readFile(
-      new URL("../components/town-photo-carousel.tsx", import.meta.url),
-      "utf8",
-    );
-    const previewFrame = await readFile(
-      new URL("../components/hero-preview-frame.tsx", import.meta.url),
-      "utf8",
-    );
-    const stage = await readFile(
-      new URL("../components/hero-stage.tsx", import.meta.url),
+    const adminSettings = await readFile(
+      new URL("../pages/dashboard/admin/settings.tsx", import.meta.url),
       "utf8",
     );
 
-    assert.match(homeHero, /TownPhotoCarousel/);
+    assert.match(homeHero, /ResponsiveHeroImage/);
     assert.match(homeHero, /resolveTownPhotoSlides/);
-    assert.match(carousel, /ResponsiveHeroImage/);
-    assert.match(carousel, /heroOverlaySizeClasses/);
-    assert.match(previewFrame, /HeroStage/);
-    assert.match(stage, /HERO_SECTION_MIN_HEIGHT_CLASS/);
-    assert.match(stage, /HeroImageLayers/);
+    assert.match(homeHero, /resolveTownPhotoSlides\(townPhotos, heroImageUrl\)\[0\]/);
+    assert.doesNotMatch(homeHero, /TownPhotoCarousel/);
+    assert.match(adminSettings, /TownPhotosEditor/);
+    assert.doesNotMatch(adminSettings, /surface="homepage-hero-overlay"/);
+    assert.doesNotMatch(adminSettings, /HeroPreviewFrame/);
+    assert.doesNotMatch(adminSettings, /label="Shop button"/);
   });
 
-  it("shares the same min-height on live hero and admin preview", async () => {
-    const branding = await readFile(
-      new URL("./platform-branding.ts", import.meta.url),
+  it("uses the configured object fit and position for the decorative photo", async () => {
+    const homeHero = await readFile(
+      new URL("../components/home-hero-section.tsx", import.meta.url),
       "utf8",
     );
-    assert.match(branding, /min-h-\[176px\] md:min-h-\[340px\]/);
+    assert.match(homeHero, /heroImageObjectClasses\(heroImageFit, heroImagePosition\)/);
+    assert.doesNotMatch(homeHero, /blur/);
   });
 
-  it("never crops the overlay image (object-contain) and scales it responsively", async () => {
-    const stage = await readFile(
-      new URL("../components/hero-stage.tsx", import.meta.url),
-      "utf8",
-    );
-    const branding = await readFile(
-      new URL("./platform-branding.ts", import.meta.url),
-      "utf8",
-    );
-    assert.match(stage, /object-contain/);
-    assert.match(stage, /heroOverlaySizeClasses/);
-    assert.match(branding, /max-w-\[70%\] md:max-w-\[38%\]/);
-    assert.match(branding, /max-w-\[85%\] md:max-w-\[55%\]/);
-    assert.match(branding, /max-w-\[92%\] md:max-w-\[72%\]/);
-  });
-
-  it("background image uses object-fit/position and has no blur", async () => {
-    const layers = await readFile(
-      new URL("../components/hero-image-layers.tsx", import.meta.url),
-      "utf8",
-    );
-    assert.match(layers, /heroImageObjectClasses/);
-    assert.doesNotMatch(layers, /blur/);
-    assert.match(layers, /from-primary\/10 via-background to-muted\/40/);
-  });
-
-  it("admin exposes the simplified hero controls only", async () => {
+  it("admin keeps only fallback image fit and positioning controls", async () => {
     const adminSettings = await readFile(
       new URL("../pages/dashboard/admin/settings.tsx", import.meta.url),
       "utf8",
     );
     assert.match(adminSettings, /TownPhotosEditor/);
-    assert.match(adminSettings, /HeroPreviewFrame/);
-    assert.match(adminSettings, /surface="homepage-hero-overlay"/);
-    assert.match(adminSettings, /HERO_OVERLAY_SIZE_OPTIONS/);
-    assert.match(adminSettings, /HERO_OVERLAY_ALIGN_OPTIONS/);
-    assert.match(adminSettings, /HERO_BUTTON_PLACEMENT_OPTIONS/);
-    assert.match(adminSettings, /showShopButton/);
-    assert.match(adminSettings, /showListBusinessButton/);
-    assert.doesNotMatch(adminSettings, /heroHeadlineLine/);
-    assert.doesNotMatch(adminSettings, /Overlay opacity/);
+    assert.match(adminSettings, /surface="homepage-hero"/);
+    assert.match(adminSettings, /HERO_IMAGE_FIT_OPTIONS/);
+    assert.match(adminSettings, /HERO_IMAGE_POSITION_OPTIONS/);
+    assert.doesNotMatch(adminSettings, /surface="homepage-hero-overlay"/);
+    assert.doesNotMatch(adminSettings, /HERO_OVERLAY_SIZE_OPTIONS/);
+    assert.doesNotMatch(adminSettings, /HERO_BUTTON_PLACEMENT_OPTIONS/);
   });
 
   it("applies logo size consistently in admin preview", async () => {
