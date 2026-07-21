@@ -103,4 +103,19 @@ describe("database pool configuration", () => {
     assert.match(statsRoute, /sum\(ordersTable\.total\)/);
     assert.doesNotMatch(statsRoute, /db\.select\(\)\.from\((businesses|orders)Table\)/);
   });
+
+  it("keeps the public directory query small, parallel, and briefly cached", async () => {
+    const source = await readFile(new URL("businesses.ts", routesDir), "utf8");
+    const directoryRoute = source.slice(
+      source.indexOf('router.get("/businesses"'),
+      source.indexOf('// POST /api/businesses/register'),
+    );
+
+    assert.match(directoryRoute, /select\(publicBusinessColumns\)/);
+    assert.match(directoryRoute, /Promise\.all/);
+    assert.match(directoryRoute, /getPublicBusinessDirectoryCache/);
+    assert.match(directoryRoute, /setPublicBusinessDirectoryCache/);
+    assert.match(directoryRoute, /const cacheKey = search \? null/);
+    assert.doesNotMatch(directoryRoute, /\.select\(\)\s*\.from\(businessesTable\)/);
+  });
 });

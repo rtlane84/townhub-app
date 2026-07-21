@@ -37,6 +37,7 @@ import {
   serializeSubscription,
   serializeSubscriptionFeature,
 } from "../lib/subscription-serializers";
+import { invalidatePublicBusinessDirectoryCache } from "../lib/public-business-directory-cache";
 
 const router: IRouter = Router();
 
@@ -221,6 +222,7 @@ adminRouter.put("/subscription-plans/:id/features", async (req, res): Promise<vo
     return;
   }
 
+  invalidatePublicBusinessDirectoryCache();
   res.json(await getPlanFeatures(id));
 });
 
@@ -350,6 +352,7 @@ adminRouter.put("/businesses/:id/subscription", async (req, res): Promise<void> 
   const features = await getPlanFeatures(sub.planId);
   const enabledFeatures = features.filter((feature) => featureKeys.has(feature.key));
 
+  invalidatePublicBusinessDirectoryCache();
   res.json(serializeSubscription(sub, plan, enabledFeatures));
 });
 
