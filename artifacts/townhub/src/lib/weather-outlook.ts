@@ -183,6 +183,31 @@ export function buildWeatherOutlookMessage(
   return null;
 }
 
+/**
+ * A lightweight forecast caution shown when no official alert is active.
+ * Official WeatherKit alerts remain the higher-priority red banner.
+ */
+export function buildWeatherWarningMessage(
+  weather: WeatherForecast | undefined | null,
+): string | null {
+  if (!weather?.enabled || weather.unavailable || weather.alert || !weather.daily?.length) {
+    return null;
+  }
+
+  const today = weather.daily[0];
+  const currentCode = weather.current?.weatherCode ?? 0;
+  const hasThunderstorm = currentCode >= 95 || today.weatherCode >= 95;
+  if (hasThunderstorm) {
+    return "Thunderstorms are possible today. Stay weather-aware.";
+  }
+
+  if ((today.precipitationChance ?? 0) >= 70) {
+    return "Rain is likely today. Plan accordingly.";
+  }
+
+  return null;
+}
+
 function outlookFromDaily(day: WeatherDaily, when: string): string | null {
   if (isThunderstorm(day.weatherCode))
     return `Storms may move through ${when}.`;

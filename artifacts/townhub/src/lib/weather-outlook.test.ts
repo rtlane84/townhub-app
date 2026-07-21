@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildWeatherOutlookMessage,
+  buildWeatherWarningMessage,
   filterEventsThisWeek,
 } from "./weather-outlook.ts";
 import type { WeatherForecast } from "@workspace/api-client-react";
@@ -114,6 +115,41 @@ describe("buildWeatherOutlookMessage", () => {
       { now },
     );
     assert.equal(msg, "Rain is likely today—keep an umbrella nearby.");
+  });
+
+  it("shows a forecast warning for thunderstorms without an official alert", () => {
+    const msg = buildWeatherWarningMessage(
+      forecast({
+        daily: [
+          {
+            date: "2026-07-12",
+            highF: 84,
+            lowF: 71,
+            weatherCode: 95,
+            summary: "Thunderstorms",
+          },
+        ],
+      }),
+    );
+    assert.equal(msg, "Thunderstorms are possible today. Stay weather-aware.");
+  });
+
+  it("does not duplicate a forecast warning when an official alert exists", () => {
+    const msg = buildWeatherWarningMessage(
+      forecast({
+        alert: { summary: "Severe thunderstorm warning", severity: "severe" },
+        daily: [
+          {
+            date: "2026-07-12",
+            highF: 84,
+            lowF: 71,
+            weatherCode: 95,
+            summary: "Thunderstorms",
+          },
+        ],
+      }),
+    );
+    assert.equal(msg, null);
   });
 
   it("suggests dry weather when today and tomorrow are clear of rain", () => {

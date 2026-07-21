@@ -3,7 +3,10 @@ import {
   WeatherIcon,
   WeatherUnavailableContent,
 } from "@/components/weather-widget";
-import { buildWeatherOutlookMessage } from "@/lib/weather-outlook";
+import {
+  buildWeatherOutlookMessage,
+  buildWeatherWarningMessage,
+} from "@/lib/weather-outlook";
 import { cn } from "@/lib/utils";
 
 type HomeWelcomeSectionProps = {
@@ -92,6 +95,10 @@ export function HomeWelcomeSection({
     weatherEnabled && !weatherLoading
       ? buildWeatherOutlookMessage(weather, { placeLabel })
       : null;
+  const forecastWarning =
+    weatherEnabled && !weatherLoading
+      ? buildWeatherWarningMessage(weather)
+      : null;
 
   return (
     <section className="th-fade-up">
@@ -128,6 +135,12 @@ export function HomeWelcomeSection({
         <div className="mt-2.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13px] leading-snug text-red-900">
           <span className="font-semibold">Weather alert:</span>{" "}
           {weather.alert.summary}
+        </div>
+      ) : null}
+      {!weather?.alert?.summary && forecastWarning ? (
+        <div className="mt-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] leading-snug text-amber-950">
+          <span className="font-semibold">Weather notice:</span>{" "}
+          {forecastWarning}
         </div>
       ) : null}
     </section>
