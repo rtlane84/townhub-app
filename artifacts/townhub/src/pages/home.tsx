@@ -35,7 +35,7 @@ import {
   Truck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { PUBLIC_EXPLORE_CATEGORIES } from "@workspace/api-zod";
+import { hasActiveMobileLocationNow, PUBLIC_EXPLORE_CATEGORIES } from "@workspace/api-zod";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { HomeHeroSection } from "@/components/home-hero-section";
@@ -123,7 +123,7 @@ function SectionTitle({
 }
 
 export default function Home() {
-  const { weatherEnabled, platformName, townName } = usePlatformBranding();
+  const { weatherEnabled, platformName, townName, timezone } = usePlatformBranding();
   const { user, isSignedIn } = useUser();
   const firstName = user?.firstName?.trim();
   const greeting = greetingForHour(new Date().getHours());
@@ -225,6 +225,9 @@ export default function Home() {
   const upcomingEventList = asArray(allUpcomingEvents);
   const todayTruckList = asArray(todayTrucks);
   const upcomingTruckList = asArray(upcomingTrucks);
+  const liveTodayTruckList = todayTruckList.filter((truck) =>
+    hasActiveMobileLocationNow([truck], new Date(), 0, timezone),
+  );
 
   const spotlightItems = highlightList.slice(0, 3);
   const featuredBusinesses = businessList.slice(0, 6);
@@ -383,12 +386,12 @@ export default function Home() {
           >
             <SectionTitle
               id="trucks-today-heading"
-              title="On the Move Today"
+              title="On the Move"
               actionHref="/food-trucks"
             />
             <HomeFoodTrucksSkeleton />
           </section>
-        ) : todayTruckList.length > 0 ? (
+        ) : liveTodayTruckList.length > 0 ? (
           <section
             id="food-trucks-today"
             className="th-fade-up"
@@ -396,7 +399,7 @@ export default function Home() {
           >
             <SectionTitle
               id="trucks-today-heading"
-              title="On the Move Today"
+              title="On the Move"
               actionHref="/food-trucks"
             />
             <div className="mb-3">
@@ -409,7 +412,7 @@ export default function Home() {
               </Badge>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {todayTruckList.map((truck) => (
+              {liveTodayTruckList.map((truck) => (
                 <Link key={truck.id} href={`/businesses/${truck.businessSlug}`}>
                   <Card className={cn(LISTING_CARD_CLASS, "rounded-[1.35rem]")}>
                     <CardContent className="p-4">
