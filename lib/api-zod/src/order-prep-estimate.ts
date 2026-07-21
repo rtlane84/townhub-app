@@ -1,4 +1,5 @@
 import { formatTime12h } from "./time";
+import { getZonedParts } from "./timezone";
 
 /** Fallback when a business has no default prep time configured. */
 export const FALLBACK_DEFAULT_PREP_MINUTES = 15;
@@ -86,9 +87,10 @@ export function formatPrepMinutesRange(minMinutes: number, maxMinutes: number): 
   return `${minMinutes}–${maxMinutes} minutes`;
 }
 
-function formatClockTime(date: Date): string {
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
+function formatClockTime(date: Date, timeZone?: string): string {
+  const parts = timeZone ? getZonedParts(date, timeZone) : null;
+  const hours = parts?.hour ?? date.getHours();
+  const minutes = parts?.minute ?? date.getMinutes();
   const hh = String(hours).padStart(2, "0");
   const mm = String(minutes).padStart(2, "0");
   return formatTime12h(`${hh}:${mm}`);
@@ -97,11 +99,12 @@ function formatClockTime(date: Date): string {
 export function formatEstimatedWindowClockRange(
   windowStart: Date | string,
   windowEnd: Date | string,
+  timeZone?: string,
 ): string {
   const start = typeof windowStart === "string" ? new Date(windowStart) : windowStart;
   const end = typeof windowEnd === "string" ? new Date(windowEnd) : windowEnd;
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "";
-  return `${formatClockTime(start)}–${formatClockTime(end)}`;
+  return `${formatClockTime(start, timeZone)}–${formatClockTime(end, timeZone)}`;
 }
 
 export function fulfillmentTimingNoun(fulfillmentType: string): "pickup" | "delivery" {
@@ -177,9 +180,10 @@ export function formatNotificationEstimatedWindow(
   fulfillmentType: string,
   windowStart: Date | string,
   windowEnd: Date | string,
+  timeZone?: string,
 ): string {
   const noun = fulfillmentTimingNoun(fulfillmentType);
-  const range = formatEstimatedWindowClockRange(windowStart, windowEnd);
+  const range = formatEstimatedWindowClockRange(windowStart, windowEnd, timeZone);
   if (!range) return "ASAP";
   return `Estimated ${noun}: ${range}`;
 }

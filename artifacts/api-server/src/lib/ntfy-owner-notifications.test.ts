@@ -28,6 +28,7 @@ describe("ntfy-owner-notifications", () => {
       orderNumber: "TH-100",
       businessId: 1,
       businessName: "Clay Diner",
+      timeZone: "America/New_York",
       customerName: "Alex",
       fulfillmentType: "PICKUP",
       total: 24.5,

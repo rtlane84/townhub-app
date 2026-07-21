@@ -104,9 +104,10 @@ export function paymentStatusLabel(paymentMethod: string, paymentStatus: string)
   return "Payment processing";
 }
 
-export function formatOrderDateTime(value: Date | string): string {
+export function formatOrderDateTime(value: Date | string, timeZone?: string): string {
   const date = typeof value === "string" ? new Date(value) : value;
   return new Intl.DateTimeFormat("en-US", {
+    timeZone,
     weekday: "short",
     month: "short",
     day: "numeric",

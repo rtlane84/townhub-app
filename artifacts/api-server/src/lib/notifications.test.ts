@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildCustomerLifecycleEmail } from "./email-templates/customer-emails";
 import { buildOwnerNewOrderEmail } from "./email-templates/business-emails";
-import { buildCustomerLifecycleSms, buildOwnerNewOrderSms } from "./notification-sms";
+import {
+  buildCustomerLifecycleSms,
+  buildCustomerOrderReceivedSms,
+  buildOwnerNewOrderSms,
+} from "./notification-sms";
 import { statusToCustomerEvent } from "./email-templates/types";
 import { resolveNotificationStatus } from "./notification-content";
 import { buildOwnerNewAppointmentEmail } from "./notification-content";
@@ -13,6 +17,7 @@ const sampleOrder = {
   orderNumber: "ORD-1001",
   businessId: 1,
   businessName: "Clay Diner",
+  timeZone: "America/New_York",
   businessLogoUrl: "https://cdn.example.com/logo.png",
   businessAddress: "123 Main St",
   pickupInstructions: "Use side door",
@@ -133,6 +138,37 @@ describe("owner new order notifications", () => {
     assert.match(body, /Sales Tax/);
     assert.match(body, /Estimated pickup:/i);
     assert.match(body, /dashboard\/business\/orders\/42/);
+  });
+
+  it("renders order notification times in the platform timezone", () => {
+    const ownerEmail = buildOwnerNewOrderEmail(sampleOrder);
+    const customerEmail = buildCustomerLifecycleEmail("ORDER_RECEIVED", sampleOrder);
+    const ownerSms = buildOwnerNewOrderSms(sampleOrder);
+    const customerSms = buildCustomerOrderReceivedSms(sampleOrder);
+
+    for (const content of [ownerEmail.html, ownerEmail.text, customerEmail.html, customerEmail.text]) {
+      assert.match(content, /Wed, Jun 24, 2026, 10:30 AM/);
+      assert.match(content, /Estimated pickup: 10:55 AM–11:05 AM/);
+    }
+    assert.match(ownerSms, /Estimated pickup: 10:55 AM–11:05 AM/);
+    assert.match(customerSms, /Estimated pickup: 10:55 AM–11:05 AM/);
+  });
+
+  it("renders delivery estimates through the daylight-saving transition", () => {
+    const daylightSavingDelivery = {
+      ...sampleOrder,
+      fulfillmentType: "DELIVERY",
+      orderedAt: new Date("2026-03-08T06:30:00Z"),
+      estimatedWindowStart: new Date("2026-03-08T07:55:00Z"),
+      estimatedWindowEnd: new Date("2026-03-08T08:05:00Z"),
+    };
+
+    const ownerEmail = buildOwnerNewOrderEmail(daylightSavingDelivery);
+    const customerSms = buildCustomerOrderReceivedSms(daylightSavingDelivery);
+
+    assert.match(ownerEmail.html, /Sun, Mar 8, 2026, 1:30 AM/);
+    assert.match(ownerEmail.html, /Estimated delivery: 3:55 AM–4:05 AM/);
+    assert.match(customerSms, /Estimated delivery: 3:55 AM–4:05 AM/);
   });
 });
 

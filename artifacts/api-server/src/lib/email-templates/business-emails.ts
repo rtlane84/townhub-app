@@ -40,7 +40,7 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
     { label: "Payment method", value: paymentMethodLabel(order.paymentMethod) },
     { label: "Payment status", value: paymentStatusLabel(order.paymentMethod, order.paymentStatus) },
     { label: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType) },
-    { label: "Order placed", value: formatOrderDateTime(order.orderedAt) },
+    { label: "Order placed", value: formatOrderDateTime(order.orderedAt, order.timeZone) },
   ];
 
   if (order.estimatedWindowStart && order.estimatedWindowEnd) {
@@ -50,6 +50,7 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
         order.fulfillmentType,
         order.estimatedWindowStart,
         order.estimatedWindowEnd,
+        order.timeZone,
       ),
     });
   }
@@ -79,11 +80,13 @@ export function buildOwnerNewOrderEmail(order: OrderNotificationData): EmailCont
     order.customerEmail ? `Email: ${order.customerEmail}` : "",
     `Payment: ${paymentMethodLabel(order.paymentMethod)} (${paymentStatusLabel(order.paymentMethod, order.paymentStatus)})`,
     `Fulfillment: ${fulfillmentLabel(order.fulfillmentType)}`,
+    `Placed: ${formatOrderDateTime(order.orderedAt, order.timeZone)}`,
     order.estimatedWindowStart && order.estimatedWindowEnd
       ? formatNotificationEstimatedWindow(
           order.fulfillmentType,
           order.estimatedWindowStart,
           order.estimatedWindowEnd,
+          order.timeZone,
         )
       : "",
     ...formatOrderTotalsTextLines(orderTotalsSummaryFromNotification(order)),

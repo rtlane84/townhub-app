@@ -98,6 +98,7 @@ describe("notification-push-copy", () => {
     businessOrderNumber: 3,
     businessId: 1,
     businessName: "Clay Diner",
+    timeZone: "America/New_York",
     customerName: "Alex",
     customerUserId: "user_1",
     customerEmail: "a@example.com",
