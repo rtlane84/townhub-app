@@ -3,7 +3,7 @@ import { AppStoreButton, PlayStoreButton } from "@/components/app-marketing/stor
 import { TownhubLogoMark } from "@/components/app-marketing/townhub-logo-mark";
 import { appMarketingConfig } from "@/lib/app-marketing-config";
 import { cn } from "@/lib/utils";
-import heroHome from "@/assets/app-marketing/hero-home-desktop.png";
+import heroHome from "@/assets/app-marketing/home-clay-today.png";
 import businessDetail from "@/assets/app-marketing/business-detail-duck-donuts.png";
 
 export function AppMarketingFinalCta() {

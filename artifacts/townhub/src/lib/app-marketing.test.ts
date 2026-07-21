@@ -62,6 +62,7 @@ describe("app marketing page", () => {
     assert.doesNotMatch(pageSource, /_replit-app-page/);
     assert.doesNotMatch(heroSource, /_replit-app-page/);
     assert.match(heroSource, /@\/assets\/app-marketing\//);
+    assert.match(heroSource, /home-clay-today\.png/);
     assert.match(heroSource, /loading="eager"/);
   });
 

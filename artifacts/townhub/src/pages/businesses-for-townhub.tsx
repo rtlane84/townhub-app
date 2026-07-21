@@ -15,7 +15,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import storefrontImage from "@/assets/app-marketing/business-detail-order-local.png";
+import storefrontImage from "@/assets/app-marketing/home-clay-today.png";
 import businessHubImage from "@/assets/app-marketing/business-hub-overview.png";
 import mobileBusinessMapImage from "@/assets/app-marketing/trucks-todays-map.png";
 
@@ -148,7 +148,7 @@ export default function BusinessesForTownHub() {
           </div>
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
             <div className="absolute inset-6 -z-10 rounded-full bg-townhub-blue/5 blur-3xl" />
-            <img src={storefrontImage} alt="A local business storefront on TownHub" className="mx-auto w-full max-w-md rounded-[2rem] border border-gray-100 bg-white shadow-2xl" />
+            <img src={storefrontImage} alt="TownHub home screen showing local businesses, events, and mobile businesses in Clay" className="mx-auto w-full max-w-md rounded-[2rem] border border-gray-100 bg-white shadow-2xl" />
           </div>
         </div>
       </section>
