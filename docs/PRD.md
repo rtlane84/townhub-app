@@ -604,10 +604,10 @@ The product owner must resolve these before general availability:
 
 1. Which Clay businesses make up the first pilot cohort?
 2. ~~What are the public plan names, prices, trial terms, setup fees, and transaction-fee policy?~~ **Resolved for Clay launch:**
-   - **Presence** — $25/mo or $250/yr (10×): business page, catalog/menu, appointments, mobile schedule, email notifications, analytics. No online ordering / SMS. Allowed storefront modes: `INFORMATION`, `APPOINTMENT`.
-   - **Orders** — $40/mo or $400/yr (recommended): everything in Presence plus `online_ordering` and `sms_notifications`. Allowed modes include `ORDERING`.
-   - **Trial:** 30 days on both public plans. **Setup fee:** $0. **Platform transaction fee:** 0% (Connect fees still apply to customer payments).
-   - **Founding / complimentary:** first Clay pilot businesses may use `isBeta` / $0 plans, then convert to Presence or Orders.
+   - **Business Showcase** — $20/mo or $200/yr (10×): business page, catalog/menu, appointments, mobile schedule, email notifications, analytics. No online ordering / SMS. Allowed storefront modes: `INFORMATION`, `APPOINTMENT`.
+   - **Business Ordering** — $40/mo or $400/yr (recommended): everything in Business Showcase plus `online_ordering` and `sms_notifications`. Allowed modes include `ORDERING`.
+   - **Trial:** 14 days on both public plans. **Setup fee:** $0. **Platform transaction fee:** 0% (Connect fees still apply to customer payments).
+   - **Founding / complimentary:** first Clay pilot businesses may use `isBeta` / $0 plans, then convert to Business Showcase or Business Ordering.
    - **Not sold as SKUs at launch:** separate Mobile plan, paid Spotlight/featured placement, multi-location add-on.
 3. Who is responsible for refunds, disputes, fulfillment failures, and customer support: TownHub, the business, or both?
 4. What merchant verification is required before activation?

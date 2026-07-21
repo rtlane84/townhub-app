@@ -8,9 +8,12 @@ import {
 import { ensureDefaultSubscriptionFeatures } from "./business-features";
 import { SUBSCRIPTION_FEATURE_KEYS } from "./subscription-feature-keys";
 
-/** Clay launch packaging — admin can rename later; keys below drive feature maps. */
-export const LAUNCH_PLAN_PRESENCE_NAME = "Presence";
-export const LAUNCH_PLAN_ORDERS_NAME = "Orders";
+/** Clay launch packaging — keys below drive feature maps. */
+export const LAUNCH_PLAN_SHOWCASE_NAME = "Business Showcase";
+export const LAUNCH_PLAN_ORDERING_NAME = "Business Ordering";
+
+const LEGACY_SHOWCASE_PLAN_NAMES = ["Presence"];
+const LEGACY_ORDERING_PLAN_NAMES = ["Orders"];
 
 const PRESENCE_FEATURE_KEYS = [
   SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE,
@@ -46,6 +49,7 @@ async function featureIdsForKeys(keys: readonly string[]): Promise<number[]> {
 
 async function upsertLaunchPlan(input: {
   name: string;
+  legacyNames: readonly string[];
   description: string;
   monthlyPrice: string;
   yearlyPrice: string;
@@ -55,11 +59,18 @@ async function upsertLaunchPlan(input: {
   sortOrder: number;
   featureKeys: readonly string[];
 }): Promise<{ planId: number; created: boolean }> {
-  const [existing] = await db
-    .select()
-    .from(subscriptionPlansTable)
-    .where(ilike(subscriptionPlansTable.name, input.name))
-    .limit(1);
+  let existing: typeof subscriptionPlansTable.$inferSelect | undefined;
+  for (const candidateName of [input.name, ...input.legacyNames]) {
+    const [candidate] = await db
+      .select()
+      .from(subscriptionPlansTable)
+      .where(ilike(subscriptionPlansTable.name, candidateName))
+      .limit(1);
+    if (candidate) {
+      existing = candidate;
+      break;
+    }
+  }
 
   let planId: number;
   let created = false;
@@ -130,37 +141,41 @@ async function upsertLaunchPlan(input: {
 }
 
 /**
- * Idempotently create/update Clay launch Presence ($25) and Orders ($40) plans
+ * Idempotently create/update Clay launch Business Showcase ($20) and
+ * Business Ordering ($40) plans. Legacy Presence/Orders records are renamed in
+ * place so active subscriptions keep their existing plan IDs.
  * with explicit feature mappings. Does not set Stripe price IDs — paste those in Admin.
  */
 export async function ensureLaunchSubscriptionPlans(): Promise<{
-  presencePlanId: number;
-  ordersPlanId: number;
-  presenceCreated: boolean;
-  ordersCreated: boolean;
+  showcasePlanId: number;
+  orderingPlanId: number;
+  showcaseCreated: boolean;
+  orderingCreated: boolean;
 }> {
   await ensureDefaultSubscriptionFeatures();
 
-  const presence = await upsertLaunchPlan({
-    name: LAUNCH_PLAN_PRESENCE_NAME,
+  const showcase = await upsertLaunchPlan({
+    name: LAUNCH_PLAN_SHOWCASE_NAME,
+    legacyNames: LEGACY_SHOWCASE_PLAN_NAMES,
     description:
-      "Business page with hours, photos, and menu or services. Customers browse — no online cart. Includes appointments and mobile location schedule when you need them.",
-    monthlyPrice: "25.00",
-    yearlyPrice: "250.00",
-    trialDays: 30,
+      "Create a public TownHub page with your hours, photos, products, menu, or services. Customers can browse, call, or request an appointment. Online ordering is not included.",
+    monthlyPrice: "20.00",
+    yearlyPrice: "200.00",
+    trialDays: 14,
     isDefault: true,
     isRecommended: false,
     sortOrder: 10,
     featureKeys: PRESENCE_FEATURE_KEYS,
   });
 
-  const orders = await upsertLaunchPlan({
-    name: LAUNCH_PLAN_ORDERS_NAME,
+  const ordering = await upsertLaunchPlan({
+    name: LAUNCH_PLAN_ORDERING_NAME,
+    legacyNames: LEGACY_ORDERING_PLAN_NAMES,
     description:
-      "Everything in Presence, plus online ordering, order management, and SMS alerts.",
+      "Everything in Business Showcase, plus online ordering and order management. Customers can place pickup or delivery orders; you run them from your dashboard.",
     monthlyPrice: "40.00",
     yearlyPrice: "400.00",
-    trialDays: 30,
+    trialDays: 14,
     isDefault: false,
     isRecommended: true,
     sortOrder: 20,
@@ -168,9 +183,9 @@ export async function ensureLaunchSubscriptionPlans(): Promise<{
   });
 
   return {
-    presencePlanId: presence.planId,
-    ordersPlanId: orders.planId,
-    presenceCreated: presence.created,
-    ordersCreated: orders.created,
+    showcasePlanId: showcase.planId,
+    orderingPlanId: ordering.planId,
+    showcaseCreated: showcase.created,
+    orderingCreated: ordering.created,
   };
 }

@@ -49,14 +49,14 @@ For each **paid** subscription plan in TownHub Admin → Subscription Plans:
 
 Complimentary / founding / beta plans (`isBeta` or $0 pricing) do **not** need Stripe price IDs.
 
-### Clay launch plans (Presence / Orders)
+### Clay launch plans (Business Showcase / Business Ordering)
 
 Recommended public packaging (also documented in `docs/PRD.md` open decision #2):
 
 | Plan | Monthly | Yearly | Trial | Features |
 |------|---------|--------|-------|----------|
-| **Presence** (default) | $25 | $250 | 30 days | `business_website`, `appointment_requests`, `mobile_business`, `email_notifications`, `analytics` |
-| **Orders** (recommended) | $40 | $400 | 30 days | Everything in Presence + `online_ordering` + `sms_notifications` |
+| **Business Showcase** (default) | $20 | $200 | 14 days | `business_website`, `appointment_requests`, `mobile_business`, `email_notifications`, `analytics` |
+| **Business Ordering** (recommended) | $40 | $400 | 14 days | Everything in Business Showcase + `online_ordering` + `sms_notifications` |
 
 **Setup fee / platform transaction fee:** $0 / 0%.
 
@@ -66,11 +66,11 @@ Seed or refresh plan rows against a **local** (or explicitly authorized) databas
 pnpm --filter @workspace/api-server exec tsx scripts/ensure-launch-plans.ts
 ```
 
-Production requires `ALLOW_LAUNCH_PLAN_SEED=1`. The script upserts Presence and Orders by name and replaces `plan_features`. Then paste Stripe product/price IDs in Admin → Plans.
+Production requires `ALLOW_LAUNCH_PLAN_SEED=1`. The script upserts Business Showcase and Business Ordering by name and replaces `plan_features`. It renames legacy Presence/Orders records in place so existing subscriptions retain their plan IDs. Then paste Stripe product/price IDs in Admin → Plans.
 
 **Entitlement rules (strict):** no subscription row → no features; plan with zero `plan_features` → no features. Public cart requires `ORDERING` mode **and** `online_ordering` entitlement. Email/SMS owner channel UI is hidden without the matching plan features; critical Stripe emails still send.
 
-**Founding cohort:** use a complimentary/`isBeta` plan for early Clay businesses, then convert to Presence or Orders. Do not sell a separate cheaper Mobile SKU.
+**Founding cohort:** use a complimentary/`isBeta` plan for early Clay businesses, then convert to Business Showcase or Business Ordering. Do not sell a separate cheaper Mobile SKU.
 
 **Spotlight / featured:** homepage featured businesses remain admin curation (PRD MKT-06), not a paid add-on at launch.
 

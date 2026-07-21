@@ -1,5 +1,6 @@
 import { Store, Package, ShoppingBag, Clock, Truck, Bell } from "lucide-react";
 import { DualPhonePair } from "@/components/app-marketing/dual-phone-pair";
+import { Button } from "@/components/ui/button";
 import bizOverview from "@/assets/app-marketing/business-hub-overview.png";
 import bizMenu from "@/assets/app-marketing/business-hub-drawer.png";
 
@@ -43,6 +44,9 @@ export function AppMarketingForBusinesses() {
                 </div>
               ))}
             </div>
+            <Button asChild className="mt-9" variant="outline">
+              <a href="/for-businesses">Explore business plans</a>
+            </Button>
           </div>
 
           <div className="w-full lg:w-1/2 relative order-2 lg:order-1 overflow-hidden">

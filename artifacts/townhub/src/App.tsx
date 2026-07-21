@@ -52,6 +52,7 @@ const FoodTrucks = lazyWithRetry(() => import("@/pages/food-trucks"));
 const Setup = lazyWithRetry(() => import("@/pages/setup"));
 const ListYourBusiness = lazyWithRetry(() => import("@/pages/list-your-business"));
 const AppMarketing = lazyWithRetry(() => import("@/pages/app-marketing"));
+const BusinessesForTownHub = lazyWithRetry(() => import("@/pages/businesses-for-townhub"));
 const DebugSentryPage = lazyWithRetry(() => import("@/pages/debug-sentry"));
 
 const BusinessOverview = lazyWithRetry(() => import("@/pages/dashboard/business/overview"));
@@ -288,7 +289,7 @@ function ClerkApiTokenBridge() {
   return null;
 }
 
-const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/pricing", "/privacy-policy", "/terms-of-service", "/sign-in", "/sign-up", "/setup", "/list-your-business", "/help"];
+const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/pricing", "/privacy-policy", "/terms-of-service", "/sign-in", "/sign-up", "/setup", "/list-your-business", "/for-businesses", "/help"];
 
 function PostSignInRedirector() {
   const { isSignedIn, isLoaded } = useUser();
@@ -450,6 +451,7 @@ function ClerkProviderWithRoutes() {
                 {/* Public routes */}
                 <SuspenseRoute path="/" component={Home} />
                 <SuspenseRoute path="/app" component={AppMarketing} />
+                <SuspenseRoute path="/for-businesses" component={BusinessesForTownHub} />
                 <SuspenseRoute path="/events" component={Events} />
                 <SuspenseRoute path="/food-trucks" component={FoodTrucks} />
                 <SuspenseRoute path="/businesses" component={Businesses} />

@@ -111,7 +111,7 @@ export async function getPlanFeatures(planId: number): Promise<SerializedSubscri
 /**
  * Single source of truth for which features a business may use.
  *
- * Strict entitlement rules (required for Presence vs Orders packaging):
+ * Strict entitlement rules (required for Business Showcase vs Business Ordering packaging):
  * - No subscription row → no features
  * - Restricted subscription status (paid) → no features
  * - Plan with zero mapped features → no features (admins must map plan_features explicitly)

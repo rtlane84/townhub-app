@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Idempotently ensure Clay launch subscription plans exist:
- * - Presence — $25/mo / $250/yr, 30-day trial (no online ordering)
- * - Orders — $40/mo / $400/yr, 30-day trial (recommended)
+ * - Business Showcase — $20/mo / $200/yr, 14-day trial (no online ordering)
+ * - Business Ordering — $40/mo / $400/yr, 14-day trial (recommended)
  *
  * Usage (from repo root, against a local or explicitly authorized database):
  *   pnpm --filter @workspace/api-server exec tsx scripts/ensure-launch-plans.ts
@@ -26,7 +26,7 @@ async function main(): Promise<void> {
         ok: true,
         ...result,
         nextStep:
-          "Admin → Plans: attach Stripe product/price IDs for Presence and Orders, then verify /list-your-business#plans",
+          "Admin → Plans: attach Stripe product/price IDs for Business Showcase and Business Ordering, then verify /list-your-business#plans",
       },
       null,
       2,
