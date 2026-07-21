@@ -22,6 +22,7 @@ Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.)
 - Does not expose service configuration, env vars, or internal errors
 - Returns HTTP 200 when the API process is running
 - A successful response means only that the API process is responding — not that every dependency is healthy
+- Successful `/health` responses are **not** written to API access logs (avoids Railway log-rate drops and Better Stack Telemetry noise from uptime probes). Failed or non-health requests still log.
 
 **Legacy alias:** `GET /api/healthz` returns `{ "status": "ok" }` for backward compatibility.
 

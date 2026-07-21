@@ -176,6 +176,14 @@ For production traffic, use a connection pooler (PgBouncer, Neon pooler, Supabas
 
 Local development works without setting these.
 
+**Staging / production (Railway):** set `DATABASE_POOL_MAX=20` (or `25`) on the TownHub API service in each environment. The previous default of `10` is tight when several clients hit `GET /api/businesses` at once (directory listing still does a few DB round-trips). Stay below your Postgres plan’s connection limit.
+
+**Supabase `DATABASE_URL`:** use the **Session Pooler** URI (port **5432**) for the long-lived Node `pg` pool. Prefer that over a direct DB host under concurrent API traffic. Do **not** point the API at the Transaction pooler (port **6543**) unless you have validated that mode with this driver — session mode matches the app’s connection lifecycle. Confirm in Supabase → Project Settings → Database → Connection string (pooler), and that Railway staging vs production each use their own project URI.
+
+**Load / uptime logging:** successful `GET /health` requests are not auto-logged (see API `pino-http` config) so Railway log rate limits and Locomotive → Better Stack ingest are not flooded by monitors or autocannon health probes. Non-health traffic and failed requests still log.
+
+After changing pool or `DATABASE_URL`, redeploy the API and smoke-check Admin → Operations Center database status plus `GET /api/businesses` latency.
+
 ---
 
 ## 5. Admin Bootstrap (first deploy)

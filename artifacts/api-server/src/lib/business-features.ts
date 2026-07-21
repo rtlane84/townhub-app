@@ -136,7 +136,13 @@ export async function getBusinessFeatureKeys(businessId: number): Promise<Set<st
   return getPlanFeatureKeys(subscription.planId);
 }
 
-/** Batch online_ordering entitlement for public business payloads. */
+/**
+ * Batch feature entitlement for public/admin business list payloads.
+ *
+ * Uses a fixed number of queries (subscriptions → plans → plan_features)
+ * instead of N per-business lookups, so directory load stays pool-friendly.
+ * Entitlement rules match {@link getBusinessFeatureKeys}.
+ */
 export async function mapBusinessesHaveFeature(
   businessIds: number[],
   featureKey: SubscriptionFeatureKey | string,
@@ -148,11 +154,69 @@ export async function mapBusinessesHaveFeature(
   }
   if (uniqueIds.length === 0) return result;
 
-  await Promise.all(
-    uniqueIds.map(async (businessId) => {
-      result.set(businessId, await businessHasFeature(businessId, featureKey));
-    }),
-  );
+  const subscriptions = await db
+    .select({
+      businessId: businessSubscriptionsTable.businessId,
+      planId: businessSubscriptionsTable.planId,
+      status: businessSubscriptionsTable.status,
+    })
+    .from(businessSubscriptionsTable)
+    .where(inArray(businessSubscriptionsTable.businessId, uniqueIds));
+
+  if (subscriptions.length === 0) return result;
+
+  const planIds = [...new Set(subscriptions.map((row) => row.planId))];
+  const plans = await db
+    .select({
+      id: subscriptionPlansTable.id,
+      isBeta: subscriptionPlansTable.isBeta,
+      monthlyPrice: subscriptionPlansTable.monthlyPrice,
+      yearlyPrice: subscriptionPlansTable.yearlyPrice,
+    })
+    .from(subscriptionPlansTable)
+    .where(inArray(subscriptionPlansTable.id, planIds));
+
+  const planById = new Map(plans.map((plan) => [plan.id, plan]));
+
+  const candidatePlanIds = new Set<number>();
+  for (const subscription of subscriptions) {
+    const plan = planById.get(subscription.planId);
+    const complimentary = plan ? isComplimentaryPlan(plan) : false;
+    if (subscriptionGrantsFeaturesForPlan(subscription.status, complimentary)) {
+      candidatePlanIds.add(subscription.planId);
+    }
+  }
+
+  if (candidatePlanIds.size === 0) return result;
+
+  const featureRows = await db
+    .select({ planId: planFeaturesTable.planId })
+    .from(planFeaturesTable)
+    .innerJoin(
+      subscriptionFeaturesTable,
+      eq(planFeaturesTable.featureId, subscriptionFeaturesTable.id),
+    )
+    .where(
+      and(
+        inArray(planFeaturesTable.planId, [...candidatePlanIds]),
+        eq(subscriptionFeaturesTable.key, featureKey),
+        eq(subscriptionFeaturesTable.isActive, true),
+      ),
+    );
+
+  const plansWithFeature = new Set(featureRows.map((row) => row.planId));
+
+  for (const subscription of subscriptions) {
+    const plan = planById.get(subscription.planId);
+    const complimentary = plan ? isComplimentaryPlan(plan) : false;
+    if (!subscriptionGrantsFeaturesForPlan(subscription.status, complimentary)) {
+      continue;
+    }
+    if (plansWithFeature.has(subscription.planId)) {
+      result.set(subscription.businessId, true);
+    }
+  }
+
   return result;
 }
 

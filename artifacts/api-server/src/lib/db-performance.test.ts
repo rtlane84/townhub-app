@@ -86,6 +86,12 @@ describe("database pool configuration", () => {
     assert.match(source, /statement_timeout/);
   });
 
+  it("silences successful /health access logs to protect Railway log rate limits", async () => {
+    const source = await readFile(new URL("../app.ts", routesDir), "utf8");
+    assert.match(source, /autoLogging/);
+    assert.match(source, /url === "\/health"/);
+  });
+
   it("aggregates platform overview stats in SQL instead of loading full tables", async () => {
     const source = await readFile(new URL("businesses.ts", routesDir), "utf8");
     const statsRoute = source.slice(

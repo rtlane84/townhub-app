@@ -61,4 +61,23 @@ describe("business-features module", () => {
     assert.match(source, /No subscription row → no features/);
     assert.match(source, /Plan with zero mapped features → no features/);
   });
+
+  it("batches mapBusinessesHaveFeature with a fixed query set instead of N lookups", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile(new URL("./business-features.ts", import.meta.url), "utf8"),
+    );
+    const mapStart = source.indexOf("export async function mapBusinessesHaveFeature");
+    const mapEnd = source.indexOf("export async function businessHasFeature", mapStart);
+    assert.ok(mapStart >= 0 && mapEnd > mapStart);
+    const mapBody = source.slice(mapStart, mapEnd);
+
+    assert.match(mapBody, /inArray\(businessSubscriptionsTable\.businessId/);
+    assert.match(mapBody, /inArray\(subscriptionPlansTable\.id/);
+    assert.match(mapBody, /inArray\(planFeaturesTable\.planId/);
+    assert.match(mapBody, /subscriptionGrantsFeaturesForPlan/);
+    assert.match(mapBody, /isComplimentaryPlan/);
+    assert.doesNotMatch(mapBody, /Promise\.all/);
+    assert.doesNotMatch(mapBody, /businessHasFeature\(/);
+    assert.doesNotMatch(mapBody, /getBusinessFeatureKeys\(/);
+  });
 });
