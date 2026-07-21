@@ -79,6 +79,14 @@ export function AppMarketingFooter() {
                   Terms of Service
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/business-seller-agreement"
+                  className="text-gray-500 hover:text-primary transition-colors text-[17px] rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Business Seller Agreement
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

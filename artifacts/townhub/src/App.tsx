@@ -48,6 +48,7 @@ const Help = lazyWithRetry(() => import("@/pages/help"));
 const Pricing = lazyWithRetry(() => import("@/pages/pricing"));
 const PrivacyPolicy = lazyWithRetry(() => import("@/pages/privacy-policy"));
 const TermsOfService = lazyWithRetry(() => import("@/pages/terms-of-service"));
+const BusinessSellerAgreement = lazyWithRetry(() => import("@/pages/business-seller-agreement"));
 const FoodTrucks = lazyWithRetry(() => import("@/pages/food-trucks"));
 const Setup = lazyWithRetry(() => import("@/pages/setup"));
 const ListYourBusiness = lazyWithRetry(() => import("@/pages/list-your-business"));
@@ -289,7 +290,7 @@ function ClerkApiTokenBridge() {
   return null;
 }
 
-const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/pricing", "/privacy-policy", "/terms-of-service", "/sign-in", "/sign-up", "/setup", "/list-your-business", "/for-businesses", "/help"];
+const PUBLIC_PATHS = ["/", "/businesses", "/events", "/food-trucks", "/pricing", "/privacy-policy", "/terms-of-service", "/business-seller-agreement", "/sign-in", "/sign-up", "/setup", "/list-your-business", "/for-businesses", "/help"];
 
 function PostSignInRedirector() {
   const { isSignedIn, isLoaded } = useUser();
@@ -474,6 +475,7 @@ function ClerkProviderWithRoutes() {
                 <SuspenseRoute path="/pricing" component={Pricing} />
                 <SuspenseRoute path="/privacy-policy" component={PrivacyPolicy} />
                 <SuspenseRoute path="/terms-of-service" component={TermsOfService} />
+                <SuspenseRoute path="/business-seller-agreement" component={BusinessSellerAgreement} />
                 {import.meta.env.DEV ? (
                   <SuspenseRoute path="/debug/sentry" component={DebugSentryPage} />
                 ) : null}

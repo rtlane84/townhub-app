@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 
-const effectiveDate = "July 14, 2026";
+const effectiveDate = "July 21, 2026";
 
 export default function TermsOfService() {
   return (
@@ -11,6 +11,7 @@ export default function TermsOfService() {
         <p>
           These terms govern your use of TownHub, a local marketplace operated by LaneTech. By using
           TownHub, you agree to these terms and the <Link href="/privacy-policy">Privacy Policy</Link>.
+          Business applicants and owners also agree to the <Link href="/business-seller-agreement">Business Seller Agreement</Link>.
         </p>
 
         <h2>The marketplace</h2>
@@ -31,9 +32,9 @@ export default function TermsOfService() {
 
         <h2>Orders, payments, and refunds</h2>
         <p>
-          Prices and fulfillment terms are shown before checkout. Card payments are processed by Stripe
-          for the participating business; some businesses offer payment at pickup. Refunds and order issues
-          are handled by the business subject to applicable law and the payment method used.
+          Prices, taxes, and fulfillment terms are shown before checkout. Card payments are processed by Stripe
+          for the participating business; some businesses offer payment at pickup. The business is the seller
+          responsible for fulfillment, customer service, and refunds, subject to applicable law and the payment method used.
         </p>
 
         <h2>Business services</h2>

@@ -22,6 +22,10 @@ import {
   resolveUniqueBusinessSlug,
   slugifyFromBusinessName,
 } from "../lib/business-slug";
+import {
+  BUSINESS_SELLER_AGREEMENT_VERSION,
+  isBusinessSellerAgreementApprovedForProduction,
+} from "../lib/business-seller-agreement";
 
 const router: IRouter = Router();
 
@@ -42,6 +46,8 @@ function serializeApplication(
     structuredHours: parseStructuredHours(a.structuredHours),
     planId: a.planId,
     billingInterval: a.billingInterval,
+    businessTermsVersion: a.businessTermsVersion,
+    businessTermsAcceptedAt: a.businessTermsAcceptedAt,
     planName: plan?.name ?? null,
     status: a.status,
     reviewNote: a.reviewNote,
@@ -66,6 +72,7 @@ const applySchema = z.object({
   })).optional(),
   planId: z.number().int().positive().optional(),
   billingInterval: z.enum(["monthly", "yearly"]).optional(),
+  acceptBusinessSellerAgreement: z.literal(true),
 });
 
 const approveSchema = z.object({
@@ -154,6 +161,12 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
     return;
   }
 
+  if (!isBusinessSellerAgreementApprovedForProduction()) {
+    req.log.error("Business application blocked: seller agreement approval version is not configured");
+    res.status(503).json({ error: "Business applications are temporarily unavailable while legal review is completed." });
+    return;
+  }
+
   const parsed = applySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -189,6 +202,7 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
     })) ?? `${userId}@user.local`;
 
   const { name, type, description, address, phone, hours, structuredHours, planId, billingInterval } = parsed.data;
+  const businessTermsAcceptedAt = new Date();
 
   if (planId) {
     const [plan] = await db
@@ -216,6 +230,8 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
         hours: legacyHoursFromStructured(structuredHours) ?? (hours?.trim() || null),
         planId: planId ?? null,
         billingInterval: billingInterval ?? null,
+        businessTermsVersion: BUSINESS_SELLER_AGREEMENT_VERSION,
+        businessTermsAcceptedAt,
         status: "PENDING",
         reviewNote: null,
         reviewedAt: null,
@@ -240,6 +256,8 @@ router.post("/businesses/apply", async (req, res): Promise<void> => {
         hours: legacyHoursFromStructured(structuredHours) ?? (hours?.trim() || null),
         planId: planId ?? null,
         billingInterval: billingInterval ?? null,
+        businessTermsVersion: BUSINESS_SELLER_AGREEMENT_VERSION,
+        businessTermsAcceptedAt,
         status: "PENDING",
       })
       .returning();

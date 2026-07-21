@@ -73,7 +73,7 @@ Dashboards: [Monitors](https://uptime.betterstack.com/team/t570646/monitors), [E
 The admin page shows:
 
 - **Application** — environment, version, build date, commit SHA (when env vars are set), uptime, start time
-- **Service readiness** — API, database (live ping), storage, email, SMS, Stripe, auth, weather/geocoding, background jobs, Sentry
+- **Service readiness** — API, database (live ping), storage, email, SMS, Stripe, auth, WeatherKit, background jobs, Sentry
 - **Operational logs** — durable notification delivery history and platform audit activity
 - **Business metrics** — orders, subscriptions, and related counts when available
 

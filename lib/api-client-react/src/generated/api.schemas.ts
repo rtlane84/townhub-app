@@ -61,6 +61,102 @@ export interface ApplicationHealth {
   startTime: string;
 }
 
+export type BusinessApplicationInputBillingInterval = typeof BusinessApplicationInputBillingInterval[keyof typeof BusinessApplicationInputBillingInterval];
+
+
+export const BusinessApplicationInputBillingInterval = {
+  monthly: 'monthly',
+  yearly: 'yearly',
+} as const;
+
+export interface BusinessDayHours {
+  /**
+     * 0=Sunday through 6=Saturday
+     * @minimum 0
+     * @maximum 6
+     */
+  dayOfWeek: number;
+  isClosed: boolean;
+  /**
+     * 24-hour time HH:mm
+     * @nullable
+     */
+  openTime?: string | null;
+  /**
+     * 24-hour time HH:mm
+     * @nullable
+     */
+  closeTime?: string | null;
+}
+
+export interface BusinessApplicationInput {
+  name: string;
+  type: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+  structuredHours?: BusinessDayHours[];
+  planId?: number;
+  billingInterval?: BusinessApplicationInputBillingInterval;
+  /** Confirms acceptance of the current published Business Seller Agreement. */
+  acceptBusinessSellerAgreement: true;
+}
+
+/**
+ * @nullable
+ */
+export type BusinessApplicationBillingInterval = typeof BusinessApplicationBillingInterval[keyof typeof BusinessApplicationBillingInterval] | null;
+
+
+export const BusinessApplicationBillingInterval = {
+  monthly: 'monthly',
+  yearly: 'yearly',
+} as const;
+
+export type BusinessApplicationStatus = typeof BusinessApplicationStatus[keyof typeof BusinessApplicationStatus];
+
+
+export const BusinessApplicationStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface BusinessApplication {
+  id: number;
+  userId?: string;
+  /** @nullable */
+  userEmail?: string | null;
+  name: string;
+  type: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  structuredHours?: BusinessDayHours[] | null;
+  /** @nullable */
+  planId?: number | null;
+  /** @nullable */
+  billingInterval?: BusinessApplicationBillingInterval;
+  /** @nullable */
+  planName?: string | null;
+  /** @nullable */
+  businessTermsVersion?: string | null;
+  /** @nullable */
+  businessTermsAcceptedAt?: string | null;
+  status: BusinessApplicationStatus;
+  /** @nullable */
+  reviewNote?: string | null;
+  /** @nullable */
+  reviewedAt?: string | null;
+  /** @nullable */
+  businessId?: number | null;
+  createdAt: string;
+}
+
 export interface PlatformActivityEntry {
   id: string;
   type: string;
@@ -349,26 +445,6 @@ export interface OwnedBusinessSummary {
   slug: string;
   type: string;
   active: boolean;
-}
-
-export interface BusinessDayHours {
-  /**
-     * 0=Sunday through 6=Saturday
-     * @minimum 0
-     * @maximum 6
-     */
-  dayOfWeek: number;
-  isClosed: boolean;
-  /**
-     * 24-hour time HH:mm
-     * @nullable
-     */
-  openTime?: string | null;
-  /**
-     * 24-hour time HH:mm
-     * @nullable
-     */
-  closeTime?: string | null;
 }
 
 /**
@@ -1832,6 +1908,11 @@ export interface WeatherDaily {
   lowF: number;
   weatherCode: number;
   summary: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  precipitationChance?: number;
 }
 
 export type WeatherForecastReason = typeof WeatherForecastReason[keyof typeof WeatherForecastReason];
@@ -1844,6 +1925,12 @@ export const WeatherForecastReason = {
   malformed_response: 'malformed_response',
 } as const;
 
+export type WeatherForecastAlert = {
+  summary?: string;
+  detailsUrl?: string;
+  severity?: string;
+};
+
 export interface WeatherForecast {
   enabled: boolean;
   unavailable?: boolean;
@@ -1852,6 +1939,7 @@ export interface WeatherForecast {
   locationQuery?: string;
   demo?: boolean;
   locationLabel?: string;
+  alert?: WeatherForecastAlert;
   current?: WeatherCurrent;
   daily?: WeatherDaily[];
 }

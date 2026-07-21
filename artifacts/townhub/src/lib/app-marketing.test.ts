@@ -39,6 +39,14 @@ describe("app marketing page", () => {
     assert.doesNotMatch(appSource, /ProtectedRoute path="\/app"/);
   });
 
+  it("publishes the seller agreement alongside the customer legal pages", () => {
+    const appSource = readFileSync(`${srcRoot}/App.tsx`, "utf8");
+    const agreementSource = readFileSync(`${srcRoot}/pages/business-seller-agreement.tsx`, "utf8");
+    assert.match(appSource, /path="\/business-seller-agreement"/);
+    assert.match(agreementSource, /Business Seller Agreement/);
+    assert.match(agreementSource, /launch draft/);
+  });
+
   it("skips marketplace chrome for the marketing page", () => {
     const layoutSource = readFileSync(`${srcRoot}/components/layout.tsx`, "utf8");
     assert.match(layoutSource, /isAppMarketingPath/);

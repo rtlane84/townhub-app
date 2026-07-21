@@ -12,4 +12,9 @@ export interface WeatherDaily {
   lowF: number;
   weatherCode: number;
   summary: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  precipitationChance?: number;
 }

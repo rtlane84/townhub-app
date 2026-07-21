@@ -75,6 +75,10 @@ export function buildWeatherOutlookMessage(
 
   const current = weather.current;
 
+  if (weather.alert?.summary) {
+    return null;
+  }
+
   // Priority: storms, snow, heavy rain, extreme heat/cold, big swings
   if (
     isThunderstorm(today.weatherCode) ||
@@ -112,7 +116,7 @@ export function buildWeatherOutlookMessage(
     return `Temperatures may reach ${Math.round(today.highF)}° today.`;
   }
 
-  if (today.highF >= 90) {
+  if (today.highF >= 90 && isClearOrSunny(today.weatherCode)) {
     return "Expect a warm and sunny afternoon.";
   }
 
@@ -130,6 +134,10 @@ export function buildWeatherOutlookMessage(
 
   if (tomorrow && tomorrow.highF - today.highF >= 12) {
     return "Expect a warmer day tomorrow.";
+  }
+
+  if (today.precipitationChance != null && today.precipitationChance >= 50) {
+    return "Rain is likely today—keep an umbrella nearby.";
   }
 
   const weekHighs = week.map((d) => d.highF);

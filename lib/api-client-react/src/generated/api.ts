@@ -29,6 +29,8 @@ import type {
   AppointmentRequestStatusUpdate,
   ArchiveBusinessResponse,
   Business,
+  BusinessApplication,
+  BusinessApplicationInput,
   BusinessFeatureAccess,
   BusinessInput,
   BusinessOrderSummary,
@@ -1651,6 +1653,154 @@ export function useCheckBusinessSlugAvailability<TData = Awaited<ReturnType<type
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getCheckBusinessSlugAvailabilityQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getApplyForBusinessListingUrl = () => {
+
+
+
+
+  return `/api/businesses/apply`
+}
+
+/**
+ * @summary Submit a business listing application
+ */
+export const applyForBusinessListing = async (businessApplicationInput: BusinessApplicationInput, options?: RequestInit): Promise<BusinessApplication> => {
+
+  return customFetch<BusinessApplication>(getApplyForBusinessListingUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      businessApplicationInput,)
+  }
+);}
+
+
+
+
+export const getApplyForBusinessListingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyForBusinessListing>>, TError,{data: BodyType<BusinessApplicationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof applyForBusinessListing>>, TError,{data: BodyType<BusinessApplicationInput>}, TContext> => {
+
+const mutationKey = ['applyForBusinessListing'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyForBusinessListing>>, {data: BodyType<BusinessApplicationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  applyForBusinessListing(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyForBusinessListingMutationResult = NonNullable<Awaited<ReturnType<typeof applyForBusinessListing>>>
+    export type ApplyForBusinessListingMutationBody = BodyType<BusinessApplicationInput>
+    export type ApplyForBusinessListingMutationError = ErrorType<void>
+
+    /**
+ * @summary Submit a business listing application
+ */
+export const useApplyForBusinessListing = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyForBusinessListing>>, TError,{data: BodyType<BusinessApplicationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof applyForBusinessListing>>,
+        TError,
+        {data: BodyType<BusinessApplicationInput>},
+        TContext
+      > => {
+      return useMutation(getApplyForBusinessListingMutationOptions(options));
+    }
+
+export const getGetMyBusinessApplicationUrl = () => {
+
+
+
+
+  return `/api/businesses/my-application`
+}
+
+/**
+ * @summary Get the signed-in applicant's pending business listing application
+ */
+export const getMyBusinessApplication = async ( options?: RequestInit): Promise<BusinessApplication> => {
+
+  return customFetch<BusinessApplication>(getGetMyBusinessApplicationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyBusinessApplicationQueryKey = () => {
+    return [
+    `/api/businesses/my-application`
+    ] as const;
+    }
+
+
+export const getGetMyBusinessApplicationQueryOptions = <TData = Awaited<ReturnType<typeof getMyBusinessApplication>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBusinessApplication>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBusinessApplicationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBusinessApplication>>> = ({ signal }) => getMyBusinessApplication({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyBusinessApplication>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyBusinessApplicationQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBusinessApplication>>>
+export type GetMyBusinessApplicationQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the signed-in applicant's pending business listing application
+ */
+
+export function useGetMyBusinessApplication<TData = Awaited<ReturnType<typeof getMyBusinessApplication>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBusinessApplication>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyBusinessApplicationQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

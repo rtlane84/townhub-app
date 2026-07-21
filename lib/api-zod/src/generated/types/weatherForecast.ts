@@ -7,6 +7,7 @@
  */
 import type { WeatherCurrent } from './weatherCurrent';
 import type { WeatherDaily } from './weatherDaily';
+import type { WeatherForecastAlert } from './weatherForecastAlert';
 import type { WeatherForecastReason } from './weatherForecastReason';
 
 export interface WeatherForecast {
@@ -17,6 +18,7 @@ export interface WeatherForecast {
   locationQuery?: string;
   demo?: boolean;
   locationLabel?: string;
+  alert?: WeatherForecastAlert;
   current?: WeatherCurrent;
   daily?: WeatherDaily[];
 }

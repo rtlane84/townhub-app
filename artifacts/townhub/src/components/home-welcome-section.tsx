@@ -59,6 +59,7 @@ function CompactWeatherCard({
             H: {Math.round(today.highF)}° L: {Math.round(today.lowF)}°
           </p>
         ) : null}
+        <p className="mt-0.5 text-[8px] text-muted-foreground">Weather by Apple</p>
       </div>
     );
   }
@@ -122,6 +123,12 @@ export function HomeWelcomeSection({
         <p className="mt-2.5 text-[13px] leading-snug text-muted-foreground">
           {outlook}
         </p>
+      ) : null}
+      {weather?.alert?.summary ? (
+        <div className="mt-2.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13px] leading-snug text-red-900">
+          <span className="font-semibold">Weather alert:</span>{" "}
+          {weather.alert.summary}
+        </div>
       ) : null}
     </section>
   );

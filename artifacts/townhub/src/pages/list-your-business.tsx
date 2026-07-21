@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUser, useAuth } from "@clerk/react";
 import { useLocation } from "wouter";
+import { Link } from "wouter";
 import { BusinessPlansSection } from "@/components/business-plans-section";
 import { NativeAwareSignIn } from "@/components/native-aware-sign-in";
 import { Button } from "@/components/ui/button";
@@ -209,6 +210,8 @@ export default function ListYourBusiness() {
   const [appLoading, setAppLoading] = useState(false);
   const [reapplying, setReapplying] = useState(false);
   const [slugAvailability, setSlugAvailability] = useState<SlugAvailabilityState>({ status: "idle" });
+  const [acceptedBusinessSellerAgreement, setAcceptedBusinessSellerAgreement] = useState(false);
+  const selectedPlan = plans.find((plan) => plan.id === selectedPlanId);
 
   useEffect(() => {
     if (window.location.hash === "#plans") {
@@ -240,7 +243,7 @@ export default function ListYourBusiness() {
   }
 
   function canSubmitApplication() {
-    return canProceedStep1();
+    return canProceedStep1() && acceptedBusinessSellerAgreement;
   }
 
   const loadExistingApplication = useCallback(async () => {
@@ -331,6 +334,7 @@ export default function ListYourBusiness() {
         structuredHours: normalizeWeeklyHours(form.structuredHours),
         planId: selectedPlanId ?? undefined,
         billingInterval: selectedPlan && !isComplimentaryPricingPlan(selectedPlan) ? billingInterval : undefined,
+        acceptBusinessSellerAgreement: true,
       }),
     });
     const body = await res.json();
@@ -340,7 +344,7 @@ export default function ListYourBusiness() {
     }
     setExistingApp(null);
     setDone(true);
-  }, [form, getToken, selectedPlanId]);
+  }, [form, getToken, selectedPlanId, selectedPlan, billingInterval]);
 
   const { run: runSubmit, pending: submitting } = useAsyncAction(submitApplication);
 
@@ -476,7 +480,6 @@ export default function ListYourBusiness() {
     );
   }
 
-  const selectedPlan = plans.find((p) => p.id === selectedPlanId);
   const typeLabel = form.type ? formatBusinessTypeLabel(form.type) : "";
 
   return (
@@ -814,6 +817,25 @@ export default function ListYourBusiness() {
                 </div>
               )}
 
+              <label className="flex items-start gap-3 rounded-lg border bg-muted/20 p-3 text-sm leading-relaxed">
+                <input
+                  type="checkbox"
+                  checked={acceptedBusinessSellerAgreement}
+                  onChange={(event) => setAcceptedBusinessSellerAgreement(event.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                />
+                <span>
+                  I have authority to act for this business and agree to the{" "}
+                  <Link href="/business-seller-agreement" className="font-medium text-primary underline underline-offset-2">
+                    Business Seller Agreement
+                  </Link>{" "}
+                  and the{" "}
+                  <Link href="/terms-of-service" className="font-medium text-primary underline underline-offset-2">
+                    TownHub Terms of Service
+                  </Link>.
+                </span>
+              </label>
+
               {selectedPlan && selectedPlan.trialDays > 0 && !isComplimentaryPricingPlan(selectedPlan) && (
                 <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
                   {storeDistribution
@@ -850,7 +872,7 @@ export default function ListYourBusiness() {
               </div>
 
               <p className="text-center text-xs text-muted-foreground">
-                By submitting, you agree that your listing will be reviewed before going live on {platformName}.
+                Applications are reviewed before a listing goes live on {platformName}. No card is charged by applying.
               </p>
             </CardContent>
           </Card>

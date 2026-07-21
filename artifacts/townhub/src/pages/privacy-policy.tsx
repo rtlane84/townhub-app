@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 
-const effectiveDate = "July 14, 2026";
+const effectiveDate = "July 21, 2026";
 
 export default function PrivacyPolicy() {
   return (
@@ -36,6 +36,13 @@ export default function PrivacyPolicy() {
           service providers that support identity, hosting, database operations, payments, email,
           text messaging, push notifications, maps, and error monitoring. Payment providers process
           payment details under their own privacy terms.
+        </p>
+
+        <h2>Cookies and analytics</h2>
+        <p>
+          TownHub uses essential browser storage for sign-in, security, and cart functionality. We use
+          privacy-focused analytics to understand site performance and do not use advertising cookies or sell
+          personal information for third-party behavioral advertising.
         </p>
 
         <h2>Retention and deletion</h2>

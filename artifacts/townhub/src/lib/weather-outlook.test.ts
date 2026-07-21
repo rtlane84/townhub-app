@@ -75,6 +75,47 @@ describe("buildWeatherOutlookMessage", () => {
     assert.equal(msg, "Temperatures may reach 95° today.");
   });
 
+  it("does not call a cloudy day sunny just because it is hot", () => {
+    const now = new Date("2026-07-12T15:00:00");
+    const msg = buildWeatherOutlookMessage(
+      forecast({
+        current: { temperatureF: 83, weatherCode: 3, summary: "Mostly cloudy" },
+        daily: [
+          {
+            date: "2026-07-12",
+            highF: 91,
+            lowF: 71,
+            weatherCode: 3,
+            summary: "Mostly cloudy",
+            precipitationChance: 20,
+          },
+        ],
+      }),
+      { now },
+    );
+    assert.notEqual(msg, "Expect a warm and sunny afternoon.");
+  });
+
+  it("mentions likely rain before using a temperature fallback", () => {
+    const now = new Date("2026-07-12T15:00:00");
+    const msg = buildWeatherOutlookMessage(
+      forecast({
+        daily: [
+          {
+            date: "2026-07-12",
+            highF: 83,
+            lowF: 71,
+            weatherCode: 3,
+            summary: "Mostly cloudy",
+            precipitationChance: 70,
+          },
+        ],
+      }),
+      { now },
+    );
+    assert.equal(msg, "Rain is likely today—keep an umbrella nearby.");
+  });
+
   it("suggests dry weather when today and tomorrow are clear of rain", () => {
     const now = new Date("2026-07-12T11:00:00");
     const msg = buildWeatherOutlookMessage(

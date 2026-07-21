@@ -531,6 +531,68 @@ export const CheckBusinessSlugAvailabilityResponse = zod.object({
 
 
 /**
+ * @summary Submit a business listing application
+ */
+export const applyForBusinessListingBodyStructuredHoursItemDayOfWeekMin = 0;
+export const applyForBusinessListingBodyStructuredHoursItemDayOfWeekMax = 6;
+
+
+
+export const ApplyForBusinessListingBody = zod.object({
+  "name": zod.string(),
+  "type": zod.string(),
+  "description": zod.string().optional(),
+  "address": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(applyForBusinessListingBodyStructuredHoursItemDayOfWeekMin).max(applyForBusinessListingBodyStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).optional(),
+  "planId": zod.number().optional(),
+  "billingInterval": zod.enum(['monthly', 'yearly']).optional(),
+  "acceptBusinessSellerAgreement": zod.boolean().describe('Confirms acceptance of the current published Business Seller Agreement.')
+})
+
+
+/**
+ * @summary Get the signed-in applicant's pending business listing application
+ */
+export const getMyBusinessApplicationResponseStructuredHoursItemDayOfWeekMin = 0;
+export const getMyBusinessApplicationResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
+
+export const GetMyBusinessApplicationResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string().optional(),
+  "userEmail": zod.string().nullish(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "description": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(getMyBusinessApplicationResponseStructuredHoursItemDayOfWeekMin).max(getMyBusinessApplicationResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
+  "planId": zod.number().nullish(),
+  "billingInterval": zod.union([zod.literal('monthly'),zod.literal('yearly'),zod.literal(null)]).nullish(),
+  "planName": zod.string().nullish(),
+  "businessTermsVersion": zod.string().nullish(),
+  "businessTermsAcceptedAt": zod.coerce.date().nullish(),
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  "reviewNote": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "businessId": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
  * @summary Public business checkout context (no auth)
  */
 export const GetBusinessCheckoutParams = zod.object({
@@ -3938,6 +4000,11 @@ export const UpdatePlatformThemeResponse = zod.object({
 /**
  * @summary Get homepage weather forecast (when enabled by admin)
  */
+export const getWeatherResponseDailyItemPrecipitationChanceMin = 0;
+export const getWeatherResponseDailyItemPrecipitationChanceMax = 100;
+
+
+
 export const GetWeatherResponse = zod.object({
   "enabled": zod.boolean(),
   "unavailable": zod.boolean().optional(),
@@ -3946,6 +4013,11 @@ export const GetWeatherResponse = zod.object({
   "locationQuery": zod.string().optional(),
   "demo": zod.boolean().optional(),
   "locationLabel": zod.string().optional(),
+  "alert": zod.object({
+  "summary": zod.string().optional(),
+  "detailsUrl": zod.string().optional(),
+  "severity": zod.string().optional()
+}).optional(),
   "current": zod.object({
   "temperatureF": zod.number(),
   "weatherCode": zod.number(),
@@ -3956,7 +4028,8 @@ export const GetWeatherResponse = zod.object({
   "highF": zod.number(),
   "lowF": zod.number(),
   "weatherCode": zod.number(),
-  "summary": zod.string()
+  "summary": zod.string(),
+  "precipitationChance": zod.number().min(getWeatherResponseDailyItemPrecipitationChanceMin).max(getWeatherResponseDailyItemPrecipitationChanceMax).optional()
 })).optional()
 })
 

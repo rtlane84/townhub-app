@@ -3,6 +3,7 @@ import { isEmailConfigured } from "./email";
 import { isSmsConfigured } from "./sms";
 import { getMediaStorageBackend } from "./media-storage";
 import { getStripeKeyMode, validateStripeConfig } from "./stripe-config";
+import { isWeatherKitConfigured } from "./weatherkit";
 import { hasAnyStripeWebhookSecret } from "./stripe-webhook-verify";
 import {
   estimateNextTrialReminderRun,
@@ -562,7 +563,9 @@ export function checkBackgroundJobsHealth(): ServiceHealth {
 }
 
 export async function checkWeatherHealth(): Promise<ServiceHealth> {
-  const hasUserAgent = Boolean(process.env.GEOCODE_USER_AGENT?.trim());
+  const weatherKitConfigured = isWeatherKitConfigured();
+  const hasCoordinates = Number.isFinite(Number(process.env.WEATHERKIT_LATITUDE)) &&
+    Number.isFinite(Number(process.env.WEATHERKIT_LONGITUDE));
   const isProduction = process.env.NODE_ENV === "production";
   const lastRefresh = getLastWeatherRefresh();
 
@@ -581,8 +584,9 @@ export async function checkWeatherHealth(): Promise<ServiceHealth> {
   const baseMetadata = {
     enabled: weatherEnabled,
     location: weatherLocation || "Not set",
-    provider: "open-meteo,nominatim",
-    geocodeUserAgentConfigured: hasUserAgent,
+    provider: "apple-weatherkit",
+    weatherKitConfigured,
+    coordinatesConfigured: hasCoordinates,
     ...(lastRefresh
       ? { lastSuccessfulRefreshAt: lastRefresh.at, lastRefreshLocation: lastRefresh.location }
       : {}),
@@ -606,12 +610,12 @@ export async function checkWeatherHealth(): Promise<ServiceHealth> {
     };
   }
 
-  if (!hasUserAgent && isProduction) {
+  if ((!weatherKitConfigured || !hasCoordinates) && isProduction) {
     return {
       name: "Weather",
       status: "degraded",
-      message: "GEOCODE_USER_AGENT not set (recommended for Nominatim geocoding)",
-      metadata: { ...baseMetadata, geocodeUserAgentConfigured: false },
+      message: "WeatherKit credentials or coordinates are not configured",
+      metadata: { ...baseMetadata, weatherKitConfigured, coordinatesConfigured: hasCoordinates },
     };
   }
 
