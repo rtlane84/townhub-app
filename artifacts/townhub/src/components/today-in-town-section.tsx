@@ -49,8 +49,8 @@ function SummaryCard({
       href={href}
       className={cn(
         "flex h-full min-w-0 flex-1 flex-col overflow-hidden",
-        "min-h-[13.5rem] rounded-[1.1rem] border border-black/[0.06] bg-card",
-        "shadow-[0_1px_4px_rgba(15,23,42,0.04)] transition-transform hover:bg-muted/30 active:scale-[0.985] sm:min-h-[14.5rem]",
+        "min-h-[11rem] rounded-[1.1rem] border border-black/[0.06] bg-card",
+        "shadow-[0_1px_4px_rgba(15,23,42,0.04)] transition-transform hover:bg-muted/30 active:scale-[0.985] sm:min-h-[12rem]",
       )}
     >
       <article className="flex min-h-0 flex-1 flex-col p-2.5 sm:p-3">
@@ -110,7 +110,7 @@ function SummaryMetric({
 function CardSkeleton() {
   return (
     <div
-      className="min-h-[13.5rem] min-w-0 flex-1 animate-pulse rounded-[1.1rem] border border-black/[0.04] bg-muted/50 p-2.5 sm:min-h-[14.5rem]"
+      className="min-h-[11rem] min-w-0 flex-1 animate-pulse rounded-[1.1rem] border border-black/[0.04] bg-muted/50 p-2.5 sm:min-h-[12rem]"
       aria-hidden
     >
       <div className="mb-2 h-6 w-6 rounded-full bg-muted" />
@@ -255,7 +255,7 @@ export function TodayInTownSection({
             icon={<Truck className="h-3 w-3" />}
             iconTint="bg-sky-500/12 text-sky-700"
             footerClassName="bg-sky-500/[0.08] text-sky-700"
-            footerLabel="View all on the move"
+            footerLabel="View trucks"
             href="/food-trucks"
           >
             {truckCount > 0 ? (
@@ -294,7 +294,7 @@ export function TodayInTownSection({
             icon={<CalendarDays className="h-3 w-3" />}
             iconTint="bg-emerald-500/12 text-emerald-700"
             footerClassName="bg-emerald-500/[0.08] text-emerald-700"
-            footerLabel="View all events"
+            footerLabel="View events"
             href="/events"
           >
             {weekCount > 0 ? (
@@ -328,7 +328,7 @@ export function TodayInTownSection({
             icon={<Store className="h-3 w-3" />}
             iconTint="bg-orange-500/12 text-orange-700"
             footerClassName="bg-orange-500/[0.08] text-orange-700"
-            footerLabel="Browse marketplace"
+            footerLabel="Browse shops"
             href="/businesses"
           >
             {hasMarketplaceStats ? (
