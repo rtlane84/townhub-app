@@ -1,4 +1,5 @@
 import type { Business } from "@workspace/api-client-react";
+import { directionsUrl, type DirectionsPlatform } from "./directions.ts";
 
 export type StorefrontPresence =
   | "mobile"
@@ -28,24 +29,20 @@ export function googleMapsSearchUrl(query: string): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
-export function googleMapsDirectionsUrl(destination: string): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
-}
-
 /** Directions URL for a stop — prefers coordinates, then address, then name. */
 export function locationDirectionsUrl(loc: {
   address?: string | null;
   locationName?: string | null;
   latitude?: string | null;
   longitude?: string | null;
-}): string | null {
+}, platform?: DirectionsPlatform): string | null {
   const lat = loc.latitude?.trim();
   const lng = loc.longitude?.trim();
   if (lat && lng) {
-    return googleMapsDirectionsUrl(`${lat},${lng}`);
+    return directionsUrl(`${lat},${lng}`, platform);
   }
   const query = loc.address?.trim() || loc.locationName?.trim();
-  return query ? googleMapsDirectionsUrl(query) : null;
+  return query ? directionsUrl(query, platform) : null;
 }
 
 const FAVORITES_KEY = "townhub:favorite-business-ids";

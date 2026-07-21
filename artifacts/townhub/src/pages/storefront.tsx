@@ -55,11 +55,11 @@ import { resolveBusinessHours } from "@/lib/business-hours";
 import { getStorefrontStatusLine } from "@/lib/business-listing";
 import { usePlatformBranding } from "@/components/theme-provider";
 import {
-  googleMapsDirectionsUrl,
   locationDirectionsUrl,
   resolveStorefrontPresence,
   shareStorefrontPage,
 } from "@/lib/storefront-presence";
+import { directionsUrl } from "@/lib/directions";
 import { cn } from "@/lib/utils";
 import { triggerNativeHaptic } from "@/lib/native-haptics";
 import { isNativeApp } from "@/lib/native-platform";
@@ -545,7 +545,7 @@ export default function Storefront() {
                     <QuickAction
                       label="Directions"
                       icon={Navigation}
-                      href={googleMapsDirectionsUrl(address)}
+                      href={directionsUrl(address)}
                       external
                     />
                   ) : null}

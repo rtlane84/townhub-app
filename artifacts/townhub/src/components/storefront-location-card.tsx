@@ -2,11 +2,11 @@ import type { FoodTruckLocation } from "@workspace/api-client-react";
 import { formatTimeRange12h } from "@workspace/api-zod";
 import { Button } from "@/components/ui/button";
 import {
-  googleMapsDirectionsUrl,
   googleMapsSearchUrl,
   locationDirectionsUrl,
   type StorefrontPresence,
 } from "@/lib/storefront-presence";
+import { directionsUrl } from "@/lib/directions";
 import type { StorefrontStatusLine } from "@/lib/business-listing";
 import { cn } from "@/lib/utils";
 import { MapPin, Navigation, Truck } from "lucide-react";
@@ -144,7 +144,7 @@ export function StorefrontLocationCard({
           </div>
           <Button asChild size="sm" variant="outline" className="h-9 rounded-full">
             <a
-              href={googleMapsDirectionsUrl(trimmed)}
+              href={directionsUrl(trimmed)}
               target="_blank"
               rel="noopener noreferrer"
             >
