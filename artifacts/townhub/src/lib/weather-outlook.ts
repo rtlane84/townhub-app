@@ -3,21 +3,45 @@ import type {
   WeatherForecast,
 } from "@workspace/api-client-react";
 
-/** WMO code buckets used for outlook messaging. */
-function isThunderstorm(code: number) {
-  return code >= 95;
+/** WeatherKit condition groups used for TownHub's forecast wording. */
+function isThunderstorm(conditionCode: string) {
+  return [
+    "IsolatedThunderstorms",
+    "ScatteredThunderstorms",
+    "StrongStorms",
+    "Thunderstorms",
+  ].includes(conditionCode);
 }
-function isSnow(code: number) {
-  return (code >= 71 && code <= 77) || (code >= 85 && code <= 86);
+function isSnow(conditionCode: string) {
+  return [
+    "Blizzard",
+    "BlowingSnow",
+    "Flurries",
+    "HeavySnow",
+    "Sleet",
+    "Snow",
+    "SunFlurries",
+    "WintryMix",
+  ].includes(conditionCode);
 }
-function isHeavyRain(code: number) {
-  return (code >= 63 && code <= 67) || (code >= 80 && code <= 82);
+function isHeavyRain(conditionCode: string) {
+  return ["HeavyRain", "Hurricane", "TropicalStorm"].includes(conditionCode);
 }
-function isRain(code: number) {
-  return (code >= 51 && code <= 67) || (code >= 80 && code <= 82);
+function isRain(conditionCode: string) {
+  return [
+    "Drizzle",
+    "FreezingDrizzle",
+    "FreezingRain",
+    "HeavyRain",
+    "Hurricane",
+    "Rain",
+    "Showers",
+    "SunShowers",
+    "TropicalStorm",
+  ].includes(conditionCode);
 }
-function isClearOrSunny(code: number) {
-  return code === 0 || code === 1;
+function isClearOrSunny(conditionCode: string) {
+  return conditionCode === "Clear" || conditionCode === "MostlyClear";
 }
 
 function localDateKey(d = new Date()) {
@@ -81,22 +105,22 @@ export function buildWeatherOutlookMessage(
 
   // Priority: storms, snow, heavy rain, extreme heat/cold, big swings
   if (
-    isThunderstorm(today.weatherCode) ||
-    isThunderstorm(current.weatherCode)
+    isThunderstorm(today.conditionCode) ||
+    isThunderstorm(current.conditionCode)
   ) {
     return place
       ? `Storms may move through ${place} ${period === "morning" ? "later today" : period}.`
       : `Storms may move through ${period === "morning" ? "later today" : period}.`;
   }
 
-  if (isSnow(today.weatherCode) || isSnow(current.weatherCode)) {
+  if (isSnow(today.conditionCode) || isSnow(current.conditionCode)) {
     return hour < 12
       ? "Snow is possible today — dress warm."
       : "Snow may continue into the evening.";
   }
 
-  if (isHeavyRain(today.weatherCode) || isHeavyRain(current.weatherCode)) {
-    if (hour < 12 && !isRain(current.weatherCode)) {
+  if (isHeavyRain(today.conditionCode) || isHeavyRain(current.conditionCode)) {
+    if (hour < 12 && !isRain(current.conditionCode)) {
       return "Morning rain should clear later today.";
     }
     return period === "afternoon" || period === "evening"
@@ -104,11 +128,11 @@ export function buildWeatherOutlookMessage(
       : "Expect wet weather through the day.";
   }
 
-  if (isRain(today.weatherCode) && !isRain(current.weatherCode) && hour < 14) {
+  if (isRain(today.conditionCode) && !isRain(current.conditionCode) && hour < 14) {
     return "Rain is possible later this afternoon.";
   }
 
-  if (isRain(current.weatherCode) && hour < 12) {
+  if (isRain(current.conditionCode) && hour < 12) {
     return "Morning rain should clear later today.";
   }
 
@@ -116,7 +140,7 @@ export function buildWeatherOutlookMessage(
     return `Temperatures may reach ${Math.round(today.highF)}° today.`;
   }
 
-  if (today.highF >= 90 && isClearOrSunny(today.weatherCode)) {
+  if (today.highF >= 90 && isClearOrSunny(today.conditionCode)) {
     return "Expect a warm and sunny afternoon.";
   }
 
@@ -153,25 +177,25 @@ export function buildWeatherOutlookMessage(
 
   if (
     tomorrow &&
-    !isRain(today.weatherCode) &&
-    !isRain(tomorrow.weatherCode) &&
-    !isThunderstorm(today.weatherCode) &&
-    !isThunderstorm(tomorrow.weatherCode)
+    !isRain(today.conditionCode) &&
+    !isRain(tomorrow.conditionCode) &&
+    !isThunderstorm(today.conditionCode) &&
+    !isThunderstorm(tomorrow.conditionCode)
   ) {
     return "Dry weather is expected through tomorrow.";
   }
 
-  if (isClearOrSunny(today.weatherCode) && today.highF >= 75 && hour < 17) {
+  if (isClearOrSunny(today.conditionCode) && today.highF >= 75 && hour < 17) {
     return "Expect a warm and sunny afternoon.";
   }
 
-  if (tomorrow && isThunderstorm(tomorrow.weatherCode)) {
+  if (tomorrow && isThunderstorm(tomorrow.conditionCode)) {
     return place
       ? `Storms may move through ${place} tomorrow.`
       : "Storms may move through tomorrow.";
   }
 
-  if (tomorrow && isRain(tomorrow.weatherCode)) {
+  if (tomorrow && isRain(tomorrow.conditionCode)) {
     return "Rain is possible tomorrow.";
   }
 
@@ -195,8 +219,8 @@ export function buildWeatherWarningMessage(
   }
 
   const today = weather.daily[0];
-  const currentCode = weather.current?.weatherCode ?? 0;
-  const hasThunderstorm = currentCode >= 95 || today.weatherCode >= 95;
+  const currentCondition = weather.current?.conditionCode ?? "Unknown";
+  const hasThunderstorm = isThunderstorm(currentCondition) || isThunderstorm(today.conditionCode);
   if (hasThunderstorm) {
     return "Thunderstorms are possible today. Stay weather-aware.";
   }
@@ -209,10 +233,10 @@ export function buildWeatherWarningMessage(
 }
 
 function outlookFromDaily(day: WeatherDaily, when: string): string | null {
-  if (isThunderstorm(day.weatherCode))
+  if (isThunderstorm(day.conditionCode))
     return `Storms may move through ${when}.`;
-  if (isSnow(day.weatherCode)) return `Snow is possible ${when}.`;
-  if (isRain(day.weatherCode)) return `Rain is possible ${when}.`;
+  if (isSnow(day.conditionCode)) return `Snow is possible ${when}.`;
+  if (isRain(day.conditionCode)) return `Rain is possible ${when}.`;
   if (day.highF >= 90) return `Expect warm temperatures ${when}.`;
   if (day.highF <= 45) return `A cooler day is ahead ${when}.`;
   return null;

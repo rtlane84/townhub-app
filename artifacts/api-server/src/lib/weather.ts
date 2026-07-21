@@ -1,5 +1,4 @@
 import { logger } from "./logger";
-import { weatherCodeSummary } from "./weather-codes";
 import {
   fetchWeatherKit,
   logWeatherKitError,
@@ -7,7 +6,8 @@ import {
 
 export type WeatherCurrent = {
   temperatureF: number;
-  weatherCode: number;
+  /** Native WeatherKit condition, such as `Foggy` or `ScatteredThunderstorms`. */
+  conditionCode: string;
   summary: string;
 };
 
@@ -15,7 +15,8 @@ export type WeatherDaily = {
   date: string;
   highF: number;
   lowF: number;
-  weatherCode: number;
+  /** Native WeatherKit condition, such as `Foggy` or `ScatteredThunderstorms`. */
+  conditionCode: string;
   summary: string;
   precipitationChance?: number;
 };
@@ -86,13 +87,13 @@ export function buildDemoWeatherForecast(
   const daily: WeatherDaily[] = Array.from({ length: 5 }, (_, index) => {
     const date = new Date(today);
     date.setDate(today.getDate() + index);
-    const code = index % 2 === 0 ? 2 : 3;
+    const conditionCode = index % 2 === 0 ? "PartlyCloudy" : "MostlyCloudy";
     return {
       date: date.toISOString().slice(0, 10),
       highF: 74 + index,
       lowF: 58 + index,
-      weatherCode: code,
-      summary: weatherCodeSummary(code),
+      conditionCode,
+      summary: weatherKitConditionLabel(conditionCode),
       precipitationChance: 0,
     };
   });
@@ -103,8 +104,8 @@ export function buildDemoWeatherForecast(
     locationLabel: locationLabel ?? locationQuery,
     current: {
       temperatureF: 68,
-      weatherCode: 2,
-      summary: weatherCodeSummary(2),
+      conditionCode: "PartlyCloudy",
+      summary: weatherKitConditionLabel("PartlyCloudy"),
     },
     daily,
   };
@@ -170,15 +171,15 @@ export async function fetchWeatherForecast(locationQuery: string): Promise<Weath
     };
   }
 
-  const currentCode = weatherKitConditionToWmo(data.currentWeather?.conditionCode);
+  const currentConditionCode = normalizeWeatherKitCondition(data.currentWeather?.conditionCode);
   const daily: WeatherDaily[] = days.slice(0, 5).map((day) => {
-    const code = weatherKitConditionToWmo(day.conditionCode);
+    const conditionCode = normalizeWeatherKitCondition(day.conditionCode);
     return {
       date: day.forecastStart?.slice(0, 10) ?? "",
       highF: Math.round(celsiusToFahrenheit(day.temperatureMax ?? 0)),
       lowF: Math.round(celsiusToFahrenheit(day.temperatureMin ?? 0)),
-      weatherCode: code,
-      summary: weatherCodeSummary(code),
+      conditionCode,
+      summary: weatherKitConditionLabel(conditionCode),
       precipitationChance: Math.round((day.precipitationChance ?? 0) * 100),
     };
   });
@@ -188,8 +189,8 @@ export async function fetchWeatherForecast(locationQuery: string): Promise<Weath
     locationLabel: trimmed,
     current: {
       temperatureF: Math.round(celsiusToFahrenheit(currentTempC)),
-      weatherCode: currentCode,
-      summary: weatherCodeSummary(currentCode),
+      conditionCode: currentConditionCode,
+      summary: weatherKitConditionLabel(currentConditionCode),
     },
     daily,
   };
@@ -212,37 +213,13 @@ function celsiusToFahrenheit(value: number): number {
   return (value * 9) / 5 + 32;
 }
 
-function weatherKitConditionToWmo(conditionCode?: string): number {
-  switch (conditionCode) {
-    case "Clear":
-    case "MostlyClear":
-      return 0;
-    case "PartlyCloudy":
-      return 2;
-    case "MostlyCloudy":
-      return 3;
-    case "Cloudy":
-    case "Foggy":
-    case "Haze":
-      return 45;
-    case "Drizzle":
-    case "FreezingDrizzle":
-      return 51;
-    case "Rain":
-    case "Showers":
-    case "HeavyRain":
-      return 63;
-    case "Snow":
-    case "Flurries":
-    case "HeavySnow":
-      return 73;
-    case "Sleet":
-    case "FreezingRain":
-    case "Hail":
-      return 66;
-    case "Thunderstorms":
-      return 95;
-    default:
-      return 2;
-  }
+function normalizeWeatherKitCondition(conditionCode?: string): string {
+  const normalized = conditionCode?.trim();
+  return normalized || "Unknown";
+}
+
+/** Turns the provider's stable condition code into a readable label without collapsing it. */
+export function weatherKitConditionLabel(conditionCode: string): string {
+  if (conditionCode === "Unknown") return "Unknown";
+  return conditionCode.replace(/([a-z])([A-Z])/g, "$1 $2");
 }

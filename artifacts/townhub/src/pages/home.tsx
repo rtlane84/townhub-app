@@ -138,6 +138,8 @@ export default function Home() {
       queryKey: getGetWeatherQueryKey(),
       enabled: weatherEnabled,
       staleTime: 5 * 60 * 1000,
+      refetchInterval: 10 * 60 * 1000,
+      refetchIntervalInBackground: false,
       retry: 1,
       placeholderData: keepPreviousData,
     },

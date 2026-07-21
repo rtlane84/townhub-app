@@ -16,8 +16,8 @@ function forecast(
     enabled: true,
     current: {
       temperatureF: 71,
-      weatherCode: 2,
-      summary: "Partly cloudy",
+      conditionCode: "PartlyCloudy",
+      summary: "Partly Cloudy",
     },
     ...partial,
   };
@@ -45,8 +45,8 @@ describe("buildWeatherOutlookMessage", () => {
             date: "2026-07-12",
             highF: 83,
             lowF: 64,
-            weatherCode: 95,
-            summary: "Thunderstorm",
+            conditionCode: "Thunderstorms",
+            summary: "Thunderstorms",
           },
         ],
       }),
@@ -66,7 +66,7 @@ describe("buildWeatherOutlookMessage", () => {
             date: "2026-07-12",
             highF: 95,
             lowF: 72,
-            weatherCode: 0,
+            conditionCode: "Clear",
             summary: "Clear",
           },
         ],
@@ -80,14 +80,14 @@ describe("buildWeatherOutlookMessage", () => {
     const now = new Date("2026-07-12T15:00:00");
     const msg = buildWeatherOutlookMessage(
       forecast({
-        current: { temperatureF: 83, weatherCode: 3, summary: "Mostly cloudy" },
+        current: { temperatureF: 83, conditionCode: "MostlyCloudy", summary: "Mostly Cloudy" },
         daily: [
           {
             date: "2026-07-12",
             highF: 91,
             lowF: 71,
-            weatherCode: 3,
-            summary: "Mostly cloudy",
+            conditionCode: "MostlyCloudy",
+            summary: "Mostly Cloudy",
             precipitationChance: 20,
           },
         ],
@@ -106,8 +106,8 @@ describe("buildWeatherOutlookMessage", () => {
             date: "2026-07-12",
             highF: 83,
             lowF: 71,
-            weatherCode: 3,
-            summary: "Mostly cloudy",
+            conditionCode: "MostlyCloudy",
+            summary: "Mostly Cloudy",
             precipitationChance: 70,
           },
         ],
@@ -125,7 +125,7 @@ describe("buildWeatherOutlookMessage", () => {
             date: "2026-07-12",
             highF: 84,
             lowF: 71,
-            weatherCode: 95,
+            conditionCode: "Thunderstorms",
             summary: "Thunderstorms",
           },
         ],
@@ -143,7 +143,7 @@ describe("buildWeatherOutlookMessage", () => {
             date: "2026-07-12",
             highF: 84,
             lowF: 71,
-            weatherCode: 95,
+            conditionCode: "Thunderstorms",
             summary: "Thunderstorms",
           },
         ],
@@ -156,20 +156,20 @@ describe("buildWeatherOutlookMessage", () => {
     const now = new Date("2026-07-12T11:00:00");
     const msg = buildWeatherOutlookMessage(
       forecast({
-        current: { temperatureF: 70, weatherCode: 1, summary: "Mainly clear" },
+        current: { temperatureF: 70, conditionCode: "MostlyClear", summary: "Mostly Clear" },
         daily: [
           {
             date: "2026-07-12",
             highF: 78,
             lowF: 58,
-            weatherCode: 1,
-            summary: "Mainly clear",
+            conditionCode: "MostlyClear",
+            summary: "Mostly Clear",
           },
           {
             date: "2026-07-13",
             highF: 80,
             lowF: 60,
-            weatherCode: 0,
+            conditionCode: "Clear",
             summary: "Clear",
           },
         ],

@@ -18,4 +18,8 @@ WeatherKit accepts coordinates rather than a place-name query, so the latitude a
 
 WeatherKit requires Apple attribution wherever its weather data is displayed. TownHub displays “Weather by Apple” alongside the homepage weather card.
 
+`GET /api/weather` preserves Apple's `conditionCode` values (for example, `Foggy`, `MostlyCloudy`, or `ScatteredThunderstorms`) and includes a readable `summary`. This makes the provider value easy to verify without exposing the private key: after deployment, open the endpoint in a browser and inspect `current.conditionCode` and each `daily[].conditionCode`. TownHub uses those values for its weather icon and friendly forecast sentence.
+
+The API caches a WeatherKit response for up to 10 minutes. The active homepage refreshes weather every 10 minutes; reloading the page or returning focus to it may also fetch a newer response once the browser cache is stale.
+
 If WeatherKit is not configured, development may use the existing demo fallback. Production returns an unavailable state and does not fabricate forecast data.

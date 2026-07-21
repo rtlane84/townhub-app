@@ -48,7 +48,7 @@ function CompactWeatherCard({
         aria-label={`Weather: ${weather.current.temperatureF} degrees, ${weather.current.summary}`}
       >
         <WeatherIcon
-          code={weather.current.weatherCode}
+          conditionCode={weather.current.conditionCode}
           className="h-5 w-5 text-amber-500"
         />
         <p className="mt-0.5 text-lg font-bold leading-none tracking-tight text-platform-heading">

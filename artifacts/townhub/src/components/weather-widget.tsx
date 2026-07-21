@@ -10,25 +10,57 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function weatherIconForCode(code: number): LucideIcon {
-  if (code === 0) return Sun;
-  if (code <= 3) return CloudSun;
-  if (code <= 48) return CloudFog;
-  if (code <= 67) return CloudRain;
-  if (code <= 77) return CloudSnow;
-  if (code <= 86) return CloudSnow;
-  if (code >= 95) return CloudLightning;
-  return Cloud;
+export function weatherIconForCondition(conditionCode: string): LucideIcon {
+  switch (conditionCode) {
+    case "Clear":
+    case "MostlyClear":
+      return Sun;
+    case "PartlyCloudy":
+    case "MostlyCloudy":
+      return CloudSun;
+    case "Foggy":
+    case "Haze":
+    case "Smoky":
+      return CloudFog;
+    case "Drizzle":
+    case "FreezingDrizzle":
+    case "Rain":
+    case "HeavyRain":
+    case "Showers":
+    case "SunShowers":
+    case "FreezingRain":
+    case "Hurricane":
+    case "TropicalStorm":
+      return CloudRain;
+    case "Flurries":
+    case "Sleet":
+    case "Snow":
+    case "SunFlurries":
+    case "WintryMix":
+    case "Blizzard":
+    case "BlowingSnow":
+    case "HeavySnow":
+      return CloudSnow;
+    case "IsolatedThunderstorms":
+    case "ScatteredThunderstorms":
+    case "StrongStorms":
+    case "Thunderstorms":
+      return CloudLightning;
+    case "Cloudy":
+      return Cloud;
+    default:
+      return Cloud;
+  }
 }
 
 export function WeatherIcon({
-  code,
+  conditionCode,
   className,
 }: {
-  code: number;
+  conditionCode: string;
   className?: string;
 }) {
-  const Icon = weatherIconForCode(code);
+  const Icon = weatherIconForCondition(conditionCode);
   return <Icon className={cn("shrink-0", className)} aria-hidden />;
 }
 
@@ -44,13 +76,13 @@ export function WeatherCardContent({
   daily,
 }: {
   locationLabel: string;
-  current: { temperatureF: number; weatherCode: number; summary: string };
-  daily: Array<{ date: string; highF: number; lowF: number; weatherCode: number }>;
+  current: { temperatureF: number; conditionCode: string; summary: string };
+  daily: Array<{ date: string; highF: number; lowF: number; conditionCode: string }>;
 }) {
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex min-w-0 items-start gap-3">
-        <WeatherIcon code={current.weatherCode} className="mt-0.5 h-8 w-8 text-primary" />
+        <WeatherIcon conditionCode={current.conditionCode} className="mt-0.5 h-8 w-8 text-primary" />
         <div className="min-w-0">
           <p className="truncate text-xs text-muted-foreground">{locationLabel}</p>
           <p className="mt-0.5 text-2xl font-semibold tracking-tight text-foreground">
@@ -66,7 +98,7 @@ export function WeatherCardContent({
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 {formatDayLabel(day.date)}
               </p>
-              <WeatherIcon code={day.weatherCode} className="mx-auto my-1 h-4 w-4 text-muted-foreground" />
+              <WeatherIcon conditionCode={day.conditionCode} className="mx-auto my-1 h-4 w-4 text-muted-foreground" />
               <p className="text-xs font-semibold text-foreground">{day.highF}°</p>
             </div>
           ))}
@@ -94,8 +126,8 @@ export function WeatherWidget({
   daily,
 }: {
   locationLabel: string;
-  current: { temperatureF: number; weatherCode: number; summary: string };
-  daily: Array<{ date: string; highF: number; lowF: number; weatherCode: number }>;
+  current: { temperatureF: number; conditionCode: string; summary: string };
+  daily: Array<{ date: string; highF: number; lowF: number; conditionCode: string }>;
 }) {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-3 rounded-xl border border-border/60 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:gap-4">

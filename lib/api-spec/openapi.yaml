@@ -5178,18 +5178,19 @@ components:
 
     WeatherCurrent:
       type: object
-      required: [temperatureF, weatherCode, summary]
+      required: [temperatureF, conditionCode, summary]
       properties:
         temperatureF:
           type: number
-        weatherCode:
-          type: integer
+        conditionCode:
+          type: string
+          description: Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms.
         summary:
           type: string
 
     WeatherDaily:
       type: object
-      required: [date, highF, lowF, weatherCode, summary]
+      required: [date, highF, lowF, conditionCode, summary]
       properties:
         date:
           type: string
@@ -5198,8 +5199,9 @@ components:
           type: number
         lowF:
           type: number
-        weatherCode:
-          type: integer
+        conditionCode:
+          type: string
+          description: Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms.
         summary:
           type: string
         precipitationChance:

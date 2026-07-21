@@ -8,6 +8,7 @@
 
 export interface WeatherCurrent {
   temperatureF: number;
-  weatherCode: number;
+  /** Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms. */
+  conditionCode: string;
   summary: string;
 }

@@ -4020,14 +4020,14 @@ export const GetWeatherResponse = zod.object({
 }).optional(),
   "current": zod.object({
   "temperatureF": zod.number(),
-  "weatherCode": zod.number(),
+  "conditionCode": zod.string().describe('Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms.'),
   "summary": zod.string()
 }).optional(),
   "daily": zod.array(zod.object({
   "date": zod.coerce.date(),
   "highF": zod.number(),
   "lowF": zod.number(),
-  "weatherCode": zod.number(),
+  "conditionCode": zod.string().describe('Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms.'),
   "summary": zod.string(),
   "precipitationChance": zod.number().min(getWeatherResponseDailyItemPrecipitationChanceMin).max(getWeatherResponseDailyItemPrecipitationChanceMax).optional()
 })).optional()
