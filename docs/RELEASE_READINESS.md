@@ -1,7 +1,5 @@
 # TownHub Release Readiness
 
-> Historical record. Use [DEPLOYMENT.md](../DEPLOYMENT.md) and [OPERATIONS.md](../OPERATIONS.md) for current instructions.
-
 **Baseline commit:** `833f4f12`
 **Audit started:** July 14, 2026
 **Latest audit update:** July 16, 2026
@@ -54,7 +52,7 @@ E2E_STRIPE_CHECKOUT=1 \
 pnpm exec playwright test tests/e2e/workflows/stripe-checkout.spec.ts
 ```
 
-Refresh owner auth storage first if sessions expired (`docs/TESTING.md`).
+Refresh owner auth storage first if sessions expired (`docs/PLAYWRIGHT_E2E.md`).
 
 2. **Internal TestFlight build (staging API)** — preferred first archive
 
@@ -64,7 +62,7 @@ pnpm release:ios:staging
 pnpm release:ios:open
 ```
 
-Xcode: Run on physical iPhone → smoke matrix below → **Product → Archive** → Validate → Upload to TestFlight. Day-to-day process: [DEPLOYMENT.md](../DEPLOYMENT.md).
+Xcode: Run on physical iPhone → smoke matrix below → **Product → Archive** → Validate → Upload to TestFlight. Day-to-day process: [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
 
 3. **App Store candidate (production API)** — after internal TF looks good
 

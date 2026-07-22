@@ -6,9 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-/**
- * @deprecated
- */
 export interface CheckoutSessionResult {
   /** @nullable */
   url: string | null;

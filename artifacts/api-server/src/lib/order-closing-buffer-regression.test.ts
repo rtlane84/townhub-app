@@ -88,17 +88,17 @@ describe("orderClosingBufferMinutes regression", () => {
     assert.match(businesses, /orderClosingBufferMinutes: b\.orderClosingBufferMinutes \?\? 0/);
   });
 
-  it("schema owns the default and API startup performs no schema mutation", () => {
-    const schema = readFileSync(
-      join(root, "lib/db/src/schema/businesses.ts"),
+  it("bootstrap SQL is idempotent with DEFAULT 0", () => {
+    const ensure = readFileSync(
+      join(apiServerRoot, "src/lib/ensure-business-fulfillment-schema.ts"),
       "utf8",
     );
     const index = readFileSync(join(apiServerRoot, "src/index.ts"), "utf8");
     assert.match(
-      schema,
-      /orderClosingBufferMinutes: integer\("order_closing_buffer_minutes"\)\.notNull\(\)\.default\(0\)/,
+      ensure,
+      /ADD COLUMN IF NOT EXISTS order_closing_buffer_minutes integer NOT NULL DEFAULT 0/,
     );
-    assert.doesNotMatch(index, /ensureOrderClosingBufferMinutesColumn|ALTER TABLE|CREATE TABLE/);
+    assert.match(index, /ensureOrderClosingBufferMinutesColumn/);
   });
 
   it("customer surfaces no longer reference orderCutoffTime", () => {

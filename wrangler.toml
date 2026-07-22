@@ -10,7 +10,7 @@
 #                       VITE_DISTRIBUTION_CHANNEL=web
 #                       VITE_API_BASE_URL=https://api-staging.townhub.io
 #                       VITE_CLERK_PUBLISHABLE_KEY=pk_test_…
-#                       NODE_VERSION=24
+#                       NODE_VERSION=22
 #
 # Production project (Git branch: main)
 #   Worker / deploy:    npx wrangler deploy --env production → script townhub-production
@@ -20,7 +20,7 @@
 #                       VITE_DISTRIBUTION_CHANNEL=web
 #                       VITE_API_BASE_URL=https://api.townhub.io
 #                       VITE_CLERK_PUBLISHABLE_KEY=pk_live_…
-#                       NODE_VERSION=24
+#                       NODE_VERSION=22
 #
 # Shared settings for both projects:
 #   Root directory:     (leave empty — repo root)

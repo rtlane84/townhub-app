@@ -1,6 +1,6 @@
 # TownHub Architecture
 
-System design reference for developers and AI assistants. For setup instructions see [DEVELOPMENT.md](DEVELOPMENT.md). For security rules see [../SECURITY.md](../SECURITY.md).
+System design reference for developers and AI assistants. For setup instructions see [SETUP.md](SETUP.md). For security rules see [../SECURITY.md](../SECURITY.md).
 
 ---
 
@@ -299,7 +299,7 @@ order. Signed-in customer links omit the token and rely on Clerk authorization.
 - Frontend: `@sentry/react` via `main.tsx`
 - Dev-only test routes: `GET /api/debug/sentry`, `/debug/sentry` page
 
-Setup and verification: [OPERATIONS.md](OPERATIONS.md).
+Setup and verification: [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry-setup).
 
 ---
 
@@ -394,7 +394,7 @@ Internal jobs (`POST /api/internal/jobs/subscription-trial-reminders`) require `
 
 ## Related Documentation
 
-- [DEVELOPMENT.md](DEVELOPMENT.md) — local development
+- [SETUP.md](SETUP.md) — local development
 - [../SECURITY.md](../SECURITY.md) — authorization matrix
-- [DEPLOYMENT.md](DEPLOYMENT.md) — deployment
+- [../PRODUCTION.md](../PRODUCTION.md) — deployment
 - [../lib/api-spec/openapi.yaml](../lib/api-spec/openapi.yaml) — full API contract

@@ -14,7 +14,6 @@ export interface BusinessApplicationInput {
   description?: string;
   address?: string;
   phone?: string;
-  hours?: string;
   structuredHours?: BusinessDayHours[];
   planId?: number;
   billingInterval?: BusinessApplicationInputBillingInterval;

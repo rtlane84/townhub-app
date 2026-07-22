@@ -51,7 +51,7 @@ pnpm run release:check-env -- --environment staging --component native
 pnpm --filter @workspace/townhub run ios:sync
 ```
 
-`ios:sync` builds the Vite application and copies `dist/public` into the native project. Any React code, help copy, legal copy, build-time variable, Capacitor configuration, plugin, entitlement, or bundled asset change requires a new iOS build and App Store Connect upload. A website deploy alone does not update an installed app. See [DEPLOYMENT.md](./DEPLOYMENT.md) for branch and versioning rules.
+`ios:sync` builds the Vite application and copies `dist/public` into the native project. Any React code, help copy, legal copy, build-time variable, Capacitor configuration, plugin, entitlement, or bundled asset change requires a new iOS build and App Store Connect upload. A website deploy alone does not update an installed app. See [RELEASE_PROCESS.md](./RELEASE_PROCESS.md) for day-to-day branch and versioning rules.
 
 ## Environment targeting
 
@@ -60,7 +60,7 @@ pnpm --filter @workspace/townhub run ios:sync
 - Increment `CURRENT_PROJECT_VERSION` for every App Store Connect upload.
 - Never submit a staging-targeted archive as the production App Store version.
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for the isolation requirements.
+See [ENVIRONMENTS.md](./ENVIRONMENTS.md) for the full isolation matrix.
 
 ## Authentication
 
@@ -170,7 +170,7 @@ Before archive, verify in Xcode:
 
 ## Day-to-day releases
 
-For branch flow (`develop` → staging, `main` → production), when a new IPA is required, version numbering, and the full script cheat sheet, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+For branch flow (`develop` → staging, `main` → production), when a new IPA is required, version numbering, and the full script cheat sheet, see [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
 
 Quick prepare commands (replaces manual `source .env.native.*` + `ios:sync`):
 

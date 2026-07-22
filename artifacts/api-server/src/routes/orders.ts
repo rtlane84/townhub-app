@@ -22,6 +22,7 @@ import {
   ListBusinessOrdersParams,
   GetBusinessOrderSummaryParams,
   ListAllOrdersQueryParams,
+  CreateCheckoutSessionBody,
   RefundOrderParams,
   RefundOrderBody,
   EstimateOrderPrepBody,

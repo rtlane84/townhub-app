@@ -1,12 +1,6 @@
 import { useState } from "react";
-import {
-  getListBusinessApplicationsQueryKey,
-  useApproveBusinessApplication,
-  useListBusinessApplications,
-  useListSubscriptionPlans,
-  useRejectBusinessApplication,
-  type BusinessApplication,
-} from "@workspace/api-client-react";
+import { useAuth } from "@clerk/react";
+import { useListSubscriptionPlans } from "@workspace/api-client-react";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,13 +13,34 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { triggerBusinessApprovedHaptic } from "@/lib/native-haptics";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, XCircle, Building2, User, Calendar, Layers, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { planAssignmentLabel } from "@/lib/subscription-plans";
 import { BusinessHoursDisplay } from "@/components/business-hours-display";
+import type { BusinessDayHours } from "@workspace/api-client-react";
+import { resolveApiUrl } from "@/lib/api-base-url";
 
-type Application = BusinessApplication;
+interface Application {
+  id: number;
+  userId: string;
+  userEmail: string | null;
+  name: string;
+  type: string;
+  description: string | null;
+  address: string | null;
+  phone: string | null;
+  hours: string | null;
+  structuredHours: BusinessDayHours[] | null;
+  planId: number | null;
+  billingInterval?: "monthly" | "yearly" | null;
+  planName: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  reviewNote: string | null;
+  reviewedAt: string | null;
+  businessId: number | null;
+  createdAt: string;
+}
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -39,7 +54,22 @@ function formatDate(iso: string) {
   });
 }
 
+function useApplications(getToken: () => Promise<string | null>) {
+  return useQuery<Application[]>({
+    queryKey: ["admin", "applications"],
+    queryFn: async () => {
+      const token = await getToken();
+      const res = await fetch(resolveApiUrl("/api/admin/applications"), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Failed to load applications");
+      return res.json() as Promise<Application[]>;
+    },
+  });
+}
+
 export default function AdminApplications() {
+  const { getToken } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -51,10 +81,16 @@ export default function AdminApplications() {
   const [rejectNote, setRejectNote] = useState("");
   const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  const { data: applications, isLoading } = useListBusinessApplications({});
+  const { data: applications, isLoading } = useApplications(getToken);
   const { data: plans = [] } = useListSubscriptionPlans({});
-  const approveApplication = useApproveBusinessApplication();
-  const rejectApplication = useRejectBusinessApplication();
+
+  async function safeJson(res: Response): Promise<Record<string, unknown>> {
+    const ct = res.headers.get("content-type") ?? "";
+    if (ct.includes("application/json")) {
+      return res.json() as Promise<Record<string, unknown>>;
+    }
+    return { error: `Server error (${res.status})` };
+  }
 
   function openApproveDialog(app: Application) {
     const defaultPlan =
@@ -73,17 +109,30 @@ export default function AdminApplications() {
     const id = approveDialog.id;
     setActionLoading(id);
     try {
+      const token = await getToken();
       const body: { planId?: number; billingInterval?: "monthly" | "yearly" } = {};
       if (approvePlanId) {
         body.planId = parseInt(approvePlanId, 10);
       }
       body.billingInterval = approveBillingInterval;
-      const result = await approveApplication.mutateAsync({ id, data: body });
+      const res = await fetch(resolveApiUrl(`/api/admin/applications/${id}/approve`), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+      const resBody = await safeJson(res);
+      if (!res.ok) {
+        toast({ title: "Approval failed", description: String(resBody.error ?? "Failed to approve"), variant: "destructive" });
+        return;
+      }
       triggerBusinessApprovedHaptic();
-      toast({ title: "Application approved", description: result.message, skipNativeHaptic: true });
+      toast({ title: "Application approved", description: String(resBody.message ?? "Business created successfully."), skipNativeHaptic: true });
       setApproveDialog(null);
       setApprovePlanId("");
-      await queryClient.invalidateQueries({ queryKey: getListBusinessApplicationsQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "applications"] });
     } catch (err) {
       toast({ title: "Network error", description: "Could not reach the server. Please try again.", variant: "destructive" });
       console.error(err);
@@ -96,14 +145,24 @@ export default function AdminApplications() {
     if (!rejectDialog || actionLoading !== null) return;
     setActionLoading(rejectDialog.id);
     try {
-      const result = await rejectApplication.mutateAsync({
-        id: rejectDialog.id,
-        data: { note: rejectNote },
+      const token = await getToken();
+      const res = await fetch(resolveApiUrl(`/api/admin/applications/${rejectDialog.id}/reject`), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ note: rejectNote }),
       });
-      toast({ title: "Application rejected", description: result.message });
+      const body = await safeJson(res);
+      if (!res.ok) {
+        toast({ title: "Error", description: String(body.error ?? "Failed to reject"), variant: "destructive" });
+        return;
+      }
+      toast({ title: "Application rejected", description: String(body.message ?? "") });
       setRejectDialog(null);
       setRejectNote("");
-      await queryClient.invalidateQueries({ queryKey: getListBusinessApplicationsQueryKey() });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "applications"] });
     } catch (err) {
       toast({ title: "Network error", description: "Could not reach the server. Please try again.", variant: "destructive" });
       console.error(err);

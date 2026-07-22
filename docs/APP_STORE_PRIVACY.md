@@ -1,7 +1,5 @@
 # App Store Privacy Questionnaire (IOS-004)
 
-> Operational record. Review this for each App Store submission; use [IOS_APP.md](IOS_APP.md) for the current release process.
-
 Owner review draft for App Store Connect → **App Privacy**. Implementation in-repo is wired; this document is the disclosure checklist to enter (and eventually sign off).
 
 **Do not treat this as formal legal advice.** Confirm answers against current product behavior before submission.

@@ -21,8 +21,6 @@ export interface BusinessApplication {
   /** @nullable */
   address?: string | null;
   /** @nullable */
-  hours?: string | null;
-  /** @nullable */
   phone?: string | null;
   /** @nullable */
   structuredHours?: BusinessDayHours[] | null;

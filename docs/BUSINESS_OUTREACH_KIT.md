@@ -1,7 +1,5 @@
 # TownHub Business Outreach Kit
 
-> Operational record. This is reusable pilot-business material, not engineering guidance.
-
 Use this copy with the print handout and [business sales page](https://townhub.io/for-businesses). The standard call to action is: **Apply at townhub.io/list-your-business**.
 
 ## First-contact email or text

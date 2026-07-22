@@ -1,6 +1,6 @@
 # TownHub — Security Model
 
-This document describes how TownHub protects data and operations in the current codebase. For local setup and deployment, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). For system design context, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+This document describes how TownHub protects data and operations in the current codebase. For local setup and deployment, see [docs/SETUP.md](docs/SETUP.md) and [PRODUCTION.md](PRODUCTION.md). For system design context, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -125,7 +125,7 @@ The API enables `credentials: true` for Clerk iframe and cross-origin preview co
 
 Unknown browser origins are rejected in production. Requests with no `Origin` header (curl, webhooks, health checks) are allowed.
 
-Configure preview/staging frontends via `CORS_ALLOWED_ORIGINS` — see `.env.example` and [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md).
+Configure preview/staging frontends via `CORS_ALLOWED_ORIGINS` — see `.env.example` and [PRODUCTION.md](PRODUCTION.md).
 
 ---
 
@@ -289,7 +289,7 @@ Request
 ## Related Documentation
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — system design
-- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — local development
-- [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — deployment checklist
+- [docs/SETUP.md](docs/SETUP.md) — local development
+- [PRODUCTION.md](PRODUCTION.md) — deployment checklist
 - [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) — Connect payments
 - [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) — email/SMS flows

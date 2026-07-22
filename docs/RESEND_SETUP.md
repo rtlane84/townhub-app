@@ -130,5 +130,5 @@ Check API server logs for `[operational] email_send_failed` entries. Operational
 
 - [STRIPE_SETUP.md](./STRIPE_SETUP.md) — card payments
 - [TWILIO_SETUP.md](./TWILIO_SETUP.md) — SMS notifications
-- [DEPLOYMENT.md](DEPLOYMENT.md) — full production checklist
-- [OPERATIONS.md](OPERATIONS.md) — health checks and operational logging
+- [PRODUCTION.md](../PRODUCTION.md) — full production checklist
+- [PRODUCTION_MONITORING.md](./PRODUCTION_MONITORING.md) — health checks and operational logging

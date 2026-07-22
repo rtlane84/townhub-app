@@ -51,7 +51,7 @@ Complimentary / founding / beta plans (`isBeta` or $0 pricing) do **not** need S
 
 ### Clay launch plans (Business Showcase / Business Ordering)
 
-Recommended public packaging (also summarized in [PRODUCT.md](PRODUCT.md)):
+Recommended public packaging (also documented in `docs/PRD.md` open decision #2):
 
 | Plan | Monthly | Yearly | Trial | Features |
 |------|---------|--------|-------|----------|

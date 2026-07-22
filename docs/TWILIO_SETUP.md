@@ -144,5 +144,5 @@ Check API server logs for `[operational] sms_send_failed` or `order_notification
 - [STRIPE_SETUP.md](./STRIPE_SETUP.md) — card payments
 - [NOTIFICATIONS.md](./NOTIFICATIONS.md) — full order notification flow
 - [RESEND_SETUP.md](./RESEND_SETUP.md) — email notifications
-- [DEPLOYMENT.md](DEPLOYMENT.md) — full production checklist
-- [OPERATIONS.md](OPERATIONS.md) — health checks and operational logging
+- [PRODUCTION.md](../PRODUCTION.md) — full production checklist
+- [PRODUCTION_MONITORING.md](./PRODUCTION_MONITORING.md) — health checks and operational logging

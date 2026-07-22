@@ -95,7 +95,6 @@ export interface BusinessApplicationInput {
   description?: string;
   address?: string;
   phone?: string;
-  hours?: string;
   structuredHours?: BusinessDayHours[];
   planId?: number;
   billingInterval?: BusinessApplicationInputBillingInterval;
@@ -135,8 +134,6 @@ export interface BusinessApplication {
   /** @nullable */
   address?: string | null;
   /** @nullable */
-  hours?: string | null;
-  /** @nullable */
   phone?: string | null;
   /** @nullable */
   structuredHours?: BusinessDayHours[] | null;
@@ -158,49 +155,6 @@ export interface BusinessApplication {
   /** @nullable */
   businessId?: number | null;
   createdAt: string;
-}
-
-export interface ApplicationSubscriptionPlan {
-  id: number;
-  name: string;
-  /** @nullable */
-  description?: string | null;
-  monthlyPrice: number;
-  /** @nullable */
-  yearlyPrice?: number | null;
-  /** @nullable */
-  setupFee?: number | null;
-  /** @nullable */
-  transactionFeePercent?: number | null;
-  trialDays: number;
-  isDefault: boolean;
-}
-
-export type BusinessApplicationApprovalInputBillingInterval = typeof BusinessApplicationApprovalInputBillingInterval[keyof typeof BusinessApplicationApprovalInputBillingInterval];
-
-
-export const BusinessApplicationApprovalInputBillingInterval = {
-  monthly: 'monthly',
-  yearly: 'yearly',
-} as const;
-
-export interface BusinessApplicationApprovalInput {
-  planId?: number;
-  billingInterval?: BusinessApplicationApprovalInputBillingInterval;
-}
-
-export interface BusinessApplicationApprovalResult {
-  message: string;
-  businessId: number;
-}
-
-export interface BusinessApplicationRejectionInput {
-  /** @maxLength 2000 */
-  note?: string;
-}
-
-export interface MessageResult {
-  message: string;
 }
 
 export interface PlatformActivityEntry {
@@ -1175,18 +1129,12 @@ export interface OrderStatusUpdate {
   status: OrderStatus;
 }
 
-/**
- * @deprecated
- */
 export interface CheckoutSessionInput {
   orderId: number;
   /** Signed guest order access token (required for guest checkout when not authenticated) */
   accessToken?: string;
 }
 
-/**
- * @deprecated
- */
 export interface CheckoutSessionResult {
   /** @nullable */
   url: string | null;
@@ -1194,36 +1142,6 @@ export interface CheckoutSessionResult {
   sessionId?: string | null;
   mockMode?: boolean;
 }
-
-export interface CheckoutIntentResult {
-  /** @nullable */
-  url: string | null;
-  /** @nullable */
-  sessionId?: string | null;
-  mockMode?: boolean;
-  pendingCheckoutId: number;
-  /** Signed pending-checkout access token for the browser return. */
-  accessToken: string;
-  /** Present only for development mock checkout. */
-  orderId?: number;
-  /** Present only when mock checkout already materialized an order. */
-  orderAccessToken?: string;
-}
-
-export type CheckoutConfirmInput = (unknown & {
-  pendingCheckoutId?: number;
-  /**
-     * Temporary legacy pre-payment order identifier.
-     * @deprecated
-     */
-  orderId?: number;
-  /** Signed pending-checkout or legacy order access token. */
-  accessToken?: string;
-});
-
-export type CheckoutConfirmResult = Order & {
-  pendingCheckoutId?: number;
-};
 
 export interface BusinessOrderSummary {
   todayCount: number;

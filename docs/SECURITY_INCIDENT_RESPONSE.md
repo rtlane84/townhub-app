@@ -1,6 +1,6 @@
 # Security and privacy incident response
 
-Use this runbook for suspected unauthorized access, data disclosure, credential loss, payment-webhook compromise, or material service abuse. It complements [SECURITY.md](../SECURITY.md), [DEPLOYMENT.md](DEPLOYMENT.md), and [ACCOUNT_DELETION_RUNBOOK.md](ACCOUNT_DELETION_RUNBOOK.md).
+Use this runbook for suspected unauthorized access, data disclosure, credential loss, payment-webhook compromise, or material service abuse. It complements [SECURITY.md](../SECURITY.md), [PRODUCTION.md](../PRODUCTION.md), and [ACCOUNT_DELETION_RUNBOOK.md](ACCOUNT_DELETION_RUNBOOK.md).
 
 ## First hour
 
