@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
   BookOpen,
+  Flag,
   GraduationCap,
   HelpCircle,
   Mail,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { HelpGuideAccordion } from "@/components/help/help-guide-accordion";
 import { HelpVideoCard } from "@/components/help/help-video-card";
+import { ReportProblemSheet } from "@/components/report-problem-sheet";
 import {
   Accordion,
   AccordionContent,
@@ -33,6 +35,11 @@ import {
   type HelpFaq,
 } from "@/lib/help-content";
 import { isStoreDistribution } from "@/lib/distribution-channel";
+import {
+  isReportFabDismissed,
+  REPORT_FAB_VISIBILITY_EVENT,
+  setReportFabDismissed,
+} from "@/lib/report-problem-fab-dismiss";
 import { cn } from "@/lib/utils";
 
 const audienceCopy: Record<HelpAudience, { title: string; description: string }> = {
@@ -77,6 +84,8 @@ export default function Help() {
   const { platformName } = usePlatformBranding();
   const [audience, setAudience] = useState<HelpAudience>("customer");
   const [query, setQuery] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [fabDismissed, setFabDismissed] = useState(() => isReportFabDismissed());
   const ownerHelp = useMemo(
     () => resolveBusinessOwnerHelpForDistribution(isStoreDistribution()),
     [],
@@ -91,6 +100,16 @@ export default function Help() {
   );
   const resultTotal = results.guideCount + results.faqCount;
   const searchActive = query.trim().length > 0;
+
+  useEffect(() => {
+    const sync = () => setFabDismissed(isReportFabDismissed());
+    window.addEventListener(REPORT_FAB_VISIBILITY_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(REPORT_FAB_VISIBILITY_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 pb-[calc(2rem+var(--native-bottom-tab-height,0px))] md:py-12">
@@ -303,15 +322,42 @@ export default function Help() {
               Contact the business for an order, delivery, appointment, or refund-policy question. Contact {platformSupportContact.providerName} for sign-in, account, payment-status, or site problems.
             </p>
           </div>
-          <a
-            href={`mailto:${platformSupportContact.email}`}
-            className="inline-flex shrink-0 items-center justify-center rounded-lg border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted/60"
-            data-testid="link-platform-support-email"
-          >
-            {platformSupportContact.email}
-          </a>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              type="button"
+              variant="default"
+              className="gap-2"
+              onClick={() => setReportOpen(true)}
+              data-testid="button-help-report-problem"
+            >
+              <Flag className="h-4 w-4" aria-hidden />
+              Report a problem
+            </Button>
+            <a
+              href={`mailto:${platformSupportContact.email}`}
+              className="inline-flex items-center justify-center rounded-lg border bg-background px-4 py-2.5 text-sm font-medium transition-colors hover:bg-muted/60"
+              data-testid="link-platform-support-email"
+            >
+              {platformSupportContact.email}
+            </a>
+          </div>
         </div>
+        {fabDismissed ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Floating report button is hidden.{" "}
+            <button
+              type="button"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+              onClick={() => setReportFabDismissed(false)}
+              data-testid="button-help-show-report-fab"
+            >
+              Show floating report button
+            </button>
+          </p>
+        ) : null}
       </section>
+
+      <ReportProblemSheet open={reportOpen} onOpenChange={setReportOpen} />
 
       <div className="mt-8 rounded-2xl border border-dashed bg-muted/30 p-6 text-center">
         <p className="text-sm text-muted-foreground">
