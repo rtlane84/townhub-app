@@ -63,6 +63,7 @@ All variables live in the **repository root `.env`**. Both the API server and Vi
 |----------|----------|-----------|
 | `STRIPE_SECRET_KEY`, `STRIPE_CONNECT_WEBHOOK_SECRET`, `STRIPE_PLATFORM_WEBHOOK_SECRET` | Stripe Connect + Billing | [STRIPE_SETUP.md](STRIPE_SETUP.md), [STRIPE_BILLING_SETUP.md](STRIPE_BILLING_SETUP.md) |
 | `RESEND_API_KEY`, `RESEND_FROM` | Email | [RESEND_SETUP.md](RESEND_SETUP.md) |
+| `SUPPORT_INBOX_EMAIL` | Customer “Report a problem” inbox (defaults to `Ronnie@LaneTechWV.com`) | Optional; uses Resend/SMTP above |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | SMS | [TWILIO_SETUP.md](TWILIO_SETUP.md) |
 | `WEATHERKIT_*`, `WEATHER_DEMO_FALLBACK` | Homepage weather | [WEATHERKIT.md](WEATHERKIT.md) |
 | `SENTRY_DSN`, `VITE_SENTRY_DSN` | Error monitoring | [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry-setup) |

@@ -38,6 +38,7 @@ export function isWriteLimitedRoute(path: string, method: string): boolean {
   if (path === "/appointment-requests") return true;
   if (path === "/businesses/apply") return true;
   if (path === "/businesses/register") return true;
+  if (path === "/support/reports") return true;
   if (path === "/media/upload") return true;
   if (/^\/businesses\/[^/]+\/food-truck-locations$/.test(path)) return true;
   return false;

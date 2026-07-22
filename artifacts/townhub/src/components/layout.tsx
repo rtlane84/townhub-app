@@ -25,6 +25,7 @@ import { isAppMarketingPath } from "@/lib/app-marketing-meta";
 import { useNativeBottomTabs, useNativePlatform, useNativePullToRefresh } from "@/hooks/use-native-platform";
 import { NativeBottomTabBar } from "@/components/native-bottom-tab-bar";
 import { NativePullToRefresh } from "@/components/native-pull-to-refresh";
+import { ReportProblemFab } from "@/components/report-problem-fab";
 import { triggerTabChangeHaptic } from "@/lib/native-haptics";
 import { useKitchenDisplayMode } from "@/hooks/kitchen-display-mode";
 import { OptimizedMediaImage } from "@/components/optimized-media-image";
@@ -635,6 +636,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Keep tabs mounted on all marketplace screens (including storefront + cart) */}
       {showNativeTabs ? <NativeBottomTabBar /> : null}
+      <ReportProblemFab />
     </div>
   );
 }

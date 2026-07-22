@@ -2135,6 +2135,38 @@ export interface AppointmentRequestInput {
   notes?: string;
 }
 
+export type SupportReportCategory = typeof SupportReportCategory[keyof typeof SupportReportCategory];
+
+
+export const SupportReportCategory = {
+  BUG: 'BUG',
+  QUESTION: 'QUESTION',
+  OTHER: 'OTHER',
+} as const;
+
+export interface SupportReportInput {
+  category: SupportReportCategory;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  message: string;
+  /** Optional reply-to address when the reporter is not signed in */
+  contactEmail?: string;
+  /**
+     * Current app path when the report was submitted
+     * @minLength 1
+     * @maxLength 500
+     */
+  pagePath: string;
+  /** @maxLength 500 */
+  userAgent?: string;
+}
+
+export interface SupportReportResult {
+  ok: boolean;
+}
+
 export type GetMeParams = {
 /**
  * Selected owned business id (must belong to the current user)

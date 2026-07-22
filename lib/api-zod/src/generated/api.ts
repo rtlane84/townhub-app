@@ -4159,6 +4159,26 @@ export const GetWeatherResponse = zod.object({
 
 
 /**
+ * @summary Submit a customer problem report (emailed to platform support)
+ */
+export const submitSupportReportBodyMessageMax = 2000;
+
+export const submitSupportReportBodyPagePathMax = 500;
+
+export const submitSupportReportBodyUserAgentMax = 500;
+
+
+
+export const SubmitSupportReportBody = zod.object({
+  "category": zod.enum(['BUG', 'QUESTION', 'OTHER']),
+  "message": zod.string().min(1).max(submitSupportReportBodyMessageMax),
+  "contactEmail": zod.string().email().optional().describe('Optional reply-to address when the reporter is not signed in'),
+  "pagePath": zod.string().min(1).max(submitSupportReportBodyPagePathMax).describe('Current app path when the report was submitted'),
+  "userAgent": zod.string().max(submitSupportReportBodyUserAgentMax).optional()
+})
+
+
+/**
  * @summary Resolve a US ZIP code to city and state
  */
 export const LookupUsZipParams = zod.object({

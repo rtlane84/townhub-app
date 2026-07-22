@@ -111,6 +111,8 @@ import type {
   SubscriptionFeatureInput,
   SubscriptionPlan,
   SubscriptionPlanInput,
+  SupportReportInput,
+  SupportReportResult,
   SystemHealthReport,
   TestMyPushNotification200,
   UnregisterDevice200,
@@ -8553,6 +8555,77 @@ export function useGetWeather<TData = Awaited<ReturnType<typeof getWeather>>, TE
 
 
 
+
+export const getSubmitSupportReportUrl = () => {
+
+
+
+
+  return `/api/support/reports`
+}
+
+/**
+ * @summary Submit a customer problem report (emailed to platform support)
+ */
+export const submitSupportReport = async (supportReportInput: SupportReportInput, options?: RequestInit): Promise<SupportReportResult> => {
+
+  return customFetch<SupportReportResult>(getSubmitSupportReportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      supportReportInput,)
+  }
+);}
+
+
+
+
+export const getSubmitSupportReportMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitSupportReport>>, TError,{data: BodyType<SupportReportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitSupportReport>>, TError,{data: BodyType<SupportReportInput>}, TContext> => {
+
+const mutationKey = ['submitSupportReport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitSupportReport>>, {data: BodyType<SupportReportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitSupportReport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitSupportReportMutationResult = NonNullable<Awaited<ReturnType<typeof submitSupportReport>>>
+    export type SubmitSupportReportMutationBody = BodyType<SupportReportInput>
+    export type SubmitSupportReportMutationError = ErrorType<void>
+
+    /**
+ * @summary Submit a customer problem report (emailed to platform support)
+ */
+export const useSubmitSupportReport = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitSupportReport>>, TError,{data: BodyType<SupportReportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitSupportReport>>,
+        TError,
+        {data: BodyType<SupportReportInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitSupportReportMutationOptions(options));
+    }
 
 export const getLookupUsZipUrl = (zip: string,) => {
 
