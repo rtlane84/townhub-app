@@ -27,6 +27,36 @@ Bring these items to make setup quick:
 - For Business Ordering: pickup/delivery availability, delivery area, minimum, fee, preparation estimate, and payment choices.
 - For card payments: complete Stripe Connect onboarding after approval. Stripe processing fees apply to card payments; TownHub charges no platform transaction fee.
 
+## Production pilot go-live (Clay)
+
+Run this only after production web (`townhub.io`) and the production-API iOS build are green. Do not copy staging test businesses into production.
+
+### Operator prep
+
+- [ ] Confirm [LEGAL_LAUNCH.md](./LEGAL_LAUNCH.md) gates you intend to honor for the pilot (seller agreement env, counsel/CPA status).
+- [ ] Production admin claimed via `/setup` (or already present); Admin → Operations Center healthy.
+- [ ] `BUSINESS_SELLER_AGREEMENT_APPROVED_VERSION` set in production when counsel has approved the published agreement.
+- [ ] Production Stripe live keys + Connect/Billing webhooks pointing at `https://api.townhub.io/api/checkout/webhook`.
+- [ ] Resend (and Twilio if used) verified with production sender identities; send one test email/SMS.
+- [ ] Sentry/uptime alerts reaching you; [PRODUCTION.md](../PRODUCTION.md) rollback path bookmarked.
+
+### First businesses (target ≥5 across ≥3 types)
+
+For each pilot owner:
+
+1. They apply at https://townhub.io/list-your-business (or you assist in person with the outreach kit above).
+2. Admin reviews identity, contact, hours, catalog readiness, and seller-agreement acceptance → approve.
+3. Owner signs in → Business Hub → complete profile, hours, photos, catalog.
+4. Ordering plan: enable pickup/delivery rules; finish Stripe Connect before card checkout.
+5. Place one controlled test order (pay-at-pickup and/or card) and confirm owner notification + kitchen/status flow.
+6. Confirm subscription path on **web** (store builds suppress billing CTAs; use Manage on the web).
+
+### After first live order
+
+- Watch Sentry and Railway logs for 24h.
+- Keep staging (`staging.townhub.io`) for continued QA; never point pilot phones at staging builds.
+- Record cohort names and activation dates outside git (company records), not in this repo.
+
 ## Offer guardrails
 
 - **Business Showcase:** $20/month or $200/year; 14-day trial; business page/catalog, appointment requests, mobile schedule, email notifications, and analytics. It does not include online ordering.

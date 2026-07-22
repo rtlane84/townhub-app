@@ -2,7 +2,7 @@
 
 **Baseline commit:** `833f4f12`
 **Audit started:** July 14, 2026
-**Latest audit update:** July 16, 2026
+**Latest audit update:** July 22, 2026
 **Target:** controlled production web beta followed by iPhone TestFlight and App Store release
 
 This is the live release-blocker ledger. Dated audit reports under `docs/` are
@@ -19,7 +19,7 @@ closed only when its implementation and required validation are complete.
 | API tests | Pass | 453/453 across 146 suites when permitted to open the temporary localhost listener used by the rate-limit test (July 16) |
 | Production build | Pass | `pnpm run build` passed July 16; bundled Vite production build and unsigned iPhone-simulator Release build are also recorded |
 | Provider E2E | Pass for current web gate | 2026-07-16 staging: public **3/3**, owner **4/4**, admin **2/2**, hosted Stripe checkout **1/1**, and full refund **1/1** passed. The Stripe helper handles prefilled email summaries and the current agent-disclosure control. Broader public/guest/owner/admin **11/11** was recorded 2026-07-15. Signed archive and devices remain |
-| Physical iPhone | In progress | Cap production auth (Apple returning, Google new/returning, Account sign-out UI) verified 2026-07-15. Staging native env gate, bundle preparation, and unsigned Release build passed 2026-07-16; local keychain currently has zero valid signing identities, so Apple Distribution certificate refresh + full matrix + signed archive remain required before internal TestFlight |
+| Physical iPhone | Pass (staging TF); production TF pending install smoke | Cap production auth verified 2026-07-15. Staging TestFlight exercised successfully by external testers before 2026-07-22. Production App Store Connect upload **1.0.0 (15)** completed 2026-07-22 from `main` (`v1.0.0` / `v1.0.0-build15`); binary targets `api.townhub.io` with `VITE_DISTRIBUTION_CHANNEL=app-store`. Remaining: install production TF build on device and re-smoke matrix against live data |
 
 ## Release blockers
 
@@ -37,46 +37,29 @@ closed only when its implementation and required validation are complete.
 | CI-001 | P1 | Release gates | Repository had no checked-in CI workflow | CI enforces health, typecheck, tests, build, and CodeQL | Complete |
 | IOS-006 | P1 | Device scope | Xcode target currently declares iPhone and iPad while v1 scope is iPhone-only | Target, metadata, screenshots, and QA matrix align to iPhone-only v1 | Complete |
 | DOC-001 | P1 | Documentation | Production guidance mixes current Cloudflare/Railway, Replit, and obsolete Netlify references | One canonical environment/release path; historical alternatives clearly labeled or removed | Complete |
-| TST-001 | P1 | Release QA | No completed staging E2E, native archive, or physical-device release matrix | Customer, owner, and full admin workflows pass required web/native tests | In progress: web staging gate passes, including hosted Stripe payment and refund; Cap production auth smoke partial; **remaining = signed archive + physical matrix** (see below) |
+| TST-001 | P1 | Release QA | No completed staging E2E, native archive, or physical-device release matrix | Customer, owner, and full admin workflows pass required web/native tests | Mostly complete 2026-07-22: staging TF green; `develop` → `main` promote (#2); production web smoke 200s; production IPA **1.0.0 (15)** uploaded to ASC. **Remaining = production TF device install smoke + App Store submit** |
 
-## Next session — TestFlight gate (TST-001)
+## 2026-07-22 production promote (completed)
 
-Do this in order from a clean `develop` tree for staging. Promote the verified commit to `main` only for the production candidate.
+| Step | Evidence |
+|---|---|
+| Staging TestFlight | External testers reported no issues (operator confirmation) |
+| Promote | PR [#2](https://github.com/rtlane84/townhub-app/pull/2) merged to `main` (`50a88414`); git tag `v1.0.0` |
+| CI on promote | Typecheck/test/build + CodeQL green after link/regex fixes |
+| Production web/API smoke | `townhub.io` and `api.townhub.io` health/public routes returned 200; home/businesses/for-businesses/legal/sign-in verified |
+| Production iOS | `pnpm release:ios:production` → Archive → App Store Connect upload **1.0.0 (15)** (`9316a43e`, tag `v1.0.0-build15`); bundle contains `api.townhub.io` + `app-store` channel (not staging) |
 
-1. **Staging Stripe E2E — passed 2026-07-16; rerun before promotion**
+### Next — production TestFlight + App Store
 
-```bash
-E2E_BASE_URL=https://staging.townhub.io \
-E2E_API_URL=https://api-staging.townhub.io \
-E2E_STRIPE_CHECKOUT=1 \
-pnpm exec playwright test tests/e2e/workflows/stripe-checkout.spec.ts
-```
-
-Refresh owner auth storage first if sessions expired (`docs/PLAYWRIGHT_E2E.md`).
-
-2. **Internal TestFlight build (staging API)** — preferred first archive
-
-```bash
-pnpm release:ios:bump-build
-pnpm release:ios:staging
-pnpm release:ios:open
-```
-
-Xcode: Run on physical iPhone → smoke matrix below → **Product → Archive** → Validate → Upload to TestFlight. Day-to-day process: [RELEASE_PROCESS.md](./RELEASE_PROCESS.md).
-
-3. **App Store candidate (production API)** — after internal TF looks good
-
-```bash
-pnpm release:ios:bump-build
-pnpm release:ios:production
-pnpm release:ios:open
-```
-
-Repeat smoke + archive. Never submit a staging-targeted archive as the App Store binary.
+1. In [App Store Connect → TestFlight](https://appstoreconnect.apple.com/apps/6791258844/testflight/ios), wait for build **15** processing, then add to Internal Testing.
+2. Install on device and run the physical-device smoke below against **production** data.
+3. Submit build **15** for App Store review with privacy/support URLs from [APP_STORE_PRIVACY.md](./APP_STORE_PRIVACY.md).
+4. Only then invite Clay pilot businesses ([BUSINESS_OUTREACH_KIT.md](./BUSINESS_OUTREACH_KIT.md) go-live checklist).
 
 ### Physical-device smoke (minimum for archive)
 
-- [ ] Fresh launch; home shows ClayTownHub branding/data
+- [x] Staging TF: fresh launch / auth / browse exercised by testers (pre-promote)
+- [ ] Production TF build **15**: fresh launch; home shows ClayTownHub branding/data
 - [ ] Apple returning user; Google; email; sign-out → Account shows real sign-in buttons (not skeleton)
 - [ ] Guest or signed-in browse → cart → pay-at-pickup or card (system browser return)
 - [ ] My Orders / List Your Business when signed in
