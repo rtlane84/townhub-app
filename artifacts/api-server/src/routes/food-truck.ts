@@ -13,6 +13,7 @@ import { authorizeBusinessOwnerOrAdmin } from "../lib/business-access";
 import { authorizeFoodTruckLocationMutation } from "../lib/food-truck-mutation-auth";
 import { getPlatformTimeZone } from "../lib/platform-timezone";
 import { addCivilDays, formatCivilDateInTimeZone } from "@workspace/api-zod";
+import { invalidatePublicBusinessDirectoryCache } from "../lib/public-business-directory-cache";
 
 const router: IRouter = Router();
 
@@ -94,6 +95,7 @@ router.post("/businesses/:id/food-truck-locations", async (req, res): Promise<vo
     .insert(foodTruckLocationsTable)
     .values({ ...data, businessId })
     .returning();
+  invalidatePublicBusinessDirectoryCache();
   res.status(201).json(serializeLocation(loc));
 });
 
@@ -135,6 +137,7 @@ router.put("/businesses/:id/food-truck-locations/:locationId", async (req, res):
     .where(eq(foodTruckLocationsTable.id, locationId))
     .returning();
   if (!updated) { res.status(404).json({ error: "Location not found" }); return; }
+  invalidatePublicBusinessDirectoryCache();
   res.json(serializeLocation(updated));
 });
 
@@ -165,6 +168,7 @@ router.delete("/businesses/:id/food-truck-locations/:locationId", async (req, re
   }
 
   await db.delete(foodTruckLocationsTable).where(eq(foodTruckLocationsTable.id, locationId));
+  invalidatePublicBusinessDirectoryCache();
   res.status(204).send();
 });
 

@@ -4,6 +4,7 @@ import { BusinessDashboardLayout } from "@/components/dashboard-layout";
 import { DashboardPageHeader } from "@/components/dashboard-page-header";
 import { SettingsSection, SettingsToggleRow } from "@/components/settings-section";
 import { useSelectedBusiness } from "@/hooks/selected-business-context";
+import { useBusinessFeatureAccess } from "@/hooks/business-feature-access";
 import { LoadingButton } from "@/components/ui/loading-button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -149,6 +150,9 @@ function Field({
 
 export default function BusinessSettings() {
   const { selectedBusinessId, business, ownedBusinesses, isLoading } = useSelectedBusiness();
+  const { hasFeature } = useBusinessFeatureAccess();
+  const onlineOrderingAllowed = hasFeature("online_ordering");
+  const appointmentRequestsAllowed = hasFeature("appointment_requests");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [form, setFormState] = useState<FormState>({ ...EMPTY });
@@ -341,7 +345,12 @@ export default function BusinessSettings() {
     );
   }
 
-  const isOrderingMode = isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
+  const isOrderingMode =
+    onlineOrderingAllowed &&
+    isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
+  const orderingLockedOnPlan =
+    !onlineOrderingAllowed &&
+    isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
 
   return (
     <BusinessDashboardLayout>
@@ -590,8 +599,22 @@ export default function BusinessSettings() {
                   }))
                 }
                 idPrefix="business-settings-storefront"
+                onlineOrderingAllowed={onlineOrderingAllowed}
+                appointmentRequestsAllowed={appointmentRequestsAllowed}
               />
-              {!isOrderingMode ? (
+              {!onlineOrderingAllowed || !appointmentRequestsAllowed ? (
+                <p className="text-xs text-muted-foreground">
+                  Locked options require a plan upgrade. Display-only mode is always available.
+                </p>
+              ) : null}
+              {orderingLockedOnPlan ? (
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  Online ordering is not on your plan, so pickup, delivery, payment, and tax settings are
+                  hidden. Switch to Display only (or Appointment requests) to match your public page, or
+                  upgrade to configure ordering.
+                </p>
+              ) : null}
+              {!isOrderingMode && !orderingLockedOnPlan ? (
                 <p className="text-xs text-muted-foreground">
                   Switch to online ordering to configure pickup, delivery, payments, and tax.
                 </p>

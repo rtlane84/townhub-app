@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 
-const effectiveDate = "July 14, 2026";
+const effectiveDate = "July 21, 2026";
 
 export default function TermsOfService() {
   return (
@@ -11,6 +11,7 @@ export default function TermsOfService() {
         <p>
           These terms govern your use of TownHub, a local marketplace operated by LaneTech. By using
           TownHub, you agree to these terms and the <Link href="/privacy-policy">Privacy Policy</Link>.
+          Business applicants and owners also agree to the <Link href="/business-seller-agreement">Business Seller Agreement</Link>.
         </p>
 
         <h2>The marketplace</h2>
@@ -24,16 +25,28 @@ export default function TermsOfService() {
         <h2>Accounts and acceptable use</h2>
         <p>
           Keep account credentials secure and provide accurate information. Do not misuse TownHub, probe
-          or disrupt its systems, impersonate others, submit unlawful content, commit fraud, or interfere
-          with another user or business. We may restrict access when reasonably needed for safety, security,
-          legal compliance, or violation of these terms.
+          or disrupt its systems, impersonate others, submit unlawful content, commit fraud, interfere
+          with another user or business, scrape or automatically extract data, or use TownHub content or
+          services for an unauthorized commercial purpose. We may restrict access when reasonably needed
+          for safety, security, legal compliance, or violation of these terms.
+        </p>
+
+        <h2>TownHub intellectual property</h2>
+        <p>
+          TownHub and LaneTech retain all rights in TownHub&apos;s original software, user interfaces, text,
+          graphics, logos, designs, databases, and other service content, except for content submitted by
+          users or businesses. You may use TownHub only as made available for its intended purpose. Except
+          where applicable law does not allow a restriction, you may not copy, modify, distribute, sell,
+          sublicense, publicly reuse, create derivative works from, reverse engineer, decompile, attempt
+          to extract source code from, or otherwise exploit TownHub or its content without LaneTech&apos;s prior
+          written permission. Third-party and open-source components remain subject to their own licenses.
         </p>
 
         <h2>Orders, payments, and refunds</h2>
         <p>
-          Prices and fulfillment terms are shown before checkout. Card payments are processed by Stripe
-          for the participating business; some businesses offer payment at pickup. Refunds and order issues
-          are handled by the business subject to applicable law and the payment method used.
+          Prices, taxes, and fulfillment terms are shown before checkout. Card payments are processed by Stripe
+          for the participating business; some businesses offer payment at pickup. The business is the seller
+          responsible for fulfillment, customer service, and refunds, subject to applicable law and the payment method used.
         </p>
 
         <h2>Business services</h2>

@@ -3,7 +3,7 @@ import { Link, useSearch } from "wouter";
 import { Search, SlidersHorizontal, Star, Store } from "lucide-react";
 import { useListBusinesses } from "@workspace/api-client-react";
 import {
-  isOrderingStorefrontMode,
+  allowsStorefrontOrdering,
   PUBLIC_BUSINESS_FILTERS,
 } from "@workspace/api-zod";
 import { Button } from "@/components/ui/button";
@@ -67,8 +67,11 @@ export default function Businesses() {
     if (!orderingOnly) return list;
     return list.filter(
       (business) =>
-        isOrderingStorefrontMode(business) &&
-        business.orderingEnabled !== false,
+        allowsStorefrontOrdering({
+          type: business.type,
+          storefrontMode: business.storefrontMode,
+          onlineOrderingEntitled: business.onlineOrderingEntitled,
+        }) && business.orderingEnabled !== false,
     );
   }, [businesses, orderingOnly]);
 

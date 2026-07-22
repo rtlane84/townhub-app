@@ -110,8 +110,11 @@ export async function getPlanFeatures(planId: number): Promise<SerializedSubscri
 
 /**
  * Single source of truth for which features a business may use.
- * When a plan has no mapped features yet, all active catalog features are allowed
- * so existing deployments keep working until an admin configures mappings.
+ *
+ * Strict entitlement rules (required for Business Showcase vs Business Ordering packaging):
+ * - No subscription row → no features
+ * - Restricted subscription status (paid) → no features
+ * - Plan with zero mapped features → no features (admins must map plan_features explicitly)
  */
 export async function getBusinessFeatureKeys(businessId: number): Promise<Set<string>> {
   const [subscription] = await db
@@ -120,7 +123,7 @@ export async function getBusinessFeatureKeys(businessId: number): Promise<Set<st
     .where(eq(businessSubscriptionsTable.businessId, businessId));
 
   if (!subscription) {
-    return listActiveFeatureKeys();
+    return new Set();
   }
 
   const plan = await findPlanById(subscription.planId);
@@ -130,12 +133,65 @@ export async function getBusinessFeatureKeys(businessId: number): Promise<Set<st
     return new Set();
   }
 
-  const planKeys = await getPlanFeatureKeys(subscription.planId);
-  if (planKeys.size === 0) {
-    return listActiveFeatureKeys();
+  return getPlanFeatureKeys(subscription.planId);
+}
+
+/**
+ * Batch feature entitlement for public/admin business list payloads.
+ *
+ * Uses one joined query instead of N per-business lookups, so directory load
+ * stays pool-friendly.
+ * Entitlement rules match {@link getBusinessFeatureKeys}.
+ */
+export async function mapBusinessesHaveFeature(
+  businessIds: number[],
+  featureKey: SubscriptionFeatureKey | string,
+): Promise<Map<number, boolean>> {
+  const result = new Map<number, boolean>();
+  const uniqueIds = [...new Set(businessIds.filter((id) => Number.isFinite(id)))];
+  for (const id of uniqueIds) {
+    result.set(id, false);
+  }
+  if (uniqueIds.length === 0) return result;
+
+  const subscriptionsWithFeature = await db
+    .select({
+      businessId: businessSubscriptionsTable.businessId,
+      status: businessSubscriptionsTable.status,
+      isBeta: subscriptionPlansTable.isBeta,
+      monthlyPrice: subscriptionPlansTable.monthlyPrice,
+      yearlyPrice: subscriptionPlansTable.yearlyPrice,
+    })
+    .from(businessSubscriptionsTable)
+    .innerJoin(
+      subscriptionPlansTable,
+      eq(businessSubscriptionsTable.planId, subscriptionPlansTable.id),
+    )
+    .innerJoin(
+      planFeaturesTable,
+      eq(subscriptionPlansTable.id, planFeaturesTable.planId),
+    )
+    .innerJoin(
+      subscriptionFeaturesTable,
+      eq(planFeaturesTable.featureId, subscriptionFeaturesTable.id),
+    )
+    .where(
+      and(
+        inArray(businessSubscriptionsTable.businessId, uniqueIds),
+        eq(subscriptionFeaturesTable.key, featureKey),
+        eq(subscriptionFeaturesTable.isActive, true),
+      ),
+    );
+
+  for (const subscription of subscriptionsWithFeature) {
+    const complimentary = isComplimentaryPlan(subscription);
+    if (!subscriptionGrantsFeaturesForPlan(subscription.status, complimentary)) {
+      continue;
+    }
+    result.set(subscription.businessId, true);
   }
 
-  return planKeys;
+  return result;
 }
 
 export async function businessHasFeature(

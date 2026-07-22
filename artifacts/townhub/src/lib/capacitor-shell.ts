@@ -354,4 +354,19 @@ export function openStripeCheckoutUrl(url: string): void {
   window.location.href = url;
 }
 
+/**
+ * Open an HTTPS URL outside the Capacitor WebView (system browser on native).
+ * Used for store-distribution owner billing links to the public website.
+ */
+export function openExternalHttpsUrl(url: string): void {
+  if (!/^https:\/\//i.test(url)) {
+    throw new Error("openExternalHttpsUrl requires an HTTPS URL.");
+  }
+  if (isNativeApp()) {
+    openExternalUrl(url);
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export { syncNativeStatusBar };

@@ -30,7 +30,7 @@ The app can proxy Clerk FAPI through `/api/__clerk` (see `artifacts/api-server` 
 
 Set all secrets in your **hosting provider's secret manager** (environment variables UI). Never commit production values.
 
-Use isolated Railway variables for the API and Cloudflare build variables for the frontend.
+Use isolated Railway variables for the API and Cloudflare build variables for the frontend. Canonical live checklists (Railway API + Cloudflare Builds) live in [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md#live-variable-checklists-operator-inventory). The complete variable catalog is [`.env.example`](.env.example).
 
 ### Required
 
@@ -96,9 +96,20 @@ See [docs/TWILIO_SETUP.md](docs/TWILIO_SETUP.md).
 | `SENTRY_DSN` | API error monitoring |
 | `VITE_SENTRY_DSN` | Frontend error monitoring (build-time) |
 | `JOB_SECRET` | Auth for internal cron jobs (trial reminders) |
+| `JOB_CRON_CONFIGURED` | Set `true` only when external cron actually calls trial reminders (clears Ops Center warning) |
 | `PLATFORM_ADMIN_EMAIL` | Subscription operational alert recipients |
 | `BOOTSTRAP_TOKEN` | Optional — required for first-admin bootstrap when set |
 | `APP_VERSION`, `GIT_COMMIT_SHA` | Optional build metadata in System Status |
+| `FRONTEND_BASE_URL` | Optional public web origin when `APP_BASE_URL` must stay on the API host |
+
+### WeatherKit (homepage weather)
+
+| Secret | Purpose |
+|--------|---------|
+| `WEATHERKIT_KEY_ID` / `WEATHERKIT_TEAM_ID` / `WEATHERKIT_SERVICE_ID` | Apple WeatherKit credentials |
+| `WEATHERKIT_PRIVATE_KEY` (or `_PATH`) | Server-side private key — never ship to the frontend |
+| `WEATHERKIT_LATITUDE` / `WEATHERKIT_LONGITUDE` / `WEATHERKIT_TIMEZONE` | Location for forecasts |
+| `WEATHER_DEMO_FALLBACK` | Prefer unset or `false` on production (see [docs/WEATHERKIT.md](docs/WEATHERKIT.md)) |
 
 ### Rate limiting (optional overrides)
 
@@ -175,6 +186,14 @@ For production traffic, use a connection pooler (PgBouncer, Neon pooler, Supabas
 | `DATABASE_QUERY_TIMEOUT_MS` | `30000` | PostgreSQL `statement_timeout` per connection (`0` disables) |
 
 Local development works without setting these.
+
+**Staging / production (Railway):** set `DATABASE_POOL_MAX=20` (or `25`) on the TownHub API service in each environment. The previous default of `10` is tight when several clients hit `GET /api/businesses` at once (directory listing still does a few DB round-trips). Stay below your Postgres plan’s connection limit.
+
+**Supabase `DATABASE_URL`:** use the **Session Pooler** URI (port **5432**) for the long-lived Node `pg` pool. Prefer that over a direct DB host under concurrent API traffic. Do **not** point the API at the Transaction pooler (port **6543**) unless you have validated that mode with this driver — session mode matches the app’s connection lifecycle. Confirm in Supabase → Project Settings → Database → Connection string (pooler), and that Railway staging vs production each use their own project URI.
+
+**Load / uptime logging:** successful `GET /health` requests are not auto-logged (see API `pino-http` config) so Railway log rate limits and Locomotive → Better Stack ingest are not flooded by monitors or autocannon health probes. Non-health traffic and failed requests still log.
+
+After changing pool or `DATABASE_URL`, redeploy the API and smoke-check Admin → Operations Center database status plus `GET /api/businesses` latency.
 
 ---
 

@@ -86,6 +86,12 @@ describe("database pool configuration", () => {
     assert.match(source, /statement_timeout/);
   });
 
+  it("silences successful /health access logs to protect Railway log rate limits", async () => {
+    const source = await readFile(new URL("../app.ts", routesDir), "utf8");
+    assert.match(source, /autoLogging/);
+    assert.match(source, /url === "\/health"/);
+  });
+
   it("aggregates platform overview stats in SQL instead of loading full tables", async () => {
     const source = await readFile(new URL("businesses.ts", routesDir), "utf8");
     const statsRoute = source.slice(
@@ -96,5 +102,20 @@ describe("database pool configuration", () => {
     assert.match(statsRoute, /count\(\)/);
     assert.match(statsRoute, /sum\(ordersTable\.total\)/);
     assert.doesNotMatch(statsRoute, /db\.select\(\)\.from\((businesses|orders)Table\)/);
+  });
+
+  it("keeps the public directory query small, parallel, and briefly cached", async () => {
+    const source = await readFile(new URL("businesses.ts", routesDir), "utf8");
+    const directoryRoute = source.slice(
+      source.indexOf('router.get("/businesses"'),
+      source.indexOf('// POST /api/businesses/register'),
+    );
+
+    assert.match(directoryRoute, /select\(publicBusinessColumns\)/);
+    assert.match(directoryRoute, /Promise\.all/);
+    assert.match(directoryRoute, /getPublicBusinessDirectoryCache/);
+    assert.match(directoryRoute, /setPublicBusinessDirectoryCache/);
+    assert.match(directoryRoute, /const cacheKey = search \? null/);
+    assert.doesNotMatch(directoryRoute, /\.select\(\)\s*\.from\(businessesTable\)/);
   });
 });

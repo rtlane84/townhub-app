@@ -36,6 +36,8 @@ export const businessApplicationsTable = pgTable("business_applications", {
   structuredHours: jsonb("structured_hours").$type<StructuredHoursJson | null>(),
   planId: integer("plan_id"),
   billingInterval: subscriptionBillingIntervalEnum("billing_interval"),
+  businessTermsVersion: text("business_terms_version"),
+  businessTermsAcceptedAt: timestamp("business_terms_accepted_at", { withTimezone: true }),
   status: businessApplicationStatusEnum("status").notNull().default("PENDING"),
   reviewNote: text("review_note"),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),

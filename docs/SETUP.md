@@ -17,7 +17,7 @@ Step-by-step guide for running TownHub from a clean clone. For architecture cont
 
 ```bash
 git clone <repository-url>
-cd local-shop-hub
+cd townhub-app
 pnpm install
 ```
 
@@ -32,6 +32,8 @@ cp .env.example .env
 ```
 
 All variables live in the **repository root `.env`**. Both the API server and Vite frontend read from this file.
+
+**Full catalog:** [`.env.example`](../.env.example) lists every app/runtime variable (required and optional), plus pointers for E2E, dev scripts, and GitHub backup secrets. Deployed Railway/Cloudflare subsets are in [ENVIRONMENTS.md](ENVIRONMENTS.md#live-variable-checklists-operator-inventory).
 
 ### Required for basic local dev
 
@@ -53,15 +55,17 @@ All variables live in the **repository root `.env`**. Both the API server and Vi
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side only |
 | `SUPABASE_STORAGE_BUCKET` | Public bucket name (e.g. `media`) |
 
-**Dev fallback:** set `MEDIA_STORAGE=local` to write files to `./uploads` without Supabase.
+**Dev fallback:** set `MEDIA_STORAGE=local` (optional `MEDIA_UPLOAD_DIR`) to write files to disk without Supabase.
 
 ### Optional providers
 
 | Variable | Provider | Setup doc |
 |----------|----------|-----------|
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe Connect + Billing | [STRIPE_SETUP.md](STRIPE_SETUP.md), [STRIPE_BILLING_SETUP.md](STRIPE_BILLING_SETUP.md) |
+| `STRIPE_SECRET_KEY`, `STRIPE_CONNECT_WEBHOOK_SECRET`, `STRIPE_PLATFORM_WEBHOOK_SECRET` | Stripe Connect + Billing | [STRIPE_SETUP.md](STRIPE_SETUP.md), [STRIPE_BILLING_SETUP.md](STRIPE_BILLING_SETUP.md) |
 | `RESEND_API_KEY`, `RESEND_FROM` | Email | [RESEND_SETUP.md](RESEND_SETUP.md) |
+| `SUPPORT_INBOX_EMAIL` | Customer “Report a problem” inbox (defaults to `Ronnie@LaneTechWV.com`) | Optional; uses Resend/SMTP above |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | SMS | [TWILIO_SETUP.md](TWILIO_SETUP.md) |
+| `WEATHERKIT_*`, `WEATHER_DEMO_FALLBACK` | Homepage weather | [WEATHERKIT.md](WEATHERKIT.md) |
 | `SENTRY_DSN`, `VITE_SENTRY_DSN` | Error monitoring | [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry-setup) |
 | `JOB_SECRET` | Internal cron jobs (trial reminders) | [NOTIFICATIONS.md](NOTIFICATIONS.md#subscription-lifecycle-email) |
 | `PLATFORM_ADMIN_EMAIL` | Subscription operational alerts | [NOTIFICATIONS.md](NOTIFICATIONS.md#subscription-lifecycle-email) |

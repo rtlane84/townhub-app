@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildWeatherOutlookMessage,
+  buildWeatherWarningMessage,
   filterEventsThisWeek,
 } from "./weather-outlook.ts";
 import type { WeatherForecast } from "@workspace/api-client-react";
@@ -15,8 +16,8 @@ function forecast(
     enabled: true,
     current: {
       temperatureF: 71,
-      weatherCode: 2,
-      summary: "Partly cloudy",
+      conditionCode: "PartlyCloudy",
+      summary: "Partly Cloudy",
     },
     ...partial,
   };
@@ -44,8 +45,8 @@ describe("buildWeatherOutlookMessage", () => {
             date: "2026-07-12",
             highF: 83,
             lowF: 64,
-            weatherCode: 95,
-            summary: "Thunderstorm",
+            conditionCode: "Thunderstorms",
+            summary: "Thunderstorms",
           },
         ],
       }),
@@ -65,7 +66,7 @@ describe("buildWeatherOutlookMessage", () => {
             date: "2026-07-12",
             highF: 95,
             lowF: 72,
-            weatherCode: 0,
+            conditionCode: "Clear",
             summary: "Clear",
           },
         ],
@@ -75,24 +76,100 @@ describe("buildWeatherOutlookMessage", () => {
     assert.equal(msg, "Temperatures may reach 95° today.");
   });
 
+  it("does not call a cloudy day sunny just because it is hot", () => {
+    const now = new Date("2026-07-12T15:00:00");
+    const msg = buildWeatherOutlookMessage(
+      forecast({
+        current: { temperatureF: 83, conditionCode: "MostlyCloudy", summary: "Mostly Cloudy" },
+        daily: [
+          {
+            date: "2026-07-12",
+            highF: 91,
+            lowF: 71,
+            conditionCode: "MostlyCloudy",
+            summary: "Mostly Cloudy",
+            precipitationChance: 20,
+          },
+        ],
+      }),
+      { now },
+    );
+    assert.notEqual(msg, "Expect a warm and sunny afternoon.");
+  });
+
+  it("mentions likely rain before using a temperature fallback", () => {
+    const now = new Date("2026-07-12T15:00:00");
+    const msg = buildWeatherOutlookMessage(
+      forecast({
+        daily: [
+          {
+            date: "2026-07-12",
+            highF: 83,
+            lowF: 71,
+            conditionCode: "MostlyCloudy",
+            summary: "Mostly Cloudy",
+            precipitationChance: 70,
+          },
+        ],
+      }),
+      { now },
+    );
+    assert.equal(msg, "Rain is likely today—keep an umbrella nearby.");
+  });
+
+  it("shows a forecast warning for thunderstorms without an official alert", () => {
+    const msg = buildWeatherWarningMessage(
+      forecast({
+        daily: [
+          {
+            date: "2026-07-12",
+            highF: 84,
+            lowF: 71,
+            conditionCode: "Thunderstorms",
+            summary: "Thunderstorms",
+          },
+        ],
+      }),
+    );
+    assert.equal(msg, "Thunderstorms are possible today. Stay weather-aware.");
+  });
+
+  it("does not duplicate a forecast warning when an official alert exists", () => {
+    const msg = buildWeatherWarningMessage(
+      forecast({
+        alert: { summary: "Severe thunderstorm warning", severity: "severe" },
+        daily: [
+          {
+            date: "2026-07-12",
+            highF: 84,
+            lowF: 71,
+            conditionCode: "Thunderstorms",
+            summary: "Thunderstorms",
+          },
+        ],
+      }),
+    );
+    assert.equal(msg, null);
+  });
+
   it("suggests dry weather when today and tomorrow are clear of rain", () => {
     const now = new Date("2026-07-12T11:00:00");
     const msg = buildWeatherOutlookMessage(
       forecast({
-        current: { temperatureF: 70, weatherCode: 1, summary: "Mainly clear" },
+        current: { temperatureF: 70, conditionCode: "MostlyClear", summary: "Mostly Clear" },
         daily: [
           {
             date: "2026-07-12",
             highF: 78,
             lowF: 58,
-            weatherCode: 1,
-            summary: "Mainly clear",
+            conditionCode: "MostlyClear",
+            summary: "Mostly Clear",
           },
           {
             date: "2026-07-13",
             highF: 80,
             lowF: 60,
-            weatherCode: 0,
+            conditionCode: "Clear",
             summary: "Clear",
           },
         ],

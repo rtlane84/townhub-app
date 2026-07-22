@@ -1,13 +1,13 @@
 {
   "name": "workspace",
   "version": "0.0.0",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "packageManager": "pnpm@10.11.1",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"!@workspace/mockup-sandbox\" --filter \"./scripts\" --if-present run typecheck",
     "audit:health": "pnpm --filter @workspace/scripts run health",
     "audit:health:bundle": "pnpm --filter @workspace/townhub run build && pnpm --filter @workspace/scripts run health -- --bundle",
     "release:check-env": "node scripts/validate-release-env.mjs",

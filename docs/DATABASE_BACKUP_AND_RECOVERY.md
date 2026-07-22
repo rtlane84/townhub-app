@@ -123,7 +123,7 @@ Configure an R2 lifecycle rule for the retention period you want. The workflow p
 
 Repeat this drill quarterly (or after backup pipeline changes) via workflow_dispatch on `production-db-restore-drill.yml`.
 
-### 3.3 Supabase Storage (media)
+### 3.4 Supabase Storage (media)
 
 Postgres backups **do not** include image bytes in the storage bucket.
 
@@ -245,8 +245,9 @@ Complete before accepting real customer orders:
 
 ### Railway deployment
 
-- Set `DATABASE_URL` in the isolated Railway production environment (prefer the provider pooler URL when recommended).
-- After changing it, redeploy or restart the API so every instance reloads the value.
+- Set `DATABASE_URL` in the isolated Railway production environment. Prefer the **Supabase Session Pooler** URI (port **5432**) for the Node `pg` pool — see [PRODUCTION.md](../PRODUCTION.md) connection pool notes. Staging and production must each use their own project URI.
+- Set `DATABASE_POOL_MAX=20` (or `25`) on the TownHub API service for staging and production. Do not exceed the provider’s allowed connections.
+- After changing either variable, redeploy or restart the API so every instance reloads the value.
 - Staging and local databases must never use the production URL.
 
 ### Neon

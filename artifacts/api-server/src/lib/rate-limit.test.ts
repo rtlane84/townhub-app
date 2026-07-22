@@ -25,6 +25,7 @@ describe("rate-limit paths", () => {
     assert.equal(isWriteLimitedRoute("/appointment-requests", "POST"), true);
     assert.equal(isWriteLimitedRoute("/businesses/apply", "POST"), true);
     assert.equal(isWriteLimitedRoute("/businesses/register", "POST"), true);
+    assert.equal(isWriteLimitedRoute("/support/reports", "POST"), true);
     assert.equal(isWriteLimitedRoute("/media/upload", "POST"), true);
     assert.equal(
       isWriteLimitedRoute("/businesses/abc/food-truck-locations", "POST"),

@@ -771,8 +771,9 @@ export function resolveBusinessOwnerHelpForDistribution(storeDistribution: boole
       summary: "See the selected plan, subscription status, and enabled features.",
       steps: [
         "Open Business Hub → Subscription to review the current plan, status, and enabled features.",
-        "Subscription purchases and changes are not available in this app.",
-        "Follow the secure setup instructions sent to the account email after approval, or contact TownHub support when the subscription needs attention.",
+        "Subscription purchases and changes are not available inside this app.",
+        "Tap Manage on the web to open the TownHub website in your browser, then sign in with the same account to subscribe or update billing.",
+        "If your business was recently approved, you may also follow the secure setup instructions sent to the account email, or contact TownHub support when the subscription needs attention.",
       ],
       note: "Return to Subscription after setup to confirm that the expected features are enabled.",
     }),
@@ -782,7 +783,7 @@ export function resolveBusinessOwnerHelpForDistribution(storeDistribution: boole
     faq.id === "paid-before-approval"
       ? {
           ...faq,
-          answer: "Applying is free. If approved, follow the secure subscription setup instructions sent to the account email. Any configured trial begins only after activation.",
+          answer: "Applying is free. If approved, open Business Hub → Subscription and tap Manage on the web, or follow the secure subscription setup instructions sent to the account email. Any configured trial begins only after activation.",
         }
       : faq,
   );

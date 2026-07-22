@@ -30,6 +30,15 @@ if (shouldTrustProxyForRateLimit()) {
 app.use(
   pinoHttp({
     logger,
+    // Uptime monitors and load probes hit /health constantly; logging every 200
+    // floods Railway (and Locomotive → Better Stack) until messages are dropped.
+    // Keep failures and all non-health traffic visible.
+    autoLogging: {
+      ignore: (req) => {
+        const url = req.url?.split("?")[0] ?? "";
+        return url === "/health" || url === "/health/";
+      },
+    },
     serializers: {
       req(req) {
         return {

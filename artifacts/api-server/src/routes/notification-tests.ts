@@ -21,8 +21,10 @@ import {
 } from "../lib/ntfy-owner-notifications";
 import { ntfySettingsForRegenerate } from "../lib/ntfy-business-settings";
 import { isValidNtfyTopic } from "../lib/ntfy-topic";
-import { serializeBusiness } from "./businesses";
+import { serializeBusinessWithEntitlements } from "./businesses";
 import { getPlatformTimeZone } from "../lib/platform-timezone";
+import { businessHasFeature } from "../lib/business-features";
+import { SUBSCRIPTION_FEATURE_KEYS } from "../lib/subscription-feature-keys";
 
 const router: IRouter = Router();
 
@@ -49,6 +51,11 @@ router.post(
       return;
     }
     const { business } = access;
+
+    if (!(await businessHasFeature(businessId, SUBSCRIPTION_FEATURE_KEYS.EMAIL_NOTIFICATIONS))) {
+      res.status(403).json({ message: "Email notifications are not included in your plan." });
+      return;
+    }
 
     const to = resolveOwnerNotificationEmail(business);
     if (!to) {
@@ -93,6 +100,11 @@ router.post(
       return;
     }
     const { business } = access;
+
+    if (!(await businessHasFeature(businessId, SUBSCRIPTION_FEATURE_KEYS.SMS_NOTIFICATIONS))) {
+      res.status(403).json({ message: "SMS notifications are not included in your plan." });
+      return;
+    }
 
     const to = resolveOwnerNotificationPhone(business);
     if (!to) {
@@ -249,7 +261,7 @@ router.post(
         return;
       }
 
-      res.json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
+      res.json(await serializeBusinessWithEntitlements(business, { timeZone: await getPlatformTimeZone() }));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to regenerate ntfy topic";
       res.status(500).json({ message });

@@ -100,6 +100,36 @@ Before every release, record pass/fail evidence for these checks:
 
 Any cross-environment result is an immediate release stop.
 
+## Live variable checklists (operator inventory)
+
+Full catalog (including local-only and optional keys): [`.env.example`](../.env.example). Validate with:
+
+```bash
+pnpm run release:check-env -- --environment staging|production --component api|frontend|native
+```
+
+### Railway API (runtime)
+
+Expected set for each Railway environment (`staging` and `production` use the same *names*, different *values*):
+
+`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET`, `PORT`, `NODE_ENV` (must be `production`), `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_CONNECT_WEBHOOK_SECRET`, `STRIPE_PLATFORM_WEBHOOK_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `APP_BASE_URL`, `CORS_ALLOWED_ORIGINS`, `SENTRY_DSN`, `SESSION_SECRET` (≥ 32 chars), `NTFY_SERVER_URL`, `PLATFORM_ADMIN_EMAIL`, `JOB_SECRET`, `APNS_BUNDLE_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY`, `APNS_PRODUCTION`, `APNS_TEAM_ID`, `DEPLOYMENT_ENVIRONMENT`, `FRONTEND_BASE_URL`, `NATIVE_ALLOWED_ORIGINS` (include `capacitor://localhost`), `DATABASE_POOL_MAX`, `RATE_LIMIT_GENERAL_MAX`, `WEATHERKIT_SERVICE_ID`, `WEATHERKIT_KEY_ID`, `WEATHERKIT_TEAM_ID`, `WEATHERKIT_PRIVATE_KEY`, `WEATHERKIT_LATITUDE`, `WEATHERKIT_LONGITUDE`, `WEATHERKIT_TIMEZONE`, `WEATHER_DEMO_FALLBACK` (prefer unset or `false` on production), `BUSINESS_SELLER_AGREEMENT_APPROVED_VERSION`.
+
+Recommended when applicable: `JOB_CRON_CONFIGURED=true` (only if external cron hits trial reminders), `APP_VERSION`, `GIT_COMMIT_SHA`.
+
+Do **not** put Cloudflare `VITE_*` secrets on Railway, and do not put API secrets on Cloudflare.
+
+### Cloudflare Workers Builds (frontend)
+
+Expected build variables per Worker project:
+
+`DEPLOYMENT_ENVIRONMENT`, `VITE_API_BASE_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_DISTRIBUTION_CHANNEL` (`web`), `VITE_PUBLIC_WEB_URL`, `VITE_SENTRY_DSN`.
+
+Optional: `VITE_APP_VERSION`, `VITE_GIT_COMMIT_SHA`. `VITE_DEPLOYMENT_ENVIRONMENT` is usually derived from `DEPLOYMENT_ENVIRONMENT` at build time.
+
+### Native iOS builds
+
+Use `.env.native.staging.example` / `.env.native.production.example` (includes Google client IDs). `VITE_DISTRIBUTION_CHANNEL=app-store`. See [IOS_APP.md](./IOS_APP.md).
+
 ## Branch deployment wiring (Railway + Cloudflare)
 
 Canonical branch mapping for automatic deploys:

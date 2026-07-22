@@ -12,6 +12,7 @@ describe("native-external-links", () => {
   it("detects external schemes", () => {
     assert.equal(isExternalScheme("mailto:test@example.com"), true);
     assert.equal(isExternalScheme("tel:+15551212"), true);
+    assert.equal(isExternalScheme("maps://?daddr=75%20Main%20St"), true);
     assert.equal(isExternalScheme("/help"), false);
   });
 

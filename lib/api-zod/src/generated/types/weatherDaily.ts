@@ -10,6 +10,12 @@ export interface WeatherDaily {
   date: Date;
   highF: number;
   lowF: number;
-  weatherCode: number;
+  /** Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms. */
+  conditionCode: string;
   summary: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  precipitationChance?: number;
 }

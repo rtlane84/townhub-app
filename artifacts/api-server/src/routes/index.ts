@@ -15,6 +15,7 @@ import foodTruckRouter from "./food-truck";
 import platformRouter from "./platform";
 import weatherRouter from "./weather";
 import geoRouter from "./geo";
+import supportRouter from "./support";
 import appointmentRequestsRouter from "./appointment-requests";
 import notificationTestsRouter from "./notification-tests";
 import devicesRouter from "./devices";
@@ -44,6 +45,7 @@ router.use("/admin", (req, res, next) => {
 router.use(platformRouter);
 router.use(weatherRouter);
 router.use(geoRouter);
+router.use(supportRouter);
 
 router.use(healthRouter);
 router.use(authRouter);

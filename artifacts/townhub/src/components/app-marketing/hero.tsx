@@ -3,7 +3,7 @@ import { PhoneFrame } from "@/components/app-marketing/phone-frame";
 import { AppStoreButton, PlayStoreButton } from "@/components/app-marketing/store-buttons";
 import { appMarketingConfig } from "@/lib/app-marketing-config";
 import { cn } from "@/lib/utils";
-import heroHome from "@/assets/app-marketing/hero-home-desktop.png";
+import heroHome from "@/assets/app-marketing/home-clay-today.png";
 import businessDetail from "@/assets/app-marketing/business-detail-duck-donuts.png";
 
 export function AppMarketingHero() {

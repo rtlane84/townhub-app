@@ -7,7 +7,7 @@ import type {
   MarketplaceStats,
 } from "@workspace/api-client-react";
 import { hasActiveMobileLocationNow, formatCivilDateInTimeZone } from "@workspace/api-zod";
-import { CalendarDays, Store, Truck } from "lucide-react";
+import { ArrowRight, CalendarDays, Store, Truck } from "lucide-react";
 import { filterEventsThisWeek } from "@/lib/weather-outlook";
 import { getBusinessOpenShortLabel } from "@/lib/business-listing";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,8 @@ function SummaryCard({
   tagClassName,
   icon,
   iconTint,
+  footerClassName,
+  footerLabel,
   children,
   href,
 }: {
@@ -37,6 +39,8 @@ function SummaryCard({
   tagClassName: string;
   icon: ReactNode;
   iconTint: string;
+  footerClassName: string;
+  footerLabel: string;
   children: ReactNode;
   href: string;
 }) {
@@ -45,11 +49,11 @@ function SummaryCard({
       href={href}
       className={cn(
         "flex h-full min-w-0 flex-1 flex-col overflow-hidden",
-        "min-h-[8.75rem] rounded-[1.1rem] border border-black/[0.06] bg-card p-2.5",
-        "shadow-[0_1px_4px_rgba(15,23,42,0.04)] transition-colors hover:bg-muted/30 active:scale-[0.985] sm:min-h-[9.25rem] sm:p-3",
+        "min-h-[11rem] rounded-[1.1rem] border border-black/[0.06] bg-card",
+        "shadow-[0_1px_4px_rgba(15,23,42,0.04)] transition-transform hover:bg-muted/30 active:scale-[0.985] sm:min-h-[12rem]",
       )}
     >
-      <article className="flex min-h-0 flex-1 flex-col">
+      <article className="flex min-h-0 flex-1 flex-col p-2.5 sm:p-3">
         <div className="mb-1.5 flex min-w-0 items-center gap-1.5">
           <span
             className={cn(
@@ -69,18 +73,44 @@ function SummaryCard({
             {tag}
           </p>
         </div>
-        <div className="flex flex-1 flex-col text-[12px] leading-snug text-foreground sm:text-[13px]">
+        <div className="flex flex-1 flex-col text-[12px] font-bold leading-snug text-foreground sm:text-[13px]">
           {children}
         </div>
       </article>
+      <div
+        className={cn(
+          "flex min-h-11 items-center justify-between border-t border-black/[0.08] px-2.5 py-2 text-[11px] font-bold sm:min-h-12 sm:px-3 sm:text-[12px]",
+          footerClassName,
+        )}
+      >
+        <span className="min-w-0 truncate">{footerLabel}</span>
+        <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+      </div>
     </Link>
+  );
+}
+
+function SummaryMetric({
+  value,
+  children,
+  className,
+}: {
+  value: number;
+  children: ReactNode;
+  className: string;
+}) {
+  return (
+    <p className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
+      <span className={cn("text-base font-bold sm:text-lg", className)}>{value}</span>
+      <span>{children}</span>
+    </p>
   );
 }
 
 function CardSkeleton() {
   return (
     <div
-      className="min-h-[8.75rem] min-w-0 flex-1 animate-pulse rounded-[1.1rem] border border-black/[0.04] bg-muted/50 p-2.5 sm:min-h-[9.25rem]"
+      className="min-h-[11rem] min-w-0 flex-1 animate-pulse rounded-[1.1rem] border border-black/[0.04] bg-muted/50 p-2.5 sm:min-h-[12rem]"
       aria-hidden
     >
       <div className="mb-2 h-6 w-6 rounded-full bg-muted" />
@@ -224,28 +254,29 @@ export function TodayInTownSection({
             tagClassName="text-sky-700"
             icon={<Truck className="h-3 w-3" />}
             iconTint="bg-sky-500/12 text-sky-700"
+            footerClassName="bg-sky-500/[0.08] text-sky-700"
+            footerLabel="View trucks"
             href="/food-trucks"
           >
             {truckCount > 0 ? (
-              <div className="space-y-0.5 text-[11px] leading-snug sm:text-[12px]">
-                <p className="font-semibold text-platform-heading">
-                  {mobileBusinessCount}{" "}
+              <div className="space-y-1 text-[11px] leading-snug sm:text-[12px]">
+                <SummaryMetric value={mobileBusinessCount} className="text-sky-700">
                   {mobileBusinessCount === 1
                     ? "mobile business"
                     : "mobile businesses"}
-                </p>
-                <p className="text-muted-foreground">
-                  {activeMobileNow} active now
-                </p>
-                <p className="text-muted-foreground">
-                  {truckCount} {truckCount === 1 ? "stop" : "stops"} today
-                </p>
+                </SummaryMetric>
+                <SummaryMetric value={activeMobileNow} className="text-sky-700">
+                  active now
+                </SummaryMetric>
+                <SummaryMetric value={truckCount} className="text-sky-700">
+                  {truckCount === 1 ? "stop" : "stops"} today
+                </SummaryMetric>
               </div>
             ) : (
               <>
-                <p className="text-muted-foreground">No mobile stops today</p>
+                <p>No mobile stops today</p>
                 {nextStopDay ? (
-                  <p className="mt-1 text-[11px] text-muted-foreground sm:text-[12px]">
+                  <p className="mt-1 text-[11px] sm:text-[12px]">
                     Next stop {nextStopDay}
                   </p>
                 ) : null}
@@ -262,23 +293,28 @@ export function TodayInTownSection({
             tagClassName="text-emerald-700"
             icon={<CalendarDays className="h-3 w-3" />}
             iconTint="bg-emerald-500/12 text-emerald-700"
+            footerClassName="bg-emerald-500/[0.08] text-emerald-700"
+            footerLabel="View events"
             href="/events"
           >
             {weekCount > 0 ? (
               <>
-                <p className="font-semibold text-platform-heading">
-                  {weekCount} {weekCount === 1 ? "event" : "events"} this week
-                </p>
+                <SummaryMetric value={weekCount} className="text-emerald-700">
+                  {weekCount === 1 ? "event" : "events"} this week
+                </SummaryMetric>
                 {nextEventName ? (
-                  <p className="mt-1 line-clamp-2 text-[11px] text-muted-foreground sm:text-[12px]">
-                    Next: {nextEventName}
-                  </p>
+                  <div className="mt-2">
+                    <p className="text-[11px] font-normal text-muted-foreground sm:text-[12px]">
+                      Next up
+                    </p>
+                    <p className="mt-0.5 line-clamp-2 text-[11px] sm:text-[12px]">
+                      {nextEventName}
+                    </p>
+                  </div>
                 ) : null}
               </>
             ) : (
-              <p className="text-muted-foreground">
-                No upcoming events this week.
-              </p>
+              <p>No upcoming events this week.</p>
             )}
           </SummaryCard>
         )}
@@ -291,25 +327,24 @@ export function TodayInTownSection({
             tagClassName="text-orange-700"
             icon={<Store className="h-3 w-3" />}
             iconTint="bg-orange-500/12 text-orange-700"
+            footerClassName="bg-orange-500/[0.08] text-orange-700"
+            footerLabel="Browse shops"
             href="/businesses"
           >
             {hasMarketplaceStats ? (
-              <div className="space-y-0.5 text-[11px] leading-snug sm:text-[12px]">
-                <p className="font-semibold text-platform-heading">
-                  {totalShops}{" "}
+              <div className="space-y-1 text-[11px] leading-snug sm:text-[12px]">
+                <SummaryMetric value={totalShops} className="text-orange-700">
                   {totalShops === 1 ? "business" : "businesses"}
-                </p>
-                <p className="text-muted-foreground">
-                  {openShops} open now
-                </p>
-                <p className="text-muted-foreground">
-                  {items} total {items === 1 ? "item" : "items"}
-                </p>
+                </SummaryMetric>
+                <SummaryMetric value={openShops} className="text-orange-700">
+                  open now
+                </SummaryMetric>
+                <SummaryMetric value={items} className="text-orange-700">
+                  total {items === 1 ? "item" : "items"}
+                </SummaryMetric>
               </div>
             ) : (
-              <p className="text-muted-foreground">
-                Browse local businesses and makers.
-              </p>
+              <p>Browse local businesses and makers.</p>
             )}
           </SummaryCard>
         )}

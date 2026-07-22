@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PhoneFrame } from "@/components/app-marketing/phone-frame";
-import homeScreen from "@/assets/app-marketing/home-today-in-clay.png";
+import homeScreen from "@/assets/app-marketing/home-clay-today.png";
 import eventsScreen from "@/assets/app-marketing/events-featured-carousel.png";
 import businessesScreen from "@/assets/app-marketing/businesses-local-directory.png";
 import businessDetail from "@/assets/app-marketing/business-detail-duck-donuts.png";

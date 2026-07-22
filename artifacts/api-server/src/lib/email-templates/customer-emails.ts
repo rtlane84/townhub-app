@@ -27,7 +27,7 @@ function orderSummaryRows(order: OrderNotificationData): Array<{ label: string; 
     rows.push({ label: "Reference", value: reference });
   }
   rows.push(
-    { label: "Order placed", value: formatOrderDateTime(order.orderedAt) },
+    { label: "Order placed", value: formatOrderDateTime(order.orderedAt, order.timeZone) },
     { label: "Fulfillment", value: fulfillmentLabel(order.fulfillmentType) },
   );
 
@@ -38,6 +38,7 @@ function orderSummaryRows(order: OrderNotificationData): Array<{ label: string; 
         order.fulfillmentType,
         order.estimatedWindowStart,
         order.estimatedWindowEnd,
+        order.timeZone,
       ),
     });
   }
@@ -96,7 +97,7 @@ function buildEmail(
     `Business: ${order.businessName}`,
     `Order: ${ticketLabel}`,
     referenceLine,
-    `Placed: ${formatOrderDateTime(order.orderedAt)}`,
+    `Placed: ${formatOrderDateTime(order.orderedAt, order.timeZone)}`,
     `Fulfillment: ${fulfillmentLabel(order.fulfillmentType)}`,
   ].filter(Boolean) as string[];
 
@@ -106,6 +107,7 @@ function buildEmail(
         order.fulfillmentType,
         order.estimatedWindowStart,
         order.estimatedWindowEnd,
+        order.timeZone,
       ),
     );
   }

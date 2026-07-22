@@ -79,6 +79,8 @@ If `RESEND_API_KEY` is set but `RESEND_FROM` is missing, email is treated as **n
 
 **SMTP fallback:** If you prefer SMTP instead, leave `RESEND_API_KEY` unset and configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`. Resend takes priority when its API key is present.
 
+**Customer problem reports:** `POST /api/support/reports` emails the support inbox. Set optional `SUPPORT_INBOX_EMAIL` to override the default (`Ronnie@LaneTechWV.com`). Delivery uses the same Resend/SMTP configuration.
+
 ---
 
 ## 5. Deploy and restart

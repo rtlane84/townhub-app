@@ -222,7 +222,7 @@ Priority definitions:
 | MKT-03 | P0 | Show open/closed state, supported fulfillment methods, short description, and business branding. |
 | MKT-04 | P0 | Provide stable, human-readable storefront URLs. |
 | MKT-05 | P0 | Exclude inactive businesses from public ordering and appointment actions. |
-| MKT-06 | P1 | Feature selected businesses and current seasonal highlights on the homepage. |
+| MKT-06 | P1 | Feature selected businesses and current seasonal highlights on the homepage (admin curation — not a paid plan add-on at Clay launch). |
 | MKT-07 | P1 | Display upcoming community events in chronological order. |
 | MKT-08 | P1 | Display current and upcoming food-truck locations with map actions. |
 | MKT-09 | P2 | Add location-aware discovery and distance sorting. |
@@ -603,7 +603,12 @@ All gates must pass against the release candidate or have a documented, time-lim
 The product owner must resolve these before general availability:
 
 1. Which Clay businesses make up the first pilot cohort?
-2. What are the public plan names, prices, trial terms, setup fees, and transaction-fee policy?
+2. ~~What are the public plan names, prices, trial terms, setup fees, and transaction-fee policy?~~ **Resolved for Clay launch:**
+   - **Business Showcase** — $20/mo or $200/yr (10×): business page, catalog/menu, appointments, mobile schedule, email notifications, analytics. No online ordering / SMS. Allowed storefront modes: `INFORMATION`, `APPOINTMENT`.
+   - **Business Ordering** — $40/mo or $400/yr (recommended): everything in Business Showcase plus `online_ordering` and `sms_notifications`. Allowed modes include `ORDERING`.
+   - **Trial:** 14 days on both public plans. **Setup fee:** $0. **Platform transaction fee:** 0% (Connect fees still apply to customer payments).
+   - **Founding / complimentary:** first Clay pilot businesses may use `isBeta` / $0 plans, then convert to Business Showcase or Business Ordering.
+   - **Not sold as SKUs at launch:** separate Mobile plan, paid Spotlight/featured placement, multi-location add-on.
 3. Who is responsible for refunds, disputes, fulfillment failures, and customer support: TownHub, the business, or both?
 4. What merchant verification is required before activation?
 5. Which taxes are calculated by TownHub versus configured and remitted by each business?

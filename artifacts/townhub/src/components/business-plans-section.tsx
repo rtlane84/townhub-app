@@ -32,11 +32,11 @@ export function BusinessPlansSection({ promptSignIn = false, className }: Busine
           <span className="text-sm font-semibold uppercase tracking-wide">Business plans</span>
         </div>
         <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
-          Plans that grow with your business
+          Simple plans for local businesses
         </h2>
         <p className="text-muted-foreground mt-3 leading-relaxed text-sm sm:text-base">
-          Choose a plan with the capabilities you need today. Features and pricing update automatically
-          as the platform evolves — no redeploy required.
+          Start with a strong business page and catalog, or add online ordering when you are ready.
+          Every plan includes a free trial so you can publish and see how it feels before you pay.
         </p>
       </div>
 
@@ -59,7 +59,13 @@ export function BusinessPlansSection({ promptSignIn = false, className }: Busine
       ) : (
         <div className={cn(
           "grid gap-6",
-          plans.length >= 3 ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2 max-w-4xl mx-auto",
+          plans.length === 1
+            ? "max-w-md mx-auto"
+            : plans.length === 2
+              ? "md:grid-cols-2 max-w-4xl mx-auto"
+              : plans.length >= 3
+                ? "md:grid-cols-2 xl:grid-cols-3"
+                : "md:grid-cols-2 max-w-4xl mx-auto",
         )}>
           {plans.map((plan) => (
             <Card

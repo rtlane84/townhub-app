@@ -91,7 +91,7 @@ In production, missing `SESSION_SECRET` throws at startup.
 - The business owner for that order's business
 - The signed-in customer whose `customerUserId` matches the order
 
-All other callers receive **403**.
+Unauthorized callers are denied by `authorizeOrderAccess` (403 semantics). Public `GET /api/orders/:id` and related customer-facing order reads map denied access to **404** via `respondOrderNotFound` so order IDs cannot be enumerated.
 
 Stripe success URLs carry the pending-checkout token to the checkout-return page. After confirmation/materialization, the frontend uses the returned order token for `/order/:id`.
 
@@ -280,9 +280,10 @@ Request
 
 | Risk | Severity | Notes |
 |------|----------|-------|
-| Guest order access tokens never expire | Medium | Stateless HMAC; leaked tokens grant permanent access until expiry/revocation is implemented (see Guest Order Access Tokens) |
+| Legacy v1 guest tokens never expire; v2 tokens last 90 days with no revocation list | Medium | New tokens use v2 with embedded expiry. Leaked v1 links remain valid until support is dropped; leaked v2 links work until expiry. No server-side revocation yet (see Guest Order Access Tokens) |
 | No pagination on list endpoints | Medium | Full table scans at scale |
 | Cart is client-side only | Low | `localStorage`; no server-side cart persistence |
+| Business Hub live events require a single API instance | Medium | In-process SSE bus; multi-instance needs shared pub/sub |
 
 ---
 

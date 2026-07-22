@@ -39,6 +39,26 @@ describe("app marketing page", () => {
     assert.doesNotMatch(appSource, /ProtectedRoute path="\/app"/);
   });
 
+  it("publishes the seller agreement alongside the customer legal pages", () => {
+    const appSource = readFileSync(`${srcRoot}/App.tsx`, "utf8");
+    const agreementSource = readFileSync(`${srcRoot}/pages/business-seller-agreement.tsx`, "utf8");
+    assert.match(appSource, /path="\/business-seller-agreement"/);
+    assert.match(agreementSource, /Business Seller Agreement/);
+    assert.match(agreementSource, /launch draft/);
+  });
+
+  it("declares proprietary TownHub rights without claiming user business content", () => {
+    const termsSource = readFileSync(`${srcRoot}/pages/terms-of-service.tsx`, "utf8");
+    const packageJson = readFileSync(`${srcRoot}/../../../package.json`, "utf8");
+    const license = readFileSync(`${srcRoot}/../../../LICENSE`, "utf8");
+    assert.match(packageJson, /"license": "UNLICENSED"/);
+    assert.match(license, /Copyright \(c\) 2026 LaneTech/);
+    assert.match(termsSource, /TownHub intellectual property/);
+    assert.match(termsSource, /reverse engineer/);
+    assert.match(termsSource, /scrape or automatically extract data/);
+    assert.match(termsSource, /except for content submitted by\s+users or businesses/);
+  });
+
   it("skips marketplace chrome for the marketing page", () => {
     const layoutSource = readFileSync(`${srcRoot}/components/layout.tsx`, "utf8");
     assert.match(layoutSource, /isAppMarketingPath/);
@@ -62,10 +82,11 @@ describe("app marketing page", () => {
     assert.doesNotMatch(pageSource, /_replit-app-page/);
     assert.doesNotMatch(heroSource, /_replit-app-page/);
     assert.match(heroSource, /@\/assets\/app-marketing\//);
+    assert.match(heroSource, /home-clay-today\.png/);
     assert.match(heroSource, /loading="eager"/);
   });
 
-  it("lazy-loads below-the-fold phone frames by default", () => {
+  it("lazy-loads below-the-fold screenshots with the shared marketing treatment", () => {
     const phoneFrame = readFileSync(
       `${srcRoot}/components/app-marketing/phone-frame.tsx`,
       "utf8",
@@ -73,14 +94,11 @@ describe("app marketing page", () => {
     assert.match(phoneFrame, /loading = "lazy"/);
     assert.match(phoneFrame, /aspectRatio/);
     assert.match(phoneFrame, /object-cover/);
-    // Replit-style border bezel + proportional attached CSS notch (no SVG / no fixed h-5).
-    assert.match(phoneFrame, /border-\[6px\]/);
-    assert.match(phoneFrame, /rounded-b-3xl/);
-    assert.match(phoneFrame, /width: "33\.333%"/);
-    // Corner radius scales with width so small phones match the good large-frame silhouette.
-    assert.match(phoneFrame, /rounded-\[min\(2\.5rem,11%\)\]/);
+    // Match the polished screenshot cards on the business sales page.
+    assert.match(phoneFrame, /rounded-\[2rem\] border border-gray-100 bg-white shadow-xl/);
+    assert.match(phoneFrame, /shadow-\[inset_0_0_15px_rgba\(0,0,0,0\.06\)\]/);
     assert.doesNotMatch(phoneFrame, /viewBox=/);
-    assert.doesNotMatch(phoneFrame, /\bh-5\b|\bh-6\b/);
+    assert.doesNotMatch(phoneFrame, /border-\[6px\]|rounded-b-3xl/);
   });
 
   it("uses DualPhonePair for shop and business sections", () => {

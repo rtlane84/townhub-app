@@ -178,11 +178,12 @@ Business **channel** settings (Email / SMS / Discord / ntfy Enable + destination
 | ------- | ------------ |
 | **Email / SMS / Discord / ntfy / TownHub App Push → Enable** | When on, that channel receives **all** operational owner alerts: new orders, and appointment requests when appointments are enabled. When off, neither operational event is sent on that channel. |
 | Destination / setup fields | Notification email, phone, Discord webhook, ntfy topic |
+| **Plan features `email_notifications` / `sms_notifications`** | When the business plan lacks the feature, that Email or SMS card is **hidden**, channel flags are forced off, and operational email/SMS are not sent. Discord, ntfy, and App Push are unchanged by these keys. |
 | **In-shop sound** | Local chime for live Business Hub toasts only |
 
 Per-event DB flags on the business (`notifyNewOrdersByEmail`, …) and user preference rows (`OWNER_NEW_ORDER`, `OWNER_APPOINTMENT_REQUEST`) remain for compatibility. Saving/toggling Enable ON writes both operational flags `true`; OFF writes both `false`.
 
-**Critical Stripe / payment alerts** are always-on (email + App Push) and are not controlled by these Enable switches — see [Critical Stripe / payment alerts](#critical-stripe--payment-alerts).
+**Critical Stripe / payment alerts** are always-on (email + App Push) and are not controlled by these Enable switches or by the `email_notifications` plan feature — see [Critical Stripe / payment alerts](#critical-stripe--payment-alerts).
 
 `OWNER_SUBSCRIPTION` (subscription updates push) is **not** shown until App Push for those events is implemented. Subscription **emails** still send independently.
 

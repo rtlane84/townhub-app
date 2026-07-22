@@ -26,11 +26,7 @@ import {
 import {
   resolvePaymentMode,
   paymentModeStorefrontNote,
-  resolveStorefrontMode,
   storefrontCopy,
-  isAppointmentStorefrontMode,
-  isInformationStorefrontMode,
-  isOrderingStorefrontMode,
   showsStorefrontCatalog,
   informationPrimaryCtaLabel,
   formatTimeRange12h,
@@ -39,6 +35,8 @@ import {
   hidesStorefrontCart,
   formatCivilDateInTimeZone,
   filterFutureMobileStops,
+  resolvePublicBrowseMode,
+  allowsStorefrontOrdering,
 } from "@workspace/api-zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,11 +55,11 @@ import { resolveBusinessHours } from "@/lib/business-hours";
 import { getStorefrontStatusLine } from "@/lib/business-listing";
 import { usePlatformBranding } from "@/components/theme-provider";
 import {
-  googleMapsDirectionsUrl,
   locationDirectionsUrl,
   resolveStorefrontPresence,
   shareStorefrontPage,
 } from "@/lib/storefront-presence";
+import { directionsUrl } from "@/lib/directions";
 import { cn } from "@/lib/utils";
 import { triggerNativeHaptic } from "@/lib/native-haptics";
 import { isNativeApp } from "@/lib/native-platform";
@@ -239,12 +237,20 @@ export default function Storefront() {
 
   const specials = products.filter((p) => p.featured && p.available !== false);
   const paymentNote = paymentModeStorefrontNote(resolvePaymentMode(b));
-  const storefrontMode = resolveStorefrontMode(b);
-  const isAppointmentMode = isAppointmentStorefrontMode(b);
-  const isInformationMode = isInformationStorefrontMode(b);
-  const isOrderingMode = isOrderingStorefrontMode(b);
-  const showCatalog = showsStorefrontCatalog(storefrontMode);
-  const copy = storefrontCopy(storefrontMode);
+  const browseMode = resolvePublicBrowseMode({
+    type: b.type,
+    storefrontMode: b.storefrontMode,
+    onlineOrderingEntitled: b.onlineOrderingEntitled,
+  });
+  const isAppointmentMode = browseMode === "APPOINTMENT";
+  const isInformationMode = browseMode === "INFORMATION";
+  const isOrderingMode = allowsStorefrontOrdering({
+    type: b.type,
+    storefrontMode: b.storefrontMode,
+    onlineOrderingEntitled: b.onlineOrderingEntitled,
+  });
+  const showCatalog = showsStorefrontCatalog(browseMode);
+  const copy = storefrontCopy(browseMode);
   const displayedProducts = (
     activeCategory
       ? products.filter((p) => p.categoryId === activeCategory)
@@ -539,7 +545,7 @@ export default function Storefront() {
                     <QuickAction
                       label="Directions"
                       icon={Navigation}
-                      href={googleMapsDirectionsUrl(address)}
+                      href={directionsUrl(address)}
                       external
                     />
                   ) : null}

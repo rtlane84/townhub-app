@@ -29,6 +29,8 @@ import type {
   AppointmentRequestStatusUpdate,
   ArchiveBusinessResponse,
   Business,
+  BusinessApplication,
+  BusinessApplicationInput,
   BusinessFeatureAccess,
   BusinessInput,
   BusinessOrderSummary,
@@ -44,8 +46,10 @@ import type {
   CategoryUpdate,
   ChangeSubscriptionPlanResponse,
   CheckBusinessSlugAvailabilityParams,
+  CheckoutIntentResult,
   CheckoutSessionInput,
-  CheckoutSessionResult,
+  ConfirmCheckoutInput,
+  ConfirmCheckoutResult,
   DeviceRegistration,
   Event,
   EventInput,
@@ -107,6 +111,8 @@ import type {
   SubscriptionFeatureInput,
   SubscriptionPlan,
   SubscriptionPlanInput,
+  SupportReportInput,
+  SupportReportResult,
   SystemHealthReport,
   TestMyPushNotification200,
   UnregisterDevice200,
@@ -1651,6 +1657,154 @@ export function useCheckBusinessSlugAvailability<TData = Awaited<ReturnType<type
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getCheckBusinessSlugAvailabilityQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getApplyForBusinessListingUrl = () => {
+
+
+
+
+  return `/api/businesses/apply`
+}
+
+/**
+ * @summary Submit a business listing application
+ */
+export const applyForBusinessListing = async (businessApplicationInput: BusinessApplicationInput, options?: RequestInit): Promise<BusinessApplication> => {
+
+  return customFetch<BusinessApplication>(getApplyForBusinessListingUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      businessApplicationInput,)
+  }
+);}
+
+
+
+
+export const getApplyForBusinessListingMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyForBusinessListing>>, TError,{data: BodyType<BusinessApplicationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof applyForBusinessListing>>, TError,{data: BodyType<BusinessApplicationInput>}, TContext> => {
+
+const mutationKey = ['applyForBusinessListing'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyForBusinessListing>>, {data: BodyType<BusinessApplicationInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  applyForBusinessListing(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyForBusinessListingMutationResult = NonNullable<Awaited<ReturnType<typeof applyForBusinessListing>>>
+    export type ApplyForBusinessListingMutationBody = BodyType<BusinessApplicationInput>
+    export type ApplyForBusinessListingMutationError = ErrorType<void>
+
+    /**
+ * @summary Submit a business listing application
+ */
+export const useApplyForBusinessListing = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyForBusinessListing>>, TError,{data: BodyType<BusinessApplicationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof applyForBusinessListing>>,
+        TError,
+        {data: BodyType<BusinessApplicationInput>},
+        TContext
+      > => {
+      return useMutation(getApplyForBusinessListingMutationOptions(options));
+    }
+
+export const getGetMyBusinessApplicationUrl = () => {
+
+
+
+
+  return `/api/businesses/my-application`
+}
+
+/**
+ * @summary Get the signed-in applicant's pending business listing application
+ */
+export const getMyBusinessApplication = async ( options?: RequestInit): Promise<BusinessApplication> => {
+
+  return customFetch<BusinessApplication>(getGetMyBusinessApplicationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyBusinessApplicationQueryKey = () => {
+    return [
+    `/api/businesses/my-application`
+    ] as const;
+    }
+
+
+export const getGetMyBusinessApplicationQueryOptions = <TData = Awaited<ReturnType<typeof getMyBusinessApplication>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBusinessApplication>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBusinessApplicationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBusinessApplication>>> = ({ signal }) => getMyBusinessApplication({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyBusinessApplication>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyBusinessApplicationQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBusinessApplication>>>
+export type GetMyBusinessApplicationQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the signed-in applicant's pending business listing application
+ */
+
+export function useGetMyBusinessApplication<TData = Awaited<ReturnType<typeof getMyBusinessApplication>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBusinessApplication>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyBusinessApplicationQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3294,6 +3448,8 @@ export const getGetOrderUrl = (id: number,) => {
  * Guest orders require a signed access token via `?token=` query parameter or
 `X-Order-Access-Token` header. Signed-in customers, business owners, and
 admins may access without a token when authorized.
+Missing orders and unauthorized callers both receive 404 so order IDs cannot
+be enumerated.
 
  * @summary Get order by id (guest token, owner, admin, or linked customer)
  */
@@ -3757,6 +3913,158 @@ export function useListAllOrders<TData = Awaited<ReturnType<typeof listAllOrders
 
 
 
+export const getCreateCheckoutIntentUrl = () => {
+
+
+
+
+  return `/api/checkout/intents`
+}
+
+/**
+ * Persists a `pending_checkouts` row, creates Stripe Checkout as a direct charge
+on the business connected account, and returns `pendingCheckoutId`, a pending
+access token, and the Stripe URL. A durable `PAID` order is created only after
+verified payment (webhook or `POST /checkout/confirm`).
+Request body matches pay-at-pickup `OrderInput` (same cart and contact fields).
+
+ * @summary Create a pending card checkout (no durable order yet)
+ */
+export const createCheckoutIntent = async (orderInput: OrderInput, options?: RequestInit): Promise<CheckoutIntentResult> => {
+
+  return customFetch<CheckoutIntentResult>(getCreateCheckoutIntentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      orderInput,)
+  }
+);}
+
+
+
+
+export const getCreateCheckoutIntentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCheckoutIntent>>, TError,{data: BodyType<OrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCheckoutIntent>>, TError,{data: BodyType<OrderInput>}, TContext> => {
+
+const mutationKey = ['createCheckoutIntent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCheckoutIntent>>, {data: BodyType<OrderInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCheckoutIntent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCheckoutIntentMutationResult = NonNullable<Awaited<ReturnType<typeof createCheckoutIntent>>>
+    export type CreateCheckoutIntentMutationBody = BodyType<OrderInput>
+    export type CreateCheckoutIntentMutationError = ErrorType<void>
+
+    /**
+ * @summary Create a pending card checkout (no durable order yet)
+ */
+export const useCreateCheckoutIntent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCheckoutIntent>>, TError,{data: BodyType<OrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCheckoutIntent>>,
+        TError,
+        {data: BodyType<OrderInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCheckoutIntentMutationOptions(options));
+    }
+
+export const getConfirmCheckoutUrl = () => {
+
+
+
+
+  return `/api/checkout/confirm`
+}
+
+/**
+ * Idempotent safety net after Stripe redirect. Prefer `pendingCheckoutId` plus the
+pending `accessToken`. Legacy `orderId` supports pre-pending-checkout flows.
+Missing or unauthorized pending checkouts return 404 (anti-enumeration).
+
+ * @summary Confirm payment and materialize a paid order from a pending checkout
+ */
+export const confirmCheckout = async (confirmCheckoutInput: ConfirmCheckoutInput, options?: RequestInit): Promise<ConfirmCheckoutResult> => {
+
+  return customFetch<ConfirmCheckoutResult>(getConfirmCheckoutUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      confirmCheckoutInput,)
+  }
+);}
+
+
+
+
+export const getConfirmCheckoutMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmCheckout>>, TError,{data: BodyType<ConfirmCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmCheckout>>, TError,{data: BodyType<ConfirmCheckoutInput>}, TContext> => {
+
+const mutationKey = ['confirmCheckout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmCheckout>>, {data: BodyType<ConfirmCheckoutInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  confirmCheckout(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof confirmCheckout>>>
+    export type ConfirmCheckoutMutationBody = BodyType<ConfirmCheckoutInput>
+    export type ConfirmCheckoutMutationError = ErrorType<void>
+
+    /**
+ * @summary Confirm payment and materialize a paid order from a pending checkout
+ */
+export const useConfirmCheckout = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmCheckout>>, TError,{data: BodyType<ConfirmCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof confirmCheckout>>,
+        TError,
+        {data: BodyType<ConfirmCheckoutInput>},
+        TContext
+      > => {
+      return useMutation(getConfirmCheckoutMutationOptions(options));
+    }
+
 export const getCreateCheckoutSessionUrl = () => {
 
 
@@ -3766,11 +4074,15 @@ export const getCreateCheckoutSessionUrl = () => {
 }
 
 /**
- * @summary Create a Stripe checkout session (requires order access)
- */
-export const createCheckoutSession = async (checkoutSessionInput: CheckoutSessionInput, options?: RequestInit): Promise<CheckoutSessionResult> => {
+ * Card checkout no longer creates an order up front. This endpoint always returns
+400 and instructs clients to use `POST /checkout/intents`.
 
-  return customFetch<CheckoutSessionResult>(getCreateCheckoutSessionUrl(),
+ * @deprecated
+ * @summary Deprecated — use POST /checkout/intents
+ */
+export const createCheckoutSession = async (checkoutSessionInput: CheckoutSessionInput, options?: RequestInit): Promise<unknown> => {
+
+  return customFetch<unknown>(getCreateCheckoutSessionUrl(),
   {
     ...options,
     method: 'POST',
@@ -3815,7 +4127,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateCheckoutSessionMutationError = ErrorType<void>
 
     /**
- * @summary Create a Stripe checkout session (requires order access)
+ * @deprecated
+ * @summary Deprecated — use POST /checkout/intents
  */
 export const useCreateCheckoutSession = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCheckoutSession>>, TError,{data: BodyType<CheckoutSessionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -8242,6 +8555,77 @@ export function useGetWeather<TData = Awaited<ReturnType<typeof getWeather>>, TE
 
 
 
+
+export const getSubmitSupportReportUrl = () => {
+
+
+
+
+  return `/api/support/reports`
+}
+
+/**
+ * @summary Submit a customer problem report (emailed to platform support)
+ */
+export const submitSupportReport = async (supportReportInput: SupportReportInput, options?: RequestInit): Promise<SupportReportResult> => {
+
+  return customFetch<SupportReportResult>(getSubmitSupportReportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      supportReportInput,)
+  }
+);}
+
+
+
+
+export const getSubmitSupportReportMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitSupportReport>>, TError,{data: BodyType<SupportReportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof submitSupportReport>>, TError,{data: BodyType<SupportReportInput>}, TContext> => {
+
+const mutationKey = ['submitSupportReport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitSupportReport>>, {data: BodyType<SupportReportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  submitSupportReport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitSupportReportMutationResult = NonNullable<Awaited<ReturnType<typeof submitSupportReport>>>
+    export type SubmitSupportReportMutationBody = BodyType<SupportReportInput>
+    export type SubmitSupportReportMutationError = ErrorType<void>
+
+    /**
+ * @summary Submit a customer problem report (emailed to platform support)
+ */
+export const useSubmitSupportReport = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitSupportReport>>, TError,{data: BodyType<SupportReportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof submitSupportReport>>,
+        TError,
+        {data: BodyType<SupportReportInput>},
+        TContext
+      > => {
+      return useMutation(getSubmitSupportReportMutationOptions(options));
+    }
 
 export const getLookupUsZipUrl = (zip: string,) => {
 

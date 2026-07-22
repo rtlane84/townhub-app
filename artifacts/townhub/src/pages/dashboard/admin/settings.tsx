@@ -868,7 +868,7 @@ export default function AdminSettings() {
             <SettingsSection
               icon={CloudSun}
               title="Weather"
-              description="Optional current conditions and 5-day forecast on the homepage (Open-Meteo)."
+              description="Optional current conditions, rain timing, and severe-weather alerts on the homepage (Apple WeatherKit)."
             >
               <SettingsToggleRow
                 label="Show weather on homepage"

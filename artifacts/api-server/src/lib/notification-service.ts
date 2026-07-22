@@ -38,6 +38,9 @@ import {
 } from "./ntfy-owner-notifications";
 import { isValidNtfyTopic } from "./ntfy-topic";
 import type { StripeConnectIssueDetails } from "./stripe-critical-alerts";
+import { businessHasFeature } from "./business-features";
+import { SUBSCRIPTION_FEATURE_KEYS } from "./subscription-feature-keys";
+import { getPlatformTimeZone } from "./platform-timezone";
 
 export {
   statusToCustomerEvent,
@@ -59,6 +62,8 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
     .select()
     .from(businessesTable)
     .where(eq(businessesTable.id, order.businessId));
+
+  const timeZone = await getPlatformTimeZone();
 
   const mappedItems = items.map((item) => ({
     productName: item.productName,
@@ -82,6 +87,7 @@ export async function loadOrderNotificationData(orderId: number): Promise<OrderN
     businessOrderNumber: order.businessOrderNumber ?? null,
     businessId: order.businessId,
     businessName: business?.name ?? "Local business",
+    timeZone,
     businessLogoUrl: business?.logoUrl,
     businessAddress: business?.address,
     pickupInstructions: business?.pickupInstructions,
@@ -205,7 +211,12 @@ export async function notifyOwnerNewOrderFromOrderId(orderId: number): Promise<v
     business.notificationEmail?.trim() || business.orderNotificationEmail?.trim() || null;
   const ownerPhone = business.notificationPhone?.trim() || null;
 
-  if (business.notifyNewOrdersByEmail !== false && ownerEmail) {
+  const [emailAllowed, smsAllowed] = await Promise.all([
+    businessHasFeature(business.id, SUBSCRIPTION_FEATURE_KEYS.EMAIL_NOTIFICATIONS),
+    businessHasFeature(business.id, SUBSCRIPTION_FEATURE_KEYS.SMS_NOTIFICATIONS),
+  ]);
+
+  if (emailAllowed && business.notifyNewOrdersByEmail !== false && ownerEmail) {
     tasks.push(
       deliverOwnerEmail({
         businessId: business.id,
@@ -219,7 +230,7 @@ export async function notifyOwnerNewOrderFromOrderId(orderId: number): Promise<v
     );
   }
 
-  if (business.notifyNewOrdersBySms && ownerPhone) {
+  if (smsAllowed && business.notifyNewOrdersBySms && ownerPhone) {
     tasks.push(
       deliverOwnerSms({
         businessId: business.id,

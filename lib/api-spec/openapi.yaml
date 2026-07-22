@@ -34,6 +34,8 @@ tags:
     description: Food truck location management
   - name: media
     description: Media library and image uploads
+  - name: support
+    description: Customer support and problem reports
 
 paths:
   /healthz:
@@ -432,6 +434,48 @@ paths:
                 $ref: "#/components/schemas/BusinessSlugAvailability"
         "400":
           description: Invalid slug
+
+  /businesses/apply:
+    post:
+      operationId: applyForBusinessListing
+      tags: [businesses]
+      summary: Submit a business listing application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessApplicationInput"
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessApplication"
+        "400":
+          description: Invalid request or seller-agreement acceptance missing
+        "401":
+          description: Unauthorized
+        "409":
+          description: Applicant already has a pending application
+
+  /businesses/my-application:
+    get:
+      operationId: getMyBusinessApplication
+      tags: [businesses]
+      summary: Get the signed-in applicant's pending business listing application
+      responses:
+        "200":
+          description: Pending application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessApplication"
+        "401":
+          description: Unauthorized
+        "404":
+          description: No pending application
 
   /businesses/checkout/{businessId}:
     get:
@@ -964,6 +1008,8 @@ paths:
         Guest orders require a signed access token via `?token=` query parameter or
         `X-Order-Access-Token` header. Signed-in customers, business owners, and
         admins may access without a token when authorized.
+        Missing orders and unauthorized callers both receive 404 so order IDs cannot
+        be enumerated.
       parameters:
         - in: path
           name: id
@@ -977,10 +1023,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
-        "403":
-          description: Forbidden — valid access token, ownership, or admin required
         "404":
-          description: Not found
+          description: Not found or access denied (anti-enumeration)
 
   /orders/{id}/status:
     patch:
@@ -1129,11 +1173,81 @@ paths:
                   $ref: "#/components/schemas/Order"
 
   # ─── Checkout / Stripe ──────────────────────────────────────────
+  /checkout/intents:
+    post:
+      operationId: createCheckoutIntent
+      tags: [orders]
+      summary: Create a pending card checkout (no durable order yet)
+      description: |
+        Persists a `pending_checkouts` row, creates Stripe Checkout as a direct charge
+        on the business connected account, and returns `pendingCheckoutId`, a pending
+        access token, and the Stripe URL. A durable `PAID` order is created only after
+        verified payment (webhook or `POST /checkout/confirm`).
+        Request body matches pay-at-pickup `OrderInput` (same cart and contact fields).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Pending checkout created; open `url` to pay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutIntentResult"
+        "200":
+          description: Mock-mode path that may already materialize a paid order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutIntentResult"
+        "400":
+          description: Validation or commerce rule failure
+        "403":
+          description: Online ordering not entitled or business inactive
+        "404":
+          description: Business not found
+
+  /checkout/confirm:
+    post:
+      operationId: confirmCheckout
+      tags: [orders]
+      summary: Confirm payment and materialize a paid order from a pending checkout
+      description: |
+        Idempotent safety net after Stripe redirect. Prefer `pendingCheckoutId` plus the
+        pending `accessToken`. Legacy `orderId` supports pre-pending-checkout flows.
+        Missing or unauthorized pending checkouts return 404 (anti-enumeration).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmCheckoutInput"
+      responses:
+        "200":
+          description: Paid order (may include accessToken / pendingCheckoutId)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfirmCheckoutResult"
+        "400":
+          description: pendingCheckoutId or orderId required
+        "404":
+          description: Not found or access denied
+        "409":
+          description: Payment not complete or session not ready
+
   /checkout/session:
     post:
       operationId: createCheckoutSession
+      deprecated: true
       tags: [orders]
-      summary: Create a Stripe checkout session (requires order access)
+      summary: Deprecated — use POST /checkout/intents
+      description: |
+        Card checkout no longer creates an order up front. This endpoint always returns
+        400 and instructs clients to use `POST /checkout/intents`.
       requestBody:
         required: true
         content:
@@ -1141,14 +1255,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CheckoutSessionInput"
       responses:
-        "200":
-          description: Checkout session URL
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CheckoutSessionResult"
-        "403":
-          description: Forbidden — valid access token, ownership, or admin required
+        "400":
+          description: Deprecated endpoint — use POST /checkout/intents
 
   /checkout/webhook:
     post:
@@ -2430,6 +2538,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/WeatherForecast"
 
+  # ─── Support / problem reports ────────────────────────────────────
+  /support/reports:
+    post:
+      operationId: submitSupportReport
+      tags: [support]
+      summary: Submit a customer problem report (emailed to platform support)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupportReportInput"
+      responses:
+        "201":
+          description: Report accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupportReportResult"
+        "400":
+          description: Invalid input
+        "429":
+          description: Too many requests
+        "503":
+          description: Support email delivery unavailable
+
   # ─── Geo / ZIP lookup ─────────────────────────────────────────────
   /geo/zip/{zip}:
     get:
@@ -2674,6 +2808,84 @@ components:
           type: string
           format: date-time
         startTime:
+          type: string
+          format: date-time
+
+    BusinessApplicationInput:
+      type: object
+      required: [name, type, acceptBusinessSellerAgreement]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        structuredHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
+        planId:
+          type: integer
+        billingInterval:
+          type: string
+          enum: [monthly, yearly]
+        acceptBusinessSellerAgreement:
+          type: boolean
+          const: true
+          description: Confirms acceptance of the current published Business Seller Agreement.
+
+    BusinessApplication:
+      type: object
+      required: [id, name, type, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        userEmail:
+          type: ["string", "null"]
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: ["string", "null"]
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        structuredHours:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/BusinessDayHours"
+        planId:
+          type: ["integer", "null"]
+        billingInterval:
+          type: ["string", "null"]
+          enum: [monthly, yearly, null]
+        planName:
+          type: ["string", "null"]
+        businessTermsVersion:
+          type: ["string", "null"]
+        businessTermsAcceptedAt:
+          type: ["string", "null"]
+          format: date-time
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+        reviewNote:
+          type: ["string", "null"]
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        businessId:
+          type: ["integer", "null"]
+        createdAt:
           type: string
           format: date-time
 
@@ -3241,6 +3453,12 @@ components:
         orderingUnavailableReason:
           type: ["string", "null"]
           description: Human-readable reason when orderingAvailable is false.
+        onlineOrderingEntitled:
+          type: boolean
+          description: >
+            Whether the business subscription plan includes the online_ordering feature.
+            Public cart/checkout UI must require this plus storefrontMode ORDERING.
+            Distinct from orderingAvailable (hours/schedule open state).
         publicAvailability:
           allOf:
             - $ref: "#/components/schemas/PublicAvailabilitySummary"
@@ -4077,6 +4295,7 @@ components:
 
     CheckoutSessionInput:
       type: object
+      deprecated: true
       required: [orderId]
       properties:
         orderId:
@@ -4087,6 +4306,7 @@ components:
 
     CheckoutSessionResult:
       type: object
+      deprecated: true
       required: [url]
       properties:
         url:
@@ -4095,6 +4315,54 @@ components:
           type: ["string", "null"]
         mockMode:
           type: boolean
+
+    CheckoutIntentResult:
+      type: object
+      required: [pendingCheckoutId, accessToken]
+      properties:
+        url:
+          type: ["string", "null"]
+          description: Stripe Checkout URL (null in mock mode after immediate materialization)
+        sessionId:
+          type: ["string", "null"]
+        mockMode:
+          type: boolean
+        pendingCheckoutId:
+          type: integer
+        accessToken:
+          type: string
+          description: Pending-checkout HMAC access token
+        orderId:
+          type: integer
+          description: Present only when mock mode materializes an order immediately
+        orderAccessToken:
+          type: string
+          description: Order access token when orderId is present
+
+    ConfirmCheckoutInput:
+      type: object
+      properties:
+        pendingCheckoutId:
+          type: integer
+          description: Preferred — pending checkout created by POST /checkout/intents
+        orderId:
+          type: integer
+          description: Legacy pre-pending-checkout order id
+        accessToken:
+          type: string
+          description: Pending or order HMAC access token
+
+    ConfirmCheckoutResult:
+      allOf:
+        - $ref: "#/components/schemas/Order"
+        - type: object
+          properties:
+            accessToken:
+              type: string
+            pendingCheckoutId:
+              type: integer
+            orderId:
+              type: integer
 
     BusinessOrderSummary:
       type: object
@@ -5052,18 +5320,19 @@ components:
 
     WeatherCurrent:
       type: object
-      required: [temperatureF, weatherCode, summary]
+      required: [temperatureF, conditionCode, summary]
       properties:
         temperatureF:
           type: number
-        weatherCode:
-          type: integer
+        conditionCode:
+          type: string
+          description: Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms.
         summary:
           type: string
 
     WeatherDaily:
       type: object
-      required: [date, highF, lowF, weatherCode, summary]
+      required: [date, highF, lowF, conditionCode, summary]
       properties:
         date:
           type: string
@@ -5072,10 +5341,15 @@ components:
           type: number
         lowF:
           type: number
-        weatherCode:
-          type: integer
+        conditionCode:
+          type: string
+          description: Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms.
         summary:
           type: string
+        precipitationChance:
+          type: number
+          minimum: 0
+          maximum: 100
 
     WeatherForecast:
       type: object
@@ -5087,7 +5361,7 @@ components:
           type: boolean
         reason:
           type: string
-          enum: [missing_location, geocoding_failed, forecast_failed, malformed_response]
+          enum: [missing_location, forecast_failed, malformed_response]
         message:
           type: string
         locationQuery:
@@ -5096,6 +5370,15 @@ components:
           type: boolean
         locationLabel:
           type: string
+        alert:
+          type: object
+          properties:
+            summary:
+              type: string
+            detailsUrl:
+              type: string
+            severity:
+              type: string
         current:
           $ref: "#/components/schemas/WeatherCurrent"
         daily:
@@ -5282,3 +5565,38 @@ components:
           minLength: 1
         notes:
           type: string
+
+    # ─── Support reports ────────────────────────────────────────────
+    SupportReportCategory:
+      type: string
+      enum: [BUG, QUESTION, OTHER]
+
+    SupportReportInput:
+      type: object
+      required: [category, message, pagePath]
+      properties:
+        category:
+          $ref: "#/components/schemas/SupportReportCategory"
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        contactEmail:
+          type: string
+          format: email
+          description: Optional reply-to address when the reporter is not signed in
+        pagePath:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Current app path when the report was submitted
+        userAgent:
+          type: string
+          maxLength: 500
+
+    SupportReportResult:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean

@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { getAuth } from "@clerk/express";
 import { db, usersTable, accountDeletionRequestsTable } from "@workspace/db";
 import { eq, count, and, sql, desc } from "drizzle-orm";
-import { serializeBusiness } from "./businesses";
+import { serializeBusinessWithEntitlements } from "./businesses";
 import { getPlatformTimeZone } from "../lib/platform-timezone";
 import {
   getPrimaryOwnedBusiness,
@@ -262,7 +262,7 @@ router.get("/auth/me/business", async (req, res): Promise<void> => {
   }
 
   res.set("Cache-Control", "no-store");
-  res.json(serializeBusiness(business, { timeZone: await getPlatformTimeZone() }));
+  res.json(await serializeBusinessWithEntitlements(business, { timeZone: await getPlatformTimeZone() }));
 });
 
 // GET /api/admin/bootstrap-status

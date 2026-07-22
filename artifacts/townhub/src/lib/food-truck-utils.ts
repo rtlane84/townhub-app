@@ -1,5 +1,6 @@
 import type { FoodTruckLocationWithBusiness } from "@workspace/api-client-react";
 import { formatCivilDateHeading, formatTimeRange12h } from "@workspace/api-zod";
+import { directionsUrl, type DirectionsPlatform } from "./directions.ts";
 
 export function formatFoodTruckTimeWindow(
   startTime?: string | null,
@@ -13,14 +14,17 @@ export function formatFoodTruckDateHeading(date: string): string {
   return formatCivilDateHeading(date);
 }
 
-export function foodTruckDirectionsUrl(truck: FoodTruckLocationWithBusiness): string {
+export function foodTruckDirectionsUrl(
+  truck: FoodTruckLocationWithBusiness,
+  platform?: DirectionsPlatform,
+): string {
   const lat = truck.latitude?.trim();
   const lng = truck.longitude?.trim();
   if (lat && lng) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}`;
+    return directionsUrl(`${lat},${lng}`, platform);
   }
   const query = truck.address?.trim() || truck.locationName;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  return directionsUrl(query, platform);
 }
 
 export type FoodTruckMapPoint = FoodTruckLocationWithBusiness & {

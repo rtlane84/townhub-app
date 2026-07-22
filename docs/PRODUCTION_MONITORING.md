@@ -22,6 +22,7 @@ Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.)
 - Does not expose service configuration, env vars, or internal errors
 - Returns HTTP 200 when the API process is running
 - A successful response means only that the API process is responding — not that every dependency is healthy
+- Successful `/health` responses are **not** written to API access logs (avoids Railway log-rate drops and Better Stack Telemetry noise from uptime probes). Failed or non-health requests still log.
 
 **Legacy alias:** `GET /api/healthz` returns `{ "status": "ok" }` for backward compatibility.
 
@@ -72,7 +73,7 @@ Dashboards: [Monitors](https://uptime.betterstack.com/team/t570646/monitors), [E
 The admin page shows:
 
 - **Application** — environment, version, build date, commit SHA (when env vars are set), uptime, start time
-- **Service readiness** — API, database (live ping), storage, email, SMS, Stripe, auth, weather/geocoding, background jobs, Sentry
+- **Service readiness** — API, database (live ping), storage, email, SMS, Stripe, auth, WeatherKit, background jobs, Sentry
 - **Operational logs** — durable notification delivery history and platform audit activity
 - **Business metrics** — orders, subscriptions, and related counts when available
 

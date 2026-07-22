@@ -59,6 +59,33 @@ describe("storefront mode", () => {
     assert.equal(hidesStorefrontCart({ type: "FUNERAL_SERVICE", storefrontMode: "INFORMATION" }), true);
   });
 
+  it("hides cart when plan lacks online_ordering even in ORDERING mode", () => {
+    assert.equal(
+      hidesStorefrontCart({
+        type: "GENERAL",
+        storefrontMode: "ORDERING",
+        onlineOrderingEntitled: false,
+      }),
+      true,
+    );
+    assert.equal(
+      allowsStorefrontOrdering({
+        type: "GENERAL",
+        storefrontMode: "ORDERING",
+        onlineOrderingEntitled: false,
+      }),
+      false,
+    );
+    assert.equal(
+      allowsStorefrontOrdering({
+        type: "GENERAL",
+        storefrontMode: "ORDERING",
+        onlineOrderingEntitled: true,
+      }),
+      true,
+    );
+  });
+
   it("shows catalog for all storefront modes", () => {
     assert.equal(showsStorefrontCatalog("ORDERING"), true);
     assert.equal(showsStorefrontCatalog("APPOINTMENT"), true);

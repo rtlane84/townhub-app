@@ -18,7 +18,7 @@ export function buildCustomerOrderReceivedSms(order: OrderNotificationData): str
   const ticketLabel = formatOrderTicketNumber(order.orderId, "Order", order.businessOrderNumber);
   const timing =
     order.estimatedWindowStart && order.estimatedWindowEnd
-      ? ` ${formatNotificationEstimatedWindow(order.fulfillmentType, order.estimatedWindowStart, order.estimatedWindowEnd)}.`
+      ? ` ${formatNotificationEstimatedWindow(order.fulfillmentType, order.estimatedWindowStart, order.estimatedWindowEnd, order.timeZone)}.`
       : "";
   return `${order.businessName} received ${ticketLabel}.${timing} We'll notify you when it's accepted. ${customerOrderUrlForNotification(order)}`;
 }
@@ -78,6 +78,7 @@ export function buildOwnerNewOrderSms(order: OrderNotificationData): string {
           order.fulfillmentType,
           order.estimatedWindowStart,
           order.estimatedWindowEnd,
+          order.timeZone,
         )
       : "ASAP";
   return [

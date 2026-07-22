@@ -62,8 +62,8 @@ export const DEFAULT_SUBSCRIPTION_FEATURES: Array<{
   },
   {
     key: SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE,
-    name: "Business Website",
-    description: "Public storefront page with hours, branding, and catalog.",
+    name: "Business page & catalog",
+    description: "Public storefront page with hours, branding, and catalog or menu (display without requiring online ordering).",
     category: "Presence",
     sortOrder: 60,
   },

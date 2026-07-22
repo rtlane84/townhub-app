@@ -61,6 +61,102 @@ export interface ApplicationHealth {
   startTime: string;
 }
 
+export type BusinessApplicationInputBillingInterval = typeof BusinessApplicationInputBillingInterval[keyof typeof BusinessApplicationInputBillingInterval];
+
+
+export const BusinessApplicationInputBillingInterval = {
+  monthly: 'monthly',
+  yearly: 'yearly',
+} as const;
+
+export interface BusinessDayHours {
+  /**
+     * 0=Sunday through 6=Saturday
+     * @minimum 0
+     * @maximum 6
+     */
+  dayOfWeek: number;
+  isClosed: boolean;
+  /**
+     * 24-hour time HH:mm
+     * @nullable
+     */
+  openTime?: string | null;
+  /**
+     * 24-hour time HH:mm
+     * @nullable
+     */
+  closeTime?: string | null;
+}
+
+export interface BusinessApplicationInput {
+  name: string;
+  type: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+  structuredHours?: BusinessDayHours[];
+  planId?: number;
+  billingInterval?: BusinessApplicationInputBillingInterval;
+  /** Confirms acceptance of the current published Business Seller Agreement. */
+  acceptBusinessSellerAgreement: true;
+}
+
+/**
+ * @nullable
+ */
+export type BusinessApplicationBillingInterval = typeof BusinessApplicationBillingInterval[keyof typeof BusinessApplicationBillingInterval] | null;
+
+
+export const BusinessApplicationBillingInterval = {
+  monthly: 'monthly',
+  yearly: 'yearly',
+} as const;
+
+export type BusinessApplicationStatus = typeof BusinessApplicationStatus[keyof typeof BusinessApplicationStatus];
+
+
+export const BusinessApplicationStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export interface BusinessApplication {
+  id: number;
+  userId?: string;
+  /** @nullable */
+  userEmail?: string | null;
+  name: string;
+  type: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  address?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  structuredHours?: BusinessDayHours[] | null;
+  /** @nullable */
+  planId?: number | null;
+  /** @nullable */
+  billingInterval?: BusinessApplicationBillingInterval;
+  /** @nullable */
+  planName?: string | null;
+  /** @nullable */
+  businessTermsVersion?: string | null;
+  /** @nullable */
+  businessTermsAcceptedAt?: string | null;
+  status: BusinessApplicationStatus;
+  /** @nullable */
+  reviewNote?: string | null;
+  /** @nullable */
+  reviewedAt?: string | null;
+  /** @nullable */
+  businessId?: number | null;
+  createdAt: string;
+}
+
 export interface PlatformActivityEntry {
   id: string;
   type: string;
@@ -351,26 +447,6 @@ export interface OwnedBusinessSummary {
   active: boolean;
 }
 
-export interface BusinessDayHours {
-  /**
-     * 0=Sunday through 6=Saturday
-     * @minimum 0
-     * @maximum 6
-     */
-  dayOfWeek: number;
-  isClosed: boolean;
-  /**
-     * 24-hour time HH:mm
-     * @nullable
-     */
-  openTime?: string | null;
-  /**
-     * 24-hour time HH:mm
-     * @nullable
-     */
-  closeTime?: string | null;
-}
-
 /**
  * Concise public open/here status for directory and storefront (separate from ordering availability modes). Computed in the platform IANA timezone.
 
@@ -522,6 +598,9 @@ export interface Business {
      * @nullable
      */
   orderingUnavailableReason?: string | null;
+  /** Whether the business subscription plan includes the online_ordering feature. Public cart/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours/schedule open state).
+   */
+  onlineOrderingEntitled?: boolean;
   /** Public directory/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.
    */
   publicAvailability?: PublicAvailabilitySummary | null;
@@ -1050,12 +1129,18 @@ export interface OrderStatusUpdate {
   status: OrderStatus;
 }
 
+/**
+ * @deprecated
+ */
 export interface CheckoutSessionInput {
   orderId: number;
   /** Signed guest order access token (required for guest checkout when not authenticated) */
   accessToken?: string;
 }
 
+/**
+ * @deprecated
+ */
 export interface CheckoutSessionResult {
   /** @nullable */
   url: string | null;
@@ -1063,6 +1148,39 @@ export interface CheckoutSessionResult {
   sessionId?: string | null;
   mockMode?: boolean;
 }
+
+export interface CheckoutIntentResult {
+  /**
+     * Stripe Checkout URL (null in mock mode after immediate materialization)
+     * @nullable
+     */
+  url?: string | null;
+  /** @nullable */
+  sessionId?: string | null;
+  mockMode?: boolean;
+  pendingCheckoutId: number;
+  /** Pending-checkout HMAC access token */
+  accessToken: string;
+  /** Present only when mock mode materializes an order immediately */
+  orderId?: number;
+  /** Order access token when orderId is present */
+  orderAccessToken?: string;
+}
+
+export interface ConfirmCheckoutInput {
+  /** Preferred — pending checkout created by POST /checkout/intents */
+  pendingCheckoutId?: number;
+  /** Legacy pre-pending-checkout order id */
+  orderId?: number;
+  /** Pending or order HMAC access token */
+  accessToken?: string;
+}
+
+export type ConfirmCheckoutResult = Order & {
+  accessToken?: string;
+  pendingCheckoutId?: number;
+  orderId?: number;
+};
 
 export interface BusinessOrderSummary {
   todayCount: number;
@@ -1819,7 +1937,8 @@ export interface PlatformThemeInput {
 
 export interface WeatherCurrent {
   temperatureF: number;
-  weatherCode: number;
+  /** Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms. */
+  conditionCode: string;
   summary: string;
 }
 
@@ -1827,8 +1946,14 @@ export interface WeatherDaily {
   date: string;
   highF: number;
   lowF: number;
-  weatherCode: number;
+  /** Native Apple WeatherKit condition code, such as Foggy or ScatteredThunderstorms. */
+  conditionCode: string;
   summary: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  precipitationChance?: number;
 }
 
 export type WeatherForecastReason = typeof WeatherForecastReason[keyof typeof WeatherForecastReason];
@@ -1836,10 +1961,15 @@ export type WeatherForecastReason = typeof WeatherForecastReason[keyof typeof We
 
 export const WeatherForecastReason = {
   missing_location: 'missing_location',
-  geocoding_failed: 'geocoding_failed',
   forecast_failed: 'forecast_failed',
   malformed_response: 'malformed_response',
 } as const;
+
+export type WeatherForecastAlert = {
+  summary?: string;
+  detailsUrl?: string;
+  severity?: string;
+};
 
 export interface WeatherForecast {
   enabled: boolean;
@@ -1849,6 +1979,7 @@ export interface WeatherForecast {
   locationQuery?: string;
   demo?: boolean;
   locationLabel?: string;
+  alert?: WeatherForecastAlert;
   current?: WeatherCurrent;
   daily?: WeatherDaily[];
 }
@@ -2002,6 +2133,38 @@ export interface AppointmentRequestInput {
   /** @minLength 1 */
   requestedTime: string;
   notes?: string;
+}
+
+export type SupportReportCategory = typeof SupportReportCategory[keyof typeof SupportReportCategory];
+
+
+export const SupportReportCategory = {
+  BUG: 'BUG',
+  QUESTION: 'QUESTION',
+  OTHER: 'OTHER',
+} as const;
+
+export interface SupportReportInput {
+  category: SupportReportCategory;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  message: string;
+  /** Optional reply-to address when the reporter is not signed in */
+  contactEmail?: string;
+  /**
+     * Current app path when the report was submitted
+     * @minLength 1
+     * @maxLength 500
+     */
+  pagePath: string;
+  /** @maxLength 500 */
+  userAgent?: string;
+}
+
+export interface SupportReportResult {
+  ok: boolean;
 }
 
 export type GetMeParams = {

@@ -58,18 +58,38 @@ export function showsStorefrontCatalog(mode: StorefrontMode): boolean {
   return mode === "ORDERING" || mode === "APPOINTMENT" || mode === "INFORMATION";
 }
 
-export function allowsStorefrontOrdering(business: {
+export type StorefrontCartBusiness = {
   type?: string | null;
   storefrontMode?: StorefrontMode | null;
-}): boolean {
+  /** When false, cart is hidden even if storefrontMode is ORDERING. */
+  onlineOrderingEntitled?: boolean | null;
+};
+
+/**
+ * Whether the public storefront may show cart / add-to-cart.
+ * Requires ORDERING mode and plan entitlement when entitlement is known.
+ * Missing onlineOrderingEntitled is treated as entitled for backward-compatible
+ * callers that have not loaded the field yet — prefer always setting it from the API.
+ */
+export function allowsStorefrontOrdering(business: StorefrontCartBusiness): boolean {
+  if (business.onlineOrderingEntitled === false) return false;
   return isOrderingStorefrontMode(business);
 }
 
-export function hidesStorefrontCart(business: {
-  type?: string | null;
-  storefrontMode?: StorefrontMode | null;
-}): boolean {
-  return !isOrderingStorefrontMode(business);
+export function hidesStorefrontCart(business: StorefrontCartBusiness): boolean {
+  return !allowsStorefrontOrdering(business);
+}
+
+/**
+ * Effective public browsing mode for UI copy and add buttons.
+ * When ordering is not entitled, behave as INFORMATION even if mode is ORDERING.
+ */
+export function resolvePublicBrowseMode(business: StorefrontCartBusiness): StorefrontMode {
+  const mode = resolveStorefrontMode(business);
+  if (mode === "ORDERING" && business.onlineOrderingEntitled === false) {
+    return "INFORMATION";
+  }
+  return mode;
 }
 
 export function acceptsAppointmentRequests(business: {

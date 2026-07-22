@@ -40,6 +40,8 @@ export type OrderNotificationData = {
   businessOrderNumber?: number | null;
   businessId: number;
   businessName: string;
+  /** IANA timezone used for customer-facing notification times. */
+  timeZone: string;
   businessLogoUrl?: string | null;
   businessAddress?: string | null;
   pickupInstructions?: string | null;

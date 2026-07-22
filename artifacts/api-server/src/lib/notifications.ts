@@ -28,6 +28,8 @@ import {
   buildOwnerNewAppointmentPush,
   buildCustomerAppointmentPush,
 } from "./notification-push-copy";
+import { businessHasFeature } from "./business-features";
+import { SUBSCRIPTION_FEATURE_KEYS } from "./subscription-feature-keys";
 
 export type { NotificationStatus, NotificationChannel, NotificationEventType } from "./notification-delivery";
 export { resolveNotificationStatus } from "./notification-delivery";
@@ -106,8 +108,13 @@ export async function notifyOwnerNewAppointmentRequest(input: {
   const phone = resolveOwnerNotificationPhone(input.business);
   const tasks: Promise<unknown>[] = [];
 
+  const [emailAllowed, smsAllowed] = await Promise.all([
+    businessHasFeature(input.business.id, SUBSCRIPTION_FEATURE_KEYS.EMAIL_NOTIFICATIONS),
+    businessHasFeature(input.business.id, SUBSCRIPTION_FEATURE_KEYS.SMS_NOTIFICATIONS),
+  ]);
+
   try {
-    if (input.business.notifyAppointmentRequestsByEmail !== false && ownerEmail) {
+    if (emailAllowed && input.business.notifyAppointmentRequestsByEmail !== false && ownerEmail) {
       tasks.push(
         deliverOwnerEmail({
           businessId: input.business.id,
@@ -121,7 +128,7 @@ export async function notifyOwnerNewAppointmentRequest(input: {
       );
     }
 
-    if (input.business.notifyAppointmentRequestsBySms && phone) {
+    if (smsAllowed && input.business.notifyAppointmentRequestsBySms && phone) {
       tasks.push(
         deliverOwnerSms({
           businessId: input.business.id,

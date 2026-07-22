@@ -30,7 +30,7 @@ Read `docs/PRD.md` for product scope and acceptance criteria, `docs/ARCHITECTURE
 | `lib/db`                    | Drizzle schema, database exports, and database push commands                  |
 | `tests/e2e`                 | Playwright customer, owner, admin, and workflow tests                         |
 | `docs`                      | Product, setup, architecture, operations, and provider documentation          |
-| `attached_assets`           | Historical prompt/source material; treat as read-only unless explicitly asked |
+| `docs/archive`              | Historical prompts, dated audits, and archived agent memory (read-only) |
 
 ## Technology and Runtime
 
@@ -235,7 +235,7 @@ Unless explicitly required by the task:
 
 - Do not modify `.env` or expose its contents. Update `.env.example` with placeholders when configuration changes.
 - Do not edit `.git`, `.pnpm-store`, `node_modules`, build output, test reports, uploads, or IDE metadata.
-- Do not edit files under `attached_assets`; they are historical inputs.
+- Do not edit files under `docs/archive`; they are historical inputs.
 - Do not edit generated API files directly.
 - Do not edit generated iOS dependency/build directories.
 - Do not modify `pnpm-lock.yaml` without an intentional dependency change.
@@ -259,7 +259,7 @@ Match validation to the risk of the change.
 
 If a required service or secret is unavailable, do not fabricate a passing result. Run every safe local check still available and explain the exact limitation.
 
-There is currently no repository lint script or checked-in CI workflow. Do not claim `pnpm run lint` exists; recommend adding lint/CI separately if the task calls for it.
+There is currently no repository lint script (`pnpm run lint` does not exist). GitHub Actions CI (`.github/workflows/ci.yml`) runs typecheck, API/frontend unit tests, production build, and `audit:health` on pull requests and `main`. Playwright E2E is not in CI — run it locally or against a configured environment when needed. Additional workflows cover CodeQL, uptime health checks, and production DB backup/restore drills.
 
 ## Definition of Done
 
