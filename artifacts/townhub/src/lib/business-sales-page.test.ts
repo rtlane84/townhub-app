@@ -35,7 +35,7 @@ describe("business sales page", () => {
     assert.match(page, /Where Clay looks first\./);
     assert.match(page, /text-townhub-blue italic/);
     assert.match(page, /Message us on Facebook/);
-    assert.ok(page.includes("https://www.facebook.com/LaneTechLLC"));
+    assert.match(page, /href="https:\/\/www\.facebook\.com\/LaneTechLLC"/);
     assert.match(page, /Start your local presence/);
     assert.match(page, /rounded-\[3rem\] border border-gray-100 bg-white/);
     assert.match(page, /bg-\[#fafbfe\] py-24/);
