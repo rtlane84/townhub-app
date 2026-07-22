@@ -1,6 +1,8 @@
 # TownHub
 
-TownHub (LocalOrderHub) is a multi-tenant local marketplace platform. Customers browse town businesses, place orders, request appointments, and follow community events. Business owners manage catalogs, orders, and subscriptions. Platform admins oversee businesses, plans, and platform settings.
+TownHub is a multi-tenant local marketplace platform. Customers browse town businesses, place orders, request appointments, and follow community events. Business owners manage catalogs, orders, and subscriptions. Platform admins oversee businesses, plans, and platform settings.
+
+Clay, West Virginia is the first pilot locality. Branding and content are configurable; locality-level data isolation is not a config toggle yet (see [docs/adr/0005-clay-first-pilot-scope.md](docs/adr/0005-clay-first-pilot-scope.md)).
 
 ---
 
@@ -15,8 +17,9 @@ TownHub (LocalOrderHub) is a multi-tenant local marketplace platform. Customers 
 - Stripe Billing for businesses paying TownHub (separate from Connect order payments)
 - Email (Resend/SMTP) and SMS (Twilio) notifications
 - Supabase Storage media library with business-scoped uploads
-- Community events, highlights, food truck locations, weather widget
+- Community events, highlights, food truck locations, WeatherKit weather widget
 - Sentry error monitoring (API + frontend)
+- Capacitor iOS shell (TestFlight / App Store)
 
 ---
 
@@ -33,6 +36,7 @@ TownHub (LocalOrderHub) is a multi-tenant local marketplace platform. Customers 
 | Validation | Zod 3, Orval-generated schemas from OpenAPI |
 | Payments | Stripe Connect (orders) + Stripe Billing (subscriptions) |
 | Media | Supabase Storage (default) or local filesystem (dev) |
+| Deploy | Cloudflare Workers (web) + Railway (API) |
 
 ---
 
@@ -46,7 +50,7 @@ pnpm --filter @workspace/api-server run dev    # API on :8080
 pnpm --filter @workspace/townhub run dev   # frontend on :23032
 ```
 
-All environment variables live in a **single root `.env`** file. The API loads it via `--env-file=../../.env`; Vite reads `VITE_*` vars from the same file during dev.
+All environment variables live in a **single root `.env`** file. [`.env.example`](.env.example) is the full catalog. The API loads it via `--env-file=../../.env`; Vite reads `VITE_*` vars from the same file during dev.
 
 | Service | Local URL |
 |---------|-----------|
@@ -77,19 +81,31 @@ Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 cha
 
 | Document | Purpose |
 |----------|---------|
-| [docs/PRD.md](docs/PRD.md) | Product vision, launch scope, requirements, metrics, and acceptance criteria |
-| [docs/SETUP.md](docs/SETUP.md) | Full local setup, env vars, providers, troubleshooting |
+| [docs/PRD.md](docs/PRD.md) | Product vision, features, roles, plans, acceptance criteria |
+| [docs/SETUP.md](docs/SETUP.md) | Local development setup and troubleshooting |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design for developers |
+| [docs/API.md](docs/API.md) | API overview, auth, conventions, OpenAPI pointer |
+| [docs/DATABASE.md](docs/DATABASE.md) | Schema domains, push rules, backups pointer |
+| [docs/TESTING.md](docs/TESTING.md) | Unit tests, CI coverage, Playwright entry |
 | [SECURITY.md](SECURITY.md) | Auth, authorization, and security model |
-| [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) | Day-to-day web + iOS release flow, versioning, and scripts |
+| [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) | Day-to-day web + iOS release flow |
 | [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) | Current release blockers and validation evidence |
 | [PRODUCTION.md](PRODUCTION.md) | Production deployment and verification checklist |
-| [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md) | Staging and production isolation |
+| [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md) | Staging and production isolation; Railway/Cloudflare var checklists |
 | [docs/IOS_APP.md](docs/IOS_APP.md) | iOS, TestFlight, and App Store workflow |
+| [docs/PLAYWRIGHT_E2E.md](docs/PLAYWRIGHT_E2E.md) | End-to-end test setup and workflows |
 | [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) | Stripe Connect (customer payments) |
 | [docs/STRIPE_BILLING_SETUP.md](docs/STRIPE_BILLING_SETUP.md) | Stripe Billing (business subscriptions) |
-| [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Notification delivery, live alerts, push, and subscription events |
+| [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Notification delivery, live alerts, push |
+| [docs/WEATHERKIT.md](docs/WEATHERKIT.md) | Apple WeatherKit setup |
 | [docs/PRODUCTION_MONITORING.md](docs/PRODUCTION_MONITORING.md) | Sentry, health checks, logs, and alerts |
+| [docs/DATABASE_BACKUP_AND_RECOVERY.md](docs/DATABASE_BACKUP_AND_RECOVERY.md) | Backups, R2, restore runbook |
+| [docs/SECURITY_INCIDENT_RESPONSE.md](docs/SECURITY_INCIDENT_RESPONSE.md) | First-hour incident steps |
+| [docs/ACCOUNT_DELETION_RUNBOOK.md](docs/ACCOUNT_DELETION_RUNBOOK.md) | Account deletion queue and SQL helpers |
+| [docs/TECH_DEBT.md](docs/TECH_DEBT.md) | Known scale and maintainability backlog |
+| [AGENTS.md](AGENTS.md) | Repository working rules for humans and agents |
+
+Provider and legal docs also live under `docs/` (Resend, Twilio, App Store privacy, legal launch, outreach).
 
 ---
 
@@ -98,12 +114,15 @@ Tokens are HMAC-signed with `SESSION_SECRET` (required in production, ≥ 32 cha
 ```
 artifacts/
   api-server/       Express API
-  townhub/  React frontend
+  townhub/          React frontend + Capacitor iOS
+  mockup-sandbox/   Isolated UI prototyping (not production)
 lib/
   api-spec/         OpenAPI contract (source of truth)
   api-client-react/ Generated TanStack Query hooks
   api-zod/          Generated Zod schemas
   db/               Drizzle schema and push scripts
+tests/e2e/          Playwright end-to-end tests
+docs/               Product and operations documentation
 ```
 
 Regenerate API clients after OpenAPI changes:

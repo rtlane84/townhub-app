@@ -5,12 +5,10 @@
  * LocalOrderHub - Multi-tenant local marketplace API
  * OpenAPI spec version: 0.1.0
  */
+import type { Order } from './order';
 
-/**
- * @deprecated
- */
-export interface CheckoutSessionInput {
-  orderId: number;
-  /** Signed guest order access token (required for guest checkout when not authenticated) */
+export type ConfirmCheckoutResult = Order & {
   accessToken?: string;
-}
+  pendingCheckoutId?: number;
+  orderId?: number;
+};

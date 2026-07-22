@@ -123,7 +123,7 @@ Configure an R2 lifecycle rule for the retention period you want. The workflow p
 
 Repeat this drill quarterly (or after backup pipeline changes) via workflow_dispatch on `production-db-restore-drill.yml`.
 
-### 3.3 Supabase Storage (media)
+### 3.4 Supabase Storage (media)
 
 Postgres backups **do not** include image bytes in the storage bucket.
 

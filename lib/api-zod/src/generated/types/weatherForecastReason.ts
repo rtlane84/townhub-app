@@ -11,7 +11,6 @@ export type WeatherForecastReason = typeof WeatherForecastReason[keyof typeof We
 
 export const WeatherForecastReason = {
   missing_location: 'missing_location',
-  geocoding_failed: 'geocoding_failed',
   forecast_failed: 'forecast_failed',
   malformed_response: 'malformed_response',
 } as const;

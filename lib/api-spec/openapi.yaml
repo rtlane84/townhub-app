@@ -1006,6 +1006,8 @@ paths:
         Guest orders require a signed access token via `?token=` query parameter or
         `X-Order-Access-Token` header. Signed-in customers, business owners, and
         admins may access without a token when authorized.
+        Missing orders and unauthorized callers both receive 404 so order IDs cannot
+        be enumerated.
       parameters:
         - in: path
           name: id
@@ -1019,10 +1021,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
-        "403":
-          description: Forbidden — valid access token, ownership, or admin required
         "404":
-          description: Not found
+          description: Not found or access denied (anti-enumeration)
 
   /orders/{id}/status:
     patch:
@@ -1171,11 +1171,81 @@ paths:
                   $ref: "#/components/schemas/Order"
 
   # ─── Checkout / Stripe ──────────────────────────────────────────
+  /checkout/intents:
+    post:
+      operationId: createCheckoutIntent
+      tags: [orders]
+      summary: Create a pending card checkout (no durable order yet)
+      description: |
+        Persists a `pending_checkouts` row, creates Stripe Checkout as a direct charge
+        on the business connected account, and returns `pendingCheckoutId`, a pending
+        access token, and the Stripe URL. A durable `PAID` order is created only after
+        verified payment (webhook or `POST /checkout/confirm`).
+        Request body matches pay-at-pickup `OrderInput` (same cart and contact fields).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Pending checkout created; open `url` to pay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutIntentResult"
+        "200":
+          description: Mock-mode path that may already materialize a paid order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutIntentResult"
+        "400":
+          description: Validation or commerce rule failure
+        "403":
+          description: Online ordering not entitled or business inactive
+        "404":
+          description: Business not found
+
+  /checkout/confirm:
+    post:
+      operationId: confirmCheckout
+      tags: [orders]
+      summary: Confirm payment and materialize a paid order from a pending checkout
+      description: |
+        Idempotent safety net after Stripe redirect. Prefer `pendingCheckoutId` plus the
+        pending `accessToken`. Legacy `orderId` supports pre-pending-checkout flows.
+        Missing or unauthorized pending checkouts return 404 (anti-enumeration).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmCheckoutInput"
+      responses:
+        "200":
+          description: Paid order (may include accessToken / pendingCheckoutId)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfirmCheckoutResult"
+        "400":
+          description: pendingCheckoutId or orderId required
+        "404":
+          description: Not found or access denied
+        "409":
+          description: Payment not complete or session not ready
+
   /checkout/session:
     post:
       operationId: createCheckoutSession
+      deprecated: true
       tags: [orders]
-      summary: Create a Stripe checkout session (requires order access)
+      summary: Deprecated — use POST /checkout/intents
+      description: |
+        Card checkout no longer creates an order up front. This endpoint always returns
+        400 and instructs clients to use `POST /checkout/intents`.
       requestBody:
         required: true
         content:
@@ -1183,14 +1253,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CheckoutSessionInput"
       responses:
-        "200":
-          description: Checkout session URL
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CheckoutSessionResult"
-        "403":
-          description: Forbidden — valid access token, ownership, or admin required
+        "400":
+          description: Deprecated endpoint — use POST /checkout/intents
 
   /checkout/webhook:
     post:
@@ -4203,6 +4267,7 @@ components:
 
     CheckoutSessionInput:
       type: object
+      deprecated: true
       required: [orderId]
       properties:
         orderId:
@@ -4213,6 +4278,7 @@ components:
 
     CheckoutSessionResult:
       type: object
+      deprecated: true
       required: [url]
       properties:
         url:
@@ -4221,6 +4287,54 @@ components:
           type: ["string", "null"]
         mockMode:
           type: boolean
+
+    CheckoutIntentResult:
+      type: object
+      required: [pendingCheckoutId, accessToken]
+      properties:
+        url:
+          type: ["string", "null"]
+          description: Stripe Checkout URL (null in mock mode after immediate materialization)
+        sessionId:
+          type: ["string", "null"]
+        mockMode:
+          type: boolean
+        pendingCheckoutId:
+          type: integer
+        accessToken:
+          type: string
+          description: Pending-checkout HMAC access token
+        orderId:
+          type: integer
+          description: Present only when mock mode materializes an order immediately
+        orderAccessToken:
+          type: string
+          description: Order access token when orderId is present
+
+    ConfirmCheckoutInput:
+      type: object
+      properties:
+        pendingCheckoutId:
+          type: integer
+          description: Preferred — pending checkout created by POST /checkout/intents
+        orderId:
+          type: integer
+          description: Legacy pre-pending-checkout order id
+        accessToken:
+          type: string
+          description: Pending or order HMAC access token
+
+    ConfirmCheckoutResult:
+      allOf:
+        - $ref: "#/components/schemas/Order"
+        - type: object
+          properties:
+            accessToken:
+              type: string
+            pendingCheckoutId:
+              type: integer
+            orderId:
+              type: integer
 
     BusinessOrderSummary:
       type: object
@@ -5219,7 +5333,7 @@ components:
           type: boolean
         reason:
           type: string
-          enum: [missing_location, geocoding_failed, forecast_failed, malformed_response]
+          enum: [missing_location, forecast_failed, malformed_response]
         message:
           type: string
         locationQuery:

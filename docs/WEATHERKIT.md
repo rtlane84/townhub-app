@@ -23,3 +23,13 @@ WeatherKit requires Apple attribution wherever its weather data is displayed. To
 The API caches a WeatherKit response for up to 10 minutes. The active homepage refreshes weather every 10 minutes; reloading the page or returning focus to it may also fetch a newer response once the browser cache is stale.
 
 If WeatherKit is not configured, development may use the existing demo fallback. Production returns an unavailable state and does not fabricate forecast data.
+
+### `WEATHER_DEMO_FALLBACK`
+
+| Value | Behavior |
+|-------|----------|
+| unset | Demo forecast only when `NODE_ENV !== "production"` |
+| `true` | Always serve demo forecast (even if WeatherKit is configured) |
+| `false` | Never serve demo; fail closed when WeatherKit is unavailable |
+
+Prefer unset or `false` on Railway production. Do not leave `true` on production.

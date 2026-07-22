@@ -116,3 +116,5 @@ Before promoting a release, the platform owner verifies:
 - [ ] Root package metadata remains `UNLICENSED` and the proprietary `LICENSE` notice remains present.
 - [ ] New contributors have a recorded confidentiality/IP assignment, and departed contributors no longer have access.
 - [ ] New code, fonts, icons, images, templates, and dependencies have a recorded compatible license; no copied competitor material or secrets are included.
+
+Non-blocking engineering backlog: [TECH_DEBT.md](TECH_DEBT.md).

@@ -30,7 +30,7 @@ The app can proxy Clerk FAPI through `/api/__clerk` (see `artifacts/api-server` 
 
 Set all secrets in your **hosting provider's secret manager** (environment variables UI). Never commit production values.
 
-Use isolated Railway variables for the API and Cloudflare build variables for the frontend.
+Use isolated Railway variables for the API and Cloudflare build variables for the frontend. Canonical live checklists (Railway API + Cloudflare Builds) live in [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md#live-variable-checklists-operator-inventory). The complete variable catalog is [`.env.example`](.env.example).
 
 ### Required
 
@@ -96,9 +96,20 @@ See [docs/TWILIO_SETUP.md](docs/TWILIO_SETUP.md).
 | `SENTRY_DSN` | API error monitoring |
 | `VITE_SENTRY_DSN` | Frontend error monitoring (build-time) |
 | `JOB_SECRET` | Auth for internal cron jobs (trial reminders) |
+| `JOB_CRON_CONFIGURED` | Set `true` only when external cron actually calls trial reminders (clears Ops Center warning) |
 | `PLATFORM_ADMIN_EMAIL` | Subscription operational alert recipients |
 | `BOOTSTRAP_TOKEN` | Optional — required for first-admin bootstrap when set |
 | `APP_VERSION`, `GIT_COMMIT_SHA` | Optional build metadata in System Status |
+| `FRONTEND_BASE_URL` | Optional public web origin when `APP_BASE_URL` must stay on the API host |
+
+### WeatherKit (homepage weather)
+
+| Secret | Purpose |
+|--------|---------|
+| `WEATHERKIT_KEY_ID` / `WEATHERKIT_TEAM_ID` / `WEATHERKIT_SERVICE_ID` | Apple WeatherKit credentials |
+| `WEATHERKIT_PRIVATE_KEY` (or `_PATH`) | Server-side private key — never ship to the frontend |
+| `WEATHERKIT_LATITUDE` / `WEATHERKIT_LONGITUDE` / `WEATHERKIT_TIMEZONE` | Location for forecasts |
+| `WEATHER_DEMO_FALLBACK` | Prefer unset or `false` on production (see [docs/WEATHERKIT.md](docs/WEATHERKIT.md)) |
 
 ### Rate limiting (optional overrides)
 

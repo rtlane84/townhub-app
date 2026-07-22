@@ -1129,12 +1129,18 @@ export interface OrderStatusUpdate {
   status: OrderStatus;
 }
 
+/**
+ * @deprecated
+ */
 export interface CheckoutSessionInput {
   orderId: number;
   /** Signed guest order access token (required for guest checkout when not authenticated) */
   accessToken?: string;
 }
 
+/**
+ * @deprecated
+ */
 export interface CheckoutSessionResult {
   /** @nullable */
   url: string | null;
@@ -1142,6 +1148,39 @@ export interface CheckoutSessionResult {
   sessionId?: string | null;
   mockMode?: boolean;
 }
+
+export interface CheckoutIntentResult {
+  /**
+     * Stripe Checkout URL (null in mock mode after immediate materialization)
+     * @nullable
+     */
+  url?: string | null;
+  /** @nullable */
+  sessionId?: string | null;
+  mockMode?: boolean;
+  pendingCheckoutId: number;
+  /** Pending-checkout HMAC access token */
+  accessToken: string;
+  /** Present only when mock mode materializes an order immediately */
+  orderId?: number;
+  /** Order access token when orderId is present */
+  orderAccessToken?: string;
+}
+
+export interface ConfirmCheckoutInput {
+  /** Preferred — pending checkout created by POST /checkout/intents */
+  pendingCheckoutId?: number;
+  /** Legacy pre-pending-checkout order id */
+  orderId?: number;
+  /** Pending or order HMAC access token */
+  accessToken?: string;
+}
+
+export type ConfirmCheckoutResult = Order & {
+  accessToken?: string;
+  pendingCheckoutId?: number;
+  orderId?: number;
+};
 
 export interface BusinessOrderSummary {
   todayCount: number;
@@ -1922,7 +1961,6 @@ export type WeatherForecastReason = typeof WeatherForecastReason[keyof typeof We
 
 export const WeatherForecastReason = {
   missing_location: 'missing_location',
-  geocoding_failed: 'geocoding_failed',
   forecast_failed: 'forecast_failed',
   malformed_response: 'malformed_response',
 } as const;

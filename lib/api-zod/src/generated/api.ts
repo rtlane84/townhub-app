@@ -1624,6 +1624,8 @@ export const ListMyOrdersResponse = zod.array(ListMyOrdersResponseItem)
  * Guest orders require a signed access token via `?token=` query parameter or
 `X-Order-Access-Token` header. Signed-in customers, business owners, and
 admins may access without a token when authorized.
+Missing orders and unauthorized callers both receive 404 so order IDs cannot
+be enumerated.
 
  * @summary Get order by id (guest token, owner, admin, or linked customer)
  */
@@ -2080,17 +2082,139 @@ export const ListAllOrdersResponse = zod.array(ListAllOrdersResponseItem)
 
 
 /**
- * @summary Create a Stripe checkout session (requires order access)
+ * Persists a `pending_checkouts` row, creates Stripe Checkout as a direct charge
+on the business connected account, and returns `pendingCheckoutId`, a pending
+access token, and the Stripe URL. A durable `PAID` order is created only after
+verified payment (webhook or `POST /checkout/confirm`).
+Request body matches pay-at-pickup `OrderInput` (same cart and contact fields).
+
+ * @summary Create a pending card checkout (no durable order yet)
+ */
+
+
+export const createCheckoutIntentBodyCustomerPhoneMin = 7;
+
+
+
+
+export const CreateCheckoutIntentBody = zod.object({
+  "businessId": zod.number(),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "customerName": zod.string().min(1),
+  "customerEmail": zod.string().email().min(1),
+  "customerPhone": zod.string().min(createCheckoutIntentBodyCustomerPhoneMin),
+  "deliveryAddress": zod.string().optional(),
+  "pickupTime": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "specialFields": zod.string().optional().describe('JSON blob for business-type-specific fields'),
+  "paymentMethod": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "quantity": zod.number().min(1),
+  "selectedOptionIds": zod.array(zod.number()).optional()
+}))
+})
+
+export const CreateCheckoutIntentResponse = zod.object({
+  "url": zod.string().nullish().describe('Stripe Checkout URL (null in mock mode after immediate materialization)'),
+  "sessionId": zod.string().nullish(),
+  "mockMode": zod.boolean().optional(),
+  "pendingCheckoutId": zod.number(),
+  "accessToken": zod.string().describe('Pending-checkout HMAC access token'),
+  "orderId": zod.number().optional().describe('Present only when mock mode materializes an order immediately'),
+  "orderAccessToken": zod.string().optional().describe('Order access token when orderId is present')
+})
+
+
+/**
+ * Idempotent safety net after Stripe redirect. Prefer `pendingCheckoutId` plus the
+pending `accessToken`. Legacy `orderId` supports pre-pending-checkout flows.
+Missing or unauthorized pending checkouts return 404 (anti-enumeration).
+
+ * @summary Confirm payment and materialize a paid order from a pending checkout
+ */
+export const ConfirmCheckoutBody = zod.object({
+  "pendingCheckoutId": zod.number().optional().describe('Preferred — pending checkout created by POST \/checkout\/intents'),
+  "orderId": zod.number().optional().describe('Legacy pre-pending-checkout order id'),
+  "accessToken": zod.string().optional().describe('Pending or order HMAC access token')
+})
+
+export const ConfirmCheckoutResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "businessName": zod.string(),
+  "orderNumber": zod.string().optional().describe('Global unique reference (TH-YYYYMMDD-XXXXX).'),
+  "businessOrderNumber": zod.number().nullish().describe('Per-business sequential customer-facing order number (e.g. 101, 102).'),
+  "status": zod.enum(['NEW', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELED']),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "customerName": zod.string(),
+  "customerEmail": zod.string(),
+  "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
+  "deliveryAddress": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
+  "notes": zod.string().nullish(),
+  "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
+  "total": zod.number(),
+  "deliveryFee": zod.number().nullish(),
+  "paymentStatus": zod.string().optional(),
+  "paymentMethod": zod.string().optional(),
+  "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "orderId": zod.number().optional(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
+})).optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
+}).and(zod.object({
+  "accessToken": zod.string().optional(),
+  "pendingCheckoutId": zod.number().optional(),
+  "orderId": zod.number().optional()
+}))
+
+
+/**
+ * Card checkout no longer creates an order up front. This endpoint always returns
+400 and instructs clients to use `POST /checkout/intents`.
+
+ * @deprecated
+ * @summary Deprecated — use POST /checkout/intents
  */
 export const CreateCheckoutSessionBody = zod.object({
   "orderId": zod.number(),
   "accessToken": zod.string().optional().describe('Signed guest order access token (required for guest checkout when not authenticated)')
-})
-
-export const CreateCheckoutSessionResponse = zod.object({
-  "url": zod.string().nullable(),
-  "sessionId": zod.string().nullish(),
-  "mockMode": zod.boolean().optional()
 })
 
 
@@ -4008,7 +4132,7 @@ export const getWeatherResponseDailyItemPrecipitationChanceMax = 100;
 export const GetWeatherResponse = zod.object({
   "enabled": zod.boolean(),
   "unavailable": zod.boolean().optional(),
-  "reason": zod.enum(['missing_location', 'geocoding_failed', 'forecast_failed', 'malformed_response']).optional(),
+  "reason": zod.enum(['missing_location', 'forecast_failed', 'malformed_response']).optional(),
   "message": zod.string().optional(),
   "locationQuery": zod.string().optional(),
   "demo": zod.boolean().optional(),

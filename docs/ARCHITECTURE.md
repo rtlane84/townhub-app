@@ -395,6 +395,11 @@ Internal jobs (`POST /api/internal/jobs/subscription-trial-reminders`) require `
 ## Related Documentation
 
 - [SETUP.md](SETUP.md) — local development
+- [API.md](API.md) — API overview and conventions
+- [DATABASE.md](DATABASE.md) — schema domains and push rules
+- [TESTING.md](TESTING.md) — unit, CI, and Playwright
+- [WEATHERKIT.md](WEATHERKIT.md) — Apple WeatherKit
 - [../SECURITY.md](../SECURITY.md) — authorization matrix
 - [../PRODUCTION.md](../PRODUCTION.md) — deployment
+- [ENVIRONMENTS.md](ENVIRONMENTS.md) — staging/production isolation
 - [../lib/api-spec/openapi.yaml](../lib/api-spec/openapi.yaml) — full API contract

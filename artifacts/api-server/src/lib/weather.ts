@@ -32,7 +32,6 @@ export type WeatherForecastResponse = {
 
 export type WeatherErrorReason =
   | "missing_location"
-  | "geocoding_failed"
   | "forecast_failed"
   | "malformed_response";
 
