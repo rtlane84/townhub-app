@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { openStripeCheckoutUrl } from "@/lib/capacitor-shell";
+import { openExternalHttpsUrl, openStripeCheckoutUrl } from "@/lib/capacitor-shell";
 import { useLocation } from "wouter";
 import {
   useGetMySubscription,
@@ -41,6 +41,8 @@ import {
 } from "@/lib/subscription-display";
 import { pollUntilSubscriptionReady } from "@/lib/subscription-activation";
 import { isStoreDistribution } from "@/lib/distribution-channel";
+import { getPublicWebBaseUrl } from "@/lib/native-oauth";
+import { getOwnerSubscriptionWebUrl } from "@/lib/web-billing-link";
 
 type CheckoutReturnParams = SubscriptionSyncOptions & {
   kind: "checkout" | "portal";
@@ -86,6 +88,18 @@ export default function BusinessSubscription() {
 
   const checkoutMutation = useCreateBusinessSubscriptionCheckout();
   const portalMutation = useCreateBusinessSubscriptionPortal();
+
+  const handleOpenWebBilling = useCallback(() => {
+    try {
+      openExternalHttpsUrl(getOwnerSubscriptionWebUrl(getPublicWebBaseUrl()));
+    } catch {
+      toast({
+        title: "Could not open website",
+        description: "Open townhub.io in a browser and sign in to manage your subscription.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   const runActivationSync = useCallback(
     async (params: CheckoutReturnParams) => {
@@ -350,7 +364,7 @@ export default function BusinessSubscription() {
                     <p className="text-muted-foreground mt-1">
                       Paid features are no longer available.
                       {storeDistribution
-                        ? " Contact TownHub support for account help."
+                        ? " Use Manage on the web below to subscribe again, or contact TownHub support for account help."
                         : " Choose a plan below to subscribe again."}
                     </p>
                   </div>
@@ -366,7 +380,7 @@ export default function BusinessSubscription() {
                     <p className="font-medium text-amber-900">Payment past due</p>
                     <p className="text-amber-800/90 mt-1">
                       {storeDistribution
-                        ? "Your subscription needs attention. Contact TownHub support for account help."
+                        ? "Your subscription needs attention. Use Manage on the web below to update billing, or contact TownHub support."
                         : "Update your payment method in Manage Billing to avoid losing access."}
                     </p>
                   </div>
@@ -542,11 +556,17 @@ export default function BusinessSubscription() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {storeDistribution && !complimentary && (
-                  <p className="text-sm text-muted-foreground">
-                    Subscription changes are not available in this app. If your business was recently
-                    approved, follow the setup instructions sent to your account email. Contact TownHub
-                    support if you need account help.
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Subscribe, change plans, and update billing on the TownHub website. Opens in your
+                      browser — sign in with the same account. If your business was recently approved,
+                      you may also use the setup instructions sent to your account email.
+                    </p>
+                    <Button onClick={handleOpenWebBilling} className="gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      Manage on the web
+                    </Button>
+                  </div>
                 )}
 
                 {!storeDistribution && needsCheckout && subscription.plan && (

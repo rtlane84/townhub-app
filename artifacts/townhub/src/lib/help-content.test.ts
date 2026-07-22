@@ -164,7 +164,8 @@ describe("help-content", () => {
     const storeHelp = resolveBusinessOwnerHelpForDistribution(true);
     const serialized = JSON.stringify(storeHelp);
 
-    assert.match(serialized, /not available in this app/);
+    assert.match(serialized, /not available inside this app/);
+    assert.match(serialized, /Manage on the web/);
     assert.match(serialized, /setup instructions sent/);
     assert.doesNotMatch(serialized, /Manage Billing/);
     assert.doesNotMatch(serialized, /start the trial or subscription/);

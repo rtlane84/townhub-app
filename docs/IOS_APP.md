@@ -121,9 +121,12 @@ The iOS app includes the customer marketplace, Business Hub, and role-protected 
 TownHub owner SaaS billing is read-only in store distributions:
 
 - Owners can see the assigned plan, status, enabled features, and renewal/access dates.
-- Subscribe, Start Trial, Change Plan, Stripe Billing portal, and billing deep-link actions are suppressed.
-- Approved owners receive account setup instructions by email.
+- In-app Subscribe, Start Trial, Change Plan, Stripe Billing portal, and billing deep-link actions remain suppressed (no Stripe Billing CTAs inside the Capacitor shell).
+- Store builds show a **Manage on the web** button that opens the public website subscription page (`VITE_PUBLIC_WEB_URL` + `/dashboard/business/subscription`) in the system browser. Owners sign in with the same Clerk account and complete Stripe Billing on the web.
+- This external link is intended for the US/Clay pilot storefront. Do not treat it as globally cleared for every App Store region without a storefront/entitlement review.
+- Approved owners may still receive account setup instructions by email.
 - Admin plan assignment remains available to authorized platform administrators.
+- Shipping this CTA requires a new TestFlight / App Store archive; a website deploy alone does not update installed apps.
 
 `VITE_DISTRIBUTION_CHANNEL=app-store` activates this behavior, and native runtime detection fails closed if the variable is missing.
 
@@ -227,7 +230,7 @@ Then smoke on a physical iPhone and use **Product → Archive** in Xcode.
 | Generic “TownHub” branding / empty home data / “Loading sign-in…” forever | Native bundle missing `VITE_API_BASE_URL` and/or baked-in `VITE_CLERK_PROXY_URL` from root `.env`. Source `.env.native.staging` (see `.env.native.staging.example`), confirm `ios:sync` preflight passes, rebuild from Xcode. Home should show **ClayTownHub** when API is reachable. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |
 | Push fails | App ID/profile capability, APNs environment/key/team/bundle ID, device token registration |
-| Store billing buttons appear | Release env gate and `VITE_DISTRIBUTION_CHANNEL=app-store` |
+| In-app Stripe Subscribe / Manage Billing appear on owner Subscription | Release env gate and `VITE_DISTRIBUTION_CHANNEL=app-store`. Store builds should show **Manage on the web** only. |
 
 ## Project layout
 
