@@ -1,5 +1,7 @@
 # IP, vendor, and data-governance records
 
+> Operational record. Keep this current as vendors, licenses, ownership, or data handling changes.
+
 Keep the following records in a restricted company folder with role-limited access. Do not commit agreements, identities, tax IDs, signature pages, or credentials to this repository.
 
 ## IP register

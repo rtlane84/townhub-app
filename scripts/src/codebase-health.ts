@@ -96,7 +96,7 @@ hardFailures.push(...relativeMarkdownLinkFailures(files));
 const sourceFiles = files.filter((file) => {
   if (!file.startsWith("artifacts/") && !file.startsWith("lib/")) return false;
   if (file.includes("/generated/")) return false;
-  return [".ts", ".tsx"].includes(extname(file));
+  return [".ts", ".tsx"].includes(extname(file)) && existsSync(join(workspaceRoot, file));
 });
 const hotspots = sourceFiles
   .map((file) => ({ file, lines: lineCount(join(workspaceRoot, file)) }))

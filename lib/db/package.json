@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema/index.ts",
-    "./migrate-legacy-product-options": "./src/migrate-legacy-product-options.ts"
+    "./migrate-legacy-product-options": "./src/migrate-legacy-product-options.ts",
+    "./migrate-legacy-business-types": "./src/migrate-legacy-business-types.ts"
   },
   "scripts": {
     "push": "node --env-file=../../.env ./node_modules/drizzle-kit/bin.cjs push --config ./drizzle.config.ts",

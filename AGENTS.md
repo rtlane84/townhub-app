@@ -15,7 +15,7 @@ The current objective is a safe, reliable production beta—not maximum feature 
 3. improves business-owner operations;
 4. supports measurable activation, retention, or revenue.
 
-Read `docs/PRD.md` for product scope and acceptance criteria, `docs/ARCHITECTURE.md` for system design, `SECURITY.md` for authorization rules, and `PRODUCTION.md` for release requirements.
+Read `docs/PRODUCT.md` for product scope, `docs/ARCHITECTURE.md` for system design, `SECURITY.md` for authorization rules, and `docs/DEPLOYMENT.md` for release requirements.
 
 ## Repository Map
 
@@ -79,7 +79,7 @@ pnpm --filter @workspace/api-spec run codegen
 pnpm exec playwright test tests/e2e/smoke/public-pages.spec.ts
 ```
 
-E2E tests default to the local frontend and API. Some workflows require configured Clerk, database, Stripe test-mode, and test-account environment variables. Read `docs/PLAYWRIGHT_E2E.md` before diagnosing environment-dependent failures.
+E2E tests default to the local frontend and API. Some workflows require configured Clerk, database, Stripe test-mode, and test-account environment variables. Read `docs/TESTING.md` before diagnosing environment-dependent failures.
 
 ## Working Method
 

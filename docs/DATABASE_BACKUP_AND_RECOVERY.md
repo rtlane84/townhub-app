@@ -2,7 +2,7 @@
 
 Operational plan for protecting production data before and during first-town launch. This is **operational safety work** — not a customer-facing feature.
 
-**Related:** [PRODUCTION.md](../PRODUCTION.md) (deploy, schema safety, and pool settings) and [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md) (health and alerts).
+**Related:** [DEPLOYMENT.md](DEPLOYMENT.md) (deploy and schema safety) and [OPERATIONS.md](OPERATIONS.md) (health and alerts).
 
 ---
 
@@ -28,7 +28,7 @@ TownHub’s **system of record** is PostgreSQL (`DATABASE_URL`). The API uses Dr
 |-------|---------------------|
 | **App hosts** | Cloudflare frontend and Railway API, isolated between staging and production |
 | **Database** | Any PostgreSQL 14+ reachable via `DATABASE_URL` |
-| **Connection pooling** | Optional provider pooler (Neon, Supabase, PgBouncer) plus the API `pg` pool documented in [PRODUCTION.md](../PRODUCTION.md) |
+| **Connection pooling** | Optional provider pooler (Neon, Supabase, PgBouncer) plus the API `pg` pool documented in [DATABASE.md](DATABASE.md) |
 | **Media** | Supabase Storage by default (`SUPABASE_*` env vars) |
 
 Production must use a separate managed PostgreSQL database with verified automated backups. Store its `DATABASE_URL` only in the production Railway environment.
@@ -226,7 +226,7 @@ Complete before accepting real customer orders:
 - [ ] `DATABASE_URL` documented in secure ops vault (not in git)
 - [ ] Supabase Storage bucket identified; backup/replication understood
 - [ ] Operator knows who can access the database provider and Railway production variables
-- [ ] [PRODUCTION.md](../PRODUCTION.md) post-deploy verification completed
+- [ ] [DEPLOYMENT.md](DEPLOYMENT.md) post-deploy verification completed
 
 ---
 
@@ -245,7 +245,7 @@ Complete before accepting real customer orders:
 
 ### Railway deployment
 
-- Set `DATABASE_URL` in the isolated Railway production environment. Prefer the **Supabase Session Pooler** URI (port **5432**) for the Node `pg` pool — see [PRODUCTION.md](../PRODUCTION.md) connection pool notes. Staging and production must each use their own project URI.
+- Set `DATABASE_URL` in the isolated Railway production environment. Prefer the **Supabase Session Pooler** URI (port **5432**) for the Node `pg` pool — see [DATABASE.md](DATABASE.md) connection pool notes. Staging and production must each use their own project URI.
 - Set `DATABASE_POOL_MAX=20` (or `25`) on the TownHub API service for staging and production. Do not exceed the provider’s allowed connections.
 - After changing either variable, redeploy or restart the API so every instance reloads the value.
 - Staging and local databases must never use the production URL.
@@ -265,7 +265,7 @@ Complete before accepting real customer orders:
 
 ## 9. References
 
-- Schema changes and pool settings: [PRODUCTION.md](../PRODUCTION.md)
-- Deploy & env vars: [PRODUCTION.md](../PRODUCTION.md)
-- Health monitoring: [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md)
+- Schema changes and pool settings: [DATABASE.md](DATABASE.md)
+- Deploy & env vars: [DEPLOYMENT.md](DEPLOYMENT.md)
+- Health monitoring: [OPERATIONS.md](OPERATIONS.md)
 - Security model: [SECURITY.md](../SECURITY.md)

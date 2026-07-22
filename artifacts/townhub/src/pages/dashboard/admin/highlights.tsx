@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useAuth } from "@clerk/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useCreateHighlight,
   useUpdateHighlight,
   useDeleteHighlight,
+  useListAdminHighlights,
+  getListAdminHighlightsQueryKey,
   getListHighlightsQueryKey,
 } from "@workspace/api-client-react";
 import type { Highlight, HighlightInput } from "@workspace/api-client-react";
@@ -20,11 +21,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Sparkles } from "lucide-react";
 import { ImageField } from "@/components/image-field";
-import { resolveApiUrl } from "@/lib/api-base-url";
 import { usePlatformBranding } from "@/components/theme-provider";
 import { formatCivilDateInTimeZone } from "@workspace/api-zod";
-
-const ADMIN_HIGHLIGHTS_KEY = ["admin", "highlights"];
 
 type HighlightFormState = {
   title: string;
@@ -50,28 +48,13 @@ const BLANK: HighlightFormState = {
   sortOrder: 0,
 };
 
-function useAdminHighlights(getToken: () => Promise<string | null>) {
-  return useQuery<Highlight[]>({
-    queryKey: ADMIN_HIGHLIGHTS_KEY,
-    queryFn: async () => {
-      const token = await getToken();
-      const res = await fetch(resolveApiUrl("/api/admin/highlights"), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new Error("Failed to load highlights");
-      return res.json() as Promise<Highlight[]>;
-    },
-  });
-}
-
 export default function AdminHighlights() {
   const { timezone } = usePlatformBranding();
   const today = formatCivilDateInTimeZone(new Date(), timezone);
-  const { getToken } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: highlights = [], isLoading } = useAdminHighlights(getToken);
+  const { data: highlights = [], isLoading } = useListAdminHighlights({});
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Highlight | null>(null);
@@ -79,7 +62,7 @@ export default function AdminHighlights() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   function invalidate() {
-    void queryClient.invalidateQueries({ queryKey: ADMIN_HIGHLIGHTS_KEY });
+    void queryClient.invalidateQueries({ queryKey: getListAdminHighlightsQueryKey() });
     void queryClient.invalidateQueries({ queryKey: getListHighlightsQueryKey() });
   }
 

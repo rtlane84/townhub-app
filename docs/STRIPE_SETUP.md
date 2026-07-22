@@ -247,5 +247,5 @@ Check API logs for `[operational] stripe_webhook_failed`. Logs never include sec
 - [NOTIFICATIONS.md](./NOTIFICATIONS.md) — owner alerts including mandatory Connect / refund critical alerts
 - [RESEND_SETUP.md](./RESEND_SETUP.md) — email notifications
 - [TWILIO_SETUP.md](./TWILIO_SETUP.md) — SMS notifications
-- [PRODUCTION.md](../PRODUCTION.md) — full production checklist
-- [PRODUCTION_MONITORING.md](./PRODUCTION_MONITORING.md) — health checks and operational logging
+- [DEPLOYMENT.md](DEPLOYMENT.md) — full production checklist
+- [OPERATIONS.md](OPERATIONS.md) — health checks and operational logging

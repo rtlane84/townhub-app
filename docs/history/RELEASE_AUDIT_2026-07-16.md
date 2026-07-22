@@ -1,5 +1,7 @@
 # TownHub release-critical audit — 2026-07-16
 
+> Historical record. Use [DEPLOYMENT.md](../DEPLOYMENT.md) and [OPERATIONS.md](../OPERATIONS.md) for current instructions.
+
 This is the current evidence ledger for the release audit. Documentation claims are not treated as live verification. No provider or production configuration was changed during this audit.
 
 | Gate | Repository evidence | Live-dashboard evidence | Test result | Status | Exact remaining action |

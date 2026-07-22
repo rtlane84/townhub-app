@@ -544,6 +544,7 @@ export const ApplyForBusinessListingBody = zod.object({
   "description": zod.string().optional(),
   "address": zod.string().optional(),
   "phone": zod.string().optional(),
+  "hours": zod.string().optional(),
   "structuredHours": zod.array(zod.object({
   "dayOfWeek": zod.number().min(applyForBusinessListingBodyStructuredHoursItemDayOfWeekMin).max(applyForBusinessListingBodyStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
   "isClosed": zod.boolean(),
@@ -572,6 +573,7 @@ export const GetMyBusinessApplicationResponse = zod.object({
   "type": zod.string(),
   "description": zod.string().nullish(),
   "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "structuredHours": zod.array(zod.object({
   "dayOfWeek": zod.number().min(getMyBusinessApplicationResponseStructuredHoursItemDayOfWeekMin).max(getMyBusinessApplicationResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
@@ -590,6 +592,119 @@ export const GetMyBusinessApplicationResponse = zod.object({
   "businessId": zod.number().nullish(),
   "createdAt": zod.coerce.date()
 })
+
+
+/**
+ * @summary List active plans available to business applicants
+ */
+export const ListApplicationSubscriptionPlansResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "monthlyPrice": zod.number(),
+  "yearlyPrice": zod.number().nullish(),
+  "setupFee": zod.number().nullish(),
+  "transactionFeePercent": zod.number().nullish(),
+  "trialDays": zod.number(),
+  "isDefault": zod.boolean()
+})
+export const ListApplicationSubscriptionPlansResponse = zod.array(ListApplicationSubscriptionPlansResponseItem)
+
+
+/**
+ * @summary List business listing applications
+ */
+export const listBusinessApplicationsResponseStructuredHoursItemDayOfWeekMin = 0;
+export const listBusinessApplicationsResponseStructuredHoursItemDayOfWeekMax = 6;
+
+
+
+export const ListBusinessApplicationsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string().optional(),
+  "userEmail": zod.string().nullish(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "description": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "structuredHours": zod.array(zod.object({
+  "dayOfWeek": zod.number().min(listBusinessApplicationsResponseStructuredHoursItemDayOfWeekMin).max(listBusinessApplicationsResponseStructuredHoursItemDayOfWeekMax).describe('0=Sunday through 6=Saturday'),
+  "isClosed": zod.boolean(),
+  "openTime": zod.string().nullish().describe('24-hour time HH:mm'),
+  "closeTime": zod.string().nullish().describe('24-hour time HH:mm')
+})).nullish(),
+  "planId": zod.number().nullish(),
+  "billingInterval": zod.union([zod.literal('monthly'),zod.literal('yearly'),zod.literal(null)]).nullish(),
+  "planName": zod.string().nullish(),
+  "businessTermsVersion": zod.string().nullish(),
+  "businessTermsAcceptedAt": zod.coerce.date().nullish(),
+  "status": zod.enum(['PENDING', 'APPROVED', 'REJECTED']),
+  "reviewNote": zod.string().nullish(),
+  "reviewedAt": zod.coerce.date().nullish(),
+  "businessId": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListBusinessApplicationsResponse = zod.array(ListBusinessApplicationsResponseItem)
+
+
+/**
+ * @summary Approve an application and create its business
+ */
+export const ApproveBusinessApplicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveBusinessApplicationBody = zod.object({
+  "planId": zod.number().optional(),
+  "billingInterval": zod.enum(['monthly', 'yearly']).optional()
+})
+
+export const ApproveBusinessApplicationResponse = zod.object({
+  "message": zod.string(),
+  "businessId": zod.number()
+})
+
+
+/**
+ * @summary Reject a business listing application
+ */
+export const RejectBusinessApplicationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const rejectBusinessApplicationBodyNoteMax = 2000;
+
+
+
+export const RejectBusinessApplicationBody = zod.object({
+  "note": zod.string().max(rejectBusinessApplicationBodyNoteMax).optional()
+})
+
+export const RejectBusinessApplicationResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary List all marketplace highlights for administration
+ */
+export const ListAdminHighlightsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "relatedBusinessId": zod.number().nullish(),
+  "buttonText": zod.string().nullish(),
+  "buttonUrl": zod.string().nullish(),
+  "active": zod.boolean(),
+  "sortOrder": zod.number(),
+  "createdAt": zod.coerce.date().optional()
+})
+export const ListAdminHighlightsResponse = zod.array(ListAdminHighlightsResponseItem)
 
 
 /**
@@ -2080,18 +2195,113 @@ export const ListAllOrdersResponse = zod.array(ListAllOrdersResponseItem)
 
 
 /**
- * @summary Create a Stripe checkout session (requires order access)
+ * Creates a pending checkout snapshot and a Stripe Checkout Session on the
+business's connected account. A durable paid order is created only after
+verified Stripe payment confirmation.
+
+ * @summary Start a card checkout without creating an order yet
  */
-export const CreateCheckoutSessionBody = zod.object({
-  "orderId": zod.number(),
-  "accessToken": zod.string().optional().describe('Signed guest order access token (required for guest checkout when not authenticated)')
+
+
+export const createCheckoutIntentBodyCustomerPhoneMin = 7;
+
+
+
+
+export const CreateCheckoutIntentBody = zod.object({
+  "businessId": zod.number(),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "customerName": zod.string().min(1),
+  "customerEmail": zod.string().email().min(1),
+  "customerPhone": zod.string().min(createCheckoutIntentBodyCustomerPhoneMin),
+  "deliveryAddress": zod.string().optional(),
+  "pickupTime": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "specialFields": zod.string().optional().describe('JSON blob for business-type-specific fields'),
+  "paymentMethod": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "productId": zod.number(),
+  "quantity": zod.number().min(1),
+  "selectedOptionIds": zod.array(zod.number()).optional()
+}))
 })
 
-export const CreateCheckoutSessionResponse = zod.object({
-  "url": zod.string().nullable(),
-  "sessionId": zod.string().nullish(),
-  "mockMode": zod.boolean().optional()
-})
+
+/**
+ * Idempotent browser-return safety net. It verifies the Stripe session and
+materializes one paid order only after Stripe reports a completed payment.
+`orderId` is accepted temporarily for legacy pre-payment checkout rows.
+
+ * @summary Confirm a paid checkout and return its order
+ */
+export const ConfirmCheckoutPaymentBody = zod.union([zod.unknown(),zod.unknown()]).and(zod.object({
+  "pendingCheckoutId": zod.number().optional(),
+  "orderId": zod.number().optional().describe('Temporary legacy pre-payment order identifier.'),
+  "accessToken": zod.string().optional().describe('Signed pending-checkout or legacy order access token.')
+}))
+
+export const ConfirmCheckoutPaymentResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "businessName": zod.string(),
+  "orderNumber": zod.string().optional().describe('Global unique reference (TH-YYYYMMDD-XXXXX).'),
+  "businessOrderNumber": zod.number().nullish().describe('Per-business sequential customer-facing order number (e.g. 101, 102).'),
+  "status": zod.enum(['NEW', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELED']),
+  "fulfillmentType": zod.enum(['PICKUP', 'DELIVERY']),
+  "customerName": zod.string(),
+  "customerEmail": zod.string(),
+  "customerPhone": zod.string().nullish(),
+  "customerUserId": zod.string().nullish().describe('Clerk user id when the customer was signed in at checkout; null for guest orders.'),
+  "deliveryAddress": zod.string().nullish(),
+  "pickupTime": zod.string().nullish(),
+  "estimatedWindowStart": zod.coerce.date().nullish().describe('Start of the server-calculated ASAP ready window.'),
+  "estimatedWindowEnd": zod.coerce.date().nullish().describe('End of the server-calculated ASAP ready window.'),
+  "notes": zod.string().nullish(),
+  "specialFields": zod.string().nullish().describe('JSON blob for business-type-specific fields'),
+  "subtotal": zod.number().optional().describe('Item subtotal in dollars (excludes tax and delivery).'),
+  "tax": zod.number().optional().describe('Sales tax amount in dollars.'),
+  "taxRatePercent": zod.number().nullish().describe('Tax rate applied at order time, if any.'),
+  "taxLabel": zod.string().nullish().describe('Tax line label shown at checkout (e.g. Sales Tax).'),
+  "total": zod.number(),
+  "deliveryFee": zod.number().nullish(),
+  "paymentStatus": zod.string().optional(),
+  "paymentMethod": zod.string().optional(),
+  "stripeSessionId": zod.string().nullish(),
+  "refundStatus": zod.enum(['NONE', 'PARTIAL', 'FULL', 'FAILED']).optional(),
+  "refundedAmount": zod.number().optional().describe('Total amount refunded in dollars'),
+  "refundableAmount": zod.number().optional().describe('Remaining refundable amount in dollars (owner\/admin views)'),
+  "lastRefundedAt": zod.coerce.date().nullish(),
+  "refunds": zod.array(zod.object({
+  "id": zod.number(),
+  "amountCents": zod.number(),
+  "reason": zod.string().nullish(),
+  "status": zod.enum(['PENDING', 'SUCCEEDED', 'FAILED', 'CANCELED']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdByUserId": zod.string(),
+  "createdByName": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})).optional().describe('Refund history with details (owner\/admin only)'),
+  "items": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "orderId": zod.number().optional(),
+  "productId": zod.number(),
+  "productName": zod.string(),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "subtotal": zod.number(),
+  "options": zod.array(zod.object({
+  "id": zod.number().optional(),
+  "optionId": zod.number().nullish(),
+  "groupName": zod.string(),
+  "optionName": zod.string(),
+  "priceAdjustment": zod.number()
+})).optional()
+})).optional(),
+  "createdAt": zod.coerce.date().optional(),
+  "accessToken": zod.string().optional().describe('Signed guest access token; included only when an order is first created')
+}).and(zod.object({
+  "pendingCheckoutId": zod.number().optional()
+}))
 
 
 /**

@@ -1,11 +1,13 @@
 # Legal launch controls — Clay, West Virginia
 
+> Historical launch record. Current product controls are summarized in [PRODUCT.md](../PRODUCT.md).
+
 This is TownHub's operational launch checklist, not legal or tax advice. The platform cannot accept live orders until the owner records the approvals and evidence below.
 
 ## Required external approvals
 
 - [ ] West Virginia entity formation, EIN, banking, bookkeeping, insurance, State Tax Department Business Registration Certificate, and any Clay municipal license are complete and retained outside this repository.
-- [ ] A West Virginia business/technology lawyer has approved the public [Terms of Service](../artifacts/townhub/src/pages/terms-of-service.tsx), [Privacy Policy](../artifacts/townhub/src/pages/privacy-policy.tsx), and [Business Seller Agreement](../artifacts/townhub/src/pages/business-seller-agreement.tsx), including effective dates and contact details.
+- [ ] A West Virginia business/technology lawyer has approved the public [Terms of Service](../../artifacts/townhub/src/pages/terms-of-service.tsx), [Privacy Policy](../../artifacts/townhub/src/pages/privacy-policy.tsx), and [Business Seller Agreement](../../artifacts/townhub/src/pages/business-seller-agreement.tsx), including effective dates and contact details.
 - [ ] After that written approval, set `BUSINESS_SELLER_AGREEMENT_APPROVED_VERSION=2026-07-21` in the production secret manager. The API rejects business listing applications in production until this matches the published agreement version.
 - [ ] A West Virginia sales-tax CPA has issued a written determination covering TownHub's marketplace-facilitator/merchant-of-record treatment, taxable transactions, destination sourcing, registrations, returns, and monthly Stripe-to-ledger reconciliation.
 - [ ] A trademark lawyer has completed clearance for the word mark and logo before filing, domain purchase, signage, or paid marketing. Record search date, jurisdictions, results, filing serial number, and owner entity outside the repository.
