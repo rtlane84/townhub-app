@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
   BookOpen,
-  Flag,
   GraduationCap,
+  MessageCircle,
   HelpCircle,
   Mail,
   RotateCcw,
@@ -330,7 +330,7 @@ export default function Help() {
               onClick={() => setReportOpen(true)}
               data-testid="button-help-report-problem"
             >
-              <Flag className="h-4 w-4" aria-hidden />
+              <MessageCircle className="h-4 w-4" aria-hidden />
               Report a problem
             </Button>
             <a
