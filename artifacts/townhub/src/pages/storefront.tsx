@@ -304,7 +304,7 @@ export default function Storefront() {
     }
     if (showCatalogSection) {
       return {
-        label: "View Menu",
+        label: "Browse",
         icon: ShoppingBag,
         onClick: () =>
           document

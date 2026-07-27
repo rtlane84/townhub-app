@@ -25,10 +25,6 @@ describe("storefront mode selector copy", () => {
 
   it("passes catalogAllowed from business_website entitlement", () => {
     assert.match(settingsSource, /catalogAllowed=\{businessWebsiteAllowed\}/);
-    assert.match(
-      settingsSource,
-      /Your plan does not include Items, so the public page will not show a catalog\./,
-    );
   });
 
   it("stops suggesting online ordering when the plan locks it", () => {

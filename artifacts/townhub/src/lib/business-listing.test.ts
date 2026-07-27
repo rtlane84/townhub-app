@@ -74,3 +74,24 @@ describe("business-listing public availability wiring", () => {
     assert.match(hoursCard, /structuredHours/);
   });
 });
+
+describe("getBusinessListingCta labels", () => {
+  it("maps storefront modes to Order, Book, and Visit", () => {
+    const source = readFileSync(join(here, "business-listing.ts"), "utf8");
+    const fnStart = source.indexOf("export function getBusinessListingCta");
+    assert.ok(fnStart >= 0);
+    const fnBody = source.slice(fnStart, source.indexOf("\n}", fnStart) + 2);
+
+    assert.match(fnBody, /isOrderingStorefrontMode[\s\S]*label: "Order"/);
+    assert.match(fnBody, /isAppointmentStorefrontMode[\s\S]*label: "Book"/);
+    assert.match(fnBody, /isInformationStorefrontMode[\s\S]*label: "Visit"/);
+    assert.doesNotMatch(fnBody, /View Menu/);
+    assert.match(source, /label: "Order" \| "Visit" \| "Book" \| "Call"/);
+  });
+
+  it("uses Browse for display-only storefront catalog CTA", () => {
+    const storefront = readFileSync(join(here, "../pages/storefront.tsx"), "utf8");
+    assert.match(storefront, /label: "Browse"/);
+    assert.doesNotMatch(storefront, /label: "View Menu"/);
+  });
+});

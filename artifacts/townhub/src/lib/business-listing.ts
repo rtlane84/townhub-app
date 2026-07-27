@@ -24,7 +24,7 @@ export type StorefrontStatusLine = {
 };
 
 export type BusinessListingCta = {
-  label: "Order" | "View Menu" | "Book" | "Call";
+  label: "Order" | "Visit" | "Book" | "Call";
   href: string;
   external?: boolean;
 };
@@ -208,7 +208,7 @@ export function getBusinessStorefrontBadge(
  * Primary contextual action for directory cards/rows.
  * - Order: ordering storefront mode
  * - Book: appointment storefront mode
- * - View Menu: informational storefront mode
+ * - Visit: informational (display-only) storefront mode
  * - Call: only when none of the above apply and a phone exists
  */
 export function getBusinessListingCta(
@@ -230,7 +230,7 @@ export function getBusinessListingCta(
   }
 
   if (isInformationStorefrontMode(business)) {
-    return { label: "View Menu", href: storefrontHref };
+    return { label: "Visit", href: storefrontHref };
   }
 
   const phone = business.phone?.trim();
