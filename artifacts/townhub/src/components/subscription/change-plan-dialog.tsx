@@ -22,7 +22,6 @@ import { useToast } from "@/hooks/use-toast";
 import {
   formatPlanAmount,
   isComplimentaryPricingPlan,
-  pricingPlanCtaLabel,
 } from "@/lib/subscription-display";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
@@ -164,9 +163,7 @@ export function ChangePlanDialog({
             loadingText="Updating…"
             disabled={!selectedPlanId || paidPlans.length === 0}
           >
-            {selectedPlanId && paidPlans.find((p) => p.id === selectedPlanId)?.trialDays
-              ? pricingPlanCtaLabel(paidPlans.find((p) => p.id === selectedPlanId)!)
-              : "Confirm change"}
+            Confirm change
           </LoadingButton>
         </DialogFooter>
       </DialogContent>
