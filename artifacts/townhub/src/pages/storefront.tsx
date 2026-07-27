@@ -275,9 +275,7 @@ export default function Storefront() {
   const showCatalogSection = showCatalog && !catalogFullyEmpty;
   const commerceHeading = isAppointmentMode
     ? "Services"
-    : isInformationMode
-      ? "Menu"
-      : "Shop";
+    : "Shop";
 
   const typeLabel = formatBusinessTypeLabel(b.type);
   const phoneDigits = b.phone?.trim()?.replace(/[^\d+]/g, "") || null;
