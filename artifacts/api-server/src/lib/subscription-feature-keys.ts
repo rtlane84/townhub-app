@@ -62,15 +62,15 @@ export const DEFAULT_SUBSCRIPTION_FEATURES: Array<{
   },
   {
     key: SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE,
-    name: "Business page & catalog",
-    description: "Public storefront page with hours, branding, and catalog or menu (display without requiring online ordering).",
+    name: "Items & catalog",
+    description: "Manage Items, categories, and options in Business Hub, and show a menu or catalog on the public page.",
     category: "Presence",
     sortOrder: 60,
   },
   {
     key: SUBSCRIPTION_FEATURE_KEYS.ANALYTICS,
     name: "Analytics",
-    description: "Business performance insights and reporting.",
+    description: "Reserved for future business insights and reporting. No owner-facing analytics are active yet.",
     category: "Growth",
     sortOrder: 70,
   },

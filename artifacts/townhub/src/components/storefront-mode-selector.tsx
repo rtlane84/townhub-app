@@ -12,6 +12,8 @@ type Props = {
   onlineOrderingAllowed?: boolean;
   /** When false, Appointment requests mode cannot be selected. */
   appointmentRequestsAllowed?: boolean;
+  /** When false, Display only copy should describe a public page without a menu/catalog. */
+  catalogAllowed?: boolean;
 };
 
 export function StorefrontModeSelector({
@@ -20,6 +22,7 @@ export function StorefrontModeSelector({
   idPrefix = "storefront-mode",
   onlineOrderingAllowed = true,
   appointmentRequestsAllowed = true,
+  catalogAllowed = true,
 }: Props) {
   return (
     <RadioGroup value={value} onValueChange={(v) => onChange(v as StorefrontMode)} className="space-y-3">
@@ -27,6 +30,10 @@ export function StorefrontModeSelector({
         const locked =
           (option.value === "ORDERING" && !onlineOrderingAllowed) ||
           (option.value === "APPOINTMENT" && !appointmentRequestsAllowed);
+        const description =
+          option.value === "INFORMATION" && !catalogAllowed
+            ? "Show your public page with hours, photos, and contact info. No menu, catalog, cart, or checkout."
+            : option.description;
         return (
           <div
             key={option.value}
@@ -46,7 +53,7 @@ export function StorefrontModeSelector({
               className={cn("space-y-1 font-normal", locked ? "cursor-not-allowed" : "cursor-pointer")}
             >
               <span className="block text-sm font-medium">{option.label}</span>
-              <span className="block text-xs text-muted-foreground">{option.description}</span>
+              <span className="block text-xs text-muted-foreground">{description}</span>
               {locked ? (
                 <span className="block text-xs text-amber-700 dark:text-amber-400">
                   Not included in your current plan — upgrade to unlock.

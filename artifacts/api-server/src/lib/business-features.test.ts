@@ -79,6 +79,21 @@ describe("business-features module", () => {
     );
   });
 
+  it("defines plain-English labels for catalog and analytics features", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile(new URL("./subscription-feature-keys.ts", import.meta.url), "utf8"),
+    );
+    assert.match(source, /name: "Items & catalog"/);
+    assert.match(
+      source,
+      /Manage Items, categories, and options in Business Hub, and show a menu or catalog on the public page\./,
+    );
+    assert.match(
+      source,
+      /Reserved for future business insights and reporting\. No owner-facing analytics are active yet\./,
+    );
+  });
+
   it("batches mapBusinessesHaveFeature with one joined query instead of N lookups", async () => {
     const source = await import("node:fs/promises").then((fs) =>
       fs.readFile(new URL("./business-features.ts", import.meta.url), "utf8"),

@@ -59,6 +59,6 @@ For each pilot owner:
 
 ## Offer guardrails
 
-- **Business Showcase:** $20/month or $200/year; 14-day trial; business page/catalog, appointment requests, mobile schedule, email notifications, and analytics. It does not include online ordering.
+- **Business Showcase:** $20/month or $200/year; 14-day trial; public business page, menu/catalog, appointment requests, mobile schedule, email notifications, and future analytics. It does not include online ordering.
 - **Business Ordering:** $40/month or $400/year; 14-day trial; everything in Business Showcase plus online ordering, order management, and SMS notifications.
 - Do not promise instant appointment bookings, TownHub-managed delivery, POS replacement, waived Stripe fees, or guaranteed customer volume.

@@ -55,7 +55,7 @@ Recommended public packaging (also documented in `docs/PRD.md` open decision #2)
 
 | Plan | Monthly | Yearly | Trial | Features |
 |------|---------|--------|-------|----------|
-| **Business Showcase** (default) | $20 | $200 | 14 days | `business_website`, `appointment_requests`, `mobile_business`, `email_notifications`, `analytics` |
+| **Business Showcase** (default) | $20 | $200 | 14 days | `business_website` (Items & catalog), `appointment_requests`, `mobile_business`, `email_notifications`, `analytics` |
 | **Business Ordering** (recommended) | $40 | $400 | 14 days | Everything in Business Showcase + `online_ordering` + `sms_notifications` |
 
 **Setup fee / platform transaction fee:** $0 / 0%.
@@ -68,7 +68,7 @@ pnpm --filter @workspace/api-server exec tsx scripts/ensure-launch-plans.ts
 
 Production requires `ALLOW_LAUNCH_PLAN_SEED=1`. The script upserts Business Showcase and Business Ordering by name and replaces `plan_features`. It renames legacy Presence/Orders records in place so existing subscriptions retain their plan IDs. Then paste Stripe product/price IDs in Admin → Plans.
 
-**Entitlement rules (strict):** no subscription row → no features; plan with zero `plan_features` → no features. Public cart requires `ORDERING` mode **and** `online_ordering` entitlement. Email/SMS owner channel UI is hidden without the matching plan features; critical Stripe emails still send.
+**Entitlement rules (strict):** no subscription row → no features; plan with zero `plan_features` → no features. Public cart requires `ORDERING` mode **and** `online_ordering` entitlement. Public menu/catalog requires `business_website` entitlement. Email/SMS owner channel UI is hidden without the matching plan features; critical Stripe emails still send.
 
 **Founding cohort:** use a complimentary/`isBeta` plan for early Clay businesses, then convert to Business Showcase or Business Ordering. Do not sell a separate cheaper Mobile SKU.
 

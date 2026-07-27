@@ -602,6 +602,7 @@ export default function BusinessSettings() {
                 idPrefix="business-settings-storefront"
                 onlineOrderingAllowed={onlineOrderingAllowed}
                 appointmentRequestsAllowed={appointmentRequestsAllowed}
+                catalogAllowed={businessWebsiteAllowed}
               />
               {!onlineOrderingAllowed || !appointmentRequestsAllowed ? (
                 <p className="text-xs text-muted-foreground">
@@ -620,7 +621,7 @@ export default function BusinessSettings() {
                   upgrade to configure ordering.
                 </p>
               ) : null}
-              {!isOrderingMode && !orderingLockedOnPlan ? (
+              {!isOrderingMode && onlineOrderingAllowed ? (
                 <p className="text-xs text-muted-foreground">
                   Switch to online ordering to configure pickup, delivery, payments, and tax.
                 </p>
