@@ -62,6 +62,23 @@ describe("business-features module", () => {
     assert.match(source, /Plan with zero mapped features → no features/);
   });
 
+  it("does not overwrite admin-edited feature catalog metadata on ensure", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile(new URL("./business-features.ts", import.meta.url), "utf8"),
+    );
+    const ensureStart = source.indexOf("export async function ensureDefaultSubscriptionFeatures");
+    const ensureEnd = source.indexOf("export async function listActiveFeatureKeys", ensureStart);
+    assert.ok(ensureStart >= 0 && ensureEnd > ensureStart);
+    const ensureBody = source.slice(ensureStart, ensureEnd);
+
+    assert.match(ensureBody, /if \(existing\) continue/);
+    assert.match(ensureBody, /Do not overwrite name\/description/);
+    assert.doesNotMatch(
+      ensureBody,
+      /\.update\(subscriptionFeaturesTable\)[\s\S]*description:\s*feature\.description/,
+    );
+  });
+
   it("batches mapBusinessesHaveFeature with one joined query instead of N lookups", async () => {
     const source = await import("node:fs/promises").then((fs) =>
       fs.readFile(new URL("./business-features.ts", import.meta.url), "utf8"),

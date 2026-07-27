@@ -25,7 +25,7 @@ export type SerializedSubscriptionFeature = {
   isActive: boolean;
 };
 
-/** Idempotently ensure the default feature catalog exists. */
+/** Idempotently ensure the default feature catalog exists (insert missing keys only). */
 export async function ensureDefaultSubscriptionFeatures(): Promise<void> {
   // Rename legacy food_truck_tracking → mobile_business (same row / plan links)
   await db.execute(
@@ -45,18 +45,8 @@ export async function ensureDefaultSubscriptionFeatures(): Promise<void> {
       .from(subscriptionFeaturesTable)
       .where(eq(subscriptionFeaturesTable.key, feature.key));
 
-    if (existing) {
-      await db
-        .update(subscriptionFeaturesTable)
-        .set({
-          name: feature.name,
-          description: feature.description,
-          category: feature.category,
-          sortOrder: feature.sortOrder,
-        })
-        .where(eq(subscriptionFeaturesTable.id, existing.id));
-      continue;
-    }
+    // Do not overwrite name/description/category/sortOrder — Admin → Features owns those.
+    if (existing) continue;
 
     await db.insert(subscriptionFeaturesTable).values({
       key: feature.key,
