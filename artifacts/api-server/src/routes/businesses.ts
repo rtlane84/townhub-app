@@ -60,6 +60,8 @@ import { getPlatformTimeZone } from "../lib/platform-timezone";
 import {
   businessHasFeature,
   mapBusinessesHaveFeature,
+  mapBusinessesHavePublicListingAccess,
+  businessHasPublicListingAccess,
 } from "../lib/business-features";
 import { SUBSCRIPTION_FEATURE_KEYS } from "../lib/subscription-feature-keys";
 import {
@@ -376,11 +378,18 @@ router.get("/businesses", async (req, res): Promise<void> => {
   if (search) conditions.push(ilike(businessesTable.name, `%${search}%`));
   if (featured === "true") conditions.push(eq(businessesTable.featured, true));
 
-  const businesses = await db
+  const businessesRaw = await db
     .select(publicBusinessColumns)
     .from(businessesTable)
     .where(and(...conditions))
     .orderBy(businessesTable.featured, businessesTable.name);
+
+  const listingAccessById = await mapBusinessesHavePublicListingAccess(
+    businessesRaw.map((business) => business.id),
+  );
+  const businesses = businessesRaw.filter(
+    (business) => listingAccessById.get(business.id) === true,
+  );
 
   const mobileBusinessIds = businesses
     .filter((business) => business.isMobileBusiness)
@@ -617,6 +626,11 @@ router.get("/businesses/checkout/:businessId", async (req, res): Promise<void> =
     return;
   }
 
+  if (!(await businessHasPublicListingAccess(business.id))) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
   const mobileLocations =
     business.isMobileBusiness ||
     business.orderingAvailabilityMode === "MOBILE_LOCATION_SCHEDULE"
@@ -652,6 +666,11 @@ router.get("/businesses/:slug", async (req, res): Promise<void> => {
     );
 
   if (!business) {
+    res.status(404).json({ error: "Business not found" });
+    return;
+  }
+
+  if (!(await businessHasPublicListingAccess(business.id))) {
     res.status(404).json({ error: "Business not found" });
     return;
   }
@@ -966,16 +985,18 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     return;
   }
 
-  // Downgrade safety: if plan lost online ordering, force display-only mode.
-  if (!onlineOrderingEntitled) {
+  // Downgrade safety: coerce storefront mode when plan no longer allows the saved mode.
+  {
     const currentMode = resolveStorefrontMode({
       type: (updateData.type as string | undefined) ?? access.business.type,
       storefrontMode:
         (updateData.storefrontMode as typeof access.business.storefrontMode | undefined) ??
         access.business.storefrontMode,
     });
-    if (currentMode === "ORDERING") {
+    if (currentMode === "ORDERING" && !onlineOrderingEntitled) {
       updateData.storefrontMode = appointmentRequestsEntitled ? "APPOINTMENT" : "INFORMATION";
+    } else if (currentMode === "APPOINTMENT" && !appointmentRequestsEntitled) {
+      updateData.storefrontMode = onlineOrderingEntitled ? "ORDERING" : "INFORMATION";
     }
   }
 

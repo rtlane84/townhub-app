@@ -114,4 +114,20 @@ describe("business-features module", () => {
     assert.doesNotMatch(mapBody, /businessHasFeature\(/);
     assert.doesNotMatch(mapBody, /getBusinessFeatureKeys\(/);
   });
+
+  it("batches public listing access with one subscription join", async () => {
+    const source = await import("node:fs/promises").then((fs) =>
+      fs.readFile(new URL("./business-features.ts", import.meta.url), "utf8"),
+    );
+    const mapStart = source.indexOf("export async function mapBusinessesHavePublicListingAccess");
+    const mapEnd = source.indexOf("export async function businessHasPublicListingAccess", mapStart);
+    assert.ok(mapStart >= 0 && mapEnd > mapStart);
+    const mapBody = source.slice(mapStart, mapEnd);
+
+    assert.match(mapBody, /inArray\(businessSubscriptionsTable\.businessId/);
+    assert.match(mapBody, /innerJoin\(\s*subscriptionPlansTable/);
+    assert.match(mapBody, /subscriptionGrantsFeaturesForPlan/);
+    assert.doesNotMatch(mapBody, /planFeaturesTable/);
+    assert.doesNotMatch(mapBody, /businessHasFeature\(/);
+  });
 });

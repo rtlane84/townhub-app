@@ -10,6 +10,7 @@ import {
   isInformationStorefrontMode,
   normalizeWebsiteUrl,
   resolveStorefrontMode,
+  coerceEntitledStorefrontMode,
   showsStorefrontCatalog,
   storefrontModePublicBadge,
   storefrontCopy,
@@ -37,6 +38,37 @@ describe("storefront mode", () => {
     assert.equal(
       resolveStorefrontMode({ type: "GENERAL", storefrontMode: "INFORMATION" }),
       "INFORMATION",
+    );
+  });
+
+  it("coerces locked modes to the best entitled option", () => {
+    assert.equal(
+      coerceEntitledStorefrontMode("ORDERING", {
+        onlineOrderingAllowed: false,
+        appointmentRequestsAllowed: false,
+      }),
+      "INFORMATION",
+    );
+    assert.equal(
+      coerceEntitledStorefrontMode("ORDERING", {
+        onlineOrderingAllowed: false,
+        appointmentRequestsAllowed: true,
+      }),
+      "APPOINTMENT",
+    );
+    assert.equal(
+      coerceEntitledStorefrontMode("APPOINTMENT", {
+        onlineOrderingAllowed: true,
+        appointmentRequestsAllowed: false,
+      }),
+      "ORDERING",
+    );
+    assert.equal(
+      coerceEntitledStorefrontMode("ORDERING", {
+        onlineOrderingAllowed: true,
+        appointmentRequestsAllowed: false,
+      }),
+      "ORDERING",
     );
   });
 

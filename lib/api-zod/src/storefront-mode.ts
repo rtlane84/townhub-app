@@ -54,6 +54,29 @@ export function isOrderingStorefrontMode(business: {
   return resolveStorefrontMode(business) === "ORDERING";
 }
 
+/**
+ * Pick a storefront mode allowed by plan entitlements.
+ * Prefer keeping the current mode when allowed; otherwise ORDERING → APPOINTMENT → INFORMATION.
+ */
+export function coerceEntitledStorefrontMode(
+  current: StorefrontMode,
+  entitlements: {
+    onlineOrderingAllowed: boolean;
+    appointmentRequestsAllowed: boolean;
+  },
+): StorefrontMode {
+  const orderingOk = entitlements.onlineOrderingAllowed;
+  const appointmentOk = entitlements.appointmentRequestsAllowed;
+
+  if (current === "ORDERING" && orderingOk) return "ORDERING";
+  if (current === "APPOINTMENT" && appointmentOk) return "APPOINTMENT";
+  if (current === "INFORMATION") return "INFORMATION";
+
+  if (orderingOk) return "ORDERING";
+  if (appointmentOk) return "APPOINTMENT";
+  return "INFORMATION";
+}
+
 export function showsStorefrontCatalog(
   mode: StorefrontMode,
   options?: { businessWebsiteEntitled?: boolean | null },

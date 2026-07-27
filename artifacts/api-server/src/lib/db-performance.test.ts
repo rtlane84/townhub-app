@@ -116,6 +116,7 @@ describe("database pool configuration", () => {
     assert.match(directoryRoute, /getPublicBusinessDirectoryCache/);
     assert.match(directoryRoute, /setPublicBusinessDirectoryCache/);
     assert.match(directoryRoute, /const cacheKey = search \? null/);
+    assert.match(directoryRoute, /mapBusinessesHavePublicListingAccess/);
     assert.doesNotMatch(directoryRoute, /\.select\(\)\s*\.from\(businessesTable\)/);
   });
 });

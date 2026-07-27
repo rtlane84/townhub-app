@@ -11,6 +11,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { z } from "zod";
 import { requireAdmin } from "../middlewares/requireRole";
 import { attachPlanToBusiness, resolveApprovalPlan } from "../lib/subscription-plans";
+import { isComplimentaryPlan } from "../lib/stripe-billing-core";
 import { notifyBusinessApplicationApproved, notifyBusinessApplicationRejected, notifyBusinessApplicationSubmitted } from "../lib/application-notifications";
 import { resolveApprovalBillingInterval } from "../lib/business-lifecycle-core";
 import { resolveOwnerDeliverableEmail } from "../lib/owner-email";
@@ -26,6 +27,7 @@ import {
   BUSINESS_SELLER_AGREEMENT_VERSION,
   isBusinessSellerAgreementApprovedForProduction,
 } from "../lib/business-seller-agreement";
+import { invalidatePublicBusinessDirectoryCache } from "../lib/public-business-directory-cache";
 
 const router: IRouter = Router();
 
@@ -341,6 +343,17 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
 
     const slug = await resolveUniqueBusinessSlug(slugifyFromBusinessName(app.name));
 
+    // Attach plan after create; paid plans start INCOMPLETE — use Display only until checkout.
+    const plan = await resolveApprovalPlan(app.planId, parsedBody.data.planId);
+    const billingInterval = resolveApprovalBillingInterval(
+      parsedBody.data.billingInterval,
+      app.billingInterval,
+    );
+    const paidRequiresCheckout = Boolean(plan && !isComplimentaryPlan(plan));
+    const initialStorefrontMode = paidRequiresCheckout
+      ? ("INFORMATION" as const)
+      : defaultStorefrontModeForBusinessType(normalized.type);
+
     // Create the business
     let business;
     try {
@@ -362,7 +375,7 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
           active: true,
           isMobileBusiness: normalized.isMobileBusiness,
           eventLocationEnabled: normalized.isMobileBusiness,
-          storefrontMode: defaultStorefrontModeForBusinessType(normalized.type),
+          storefrontMode: initialStorefrontMode,
         })
         .returning();
     } catch (err) {
@@ -397,12 +410,6 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
         },
       });
 
-    // Attach subscription: admin override > application plan > default active plan
-    const plan = await resolveApprovalPlan(app.planId, parsedBody.data.planId);
-    const billingInterval = resolveApprovalBillingInterval(
-      parsedBody.data.billingInterval,
-      app.billingInterval,
-    );
     let attachResult = null;
     if (plan) {
       attachResult = await attachPlanToBusiness(business.id, plan, { billingInterval });
@@ -423,6 +430,9 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
       { adminId: userId, applicationId: id, businessId: business.id },
       "Business application approved",
     );
+
+    // Complimentary / granting subscriptions may appear on the public directory immediately.
+    invalidatePublicBusinessDirectoryCache();
 
     if (plan && attachResult) {
       try {

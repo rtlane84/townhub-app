@@ -327,7 +327,7 @@ Subscription plans map to features via `plan_features` → `subscription_feature
 
 `GET /api/businesses/:id/feature-access` returns the owner-facing report. Frontend `BusinessFeatureAccessProvider` reads this for UI gating; API enforces independently.
 
-Businesses without a subscription record receive **no** plan features. A plan with zero `plan_features` rows also grants none — map features explicitly for every public plan. Complimentary/beta plans and inactive subscription statuses may further restrict features. Public cart UI requires both `storefrontMode === ORDERING` and `online_ordering` entitlement (`Business.onlineOrderingEntitled`). Public catalog/menu requires `business_website` entitlement (`Business.businessWebsiteEntitled`).
+Businesses without a subscription record receive **no** plan features. A plan with zero `plan_features` rows also grants none — map features explicitly for every public plan. Complimentary/beta plans and inactive subscription statuses may further restrict features. Public directory and public storefront slug responses require a subscription whose status grants features (`subscriptionGrantsFeaturesForPlan`) — e.g. `INCOMPLETE` paid plans after approval are not listed until checkout activates the subscription. Public cart UI requires both `storefrontMode === ORDERING` and `online_ordering` entitlement (`Business.onlineOrderingEntitled`). Public catalog/menu requires `business_website` entitlement (`Business.businessWebsiteEntitled`).
 
 ---
 

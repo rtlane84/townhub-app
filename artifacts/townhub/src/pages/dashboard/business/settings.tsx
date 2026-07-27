@@ -21,6 +21,7 @@ import {
   parseStructuredHours,
   resolvePaymentMode,
   resolveStorefrontMode,
+  coerceEntitledStorefrontMode,
   resolveOrderingAvailabilityMode,
   isOrderingStorefrontMode,
   isPaymentMode,
@@ -150,7 +151,7 @@ function Field({
 
 export default function BusinessSettings() {
   const { selectedBusinessId, business, ownedBusinesses, isLoading } = useSelectedBusiness();
-  const { hasFeature } = useBusinessFeatureAccess();
+  const { hasFeature, isLoading: featureAccessLoading } = useBusinessFeatureAccess();
   const onlineOrderingAllowed = hasFeature("online_ordering");
   const appointmentRequestsAllowed = hasFeature("appointment_requests");
   const businessWebsiteAllowed = hasFeature("business_website");
@@ -176,6 +177,13 @@ export default function BusinessSettings() {
     const b = biz as unknown as Record<string, unknown>;
     const deliveryInstructions = String(b.deliveryInstructions ?? "");
     const deliveryNotes = String(b.deliveryNotes ?? "");
+    const savedStorefrontMode = resolveStorefrontMode(biz);
+    const storefrontMode = featureAccessLoading
+      ? savedStorefrontMode
+      : coerceEntitledStorefrontMode(savedStorefrontMode, {
+          onlineOrderingAllowed,
+          appointmentRequestsAllowed,
+        });
     setFormState({
       name: biz.name ?? "",
       type: biz.type ?? "GENERAL",
@@ -196,7 +204,7 @@ export default function BusinessSettings() {
       pickupInstructions: String(b.pickupInstructions ?? ""),
       deliveryInstructions: deliveryInstructions || deliveryNotes,
       paymentMode: resolvePaymentMode(biz),
-      storefrontMode: resolveStorefrontMode(biz),
+      storefrontMode,
       orderingAvailabilityMode: resolveOrderingAvailabilityMode(biz),
       orderingEnabled: biz.orderingEnabled !== false,
       orderClosingBufferMinutes:
@@ -212,7 +220,8 @@ export default function BusinessSettings() {
       taxLabel: String(b.taxLabel ?? "Sales Tax"),
     });
     lastSyncedId.current = biz.id;
-    setIsDirty(false);
+    // Persist coerced mode on next Save when DB still has a locked mode.
+    setIsDirty(!featureAccessLoading && storefrontMode !== savedStorefrontMode);
   };
 
   useEffect(() => {
@@ -221,6 +230,27 @@ export default function BusinessSettings() {
     hydrateFromBusiness(business);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate only when business identity/data changes while clean
   }, [business, isDirty]);
+
+  // After feature access loads, move off locked modes (e.g. ORDERING on a display-only plan).
+  useEffect(() => {
+    if (!business || featureAccessLoading) return;
+    let didCoerce = false;
+    setFormState((prev) => {
+      const coerced = coerceEntitledStorefrontMode(prev.storefrontMode, {
+        onlineOrderingAllowed,
+        appointmentRequestsAllowed,
+      });
+      if (coerced === prev.storefrontMode) return prev;
+      didCoerce = true;
+      return { ...prev, storefrontMode: coerced };
+    });
+    if (didCoerce) setIsDirty(true);
+  }, [
+    business,
+    featureAccessLoading,
+    onlineOrderingAllowed,
+    appointmentRequestsAllowed,
+  ]);
 
   const updateBusiness = useUpdateBusiness({
     mutation: {
@@ -349,9 +379,7 @@ export default function BusinessSettings() {
   const isOrderingMode =
     onlineOrderingAllowed &&
     isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
-  const orderingLockedOnPlan =
-    !onlineOrderingAllowed &&
-    isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
+  const showOrderingPlanNotice = !featureAccessLoading && !onlineOrderingAllowed;
 
   return (
     <BusinessDashboardLayout>
@@ -614,11 +642,13 @@ export default function BusinessSettings() {
                   Your plan does not include Items, so the public page will not show a catalog.
                 </p>
               ) : null}
-              {orderingLockedOnPlan ? (
+              {showOrderingPlanNotice ? (
                 <p className="text-xs text-amber-700 dark:text-amber-400">
                   Online ordering is not on your plan, so pickup, delivery, payment, and tax settings are
-                  hidden. Switch to Display only (or Appointment requests) to match your public page, or
-                  upgrade to configure ordering.
+                  hidden.{" "}
+                  {appointmentRequestsAllowed
+                    ? "Use Display only or Appointment requests for your public page, or upgrade to configure ordering."
+                    : "Display only is available on your plan, or upgrade to configure ordering."}
                 </p>
               ) : null}
               {!isOrderingMode && onlineOrderingAllowed ? (

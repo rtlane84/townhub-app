@@ -184,6 +184,49 @@ export async function mapBusinessesHaveFeature(
   return result;
 }
 
+/**
+ * Whether a business may appear on the public directory / storefront.
+ * Requires a subscription whose status grants features (not INCOMPLETE/canceled/etc.).
+ */
+export async function mapBusinessesHavePublicListingAccess(
+  businessIds: number[],
+): Promise<Map<number, boolean>> {
+  const result = new Map<number, boolean>();
+  const uniqueIds = [...new Set(businessIds.filter((id) => Number.isFinite(id)))];
+  for (const id of uniqueIds) {
+    result.set(id, false);
+  }
+  if (uniqueIds.length === 0) return result;
+
+  const rows = await db
+    .select({
+      businessId: businessSubscriptionsTable.businessId,
+      status: businessSubscriptionsTable.status,
+      isBeta: subscriptionPlansTable.isBeta,
+      monthlyPrice: subscriptionPlansTable.monthlyPrice,
+      yearlyPrice: subscriptionPlansTable.yearlyPrice,
+    })
+    .from(businessSubscriptionsTable)
+    .innerJoin(
+      subscriptionPlansTable,
+      eq(businessSubscriptionsTable.planId, subscriptionPlansTable.id),
+    )
+    .where(inArray(businessSubscriptionsTable.businessId, uniqueIds));
+
+  for (const row of rows) {
+    if (subscriptionGrantsFeaturesForPlan(row.status, isComplimentaryPlan(row))) {
+      result.set(row.businessId, true);
+    }
+  }
+
+  return result;
+}
+
+export async function businessHasPublicListingAccess(businessId: number): Promise<boolean> {
+  const map = await mapBusinessesHavePublicListingAccess([businessId]);
+  return map.get(businessId) === true;
+}
+
 export async function businessHasFeature(
   businessId: number,
   featureKey: SubscriptionFeatureKey | string,
