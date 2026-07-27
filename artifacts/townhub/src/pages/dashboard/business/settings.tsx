@@ -379,8 +379,6 @@ export default function BusinessSettings() {
   const isOrderingMode =
     onlineOrderingAllowed &&
     isOrderingStorefrontMode({ type: form.type, storefrontMode: form.storefrontMode });
-  const showOrderingPlanNotice = !featureAccessLoading && !onlineOrderingAllowed;
-
   return (
     <BusinessDashboardLayout>
       <div className="mx-auto max-w-2xl space-y-6 pb-28">
@@ -632,25 +630,6 @@ export default function BusinessSettings() {
                 appointmentRequestsAllowed={appointmentRequestsAllowed}
                 catalogAllowed={businessWebsiteAllowed}
               />
-              {!onlineOrderingAllowed || !appointmentRequestsAllowed ? (
-                <p className="text-xs text-muted-foreground">
-                  Locked options require a plan upgrade. Display-only mode is always available.
-                </p>
-              ) : null}
-              {!businessWebsiteAllowed ? (
-                <p className="text-xs text-muted-foreground">
-                  Your plan does not include Items, so the public page will not show a catalog.
-                </p>
-              ) : null}
-              {showOrderingPlanNotice ? (
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  Online ordering is not on your plan, so pickup, delivery, payment, and tax settings are
-                  hidden.{" "}
-                  {appointmentRequestsAllowed
-                    ? "Use Display only or Appointment requests for your public page, or upgrade to configure ordering."
-                    : "Display only is available on your plan, or upgrade to configure ordering."}
-                </p>
-              ) : null}
               {!isOrderingMode && onlineOrderingAllowed ? (
                 <p className="text-xs text-muted-foreground">
                   Switch to online ordering to configure pickup, delivery, payments, and tax.
