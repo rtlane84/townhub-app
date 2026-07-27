@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, businessesTable } from "@workspace/db";
 import { resolveOrderTotalsDisplay } from "@workspace/api-zod";
-import { buildOwnerNewOrderEmail, buildOwnerRefundFailedEmail, buildOwnerStripeConnectIssueEmail } from "./email-templates/business-emails";
+import { buildOwnerNewOrderEmail, buildOwnerRefundFailedEmail, buildOwnerStripeConnectIssueEmail, buildAdminStripeConnectIssueEmail } from "./email-templates/business-emails";
 import { buildCustomerLifecycleEmail, buildCustomerOrderRefundEmail } from "./email-templates/customer-emails";
 import {
   statusToCustomerEvent,
@@ -18,6 +18,7 @@ import {
   deliverOwnerSms,
   deliverOwnerDiscord,
   deliverOwnerNtfy,
+  deliverPlatformAdminStripeConnectEmail,
   type CustomerLifecycleEventType,
 } from "./notification-delivery";
 import { deliverPushToUsers } from "./push-delivery";
@@ -38,6 +39,7 @@ import {
 } from "./ntfy-owner-notifications";
 import { isValidNtfyTopic } from "./ntfy-topic";
 import type { StripeConnectIssueDetails } from "./stripe-critical-alerts";
+import { resolvePlatformAdminEmails } from "./platform-admin-recipients";
 import { businessHasFeature } from "./business-features";
 import { SUBSCRIPTION_FEATURE_KEYS } from "./subscription-feature-keys";
 import { getPlatformTimeZone } from "./platform-timezone";
@@ -429,6 +431,35 @@ export async function notifyOwnerStripeConnectIssue(input: {
       }),
     );
   }
+
+  // Platform admins also get email (fire-and-forget alongside owner delivery).
+  tasks.push(
+    (async () => {
+      try {
+        const adminRecipients = await resolvePlatformAdminEmails();
+        if (adminRecipients.length === 0) return;
+        const adminEmail = buildAdminStripeConnectIssueEmail({
+          businessName: input.businessName,
+          headline: input.issue.headline,
+          detail: input.issue.detail,
+        });
+        await Promise.all(
+          adminRecipients.map((to) =>
+            deliverPlatformAdminStripeConnectEmail({
+              businessId: input.businessId,
+              eventType: "ADMIN_STRIPE_CONNECT_ISSUE",
+              to,
+              subject: adminEmail.subject,
+              body: adminEmail.text,
+              html: adminEmail.html,
+            }),
+          ),
+        );
+      } catch {
+        // Admin alert must not fail owner notify path.
+      }
+    })(),
+  );
 
   if (tasks.length) await Promise.all(tasks);
 }

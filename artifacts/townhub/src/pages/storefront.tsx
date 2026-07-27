@@ -59,6 +59,7 @@ import {
   resolveStorefrontPresence,
   shareStorefrontPage,
 } from "@/lib/storefront-presence";
+import { buildPublicStorefrontUrl } from "@/lib/storefront-url";
 import { directionsUrl } from "@/lib/directions";
 import { cn } from "@/lib/utils";
 import { triggerNativeHaptic } from "@/lib/native-haptics";
@@ -249,7 +250,9 @@ export default function Storefront() {
     storefrontMode: b.storefrontMode,
     onlineOrderingEntitled: b.onlineOrderingEntitled,
   });
-  const showCatalog = showsStorefrontCatalog(browseMode);
+  const showCatalog = showsStorefrontCatalog(browseMode, {
+    businessWebsiteEntitled: b.businessWebsiteEntitled,
+  });
   const copy = storefrontCopy(browseMode);
   const displayedProducts = (
     activeCategory
@@ -279,8 +282,7 @@ export default function Storefront() {
   const typeLabel = formatBusinessTypeLabel(b.type);
   const phoneDigits = b.phone?.trim()?.replace(/[^\d+]/g, "") || null;
   const address = b.address?.trim() || null;
-  const pageUrl =
-    typeof window !== "undefined" ? window.location.href : `/businesses/${b.slug}`;
+  const pageUrl = buildPublicStorefrontUrl(b.slug);
 
   const primaryCta = (() => {
     if (isOrderingMode) {

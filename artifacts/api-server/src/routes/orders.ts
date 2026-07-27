@@ -28,6 +28,7 @@ import {
   EstimateOrderPrepBody,
 } from "@workspace/api-zod";
 import { createStripeCheckoutSession, stripe, isMockMode, retrieveStripeCheckoutSession } from "../lib/stripe";
+import { mapStripeCheckoutSessionError } from "../lib/stripe-checkout-errors";
 import { logOperationalFailure } from "../lib/operational-log";
 import { respondIfUserDisabled } from "../lib/user-account-status";
 import { recordStripeWebhookReceived } from "../lib/system-runtime-state";
@@ -1114,17 +1115,37 @@ router.post("/checkout/intents", async (req, res): Promise<void> => {
     taxLabel: orderTotals.taxLabel,
   });
 
-  const result = await createStripeCheckoutSession({
-    lineItems,
-    connectedAccountId: business.stripeConnectedAccountId,
-    successUrl,
-    cancelUrl,
-    customerEmail: d.customerEmail.trim(),
-    metadata: {
-      pendingCheckoutId: String(pending.id),
+  let result: Awaited<ReturnType<typeof createStripeCheckoutSession>>;
+  try {
+    result = await createStripeCheckoutSession({
+      lineItems,
       connectedAccountId: business.stripeConnectedAccountId,
-    },
-  });
+      successUrl,
+      cancelUrl,
+      customerEmail: d.customerEmail.trim(),
+      metadata: {
+        pendingCheckoutId: String(pending.id),
+        connectedAccountId: business.stripeConnectedAccountId,
+      },
+    });
+  } catch (err) {
+    const mapped = mapStripeCheckoutSessionError(err);
+    if (mapped) {
+      req.log.warn(
+        {
+          businessId: d.businessId,
+          pendingCheckoutId: pending.id,
+          totalCents: orderTotals.totalCents,
+          code: mapped.code,
+          stripeRequestId: mapped.stripeRequestId,
+        },
+        "Stripe checkout session rejected",
+      );
+      res.status(mapped.status).json({ error: mapped.error, code: mapped.code });
+      return;
+    }
+    throw err;
+  }
 
   if (result.sessionId) {
     await db

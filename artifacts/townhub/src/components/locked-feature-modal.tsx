@@ -58,9 +58,9 @@ export function LockedFeatureModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button disabled title="Billing integration coming soon">
-            Upgrade Plan
-          </Button>
+          <Link href="/dashboard/business/subscription">
+            <Button onClick={() => onOpenChange(false)}>Upgrade plan</Button>
+          </Link>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -94,9 +94,9 @@ export function FeatureLockedPage({ featureKey, feature, planName }: FeatureLock
         </p>
       )}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-        <Button disabled title="Billing integration coming soon">
-          Upgrade Plan
-        </Button>
+        <Link href="/dashboard/business/subscription">
+          <Button>Upgrade plan</Button>
+        </Link>
         <Link href="/dashboard/business">
           <Button variant="outline">Back to dashboard</Button>
         </Link>

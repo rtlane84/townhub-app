@@ -86,10 +86,25 @@ describe("storefront mode", () => {
     );
   });
 
-  it("shows catalog for all storefront modes", () => {
+  it("shows catalog for all storefront modes when entitled", () => {
     assert.equal(showsStorefrontCatalog("ORDERING"), true);
     assert.equal(showsStorefrontCatalog("APPOINTMENT"), true);
     assert.equal(showsStorefrontCatalog("INFORMATION"), true);
+  });
+
+  it("hides catalog when plan lacks business_website", () => {
+    assert.equal(
+      showsStorefrontCatalog("INFORMATION", { businessWebsiteEntitled: false }),
+      false,
+    );
+    assert.equal(
+      showsStorefrontCatalog("ORDERING", { businessWebsiteEntitled: false }),
+      false,
+    );
+    assert.equal(
+      showsStorefrontCatalog("ORDERING", { businessWebsiteEntitled: true }),
+      true,
+    );
   });
 
   it("allows online ordering only in ordering mode", () => {

@@ -252,6 +252,38 @@ export async function deliverPlatformAdminApplicationEmail(input: {
   });
 }
 
+export async function deliverPlatformAdminStripeConnectEmail(input: {
+  businessId: number;
+  eventType: "ADMIN_STRIPE_CONNECT_ISSUE";
+  to: string;
+  subject: string;
+  body: string;
+  html?: string;
+}): Promise<void> {
+  const result = await sendEmail(input.to, input.subject, input.body, input.html);
+  const status = resolveNotificationStatus(result);
+
+  if (status === "LOGGED") {
+    logger.info({ eventType: input.eventType, subject: input.subject }, `[ADMIN NOTIFICATION LOG] ${input.eventType}`);
+  } else if (status === "FAILED") {
+    logOperationalFailure("stripe_admin_notification_email_failed", {
+      eventType: input.eventType,
+      businessId: input.businessId,
+    });
+  }
+
+  await logNotification({
+    businessId: input.businessId,
+    channel: "EMAIL",
+    eventType: input.eventType,
+    recipientEmail: input.to,
+    subject: input.subject,
+    body: input.body,
+    status,
+    errorMessage: result.error,
+  });
+}
+
 export async function deliverOwnerSms(input: {
   businessId: number;
   eventType: OwnerEventType;

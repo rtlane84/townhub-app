@@ -224,6 +224,7 @@ export function categoryForEventType(eventType: string): NotificationCategoryKey
       return "ADMIN_PAYMENT_FAILURE";
     case "ADMIN_SUBSCRIPTION_PAID_STARTED":
     case "ADMIN_TRIAL_STARTED":
+    case "ADMIN_STRIPE_CONNECT_ISSUE":
       return "ADMIN_CRITICAL_ALERT";
     case "NEW_ORDER":
       return "OWNER_NEW_ORDER";

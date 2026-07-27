@@ -96,3 +96,20 @@ If processing cannot finish by the scheduled date:
 2. Notify the user with a specific revised date.
 3. Escalate provider, payment, security, or legal blockers to the platform owner.
 4. Do not mark the request complete merely to clear the queue.
+
+## Business archive vs deactivate
+
+Admin → Businesses supports two different off-ramps:
+
+| Action | Effect | Reversible in product? |
+|--------|--------|------------------------|
+| **Deactivate** (`active = false`) | Hidden from customers; storefront closed; no new orders | **Yes** — turn Active back on in Admin |
+| **Archive** (`archived_at` set, `active = false`) | Removed from public listings and owner Business Hub; Stripe subscription cancelled when present; history retained | **No** — UI says cannot be undone; there is no unarchive API |
+
+### Re-establishing an archived business
+
+There is no Admin “Restore” button today. Practical options:
+
+1. **Preferred for a clean restart:** have the owner submit a new application (or Admin create a new business), assign ownership, and start a new subscription checkout. Prefer a new slug if the old one must stay reserved on the archived row.
+2. **Ops-only DB restore (staging/production with explicit approval):** clear `archived_at`, set `active = true`, then recreate billing (Stripe was cancelled on archive) via Business Hub → Subscription or Admin plan assignment. Confirm slug uniqueness and owner access before going public.
+3. Prefer **Deactivate** instead of Archive when you may need the same business record again.

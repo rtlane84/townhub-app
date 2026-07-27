@@ -39,11 +39,12 @@ For every type below: **Linked to the user = Yes**, **Used for tracking = No**, 
 | Photos or Videos | Yes | App Functionality | Business / town media uploads |
 | Other User Content | Yes | App Functionality | Products, notes, appointments, listings |
 | Crash Data | Yes | App Functionality, Analytics | Sentry/Better Stack Errors |
+| Product Interaction | Yes (when Better Stack JS tag / session replay is enabled) | App Functionality, Analytics | Session replay + frontend diagnostics; mask checkout contact fields; not used for advertising tracking |
 | Payment Info | **No** (recommended) | — | Card numbers enter Stripe Checkout / Connect hosted UI; TownHub stores payment status + provider ids, not full card data. If Apple’s UI forces a payment row, declare only what leaves the device and say not used for tracking. |
 | Precise / Coarse Location | **No** (device GPS) | — | No Core Location permission strings in `Info.plist`. Business / food-truck coordinates are owner-entered listing data (covered under Other User Content / address as applicable), not device location services. |
 | Contacts, Health, Financial Info (bank), Browsing History, Search History, Advertising Data | **No** | — | Not collected for those Apple buckets |
 
-Third parties that process data for you (disclose as shared with processors / service providers where Connect asks): **Clerk** (identity), **Stripe** (payments), **Supabase/Postgres host** (database), **Cloudflare** (frontend), **Railway** (API), **Resend/Twilio** (email/SMS when configured), **APNs** (push), **Better Stack** (errors/logs/uptime). Do not list them as “selling” data.
+Third parties that process data for you (disclose as shared with processors / service providers where Connect asks): **Clerk** (identity), **Stripe** (payments), **Supabase/Postgres host** (database), **Cloudflare** (frontend), **Railway** (API), **Resend/Twilio** (email/SMS when configured), **APNs** (push), **Better Stack** (errors, logs, uptime, and session replay when the JS tag is enabled). Do not list them as “selling” data.
 
 ## Age rating / kids
 

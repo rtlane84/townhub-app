@@ -66,7 +66,7 @@ All variables live in the **repository root `.env`**. Both the API server and Vi
 | `SUPPORT_INBOX_EMAIL` | Customer “Report a problem” inbox (defaults to `Ronnie@LaneTechWV.com`) | Optional; uses Resend/SMTP above |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | SMS | [TWILIO_SETUP.md](TWILIO_SETUP.md) |
 | `WEATHERKIT_*`, `WEATHER_DEMO_FALLBACK` | Homepage weather | [WEATHERKIT.md](WEATHERKIT.md) |
-| `SENTRY_DSN`, `VITE_SENTRY_DSN` | Error monitoring | [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry-setup) |
+| `SENTRY_DSN`, `VITE_BETTERSTACK_JS_TOKEN`, `VITE_SENTRY_DSN` | Error monitoring (+ session replay via JS tag) | [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry--better-stack-errors-setup) |
 | `JOB_SECRET` | Internal cron jobs (trial reminders) | [NOTIFICATIONS.md](NOTIFICATIONS.md#subscription-lifecycle-email) |
 | `PLATFORM_ADMIN_EMAIL` | Subscription operational alerts | [NOTIFICATIONS.md](NOTIFICATIONS.md#subscription-lifecycle-email) |
 | `RATE_LIMIT_*` | API rate limiting | [../SECURITY.md](../SECURITY.md) |
@@ -190,8 +190,9 @@ Guide: [TWILIO_SETUP.md](TWILIO_SETUP.md).
 ### Sentry
 
 ```bash
-SENTRY_DSN=...           # API
-VITE_SENTRY_DSN=...      # Frontend
+SENTRY_DSN=...           # API (Better Stack Errors ingest)
+VITE_BETTERSTACK_JS_TOKEN=...  # Frontend JS tag (errors + session replay; preferred)
+# VITE_SENTRY_DSN=...    # Frontend Errors-only fallback when JS token unset
 ```
 
 Debug test endpoints are **development-only** (not mounted in production). See [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md#sentry-setup).

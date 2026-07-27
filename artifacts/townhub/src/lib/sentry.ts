@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/react";
 import type { Breadcrumb, ErrorEvent, EventHint } from "@sentry/react";
 import { sanitizeSentryEventText, sanitizeSentryText } from "./sentry-scrub";
+import { betterStackJsEnabled } from "./betterstack";
 
 const SENSITIVE_KEY_PATTERN =
   /password|passwd|token|authorization|auth|secret|stripe|api[_-]?key|bearer|cookie|session|cvv|card/i;
@@ -112,9 +113,10 @@ function beforeBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
 
 const dsn = import.meta.env.VITE_SENTRY_DSN?.trim();
 
-export const sentryEnabled = Boolean(dsn);
+// Better Stack JS tag embeds Sentry — do not double-init when the tag is enabled.
+export const sentryEnabled = Boolean(dsn) && !betterStackJsEnabled;
 
-if (dsn) {
+if (sentryEnabled && dsn) {
   const release =
     import.meta.env.VITE_APP_VERSION?.trim() ||
     import.meta.env.VITE_GIT_COMMIT_SHA?.trim() ||

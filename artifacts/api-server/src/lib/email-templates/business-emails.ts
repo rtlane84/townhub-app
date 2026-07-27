@@ -1,4 +1,4 @@
-import { dashboardOrderUrl, dashboardSettingsUrl } from "../notification-urls";
+import { dashboardOrderUrl, dashboardSettingsUrl, dashboardAdminSystemStatusUrl } from "../notification-urls";
 import {
   formatNotificationEstimatedWindow,
   formatOrderReferenceLabel,
@@ -175,6 +175,45 @@ export function buildOwnerStripeConnectIssueEmail(input: {
 
   return {
     subject: `${input.headline} — ${input.businessName}`,
+    text,
+    html,
+  };
+}
+
+/** Platform admin copy for a connected-business Stripe Connect issue (no account IDs / PII). */
+export function buildAdminStripeConnectIssueEmail(input: {
+  businessName: string;
+  headline: string;
+  detail: string;
+}): EmailContent {
+  const openUrl = dashboardAdminSystemStatusUrl();
+  const html = renderEmailLayout({
+    preheader: `${input.businessName}: ${input.headline}`,
+    businessName: "TownHub",
+    heading: "Connected business Stripe issue",
+    bodyHtml: [
+      `<p style="margin:0 0 12px;color:#334155;font-size:15px;line-height:1.6;"><strong>${input.businessName}</strong></p>`,
+      `<p style="margin:0 0 12px;color:#334155;font-size:15px;line-height:1.6;">${input.headline}</p>`,
+      `<p style="margin:0 0 16px;color:#334155;font-size:15px;line-height:1.6;">${input.detail}</p>`,
+    ].join(""),
+    actionLabel: "Open Operations Center",
+    actionUrl: openUrl,
+    footerNote:
+      "TownHub notifies platform admins when a connected business Stripe account needs attention.",
+  });
+
+  const text = [
+    "Connected business Stripe issue",
+    "",
+    input.businessName,
+    input.headline,
+    input.detail,
+    "",
+    `Open Operations Center: ${openUrl}`,
+  ].join("\n");
+
+  return {
+    subject: `[TownHub] ${input.headline} — ${input.businessName}`,
     text,
     html,
   };

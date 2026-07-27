@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ErrorBoundary } from "@sentry/react";
 import { Button } from "@/components/ui/button";
 import { isNativeApp } from "@/lib/native-platform";
+import { isSentryEnabled } from "@/lib/sentry";
 
-function SentryFallback({ error, componentStack }: { error: unknown; componentStack: string }) {
+function FallbackUi({ error, componentStack }: { error: unknown; componentStack: string }) {
   const message =
     error instanceof Error
       ? error.message
@@ -33,11 +34,41 @@ function SentryFallback({ error, componentStack }: { error: unknown; componentSt
   );
 }
 
+type LocalBoundaryState = {
+  error: unknown | null;
+  componentStack: string;
+};
+
+class LocalErrorBoundary extends Component<{ children: ReactNode }, LocalBoundaryState> {
+  state: LocalBoundaryState = { error: null, componentStack: "" };
+
+  static getDerivedStateFromError(error: unknown): Partial<LocalBoundaryState> {
+    return { error, componentStack: "" };
+  }
+
+  componentDidCatch(error: unknown, info: ErrorInfo): void {
+    this.setState({ error, componentStack: info.componentStack ?? "" });
+  }
+
+  render() {
+    if (this.state.error != null) {
+      return (
+        <FallbackUi error={this.state.error} componentStack={this.state.componentStack} />
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function SentryErrorBoundary({ children }: { children: ReactNode }) {
+  if (!isSentryEnabled()) {
+    return <LocalErrorBoundary>{children}</LocalErrorBoundary>;
+  }
+
   return (
     <ErrorBoundary
       fallback={({ error, componentStack }) => (
-        <SentryFallback error={error} componentStack={componentStack ?? ""} />
+        <FallbackUi error={error} componentStack={componentStack ?? ""} />
       )}
     >
       {children}

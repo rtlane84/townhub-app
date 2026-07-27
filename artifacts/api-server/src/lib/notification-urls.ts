@@ -60,6 +60,10 @@ export function dashboardAdminApplicationsUrl(): string {
   return `${getAppBaseUrl()}/dashboard/admin/applications`;
 }
 
+export function dashboardAdminSystemStatusUrl(): string {
+  return `${getAppBaseUrl()}/dashboard/admin/system-status`;
+}
+
 export function listYourBusinessUrl(): string {
   return `${getAppBaseUrl()}/list-your-business`;
 }

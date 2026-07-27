@@ -81,6 +81,18 @@ If `RESEND_API_KEY` is set but `RESEND_FROM` is missing, email is treated as **n
 
 **Customer problem reports:** `POST /api/support/reports` emails the support inbox. Set optional `SUPPORT_INBOX_EMAIL` to override the default (`Ronnie@LaneTechWV.com`). Delivery uses the same Resend/SMTP configuration.
 
+### Inbound mail (replies to `updates@townhub.io`)
+
+Resend only **sends** TownHub transactional mail. Routing replies or other inbound messages for addresses on `townhub.io` is DNS / mailbox configuration, not an app setting.
+
+To forward `updates@townhub.io` → `ronnie@lanetechwv.com`:
+
+1. Prefer **Cloudflare Email Routing** (if DNS for `townhub.io` is on Cloudflare): Email → Routing → create address `updates@townhub.io` → destination `ronnie@lanetechwv.com` (verify the destination once).
+2. Or create the mailbox / alias in Google Workspace (or your mail host) and set a forward to `ronnie@lanetechwv.com`.
+3. Keep Resend’s domain DNS (SPF/DKIM) intact so outbound `RESEND_FROM` still verifies.
+
+Do not expect replies to land in Resend’s dashboard — Resend is not the inbound mailbox.
+
 ---
 
 ## 5. Deploy and restart
