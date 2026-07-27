@@ -9,7 +9,7 @@ import {
 
 type NotificationProviderCardProps = {
   title: string;
-  description: string;
+  description?: string;
   icon: ReactNode;
   testId?: string;
   children: ReactNode;
@@ -29,7 +29,7 @@ export function NotificationProviderCard({
           {icon}
           {title}
         </CardTitle>
-        <CardDescription>{description}</CardDescription>
+        {description ? <CardDescription>{description}</CardDescription> : null}
       </CardHeader>
       <CardContent className="space-y-5">{children}</CardContent>
     </Card>

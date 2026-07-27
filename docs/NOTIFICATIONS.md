@@ -183,7 +183,7 @@ Business **channel** settings (Email / SMS / Discord / ntfy Enable + destination
 
 Per-event DB flags on the business (`notifyNewOrdersByEmail`, …) and user preference rows (`OWNER_NEW_ORDER`, `OWNER_APPOINTMENT_REQUEST`) remain for compatibility. Saving/toggling Enable ON writes both operational flags `true`; OFF writes both `false`.
 
-**Critical Stripe / payment alerts** are always-on (email + App Push) and are not controlled by these Enable switches or by the `email_notifications` plan feature — see [Critical Stripe / payment alerts](#critical-stripe--payment-alerts).
+**Payment, billing, and refund notices** are always-on (owner **login email** + App Push) and are not controlled by these Enable switches or by the `email_notifications` plan feature — see [Critical Stripe / payment alerts](#critical-stripe--payment-alerts).
 
 `OWNER_SUBSCRIPTION` (subscription updates push) is **not** shown until App Push for those events is implemented. Subscription **emails** still send independently.
 
@@ -195,14 +195,14 @@ These are **not** controlled by Email / SMS / Discord / ntfy Enable or by TownHu
 
 | Event | Trigger | Delivery |
 | ----- | ------- | -------- |
-| Refund failed | Owner refund API returns 5xx after a failed Stripe refund | Owner **email** (if notification address set) + **TownHub app push** |
-| Stripe Connect issue | `account.updated` / Connect sync enters an unhealthy state | Owner **email** (if notification address set) + **TownHub app push**, plus platform-admin **email** (`ADMIN_STRIPE_CONNECT_ISSUE` via `PLATFORM_ADMIN_EMAIL` / admin users) |
+| Refund failed | Owner refund API returns 5xx after a failed Stripe refund | Owner **login email** + **TownHub app push** |
+| Stripe Connect issue | `account.updated` / Connect sync enters an unhealthy state | Owner **login email** + **TownHub app push**, plus platform-admin **email** (`ADMIN_STRIPE_CONNECT_ISSUE` via `PLATFORM_ADMIN_EMAIL` / admin users) |
 
 Connect issues include: account disconnected (was connected), charges disabled, payouts disabled, verification / additional information required, restricted account, and other states that block normal payment or payout operation (`pending` with a connected account, or `restricted`). Payouts disabled is stored as Connect status `restricted`.
 
-**Owner email address vs Enable:** Critical alerts use the business **Notification email** field as the destination. The Email **Enable** toggle only gates operational order/appointment email — it does **not** turn off Stripe/refund emails. The Notifications UI keeps that address editable even when Enable is off so owners can still set a destination for critical alerts.
+**Owner email destination:** Critical alerts use the primary owner’s **login email** (`users.email`, falling back to Clerk primary via `resolveOwnerLoginEmail`). They do **not** use the business Notification email field. That field (and Email Enable) only control new order / appointment emails.
 
-**Channels (owner):** email + TownHub app push only. **Never** SMS, Discord, or ntfy.
+**Channels (owner):** login email + TownHub app push only. **Never** SMS, Discord, or ntfy.
 
 **Hub UI:** while Connect status is `pending` or `restricted`, Business Hub shows a persistent warning banner (CTA → Settings). Refund failures are notified immediately; they do not keep a separate persistent banner.
 
@@ -217,7 +217,7 @@ Implementation: `stripe-critical-alerts.ts`, `notifyOwnerRefundFailed` / `notify
 - Defaults: all **toggleable** implemented categories **enabled** until the user opts out
 - Non-toggleable categories (e.g. `OWNER_STRIPE_ISSUE`) are omitted from the UI and rejected on PUT
 - Unimplemented categories (e.g. `OWNER_SUBSCRIPTION` push) are omitted until wired
-- Copy distinguishes **operational** channel Enables from always-on **critical** payment/account alerts
+- Copy distinguishes order/appointment channel Enables from always-on payment, billing, and refund notices (login email + app push)
 
 Test push (signed-in): `POST /api/me/notifications/test-push`
 

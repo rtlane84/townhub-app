@@ -653,7 +653,7 @@ const businessOwnerHelp: HelpDirectory = {
             "Use each provider's test action after saving a valid destination or setup value.",
             "Enable In-shop sound for a local chime while Business Hub is open.",
           ],
-          note: "Critical Stripe, refund, and account-security alerts remain mandatory and are not disabled by operational channel switches.",
+          note: "Payment, billing, and refund notices remain mandatory (owner login email and app push) and are not disabled by order-alert channel switches.",
           keywords: ["email", "SMS", "Twilio", "ntfy", "Discord", "push", "sound", "test"],
           link: { href: "/dashboard/business/notifications", label: "Open Notifications" },
         },

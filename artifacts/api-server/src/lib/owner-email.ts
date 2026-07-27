@@ -84,3 +84,28 @@ export async function resolveOwnerDeliverableEmail(input: {
 
   return null;
 }
+
+/**
+ * Owner login email only (users table, then Clerk primary).
+ * Does not use business notificationEmail — for mandatory payment/refund alerts.
+ */
+export async function resolveOwnerLoginEmail(ownerId: string): Promise<string | null> {
+  if (!ownerId.trim()) return null;
+
+  const [user] = await db
+    .select({ email: usersTable.email })
+    .from(usersTable)
+    .where(eq(usersTable.id, ownerId));
+
+  if (isDeliverableEmail(user?.email)) {
+    return user.email.trim();
+  }
+
+  const fromClerk = await fetchClerkPrimaryEmail(ownerId);
+  if (fromClerk) {
+    await syncUserEmailIfNeeded(ownerId, fromClerk);
+    return fromClerk;
+  }
+
+  return null;
+}

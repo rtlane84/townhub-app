@@ -34,7 +34,7 @@ type Props = {
 export function UserNotificationPreferencesPanel({
   audience = "BUSINESS_OWNER",
   title = "TownHub App Push",
-  description = "Operational alerts on your signed-in phone. Critical payment and account alerts always use email and TownHub app push.",
+  description = "New order and appointment alerts on this phone.",
   enableDescription,
   acceptsAppointments = false,
   icon = <Bell className="h-4 w-4" />,

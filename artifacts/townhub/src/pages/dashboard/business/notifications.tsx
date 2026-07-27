@@ -45,7 +45,6 @@ import {
 } from "@/lib/notification-preferences";
 import { playNotificationSound, unlockNotificationSound } from "@/lib/notification-sounds";
 import {
-  channelAlertsHelperText,
   channelEventFlags,
   deliveryFormFromBusiness,
   isDiscordSettingsDirty,
@@ -152,7 +151,6 @@ export default function BusinessNotifications() {
     : false;
 
   const acceptsAppointments = acceptsAppointmentRequests(business ?? {});
-  const channelHelperText = channelAlertsHelperText(acceptsAppointments);
 
   const invalidateBusiness = () => {
     if (selectedBusinessId != null) {
@@ -383,22 +381,20 @@ export default function BusinessNotifications() {
         <div>
           <h1 className="text-2xl font-serif font-bold">Notifications</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Turn on channels for operational alerts (new orders and appointments). Critical payment,
-            refund, and account-security notices always go by email and TownHub app push — they cannot
-            be turned off here.
+            Choose how your business receives new order and appointment alerts. Payment, billing, and
+            refund notices are always sent to the owner’s login email and by TownHub app push.
           </p>
         </div>
 
         {emailNotificationsAllowed ? (
         <NotificationProviderCard
           title="Email"
-          description={`Enable controls operational alerts (${channelHelperText}). The address below is also used for always-on Stripe and refund alerts.`}
           icon={<Mail className="h-4 w-4" />}
           testId="notification-email-card"
         >
           <ProviderEnableRow
-            label="Enable email notifications"
-            description={`Operational only: ${channelHelperText}`}
+            label="Enable new order/appointment emails"
+            description="Email me when a new order is placed or an appointment is requested."
             checked={deliveryForm.emailEnabled}
             onCheckedChange={(emailEnabled) => setDeliveryForm((f) => ({ ...f, emailEnabled }))}
             testId="toggle-email-enabled"
@@ -416,20 +412,6 @@ export default function BusinessNotifications() {
               placeholder="owner@yourbusiness.com"
               data-testid="input-notificationEmail"
             />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Always editable. Critical Stripe and refund notices use this address even when Enable is off.
-            </p>
-            {business.stripeConnectStatus != null &&
-            business.stripeConnectStatus !== "not_connected" &&
-            !emailConfigured ? (
-              <p
-                className="mt-2 text-xs text-amber-800 bg-amber-500/10 border border-amber-500/30 rounded-md px-2.5 py-2"
-                data-testid="stripe-email-address-warning"
-              >
-                Stripe payments are connected for this business, but no notification email is set.
-                Add an address so critical payment alerts can reach you by email.
-              </p>
-            ) : null}
           </div>
 
           <ProviderConnectionStatus
@@ -462,13 +444,12 @@ export default function BusinessNotifications() {
         {smsNotificationsAllowed ? (
         <NotificationProviderCard
           title="SMS"
-          description={`Operational alerts. ${channelHelperText}`}
           icon={<MessageSquare className="h-4 w-4" />}
           testId="notification-sms-card"
         >
           <ProviderEnableRow
-            label="Enable SMS notifications"
-            description={channelHelperText}
+            label="Enable new order/appointment texts"
+            description="Text me when a new order is placed or an appointment is requested."
             checked={deliveryForm.smsEnabled}
             onCheckedChange={(smsEnabled) => setDeliveryForm((f) => ({ ...f, smsEnabled }))}
             testId="toggle-sms-enabled"
@@ -518,13 +499,12 @@ export default function BusinessNotifications() {
 
         <NotificationProviderCard
           title="Free phone notifications"
-          description={`Operational alerts via the free ntfy app. ${channelHelperText}`}
           icon={<Smartphone className="h-4 w-4" />}
           testId="ntfy-phone-notifications-card"
         >
           <ProviderEnableRow
-            label="Enable phone notifications"
-            description={channelHelperText}
+            label="Enable new order/appointment alerts"
+            description="Notify this phone when a new order is placed or an appointment is requested."
             checked={ntfyEnabled}
             onCheckedChange={handleNtfyToggle}
             disabled={updateBusiness.isPending}
@@ -672,13 +652,12 @@ export default function BusinessNotifications() {
 
         <NotificationProviderCard
           title="Discord"
-          description={`Operational alerts. ${channelHelperText}`}
           icon={<Hash className="h-4 w-4" />}
           testId="notification-discord-card"
         >
           <ProviderEnableRow
-            label="Enable Discord notifications"
-            description={channelHelperText}
+            label="Enable new order/appointment Discord alerts"
+            description="Post to Discord when a new order is placed or an appointment is requested."
             checked={deliveryForm.discordEnabled}
             onCheckedChange={(discordEnabled) => setDeliveryForm((f) => ({ ...f, discordEnabled }))}
             testId="toggle-discord-enabled"
@@ -783,9 +762,9 @@ export default function BusinessNotifications() {
         <UserNotificationPreferencesPanel
           audience="BUSINESS_OWNER"
           title="TownHub App Push"
-          description="Operational alerts on your signed-in phone. Critical payment, refund, and account-security notices always use email and TownHub app push — they stay on even if this switch is off."
+          description="New order and appointment alerts on this phone."
           acceptsAppointments={acceptsAppointments}
-          enableDescription={channelHelperText}
+          enableDescription="Notify this phone when a new order is placed or an appointment is requested."
         />
       </div>
     </BusinessDashboardLayout>

@@ -40,6 +40,7 @@ import {
 import { isValidNtfyTopic } from "./ntfy-topic";
 import type { StripeConnectIssueDetails } from "./stripe-critical-alerts";
 import { resolvePlatformAdminEmails } from "./platform-admin-recipients";
+import { resolveOwnerLoginEmail } from "./owner-email";
 import { businessHasFeature } from "./business-features";
 import { SUBSCRIPTION_FEATURE_KEYS } from "./subscription-feature-keys";
 import { getPlatformTimeZone } from "./platform-timezone";
@@ -342,25 +343,24 @@ export async function notifyOwnerRefundFailed(
   const email = buildOwnerRefundFailedEmail(order, refundAmountCents);
   const tasks: Promise<unknown>[] = [];
 
-  // Critical: always email when an address exists — ignores operational Email Enable.
-  const ownerEmail =
-    business.notificationEmail?.trim() || business.orderNotificationEmail?.trim() || null;
-  if (ownerEmail) {
-    tasks.push(
-      deliverOwnerEmail({
-        businessId: business.id,
-        eventType: "REFUND_FAILED",
-        to: ownerEmail,
-        subject: email.subject,
-        body: email.text,
-        html: email.html,
-        orderId,
-      }),
-    );
-  }
-
-  // Critical: always push to registered owner devices — ignores category opt-outs.
+  // Critical: owner's login email — ignores operational Email Enable and notificationEmail.
   if (business.ownerId) {
+    const ownerEmail = await resolveOwnerLoginEmail(business.ownerId);
+    if (ownerEmail) {
+      tasks.push(
+        deliverOwnerEmail({
+          businessId: business.id,
+          eventType: "REFUND_FAILED",
+          to: ownerEmail,
+          subject: email.subject,
+          body: email.text,
+          html: email.html,
+          orderId,
+        }),
+      );
+    }
+
+    // Critical: always push to registered owner devices — ignores category opt-outs.
     const push = buildOwnerRefundFailedPush(order, refundAmountCents);
     tasks.push(
       deliverPushToUsers({
@@ -398,22 +398,22 @@ export async function notifyOwnerStripeConnectIssue(input: {
   });
   const tasks: Promise<unknown>[] = [];
 
-  const ownerEmail =
-    input.notificationEmail?.trim() || input.orderNotificationEmail?.trim() || null;
-  if (ownerEmail) {
-    tasks.push(
-      deliverOwnerEmail({
-        businessId: input.businessId,
-        eventType: "STRIPE_CONNECT_ISSUE",
-        to: ownerEmail,
-        subject: email.subject,
-        body: email.text,
-        html: email.html,
-      }),
-    );
-  }
-
+  // Critical: owner's login email — ignores notificationEmail and Email Enable.
   if (input.ownerId) {
+    const ownerEmail = await resolveOwnerLoginEmail(input.ownerId);
+    if (ownerEmail) {
+      tasks.push(
+        deliverOwnerEmail({
+          businessId: input.businessId,
+          eventType: "STRIPE_CONNECT_ISSUE",
+          to: ownerEmail,
+          subject: email.subject,
+          body: email.text,
+          html: email.html,
+        }),
+      );
+    }
+
     const push = buildOwnerStripeConnectIssuePush({
       headline: input.issue.headline,
       detail: input.issue.detail,
