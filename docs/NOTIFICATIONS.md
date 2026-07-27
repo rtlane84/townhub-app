@@ -196,11 +196,13 @@ These are **not** controlled by Email / SMS / Discord / ntfy Enable or by TownHu
 | Event | Trigger | Delivery |
 | ----- | ------- | -------- |
 | Refund failed | Owner refund API returns 5xx after a failed Stripe refund | Owner **email** (if notification address set) + **TownHub app push** |
-| Stripe Connect issue | `account.updated` / Connect sync enters an unhealthy state | Owner **email** + **TownHub app push** |
+| Stripe Connect issue | `account.updated` / Connect sync enters an unhealthy state | Owner **email** (if notification address set) + **TownHub app push**, plus platform-admin **email** (`ADMIN_STRIPE_CONNECT_ISSUE` via `PLATFORM_ADMIN_EMAIL` / admin users) |
 
 Connect issues include: account disconnected (was connected), charges disabled, payouts disabled, verification / additional information required, restricted account, and other states that block normal payment or payout operation (`pending` with a connected account, or `restricted`). Payouts disabled is stored as Connect status `restricted`.
 
-**Channels:** email + TownHub app push only. **Never** SMS, Discord, or ntfy.
+**Owner email address vs Enable:** Critical alerts use the business **Notification email** field as the destination. The Email **Enable** toggle only gates operational order/appointment email — it does **not** turn off Stripe/refund emails. The Notifications UI keeps that address editable even when Enable is off so owners can still set a destination for critical alerts.
+
+**Channels (owner):** email + TownHub app push only. **Never** SMS, Discord, or ntfy.
 
 **Hub UI:** while Connect status is `pending` or `restricted`, Business Hub shows a persistent warning banner (CTA → Settings). Refund failures are notified immediately; they do not keep a separate persistent banner.
 

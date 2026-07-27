@@ -122,7 +122,7 @@ Do **not** put Cloudflare `VITE_*` secrets on Railway, and do not put API secret
 
 Expected build variables per Worker project:
 
-`DEPLOYMENT_ENVIRONMENT`, `VITE_API_BASE_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_DISTRIBUTION_CHANNEL` (`web`), `VITE_PUBLIC_WEB_URL`, `VITE_SENTRY_DSN`.
+`DEPLOYMENT_ENVIRONMENT`, `VITE_API_BASE_URL`, `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_DISTRIBUTION_CHANNEL` (`web`), `VITE_PUBLIC_WEB_URL`, `VITE_SENTRY_DSN`, `VITE_BETTERSTACK_JS_TOKEN` (preferred for frontend errors + session replay; when set, skip relying on `VITE_SENTRY_DSN`).
 
 Optional: `VITE_APP_VERSION`, `VITE_GIT_COMMIT_SHA`. `VITE_DEPLOYMENT_ENVIRONMENT` is usually derived from `DEPLOYMENT_ENVIRONMENT` at build time.
 

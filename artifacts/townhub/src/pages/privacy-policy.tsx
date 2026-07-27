@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 
-const effectiveDate = "July 21, 2026";
+const effectiveDate = "July 26, 2026";
 
 export default function PrivacyPolicy() {
   return (
@@ -21,6 +21,11 @@ export default function PrivacyPolicy() {
           <li>Business listing and owner-provided content, including business contact details, photos, products, hours, and locations.</li>
           <li>Payment status and provider identifiers. TownHub does not store complete card numbers.</li>
           <li>Device tokens, notification preferences, diagnostics, security events, and usage information needed to operate and improve the service.</li>
+          <li>
+            Optional session diagnostics (including session replay of on-screen interactions) via Better Stack when enabled,
+            used only to diagnose errors and improve reliability. Sensitive form fields are masked where possible; we do not
+            intentionally record payment card numbers.
+          </li>
         </ul>
 
         <h2>How we use information</h2>

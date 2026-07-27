@@ -3459,6 +3459,12 @@ components:
             Whether the business subscription plan includes the online_ordering feature.
             Public cart/checkout UI must require this plus storefrontMode ORDERING.
             Distinct from orderingAvailable (hours/schedule open state).
+        businessWebsiteEntitled:
+          type: boolean
+          description: >
+            Whether the business subscription plan includes the business_website feature.
+            When false, the public storefront must hide the catalog (Items/menu/services)
+            even if products exist in the database.
         publicAvailability:
           allOf:
             - $ref: "#/components/schemas/PublicAvailabilitySummary"

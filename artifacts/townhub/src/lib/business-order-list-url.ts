@@ -43,7 +43,6 @@ export function buildOrdersPageHref(state: OrdersPageUrlState): string {
 export const OVERVIEW_ORDERS_LINKS = {
   today: buildOrdersPageHref({ datePreset: "today" }),
   todayCompleted: buildOrdersPageHref({ datePreset: "today", statusFilter: "COMPLETED" }),
-  active: buildOrdersPageHref({ datePreset: "all", statusFilter: "active" }),
 } as const;
 
 export const OVERVIEW_KITCHEN_HREF = "/dashboard/business/kitchen";

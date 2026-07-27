@@ -138,6 +138,9 @@ export interface Business {
   /** Whether the business subscription plan includes the online_ordering feature. Public cart/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours/schedule open state).
    */
   onlineOrderingEntitled?: boolean;
+  /** Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items/menu/services) even if products exist in the database.
+   */
+  businessWebsiteEntitled?: boolean;
   /** Public directory/storefront open-here summary in the platform timezone. For mobile businesses this uses scheduled stops; for fixed locations it uses structured hours. Distinct from orderingAvailable.
    */
   publicAvailability?: PublicAvailabilitySummary | null;

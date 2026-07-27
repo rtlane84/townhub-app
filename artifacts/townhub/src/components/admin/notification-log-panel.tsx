@@ -7,15 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Bell, CheckCircle, AlertCircle, Clock, ChevronDown, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  formatNotificationRecipient,
+  notificationDeliveryProvider,
+} from "@/lib/notification-log-display";
 
 type StatusFilter = "ALL" | "SENT" | "LOGGED" | "FAILED";
-type ChannelFilter = "ALL" | "EMAIL" | "SMS";
-
-function deliveryProvider(channel: string | undefined): string {
-  if (channel === "SMS") return "Twilio";
-  if (channel === "EMAIL") return "Resend / SMTP";
-  return "Unknown";
-}
+type ChannelFilter = "ALL" | "EMAIL" | "SMS" | "PUSH";
 
 function isHtmlBody(body: string): boolean {
   return /<[a-z][\s\S]*>/i.test(body);
@@ -24,7 +22,7 @@ function isHtmlBody(body: string): boolean {
 function NotificationEntry({ log }: { log: NotificationLog }) {
   const [open, setOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"plain" | "html">("plain");
-  const recipient = log.recipientEmail ?? log.recipientPhone ?? "Unknown recipient";
+  const recipient = formatNotificationRecipient(log);
   const htmlContent = isHtmlBody(log.body);
 
   return (
@@ -81,7 +79,7 @@ function NotificationEntry({ log }: { log: NotificationLog }) {
               </div>
               <div>
                 <dt className="text-muted-foreground">Delivery provider</dt>
-                <dd className="font-medium">{deliveryProvider(log.channel)}</dd>
+                <dd className="font-medium">{notificationDeliveryProvider(log.channel)}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Delivery status</dt>
@@ -203,6 +201,7 @@ export function NotificationLogPanel({
                 <SelectItem value="ALL">All channels</SelectItem>
                 <SelectItem value="EMAIL">Email</SelectItem>
                 <SelectItem value="SMS">SMS</SelectItem>
+                <SelectItem value="PUSH">Push</SelectItem>
               </SelectContent>
             </Select>
           </div>

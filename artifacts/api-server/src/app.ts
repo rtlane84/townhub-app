@@ -14,9 +14,11 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import { createApiRateLimitMiddleware } from "./middlewares/rate-limit";
+import { sentryRequestContextMiddleware } from "./middlewares/sentry-request-context";
 import { shouldTrustProxyForRateLimit } from "./lib/rate-limit-config";
 import { getFrontendBaseUrl } from "./lib/app-base-url";
 import { buildNativeCheckoutReturnHtml } from "./lib/native-checkout-return-html";
+import { getAuth } from "@clerk/express";
 
 const app: Express = express();
 
@@ -94,6 +96,9 @@ app.use(
   })),
 );
 
+// After Clerk so getAuth works; before routes so Errors/Logs share request_id.
+app.use(sentryRequestContextMiddleware);
+
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
@@ -112,7 +117,39 @@ app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
     return;
   }
 
-  logger.error({ err, method: req.method, url: req.originalUrl }, "Unhandled request error");
+  const { userId } = getAuth(req);
+  const stripeCode =
+    err && typeof err === "object" && "code" in err && typeof (err as { code: unknown }).code === "string"
+      ? (err as { code: string }).code
+      : undefined;
+  const stripeRequestId =
+    err &&
+    typeof err === "object" &&
+    "requestId" in err &&
+    typeof (err as { requestId: unknown }).requestId === "string"
+      ? (err as { requestId: string }).requestId
+      : undefined;
+
+  if (stripeCode) {
+    Sentry.getCurrentScope().setTag("stripe_error_code", stripeCode);
+  }
+  if (stripeRequestId) {
+    Sentry.getCurrentScope().setTag("stripe_request_id", stripeRequestId);
+  }
+
+  const log = req.log ?? logger;
+  log.error(
+    {
+      err,
+      method: req.method,
+      url: req.originalUrl,
+      requestId: req.id,
+      ...(userId ? { userId } : {}),
+      ...(stripeCode ? { stripeErrorCode: stripeCode } : {}),
+      ...(stripeRequestId ? { stripeRequestId } : {}),
+    },
+    "Unhandled request error",
+  );
   res.status(500).json({ error: "Internal server error" });
 });
 

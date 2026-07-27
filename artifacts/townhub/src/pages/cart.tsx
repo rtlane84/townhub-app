@@ -476,15 +476,38 @@ export default function Cart() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
-                    <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+                    <Input
+                      id="name"
+                      className="th-bs-exclude"
+                      autoComplete="name"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number <span className="text-destructive">*</span></Label>
-                    <Input id="phone" type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} required />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      className="th-bs-exclude"
+                      autoComplete="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      required
+                    />
                   </div>
                   <div className="col-span-2 space-y-2">
                     <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
-                    <Input id="email" type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} required />
+                    <Input
+                      id="email"
+                      type="email"
+                      className="th-bs-exclude"
+                      autoComplete="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      required
+                    />
                   </div>
                 </div>
               </div>

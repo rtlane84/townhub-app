@@ -1,3 +1,4 @@
+import { initBetterStackJs } from "@/lib/betterstack";
 import "@/lib/sentry";
 import { initPlausible } from "@/lib/plausible";
 import { createRoot } from "react-dom/client";
@@ -13,6 +14,8 @@ import "./index.css";
 // Path-encoded SSO remounts promote into ?search before Clerk boots.
 promoteNativeSsoPathParamsToSearch();
 
+// Better Stack JS tag before Sentry — when the token is set, sentry.ts skips init.
+initBetterStackJs();
 initPlausible();
 
 const apiBaseUrl = getApiBaseUrl();

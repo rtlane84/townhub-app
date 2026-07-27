@@ -153,6 +153,7 @@ export default function BusinessSettings() {
   const { hasFeature } = useBusinessFeatureAccess();
   const onlineOrderingAllowed = hasFeature("online_ordering");
   const appointmentRequestsAllowed = hasFeature("appointment_requests");
+  const businessWebsiteAllowed = hasFeature("business_website");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [form, setFormState] = useState<FormState>({ ...EMPTY });
@@ -605,6 +606,11 @@ export default function BusinessSettings() {
               {!onlineOrderingAllowed || !appointmentRequestsAllowed ? (
                 <p className="text-xs text-muted-foreground">
                   Locked options require a plan upgrade. Display-only mode is always available.
+                </p>
+              ) : null}
+              {!businessWebsiteAllowed ? (
+                <p className="text-xs text-muted-foreground">
+                  Your plan does not include Items, so the public page will not show a catalog.
                 </p>
               ) : null}
               {orderingLockedOnPlan ? (

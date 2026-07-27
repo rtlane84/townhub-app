@@ -115,7 +115,12 @@ export type PlatformAdminSubscriptionEvent =
 
 export type PlatformAdminApplicationEvent = "ADMIN_APPLICATION_SUBMITTED";
 
-export type PlatformAdminEvent = PlatformAdminSubscriptionEvent | PlatformAdminApplicationEvent;
+export type PlatformAdminStripeEvent = "ADMIN_STRIPE_CONNECT_ISSUE";
+
+export type PlatformAdminEvent =
+  | PlatformAdminSubscriptionEvent
+  | PlatformAdminApplicationEvent
+  | PlatformAdminStripeEvent;
 
 export type AppointmentNotificationData = {
   businessName: string;

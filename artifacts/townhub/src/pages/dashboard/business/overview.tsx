@@ -6,7 +6,7 @@ import { useSelectedBusiness } from "@/hooks/selected-business-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { ShoppingBag, Clock, DollarSign, TrendingUp, Loader2 } from "lucide-react";
+import { ShoppingBag, Clock, DollarSign, Loader2 } from "lucide-react";
 import { OrderRow, orderStatusHighlightClass } from "@/components/order-row";
 import { useOrderHighlight } from "@/hooks/order-dashboard-refresh-context";
 import { cn } from "@/lib/utils";
@@ -70,9 +70,9 @@ export default function BusinessOverview() {
 
         <LockedFeatureSection featureKey="online_ordering">
         {/* Stats grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {showInitialSkeleton ? (
-            Array.from({ length: 4 }).map((_, i) => (
+            Array.from({ length: 3 }).map((_, i) => (
               <Card key={i}><CardContent className="p-6"><Skeleton className="h-16 w-full" /></CardContent></Card>
             ))
           ) : (
@@ -113,19 +113,6 @@ export default function BusinessOverview() {
                 icon={
                   <div className="p-2 bg-green-100 rounded-lg">
                     <DollarSign className="h-4 w-4 text-green-600" />
-                  </div>
-                }
-              />
-              <OverviewStatCard
-                href={OVERVIEW_ORDERS_LINKS.active}
-                locked={ordersLocked}
-                onLockedClick={() => openLockedFeature("online_ordering")}
-                testId="stat-upcoming-orders"
-                value={summary?.upcomingCount ?? 0}
-                label="Upcoming"
-                icon={
-                  <div className="p-2 bg-indigo-100 rounded-lg">
-                    <TrendingUp className="h-4 w-4 text-indigo-600" />
                   </div>
                 }
               />

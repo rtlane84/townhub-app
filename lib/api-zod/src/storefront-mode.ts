@@ -54,7 +54,12 @@ export function isOrderingStorefrontMode(business: {
   return resolveStorefrontMode(business) === "ORDERING";
 }
 
-export function showsStorefrontCatalog(mode: StorefrontMode): boolean {
+export function showsStorefrontCatalog(
+  mode: StorefrontMode,
+  options?: { businessWebsiteEntitled?: boolean | null },
+): boolean {
+  // Missing entitlement is treated as entitled for backward-compatible callers.
+  if (options?.businessWebsiteEntitled === false) return false;
   return mode === "ORDERING" || mode === "APPOINTMENT" || mode === "INFORMATION";
 }
 

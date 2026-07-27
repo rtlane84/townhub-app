@@ -6,6 +6,7 @@ import {
   resolveStorefrontPresence,
 } from "./storefront-presence.ts";
 import { directionsUrl } from "./directions.ts";
+import { buildPublicStorefrontUrl } from "./storefront-url.ts";
 
 describe("resolveStorefrontPresence", () => {
   it("classifies mobile businesses before address", () => {
@@ -81,5 +82,16 @@ describe("maps urls", () => {
       locationDirectionsUrl({ locationName: "Clay Town Square" }, "other"),
       `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent("Clay Town Square")}`,
     );
+  });
+});
+
+describe("shareStorefrontPage", () => {
+  it("uses a public HTTPS storefront URL for sharing, not capacitor://", () => {
+    const url = buildPublicStorefrontUrl("clay-diner", {
+      runtimeOrigin: "capacitor://localhost",
+      publicWebBaseUrl: "https://townhub.io",
+    });
+    assert.equal(url, "https://townhub.io/businesses/clay-diner");
+    assert.doesNotMatch(url, /^capacitor:/);
   });
 });

@@ -392,13 +392,13 @@ export default function BusinessNotifications() {
         {emailNotificationsAllowed ? (
         <NotificationProviderCard
           title="Email"
-          description={`Operational alerts. ${channelHelperText}`}
+          description={`Enable controls operational alerts (${channelHelperText}). The address below is also used for always-on Stripe and refund alerts.`}
           icon={<Mail className="h-4 w-4" />}
           testId="notification-email-card"
         >
           <ProviderEnableRow
             label="Enable email notifications"
-            description={channelHelperText}
+            description={`Operational only: ${channelHelperText}`}
             checked={deliveryForm.emailEnabled}
             onCheckedChange={(emailEnabled) => setDeliveryForm((f) => ({ ...f, emailEnabled }))}
             testId="toggle-email-enabled"
@@ -414,9 +414,22 @@ export default function BusinessNotifications() {
               value={deliveryForm.notificationEmail}
               onChange={(e) => setDeliveryForm((f) => ({ ...f, notificationEmail: e.target.value }))}
               placeholder="owner@yourbusiness.com"
-              disabled={!deliveryForm.emailEnabled}
               data-testid="input-notificationEmail"
             />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Always editable. Critical Stripe and refund notices use this address even when Enable is off.
+            </p>
+            {business.stripeConnectStatus != null &&
+            business.stripeConnectStatus !== "not_connected" &&
+            !emailConfigured ? (
+              <p
+                className="mt-2 text-xs text-amber-800 bg-amber-500/10 border border-amber-500/30 rounded-md px-2.5 py-2"
+                data-testid="stripe-email-address-warning"
+              >
+                Stripe payments are connected for this business, but no notification email is set.
+                Add an address so critical payment alerts can reach you by email.
+              </p>
+            ) : null}
           </div>
 
           <ProviderConnectionStatus

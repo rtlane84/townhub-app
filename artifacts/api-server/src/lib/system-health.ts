@@ -23,9 +23,11 @@ import {
   queryLastMigrationHint,
   queryNotificationDeliverySummary,
   queryRecentPlatformActivity,
+  queryStripeConnectBusinessCounts,
   queryStripeSubscriptionCounts,
   type PlatformActivityEntry,
 } from "./system-operational-queries";
+import type Stripe from "stripe";
 import {
   queryDatabaseStats,
   queryNotificationChannelCountsToday,
@@ -374,6 +376,110 @@ export async function checkSmsHealth(): Promise<ServiceHealth> {
   };
 }
 
+const PLATFORM_DISABLED_REASON_MAX = 80;
+
+export type PlatformStripeLiveSnapshot = {
+  reachable: boolean;
+  chargesEnabled: boolean | null;
+  payoutsEnabled: boolean | null;
+  requirementsDueCount: number | null;
+  disabledReason: string | null;
+};
+
+export function evaluateStripeLiveSignals(input: {
+  validationOk: boolean;
+  baseStatus: ServiceHealthStatus;
+  mode: string;
+  platform: PlatformStripeLiveSnapshot;
+  restrictedBusinessCount: number;
+  pendingConnectBusinessCount: number;
+}): { status: ServiceHealthStatus; message: string } {
+  let status = input.baseStatus;
+  const { platform } = input;
+
+  const platformUnhealthy =
+    platform.reachable &&
+    (platform.chargesEnabled === false ||
+      platform.payoutsEnabled === false ||
+      (platform.requirementsDueCount ?? 0) > 0 ||
+      Boolean(platform.disabledReason));
+
+  const connectUnhealthy =
+    input.restrictedBusinessCount > 0 || input.pendingConnectBusinessCount > 0;
+
+  let message: string;
+  if (!input.validationOk) {
+    message = "Stripe configuration incomplete";
+  } else if (!platform.reachable) {
+    status = status === "unavailable" ? status : "degraded";
+    message = `Stripe credentials present (${input.mode} mode) but live platform account check failed`;
+  } else if (platformUnhealthy) {
+    status = status === "unavailable" ? status : "degraded";
+    if (platform.payoutsEnabled === false) {
+      message = "Platform payouts disabled — complete verification in the Stripe Dashboard";
+    } else if (platform.chargesEnabled === false) {
+      message = "Platform charges disabled — complete verification in the Stripe Dashboard";
+    } else if ((platform.requirementsDueCount ?? 0) > 0) {
+      message = `Platform Stripe account needs attention (${platform.requirementsDueCount} requirement${
+        platform.requirementsDueCount === 1 ? "" : "s"
+      } due)`;
+    } else {
+      message = "Platform Stripe account is restricted — review the Stripe Dashboard";
+    }
+  } else if (connectUnhealthy) {
+    status = status === "unavailable" ? status : "degraded";
+    const parts: string[] = [];
+    if (input.restrictedBusinessCount > 0) {
+      parts.push(
+        `${input.restrictedBusinessCount} connected business${
+          input.restrictedBusinessCount === 1 ? "" : "es"
+        } restricted`,
+      );
+    }
+    if (input.pendingConnectBusinessCount > 0) {
+      parts.push(`${input.pendingConnectBusinessCount} pending Connect setup`);
+    }
+    message = parts.join("; ");
+  } else if (status === "configured") {
+    message = `Stripe live check OK (${input.mode} mode; platform account reachable)`;
+  } else {
+    message = "Stripe configuration incomplete";
+  }
+
+  return { status, message };
+}
+
+async function retrievePlatformStripeAccount(
+  secretKey: string,
+): Promise<PlatformStripeLiveSnapshot> {
+  try {
+    const StripeCtor = (await import("stripe")).default;
+    const client = new StripeCtor(secretKey, { apiVersion: "2026-05-27.dahlia" });
+    // Pass null to retrieve the platform account for this secret key (GET /v1/account).
+    const account = (await client.accounts.retrieve(null)) as Stripe.Account;
+    const due = account.requirements?.currently_due?.length ?? 0;
+    const rawReason = account.requirements?.disabled_reason?.trim() || null;
+    const disabledReason = rawReason
+      ? rawReason.slice(0, PLATFORM_DISABLED_REASON_MAX)
+      : null;
+    return {
+      reachable: true,
+      chargesEnabled: account.charges_enabled ?? false,
+      payoutsEnabled: account.payouts_enabled ?? false,
+      requirementsDueCount: due,
+      disabledReason,
+    };
+  } catch {
+    return {
+      reachable: false,
+      chargesEnabled: null,
+      payoutsEnabled: null,
+      requirementsDueCount: null,
+      disabledReason: null,
+    };
+  }
+}
+
 export async function checkStripeHealth(): Promise<ServiceHealth> {
   const key = process.env.STRIPE_SECRET_KEY?.trim();
   const mode = getStripeKeyMode(key);
@@ -384,7 +490,10 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
   const legacyWebhookConfigured = Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim());
   const billingConfigured = mode !== "mock";
   const lastWebhook = getLastStripeWebhookReceived();
-  const subscriptionCounts = await queryStripeSubscriptionCounts();
+  const [subscriptionCounts, connectCounts] = await Promise.all([
+    queryStripeSubscriptionCounts(),
+    queryStripeConnectBusinessCounts(),
+  ]);
 
   const webhookMetadata = {
     ...(lastWebhook
@@ -395,6 +504,12 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
           activeSubscriptions: subscriptionCounts.active,
           trialSubscriptions: subscriptionCounts.trial,
           pastDueSubscriptions: subscriptionCounts.pastDue,
+        }
+      : {}),
+    ...(connectCounts
+      ? {
+          restrictedBusinessCount: connectCounts.restricted,
+          pendingConnectBusinessCount: connectCounts.pendingWithAccount,
         }
       : {}),
   };
@@ -417,16 +532,54 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
     };
   }
 
-  let status: ServiceHealthStatus = validation.ok ? "configured" : "degraded";
-  if (mode === "unknown") status = "degraded";
-  if (mode === "live" && !webhookConfigured) status = "unavailable";
+  let baseStatus: ServiceHealthStatus = validation.ok ? "configured" : "degraded";
+  if (mode === "unknown") baseStatus = "degraded";
+  if (mode === "live" && !webhookConfigured) baseStatus = "unavailable";
+
+  const platform = key
+    ? await retrievePlatformStripeAccount(key)
+    : {
+        reachable: false,
+        chargesEnabled: null,
+        payoutsEnabled: null,
+        requirementsDueCount: null,
+        disabledReason: null,
+      };
+
+  const live = evaluateStripeLiveSignals({
+    validationOk: validation.ok,
+    baseStatus,
+    mode,
+    platform,
+    restrictedBusinessCount: connectCounts?.restricted ?? 0,
+    pendingConnectBusinessCount: connectCounts?.pendingWithAccount ?? 0,
+  });
+
+  const message =
+    !validation.ok && validation.issues[0]
+      ? validation.issues[0]
+      : live.message;
+
+  const platformMetadata: Record<string, string | number | boolean> = {
+    stripeApiReachable: platform.reachable,
+  };
+  if (platform.chargesEnabled != null) {
+    platformMetadata.platformChargesEnabled = platform.chargesEnabled;
+  }
+  if (platform.payoutsEnabled != null) {
+    platformMetadata.platformPayoutsEnabled = platform.payoutsEnabled;
+  }
+  if (platform.requirementsDueCount != null) {
+    platformMetadata.platformRequirementsDueCount = platform.requirementsDueCount;
+  }
+  if (platform.disabledReason) {
+    platformMetadata.platformDisabledReason = platform.disabledReason;
+  }
 
   return {
     name: "Stripe",
-    status,
-    message: validation.ok
-      ? `Stripe credentials configured (${mode} mode; no live Stripe API call performed)`
-      : validation.issues[0] ?? "Stripe configuration incomplete",
+    status: live.status,
+    message,
     metadata: {
       mode,
       billingConfigured,
@@ -437,6 +590,7 @@ export async function checkStripeHealth(): Promise<ServiceHealth> {
       legacyWebhookConfigured,
       configIssueCount: validation.issues.length,
       ...webhookMetadata,
+      ...platformMetadata,
     },
   };
 }
@@ -500,13 +654,15 @@ export function checkBackgroundJobsHealth(): ServiceHealth {
   } else if (!schedulerConfigured) {
     status = "not_configured";
     message =
-      "External cron scheduler is not confirmed. Schedule POST /api/internal/jobs/subscription-trial-reminders daily.";
+      "External cron is not confirmed. Set JOB_CRON_CONFIGURED=true after scheduling daily POST /api/internal/jobs/subscription-trial-reminders with Authorization: Bearer <JOB_SECRET>.";
   } else if (!lastRun) {
     status = "degraded";
-    message = "Scheduler is configured but no job has run yet — the external cron may not have executed yet.";
+    message =
+      "Scheduler is marked configured but no trial-reminder job has run yet — verify the external cron has executed at least once.";
   } else if (!schedulerRunning) {
     status = "degraded";
-    message = "Scheduler has not run recently — verify the external cron is active.";
+    message =
+      "Trial-reminder cron has not run recently — verify the external schedule is still posting to /api/internal/jobs/subscription-trial-reminders.";
   } else if (lastSuccess) {
     status = "healthy";
     message = "Trial reminder job has run successfully and the scheduler remains active.";

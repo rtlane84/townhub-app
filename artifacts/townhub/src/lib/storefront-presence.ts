@@ -1,5 +1,6 @@
 import type { Business } from "@workspace/api-client-react";
 import { directionsUrl, type DirectionsPlatform } from "./directions.ts";
+import { isNativeApp } from "./native-platform.ts";
 
 export type StorefrontPresence =
   | "mobile"
@@ -77,12 +78,34 @@ export function toggleFavoriteBusiness(businessId: number): boolean {
   return next.includes(businessId);
 }
 
+function isShareCanceled(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") return true;
+  if (err && typeof err === "object" && "message" in err) {
+    const message = String((err as { message?: unknown }).message ?? "").toLowerCase();
+    if (message.includes("share canceled") || message.includes("share cancelled")) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function shareStorefrontPage(input: {
   title: string;
   text?: string;
   url: string;
 }): Promise<"shared" | "copied" | "failed"> {
   try {
+    if (isNativeApp()) {
+      const { Share } = await import("@capacitor/share");
+      await Share.share({
+        title: input.title,
+        text: input.text,
+        url: input.url,
+        dialogTitle: input.title,
+      });
+      return "shared";
+    }
+
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       await navigator.share({
         title: input.title,
@@ -93,7 +116,7 @@ export async function shareStorefrontPage(input: {
     }
   } catch (err) {
     // User cancel should not fall through to clipboard as an error toast
-    if (err instanceof DOMException && err.name === "AbortError") {
+    if (isShareCanceled(err)) {
       return "failed";
     }
   }

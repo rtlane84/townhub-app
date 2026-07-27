@@ -120,6 +120,40 @@ export async function queryStripeSubscriptionCounts(): Promise<{
   }
 }
 
+/** Counts of businesses with unhealthy Stripe Connect status (safe aggregates only). */
+export async function queryStripeConnectBusinessCounts(): Promise<{
+  restricted: number;
+  pendingWithAccount: number;
+} | null> {
+  try {
+    const { db, businessesTable } = await import("@workspace/db");
+    const rows = await db
+      .select({
+        stripeConnectStatus: businessesTable.stripeConnectStatus,
+        stripeConnectedAccountId: businessesTable.stripeConnectedAccountId,
+      })
+      .from(businessesTable);
+
+    let restricted = 0;
+    let pendingWithAccount = 0;
+    for (const row of rows) {
+      if (row.stripeConnectStatus === "restricted") {
+        restricted += 1;
+        continue;
+      }
+      if (
+        row.stripeConnectStatus === "pending" &&
+        Boolean(row.stripeConnectedAccountId?.trim())
+      ) {
+        pendingWithAccount += 1;
+      }
+    }
+    return { restricted, pendingWithAccount };
+  } catch {
+    return null;
+  }
+}
+
 export async function queryRecentPlatformActivity(limit = 50): Promise<PlatformActivityEntry[]> {
   try {
     const {

@@ -12,6 +12,7 @@ import {
   checkStripeHealth,
   checkStorageHealth,
   deriveOverallStatus,
+  evaluateStripeLiveSignals,
   type ServiceHealth,
 } from "./system-health";
 
@@ -102,14 +103,16 @@ describe("buildFallbackHealthReport", () => {
 });
 
 describe("service health checks", () => {
-  it("checkStripeHealth reports configured without exposing the key", async () => {
+  it("checkStripeHealth reports degraded when live platform check fails with a fake key", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_abc123";
     process.env.STRIPE_CONNECT_WEBHOOK_SECRET = "whsec_connect_test";
     process.env.STRIPE_PLATFORM_WEBHOOK_SECRET = "whsec_platform_test";
     const health = await checkStripeHealth();
     assert.equal(health.metadata?.mode, "test");
     assert.equal(health.metadata?.billingConfigured, true);
-    assert.equal(health.status, "configured");
+    assert.equal(health.metadata?.stripeApiReachable, false);
+    assert.equal(health.status, "degraded");
+    assert.match(String(health.message), /live platform account check failed/i);
     assertHealthPayloadSafe(health);
   });
 
@@ -121,6 +124,64 @@ describe("service health checks", () => {
     const health = await checkStripeHealth();
     assert.equal(health.status, "degraded");
     assertHealthPayloadSafe(health);
+  });
+
+  it("evaluateStripeLiveSignals degrades when platform payouts are disabled", () => {
+    const result = evaluateStripeLiveSignals({
+      validationOk: true,
+      baseStatus: "configured",
+      mode: "live",
+      platform: {
+        reachable: true,
+        chargesEnabled: true,
+        payoutsEnabled: false,
+        requirementsDueCount: 0,
+        disabledReason: null,
+      },
+      restrictedBusinessCount: 0,
+      pendingConnectBusinessCount: 0,
+    });
+    assert.equal(result.status, "degraded");
+    assert.match(result.message, /Platform payouts disabled/i);
+  });
+
+  it("evaluateStripeLiveSignals degrades when connected businesses are restricted", () => {
+    const result = evaluateStripeLiveSignals({
+      validationOk: true,
+      baseStatus: "configured",
+      mode: "live",
+      platform: {
+        reachable: true,
+        chargesEnabled: true,
+        payoutsEnabled: true,
+        requirementsDueCount: 0,
+        disabledReason: null,
+      },
+      restrictedBusinessCount: 2,
+      pendingConnectBusinessCount: 1,
+    });
+    assert.equal(result.status, "degraded");
+    assert.match(result.message, /2 connected businesses restricted/i);
+    assert.match(result.message, /1 pending Connect setup/i);
+  });
+
+  it("evaluateStripeLiveSignals stays configured when live check is healthy", () => {
+    const result = evaluateStripeLiveSignals({
+      validationOk: true,
+      baseStatus: "configured",
+      mode: "test",
+      platform: {
+        reachable: true,
+        chargesEnabled: true,
+        payoutsEnabled: true,
+        requirementsDueCount: 0,
+        disabledReason: null,
+      },
+      restrictedBusinessCount: 0,
+      pendingConnectBusinessCount: 0,
+    });
+    assert.equal(result.status, "configured");
+    assert.match(result.message, /live check OK/i);
   });
 
   it("checkStorageHealth reports supabase as configured without secrets", async () => {

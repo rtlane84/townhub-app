@@ -132,6 +132,8 @@ type BusinessSerializationOptions = {
   now?: Date;
   /** Plan entitlement for online_ordering. Defaults to true when omitted. */
   onlineOrderingEntitled?: boolean;
+  /** Plan entitlement for business_website (public catalog). Defaults to true when omitted. */
+  businessWebsiteEntitled?: boolean;
 };
 
 function serializePublicBusinessFields(
@@ -166,6 +168,7 @@ function serializePublicBusinessFields(
     timeZone,
   );
   const onlineOrderingEntitled = options?.onlineOrderingEntitled ?? true;
+  const businessWebsiteEntitled = options?.businessWebsiteEntitled ?? true;
 
   return {
     id: b.id,
@@ -214,6 +217,7 @@ function serializePublicBusinessFields(
     orderingAvailable: availability.available,
     orderingUnavailableReason: availability.reason,
     onlineOrderingEntitled,
+    businessWebsiteEntitled,
     publicAvailability,
     accentColor: b.accentColor,
     buttonColor: b.buttonColor,
@@ -229,6 +233,8 @@ export function serializeBusiness(
     now?: Date;
     /** Plan entitlement for online_ordering. Defaults to true when omitted (owner paths that set it explicitly should pass it). */
     onlineOrderingEntitled?: boolean;
+    /** Plan entitlement for business_website. Defaults to true when omitted. */
+    businessWebsiteEntitled?: boolean;
   },
 ) {
   return {
@@ -263,6 +269,7 @@ export function serializePublicBusiness(
     timeZone?: string;
     now?: Date;
     onlineOrderingEntitled?: boolean;
+    businessWebsiteEntitled?: boolean;
   },
 ) {
   return serializePublicBusinessFields(b, options);
@@ -276,11 +283,15 @@ async function serializeBusinessWithEntitlements(
     now?: Date;
   },
 ) {
-  const onlineOrderingEntitled = await businessHasFeature(
-    b.id,
-    SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
-  );
-  return serializeBusiness(b, { ...options, onlineOrderingEntitled });
+  const [onlineOrderingEntitled, businessWebsiteEntitled] = await Promise.all([
+    businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING),
+    businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE),
+  ]);
+  return serializeBusiness(b, {
+    ...options,
+    onlineOrderingEntitled,
+    businessWebsiteEntitled,
+  });
 }
 
 export { serializeBusinessWithEntitlements };
@@ -293,11 +304,15 @@ async function serializePublicBusinessWithEntitlements(
     now?: Date;
   },
 ) {
-  const onlineOrderingEntitled = await businessHasFeature(
-    b.id,
-    SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
-  );
-  return serializePublicBusiness(b, { ...options, onlineOrderingEntitled });
+  const [onlineOrderingEntitled, businessWebsiteEntitled] = await Promise.all([
+    businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING),
+    businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE),
+  ]);
+  return serializePublicBusiness(b, {
+    ...options,
+    onlineOrderingEntitled,
+    businessWebsiteEntitled,
+  });
 }
 
 async function loadMobileLocationsForBusiness(
@@ -371,7 +386,7 @@ router.get("/businesses", async (req, res): Promise<void> => {
     .filter((business) => business.isMobileBusiness)
     .map((business) => business.id);
 
-  const [locs, timeZone, entitledById] = await Promise.all([
+  const [locs, timeZone, orderingEntitledById, websiteEntitledById] = await Promise.all([
     mobileBusinessIds.length > 0
       ? db
           .select({
@@ -395,6 +410,10 @@ router.get("/businesses", async (req, res): Promise<void> => {
       businesses.map((business) => business.id),
       SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
     ),
+    mapBusinessesHaveFeature(
+      businesses.map((business) => business.id),
+      SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE,
+    ),
   ]);
 
   const mobileLocationsByBusiness = new Map<number, FoodTruckLocationWindow[]>();
@@ -414,7 +433,8 @@ router.get("/businesses", async (req, res): Promise<void> => {
       serializePublicBusiness(business, {
         mobileLocations: mobileLocationsByBusiness.get(business.id),
         timeZone,
-        onlineOrderingEntitled: entitledById.get(business.id) === true,
+        onlineOrderingEntitled: orderingEntitledById.get(business.id) === true,
+        businessWebsiteEntitled: websiteEntitledById.get(business.id) === true,
       }),
   );
   if (cacheKey) setPublicBusinessDirectoryCache(cacheKey, payload);
@@ -923,11 +943,13 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
     emailNotificationsEntitled,
     smsNotificationsEntitled,
     appointmentRequestsEntitled,
+    businessWebsiteEntitled,
   ] = await Promise.all([
     businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING),
     businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.EMAIL_NOTIFICATIONS),
     businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.SMS_NOTIFICATIONS),
     businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.APPOINTMENT_REQUESTS),
+    businessHasFeature(params.data.id, SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE),
   ]);
 
   const requestedMode = updateData.storefrontMode as string | undefined;
@@ -1022,6 +1044,7 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
       serializeBusiness(business, {
         timeZone: await getPlatformTimeZone(),
         onlineOrderingEntitled,
+        businessWebsiteEntitled,
       }),
     );
   } catch (err) {

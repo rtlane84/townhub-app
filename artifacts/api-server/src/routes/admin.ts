@@ -108,15 +108,22 @@ router.get("/admin/businesses", async (_req, res): Promise<void> => {
     .orderBy(businessesTable.name);
 
   const timeZone = await getPlatformTimeZone();
-  const entitledById = await mapBusinessesHaveFeature(
-    businesses.map((business) => business.id),
-    SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
-  );
+  const [orderingEntitledById, websiteEntitledById] = await Promise.all([
+    mapBusinessesHaveFeature(
+      businesses.map((business) => business.id),
+      SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING,
+    ),
+    mapBusinessesHaveFeature(
+      businesses.map((business) => business.id),
+      SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE,
+    ),
+  ]);
   res.json(
     businesses.map((business) =>
       serializeBusiness(business, {
         timeZone,
-        onlineOrderingEntitled: entitledById.get(business.id) === true,
+        onlineOrderingEntitled: orderingEntitledById.get(business.id) === true,
+        businessWebsiteEntitled: websiteEntitledById.get(business.id) === true,
       }),
     ),
   );

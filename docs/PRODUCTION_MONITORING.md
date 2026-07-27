@@ -50,19 +50,60 @@ Both staging and production API service instances set `healthcheckPath=/health` 
 
 `.github/workflows/uptime-health-check.yml` still probes the four public surfaces every 5 minutes. On job failure it opens or comments on a GitHub issue titled `OPS-002: External uptime check failed` labeled `uptime`. Acknowledge and close that issue only after all probes are healthy again. Keep Better Stack / UptimeRobot email or SMS as the primary human route.
 
-### Better Stack free-tier setup (complete 2026-07-15)
+### Better Stack free-tier setup (complete 2026-07-15; JS tag added 2026-07-26)
 
-Team `t570646` (Uptime + Errors + Telemetry) is configured to maximize free monitoring:
+Team `t570646` (Uptime + Errors + Telemetry + RUM/JS tag) is configured to maximize free monitoring:
 
 | Area | Status | Notes |
 |---|---|---|
-| Uptime monitors | Partial | Live dashboard audit on 2026-07-17 confirmed only `https://api.townhub.io/health` (3-minute checks, e-mail alerts). Additional Better Stack monitors currently require a paid upgrade. GitHub Actions `.github/workflows/uptime-health-check.yml` still probes production/staging API + frontend every 5 minutes as a backup signal. |
+| Uptime monitors | Partial / verify | Free tier allows up to 10 monitors. Confirm [Monitors](https://uptime.betterstack.com/team/t570646/monitors) still includes production `https://api.townhub.io/health` with email alerts; add staging API + frontend origins within the free allotment. GitHub Actions `.github/workflows/uptime-health-check.yml` remains the backup probe. |
 | Test alert | Acknowledged | Monitor `api.townhub.io/health` test alert received by owner (2026-07-15). Add a second team member before launch and confirm a test alert reaches both inboxes. |
 | Status page | Deferred | Creating a status page redirected to billing/features; stay on free Pay as you go — do not purchase bundles just for OPS-002. Revisit after free-plan status-page entitlement is clear. |
-| Errors (Sentry-compatible) | Live; privacy scrub deployed 2026-07-18 | `TownHub Frontend` + `TownHub API` apps receive staging and production events. Deployed sanitization covers exception-message text, request URLs, fingerprints, breadcrumbs, tags, and structured context. Confirm new production/staging issues no longer contain emails or Clerk identifiers. Do not commit DSNs. |
-| Logs (Railway → Telemetry) | Connected (ingest verified 2026-07-18) | Staging `locomotive` and production `locomotive-production` both target the same Better Stack HTTP ingest host with `LOCOMOTIVE_WEBHOOK_MODE=betterstack`. A controlled ingest probe returned HTTP 202. Confirm the marker in Live Tail from the Better Stack UI; rotate the source token if the dashboard still shows zero sources (UI auth mismatch) or after any credential exposure. Use an **account-scoped** Railway API token (`LOCOMOTIVE_RAILWAY_API_KEY`); tokens live only in Railway/Better Stack secrets. |
+| Errors (Sentry-compatible) | Live; privacy scrub deployed 2026-07-18 | `TownHub Frontend` + `TownHub API` apps receive staging and production events. API requests attach `request_id`, optional Clerk `user.id`, and `business_id` when present. Do not commit DSNs. |
+| Frontend JS tag / session replay | Code ready — set token | Set Cloudflare (and native) `VITE_BETTERSTACK_JS_TOKEN` from Errors → TownHub Frontend → **Frontend** tab (or RUM → Connect application). When set, standalone `VITE_SENTRY_DSN` is skipped to avoid dual Sentry globals. In the Frontend tab: enable session replays; add exclude selector `.th-bs-exclude`; sample replays under free-tier limits (5k/mo). |
+| Logs (Railway → Telemetry) | Connected (ingest verified 2026-07-18) | Staging `locomotive` and production `locomotive-production` both target Better Stack HTTP ingest. Free: ~3 GB / **3-day** retention. |
 
-Dashboards: [Monitors](https://uptime.betterstack.com/team/t570646/monitors), [Errors applications](https://errors.betterstack.com/team/t570646/applications), [Log sources](https://telemetry.betterstack.com/team/t570646/sources).
+Dashboards: [Monitors](https://uptime.betterstack.com/team/t570646/monitors), [Errors applications](https://errors.betterstack.com/team/t570646/applications), [Log sources](https://telemetry.betterstack.com/team/t570646/sources), [RUM](https://rum.betterstack.com/team/t570646/applications).
+
+## Operator triage (first 60 seconds)
+
+```text
+Alert or user report
+  → Down? Better Stack Uptime
+  → Else Errors (API or Frontend app)
+       → read message, stack, user.id, business_id, request_id, linked replay
+  → Thin issue? Logs: filter request_id or time + route
+  → Payment? Stripe Dashboard (acct_ / req_ from log JSON)
+```
+
+### Example A — Card checkout total too small
+
+1. [Telemetry](https://telemetry.betterstack.com/team/t570646/tail) → source **TownHub Railway API logs**
+2. Search `amount_too_small` or `Stripe checkout session rejected`
+3. Note `businessId`, `requestId` / `stripeRequestId`, total cents
+4. Client should receive HTTP **400** with a clear message (not a mystery 500)
+5. Stripe Dashboard if you still need the connected-account request
+
+### Example B — Unhandled API exception
+
+1. [TownHub API Errors](https://errors.betterstack.com/team/t570646/errors?s=2601802)
+2. Open the issue → stack, tags (`request_id`, `business_id`, `route`), user id when signed in
+3. Correlate the same `request_id` in Logs if you need the raw Pino line
+
+### Example C — Frontend / Clerk blip
+
+1. [TownHub Frontend Errors](https://errors.betterstack.com/team/t570646/errors?s=2601794)
+2. Check environment + user count; ignore isolated transient Clerk network errors unless clustered
+3. With JS tag enabled, open the linked **session replay** when present
+
+### Example D — Log noise that is not a customer outage
+
+1. Logs → `DeprecationWarning` / `client.query()` / `pg@9`
+2. Do not page; fix concurrent DB usage later
+
+### Example E — Successful payment
+
+Not an Errors issue — Stripe Dashboard + TownHub orders / admin.
 
 ## Admin Operations Center
 
@@ -93,12 +134,16 @@ Each service reports:
 | Status | Meaning |
 |--------|---------|
 | **healthy** | A real successful check (for example a database ping, or a recorded successful job/weather refresh) |
-| **configured** | Credentials or settings are present; TownHub did **not** perform a live provider ping |
-| **degraded** | Partially working or suboptimal (for example local storage in production) |
+| **configured** | Credentials or settings are present; for most providers TownHub did **not** perform a live provider ping. Stripe may stay `configured` after a successful live platform account check. |
+| **degraded** | Partially working or suboptimal (for example local storage in production, Stripe platform payouts disabled, or restricted Connect businesses) |
 | **unavailable** | Required or expected capability is broken or incomplete for use |
 | **not_configured** | Optional capability intentionally unset |
 
-Clerk, Stripe, email, SMS, storage, and weather are reported as **configured** (not healthy) when only environment variables or settings are verified.
+Clerk, email, SMS, and storage are reported as **configured** (not healthy) when only environment variables or settings are verified. **Stripe** also runs a live platform `accounts.retrieve` plus DB counts of restricted/pending Connect businesses; platform or Connect problems mark Stripe **degraded** with an actionable message. Auth/storage still do not live-ping their providers.
+
+**Background Jobs:** stays `not_configured` until `JOB_SECRET` is set **and** `JOB_CRON_CONFIGURED` confirms an external daily cron posts to `POST /api/internal/jobs/subscription-trial-reminders`. It becomes `healthy` only after a successful recorded run.
+
+**Application version:** Admin System Status shows `APP_VERSION` / `API_VERSION` / `GIT_COMMIT_SHA` / `BUILD_DATE` when set on the API deploy. Missing values display as “Not set” / `0.0.0` — set those env vars on Railway for clearer release tracking.
 
 ### Overall status meanings
 
@@ -124,6 +169,7 @@ The API logs operational failures with the prefix `[operational]` and an `operat
 | `order_notification_sms_failed` | Owner SMS notification failed |
 | `order_notification_failed` | Owner notification orchestration failed |
 | `stripe_webhook_failed` | Stripe webhook rejected or misconfigured |
+| `stripe_admin_notification_email_failed` | Platform-admin Stripe Connect issue email failed |
 | `storage_upload_failed` | Media upload to storage failed |
 
 Logs include IDs useful for debugging (`businessId`, `orderId`, `appointmentRequestId`) but **not** full payment payloads, API keys, or unnecessary customer PII.
@@ -137,14 +183,15 @@ Set in deployment for richer Admin System Status:
 - `BUILD_DATE` — ISO build timestamp
 - `GIT_COMMIT_SHA` — git commit (short or full)
 
-## Sentry setup
+## Sentry / Better Stack Errors setup
 
-Create separate Sentry/Better Stack apps for the API (`SENTRY_DSN`) and frontend (`VITE_SENTRY_DSN`) so alerts and releases can be triaged independently. Vite variables must be present at build time.
+Create separate Better Stack Errors apps for the API (`SENTRY_DSN`) and frontend. For frontend **session replay**, set `VITE_BETTERSTACK_JS_TOKEN` (JS tag). When the JS token is present, TownHub skips standalone `@sentry/react` init so the tag owns browser errors + replay.
 
-Tag events with **`DEPLOYMENT_ENVIRONMENT`** (`staging` or `production`) so Better Stack can filter staging vs production on the same DSN. The API reads `DEPLOYMENT_ENVIRONMENT` (fallback `NODE_ENV`). The frontend build exposes it as `VITE_DEPLOYMENT_ENVIRONMENT` from `DEPLOYMENT_ENVIRONMENT` or an explicit `VITE_DEPLOYMENT_ENVIRONMENT`. Cloudflare Builds already set `DEPLOYMENT_ENVIRONMENT`; Railway must set it per environment.
+Tag events with **`DEPLOYMENT_ENVIRONMENT`** (`staging` or `production`) so Better Stack can filter staging vs production. The API reads `DEPLOYMENT_ENVIRONMENT` (fallback `NODE_ENV`). The frontend build exposes it as `VITE_DEPLOYMENT_ENVIRONMENT` from `DEPLOYMENT_ENVIRONMENT` or an explicit `VITE_DEPLOYMENT_ENVIRONMENT`. Cloudflare Builds already set `DEPLOYMENT_ENVIRONMENT`; Railway must set it per environment.
 
-- API initialization: `artifacts/api-server/src/instrument.ts`
-- Frontend initialization: `artifacts/townhub/src/lib/sentry.ts`
+- API initialization: `artifacts/api-server/src/instrument.ts` + `sentryRequestContextMiddleware`
+- Frontend JS tag: `artifacts/townhub/src/lib/betterstack.ts` (preferred)
+- Frontend Sentry fallback: `artifacts/townhub/src/lib/sentry.ts` (only when JS token unset)
 - Optional release tags: `APP_VERSION`, `GIT_COMMIT_SHA`, `VITE_APP_VERSION`, `VITE_GIT_COMMIT_SHA`
 - Development-only tests: `GET /api/debug/sentry` and `/debug/sentry`; neither route is mounted in production
 

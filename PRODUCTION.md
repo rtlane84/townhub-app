@@ -94,7 +94,8 @@ See [docs/TWILIO_SETUP.md](docs/TWILIO_SETUP.md).
 | Secret | Purpose |
 |--------|---------|
 | `SENTRY_DSN` | API error monitoring |
-| `VITE_SENTRY_DSN` | Frontend error monitoring (build-time) |
+| `VITE_BETTERSTACK_JS_TOKEN` | Frontend Better Stack JS tag (errors + session replay; preferred) |
+| `VITE_SENTRY_DSN` | Frontend Errors-only fallback when JS token is unset |
 | `JOB_SECRET` | Auth for internal cron jobs (trial reminders) |
 | `JOB_CRON_CONFIGURED` | Set `true` only when external cron actually calls trial reminders (clears Ops Center warning) |
 | `PLATFORM_ADMIN_EMAIL` | Subscription operational alert recipients |
@@ -257,7 +258,7 @@ TownHub is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`
 1. **Deploy the backend/API** — Node process serving Express on `PORT` (default `8080`). Ensure `NODE_ENV=production`.
 2. **Deploy the frontend** — build `artifacts/townhub` and serve static assets, or use your host's combined build pipeline.
 3. **Set production environment variables** in the host secret manager (see §2). Include `DATABASE_URL`, Clerk, `SESSION_SECRET`, `APP_BASE_URL`, Stripe, media, and monitoring keys.
-4. **Set build-time frontend variables** (`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` when frontend and API hosts differ, `VITE_SENTRY_DSN`, etc.) **before** running the frontend build.
+4. **Set build-time frontend variables** (`VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` when frontend and API hosts differ, `VITE_BETTERSTACK_JS_TOKEN` or `VITE_SENTRY_DSN`, etc.) **before** running the frontend build.
 5. **Attach production domains** — point DNS to Cloudflare/Railway; set Railway `APP_BASE_URL` to the public frontend URL and the Cloudflare build’s `VITE_API_BASE_URL` to the Railway API origin.
 6. **Restart or redeploy the application** after any environment variable change (runtime secrets need a restart; `VITE_*` changes need a rebuild).
 7. **Apply database schema** if this release includes schema changes:
@@ -294,7 +295,7 @@ Do not put a `/* /index.html 200` rule in `public/_redirects` — Workers SPA ha
 
 1. **Delete** any Build variable/secret named `CLOUDFLARE_API_TOKEN` (and `CF_API_TOKEN`). A custom variable overrides the Build → API token and is a common cause of `10000`.
 2. Under **Settings → Build → API token**, use Cloudflare’s **default / auto** token (or any token with **Account → Workers Scripts → Edit**). You do **not** need Pages → Edit for this setup.
-3. Keep build-time env: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway API origin), optional `VITE_SENTRY_DSN`.
+3. Keep build-time env: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL` (Railway API origin), preferred `VITE_BETTERSTACK_JS_TOKEN` (or fallback `VITE_SENTRY_DSN`).
 
 If install fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`:
 

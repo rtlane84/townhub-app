@@ -54,6 +54,10 @@ describe("notification-categories", () => {
     );
   });
 
+  it("maps admin stripe connect issue to ADMIN_CRITICAL_ALERT", () => {
+    assert.equal(categoryForEventType("ADMIN_STRIPE_CONNECT_ISSUE"), "ADMIN_CRITICAL_ALERT");
+  });
+
   it("has definitions for every registry key", () => {
     for (const key of ALL_NOTIFICATION_CATEGORY_KEYS) {
       assert.ok(getNotificationCategory(key));

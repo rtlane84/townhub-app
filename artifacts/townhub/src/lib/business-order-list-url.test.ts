@@ -19,6 +19,5 @@ describe("business-order-list-url", () => {
   it("defines overview deep links", () => {
     assert.match(OVERVIEW_ORDERS_LINKS.today, /date=today/);
     assert.match(OVERVIEW_ORDERS_LINKS.todayCompleted, /status=COMPLETED/);
-    assert.match(OVERVIEW_ORDERS_LINKS.active, /status=active/);
   });
 });
