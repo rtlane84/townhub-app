@@ -9,10 +9,11 @@ const srcRoot = fileURLToPath(new URL("..", import.meta.url));
 
 describe("app marketing page", () => {
   it("exposes store and support settings in one config module", () => {
-    assert.equal(typeof appMarketingConfig.appStoreUrl, "string");
-    assert.match(appMarketingConfig.appStoreUrl, /PLACEHOLDER|apps\.apple\.com/);
-    assert.equal(typeof appMarketingConfig.appStoreId, "string");
-    assert.ok(appMarketingConfig.appStoreId.length > 0);
+    assert.equal(
+      appMarketingConfig.appStoreUrl,
+      "https://apps.apple.com/us/app/townhub-local/id6791258844",
+    );
+    assert.equal(appMarketingConfig.appStoreId, "6791258844");
     assert.equal(appMarketingConfig.businessSignupUrl, "/list-your-business");
     assert.equal(typeof appMarketingConfig.supportEmail, "string");
     assert.equal(appMarketingConfig.androidAvailable, false);

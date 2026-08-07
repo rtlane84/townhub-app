@@ -1,11 +1,11 @@
 /**
  * Single source of truth for the public `/app` marketing page store links
- * and contact targets. Update placeholders here before launch.
+ * and contact targets.
  */
 export const appMarketingConfig = {
-  /** Placeholder until the public App Store listing URL is confirmed. */
-  appStoreUrl: "https://apps.apple.com/app/townhub/idPLACEHOLDER",
-  /** App Store Connect numeric ID (Smart App Banner). Confirm before launch. */
+  /** Public App Store listing for TownHub Local. */
+  appStoreUrl: "https://apps.apple.com/us/app/townhub-local/id6791258844",
+  /** App Store Connect numeric ID (Smart App Banner). */
   appStoreId: "6791258844",
   /** In-app business application flow. */
   businessSignupUrl: "/list-your-business",
