@@ -9,6 +9,8 @@ import {
   useAssignBusinessOwner,
   useListSubscriptionPlans,
   getListAdminBusinessesQueryKey,
+  getListBusinessesQueryKey,
+  getGetBusinessBySlugQueryKey,
   BusinessType,
 } from "@workspace/api-client-react";
 import { planAssignmentLabel } from "@/lib/subscription-plans";
@@ -27,18 +29,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, UserPlus, Star, Layers } from "lucide-react";
-import { WeeklyHoursPicker } from "@/components/weekly-hours-picker";
 import { StreetAddressFields } from "@/components/street-address-fields";
 import {
-  defaultWeeklyHours,
-  normalizeWeeklyHours,
-  parseStructuredHours,
-  resolvePaymentMode,
   BUSINESS_TYPE_OPTIONS,
   formatBusinessTypeLabel,
 } from "@workspace/api-zod";
-import type { BusinessDayHours, PaymentMode } from "@workspace/api-client-react";
-import { PaymentModeSelector } from "@/components/payment-mode-selector";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { archiveBusinessCopy, deactivateBusinessCopy } from "@/lib/confirm-action-copy";
 
@@ -51,22 +46,13 @@ interface BizForm {
   description: string;
   address: string;
   phone: string;
-  structuredHours: BusinessDayHours[];
   active: boolean;
   featured: boolean;
-  pickupEnabled: boolean;
-  deliveryEnabled: boolean;
-  paymentMode: PaymentMode;
-  deliveryFee: string;
-  minimumOrder: string;
-  ownerId: string;
 }
 
 const EMPTY_FORM: BizForm = {
   name: "", slug: "", type: "GENERAL", description: "", address: "", phone: "",
-  structuredHours: defaultWeeklyHours(),
-  active: true, featured: false, pickupEnabled: true, deliveryEnabled: false, paymentMode: "ONLINE_ONLY",
-  deliveryFee: "", minimumOrder: "", ownerId: "",
+  active: true, featured: false,
 };
 
 function slugify(name: string) {
@@ -160,12 +146,7 @@ export default function AdminBusinesses() {
     setForm({
       name: b.name, slug: b.slug, type: b.type, description: b.description ?? "",
       address: b.address ?? "", phone: b.phone ?? "",
-      structuredHours: parseStructuredHours(b.structuredHours) ?? defaultWeeklyHours(),
-      active: b.active ?? true, featured: b.featured ?? false, pickupEnabled: b.pickupEnabled ?? true,
-      deliveryEnabled: b.deliveryEnabled ?? false, paymentMode: resolvePaymentMode(b),
-      deliveryFee: b.deliveryFee != null ? String(b.deliveryFee) : "",
-      minimumOrder: b.minimumOrder != null ? String(b.minimumOrder) : "",
-      ownerId: b.ownerId ?? "",
+      active: b.active ?? true, featured: b.featured ?? false,
     });
     setDialogOpen(true);
   }
@@ -229,6 +210,18 @@ export default function AdminBusinesses() {
         toast({ title: "Failed to assign plan", description: String(body.error ?? "Unknown error"), variant: "destructive" });
         return;
       }
+      const updatedBusiness = businesses?.find((business) => business.id === subBusinessId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getListAdminBusinessesQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getListBusinessesQueryKey() }),
+        ...(updatedBusiness
+          ? [
+              queryClient.invalidateQueries({
+                queryKey: getGetBusinessBySlugQueryKey(updatedBusiness.slug),
+              }),
+            ]
+          : []),
+      ]);
       toast({ title: "Plan assigned", description: "Subscription updated successfully." });
       setSubDialogOpen(false);
     } catch {
@@ -240,12 +233,14 @@ export default function AdminBusinesses() {
 
   function buildPayload() {
     return {
-      ...form,
+      name: form.name,
+      slug: form.slug,
       type: form.type as BusinessType,
-      structuredHours: normalizeWeeklyHours(form.structuredHours),
-      deliveryFee: form.deliveryFee ? parseFloat(form.deliveryFee) : undefined,
-      minimumOrder: form.minimumOrder ? parseFloat(form.minimumOrder) : undefined,
-      ownerId: form.ownerId || undefined,
+      description: form.description,
+      address: form.address,
+      phone: form.phone,
+      active: form.active,
+      featured: form.featured,
     };
   }
 
@@ -382,43 +377,43 @@ export default function AdminBusinesses() {
               <label className="text-sm font-medium mb-1.5 block">Phone</label>
               <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
             </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Business Hours</label>
-              <WeeklyHoursPicker
-                value={form.structuredHours}
-                onChange={(structuredHours) => setForm((f) => ({ ...f, structuredHours }))}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={form.active}
-                  onCheckedChange={(v) => {
-                    if (!v && form.active) {
-                      setDeactivatePending(true);
-                      return;
-                    }
-                    setForm((f) => ({ ...f, active: v }));
-                  }}
-                />
-                <label className="text-sm">Active</label>
+            <div className="rounded-lg border border-border p-4">
+              <p className="text-sm font-medium">Platform controls</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Store hours, ordering, fulfillment, and payments are managed in Business Hub settings.
+              </p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="flex items-start gap-2">
+                  <Switch
+                    id="admin-business-active"
+                    checked={form.active}
+                    onCheckedChange={(v) => {
+                      if (!v && form.active) {
+                        setDeactivatePending(true);
+                        return;
+                      }
+                      setForm((f) => ({ ...f, active: v }));
+                    }}
+                    aria-label="Business active"
+                  />
+                  <div>
+                    <label htmlFor="admin-business-active" className="text-sm font-medium">Active</label>
+                    <p className="text-xs text-muted-foreground">Visible and available on the marketplace.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Switch
+                    id="admin-business-featured"
+                    checked={form.featured}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, featured: v }))}
+                    aria-label="Business featured"
+                  />
+                  <div>
+                    <label htmlFor="admin-business-featured" className="text-sm font-medium">Featured</label>
+                    <p className="text-xs text-muted-foreground">Eligible for featured placement on the homepage.</p>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.featured} onCheckedChange={(v) => setForm((f) => ({ ...f, featured: v }))} />
-                <label className="text-sm">Featured</label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.pickupEnabled} onCheckedChange={(v) => setForm((f) => ({ ...f, pickupEnabled: v }))} />
-                <label className="text-sm">Pickup</label>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">Payment options</label>
-              <PaymentModeSelector
-                value={form.paymentMode}
-                onChange={(paymentMode) => setForm((f) => ({ ...f, paymentMode }))}
-                idPrefix="admin-business-payment"
-              />
             </div>
           </div>
           <DialogFooter>

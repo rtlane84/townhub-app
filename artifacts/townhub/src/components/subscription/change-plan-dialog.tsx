@@ -5,6 +5,9 @@ import {
   getListPublicPricingPlansQueryKey,
   useChangeBusinessSubscriptionPlan,
   getGetMySubscriptionQueryKey,
+  getGetMyBusinessQueryKey,
+  getGetBusinessBySlugQueryKey,
+  getListBusinessesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -28,6 +31,7 @@ import { Check } from "lucide-react";
 
 type Props = {
   businessId: number;
+  businessSlug: string;
   currentPlanId?: number;
   currentInterval?: "monthly" | "yearly" | null;
   open: boolean;
@@ -36,6 +40,7 @@ type Props = {
 
 export function ChangePlanDialog({
   businessId,
+  businessSlug,
   currentPlanId,
   currentInterval,
   open,
@@ -66,7 +71,16 @@ export function ChangePlanDialog({
         return;
       }
 
-      await queryClient.invalidateQueries({ queryKey: getGetMySubscriptionQueryKey(businessId) });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetMySubscriptionQueryKey(businessId) }),
+        queryClient.invalidateQueries({
+          queryKey: getGetMyBusinessQueryKey({ businessId }),
+        }),
+        queryClient.invalidateQueries({ queryKey: getListBusinessesQueryKey() }),
+        queryClient.invalidateQueries({
+          queryKey: getGetBusinessBySlugQueryKey(businessSlug),
+        }),
+      ]);
       toast({ title: "Plan updated", description: "Your subscription has been updated." });
       onOpenChange(false);
     } catch (err) {

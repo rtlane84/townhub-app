@@ -28,7 +28,6 @@ import {
   paymentModeStorefrontNote,
   storefrontCopy,
   showsStorefrontCatalog,
-  informationPrimaryCtaLabel,
   formatTimeRange12h,
   normalizeWebsiteUrl,
   formatBusinessTypeLabel,
@@ -242,6 +241,7 @@ export default function Storefront() {
     type: b.type,
     storefrontMode: b.storefrontMode,
     onlineOrderingEntitled: b.onlineOrderingEntitled,
+    appointmentRequestsEntitled: b.appointmentRequestsEntitled,
   });
   const isAppointmentMode = browseMode === "APPOINTMENT";
   const isInformationMode = browseMode === "INFORMATION";
@@ -269,7 +269,6 @@ export default function Storefront() {
     !catalogFullyEmpty &&
     displayedProducts.length === 0 &&
     !(showSpecialsSection && specials.length > 0);
-  const contactCtaLabel = informationPrimaryCtaLabel(!!b.phone?.trim());
   const websiteUrl = normalizeWebsiteUrl(bx.websiteUrl as string | undefined);
   const showWebsiteLink = !!websiteUrl;
   const showCatalogSection = showCatalog && !catalogFullyEmpty;
@@ -298,23 +297,6 @@ export default function Storefront() {
         label: "Book Now",
         icon: CalendarDays,
         onClick: () => openAppointmentDialog(),
-      };
-    }
-    if (showCatalogSection) {
-      return {
-        label: "Browse",
-        icon: ShoppingBag,
-        onClick: () =>
-          document
-            .getElementById("storefront-commerce")
-            ?.scrollIntoView({ behavior: "smooth" }),
-      };
-    }
-    if (phoneDigits) {
-      return {
-        label: contactCtaLabel,
-        icon: Phone,
-        href: `tel:${phoneDigits}`,
       };
     }
     return null;
@@ -498,25 +480,6 @@ export default function Storefront() {
                 {primaryCta
                   ? (() => {
                       const CtaIcon = primaryCta.icon;
-                      if (primaryCta.href) {
-                        return (
-                          <Button
-                            asChild
-                            className={cn(
-                              "shrink-0",
-                              storefrontPrimaryButtonClass,
-                            )}
-                          >
-                            <a
-                              href={primaryCta.href}
-                              data-testid="button-storefront-primary"
-                            >
-                              <CtaIcon className="mr-1.5 h-4 w-4" aria-hidden />
-                              {primaryCta.label}
-                            </a>
-                          </Button>
-                        );
-                      }
                       return (
                         <Button
                           className={cn(
@@ -813,7 +776,7 @@ export default function Storefront() {
                         data-testid="button-call-empty-shop"
                       >
                         <Phone className="mr-1 h-4 w-4" />
-                        {contactCtaLabel}
+                        Call
                       </a>
                     </Button>
                   ) : null}
@@ -861,7 +824,7 @@ export default function Storefront() {
                     data-testid="button-call-empty-shop"
                   >
                     <Phone className="mr-1 h-4 w-4" />
-                    {contactCtaLabel}
+                    Call
                   </a>
                 </Button>
               ) : null}

@@ -12,7 +12,7 @@ import {
   type SubscriptionFeatureKey,
 } from "./subscription-feature-keys";
 import { serializeSubscriptionFeature } from "./subscription-serializers";
-import { isComplimentaryPlan } from "./stripe-billing";
+import { isComplimentaryPlan } from "./stripe-billing-core";
 import { findPlanById } from "./subscription-plans";
 
 export type SerializedSubscriptionFeature = {

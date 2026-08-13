@@ -76,22 +76,27 @@ describe("business-listing public availability wiring", () => {
 });
 
 describe("getBusinessListingCta labels", () => {
-  it("maps storefront modes to Order, Book, and Visit", () => {
+  it("maps effective entitled modes to Order, Book, and Visit", () => {
     const source = readFileSync(join(here, "business-listing.ts"), "utf8");
     const fnStart = source.indexOf("export function getBusinessListingCta");
     assert.ok(fnStart >= 0);
     const fnBody = source.slice(fnStart, source.indexOf("\n}", fnStart) + 2);
 
-    assert.match(fnBody, /isOrderingStorefrontMode[\s\S]*label: "Order"/);
-    assert.match(fnBody, /isAppointmentStorefrontMode[\s\S]*label: "Book"/);
-    assert.match(fnBody, /isInformationStorefrontMode[\s\S]*label: "Visit"/);
+    assert.match(fnBody, /resolvePublicBrowseMode[\s\S]*mode === "ORDERING"[\s\S]*label: "Order"/);
+    assert.match(fnBody, /mode === "APPOINTMENT"[\s\S]*label: "Book"/);
+    assert.match(fnBody, /mode === "INFORMATION"[\s\S]*label: "Visit"/);
     assert.doesNotMatch(fnBody, /View Menu/);
     assert.match(source, /label: "Order" \| "Visit" \| "Book" \| "Call"/);
   });
 
-  it("uses Browse for display-only storefront catalog CTA", () => {
+  it("does not render a large display-only storefront CTA", () => {
     const storefront = readFileSync(join(here, "../pages/storefront.tsx"), "utf8");
-    assert.match(storefront, /label: "Browse"/);
+    const ctaStart = storefront.indexOf("const primaryCta");
+    const ctaEnd = storefront.indexOf("function openAppointmentDialog", ctaStart);
+    const ctaBody = storefront.slice(ctaStart, ctaEnd);
+    assert.doesNotMatch(ctaBody, /label: "Browse"/);
+    assert.doesNotMatch(ctaBody, /Call to Order/);
     assert.doesNotMatch(storefront, /label: "View Menu"/);
+    assert.match(storefront, /label="Call"/);
   });
 });
