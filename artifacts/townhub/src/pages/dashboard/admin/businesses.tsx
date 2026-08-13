@@ -9,6 +9,8 @@ import {
   useAssignBusinessOwner,
   useListSubscriptionPlans,
   getListAdminBusinessesQueryKey,
+  getListBusinessesQueryKey,
+  getGetBusinessBySlugQueryKey,
   BusinessType,
 } from "@workspace/api-client-react";
 import { planAssignmentLabel } from "@/lib/subscription-plans";
@@ -208,6 +210,18 @@ export default function AdminBusinesses() {
         toast({ title: "Failed to assign plan", description: String(body.error ?? "Unknown error"), variant: "destructive" });
         return;
       }
+      const updatedBusiness = businesses?.find((business) => business.id === subBusinessId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getListAdminBusinessesQueryKey() }),
+        queryClient.invalidateQueries({ queryKey: getListBusinessesQueryKey() }),
+        ...(updatedBusiness
+          ? [
+              queryClient.invalidateQueries({
+                queryKey: getGetBusinessBySlugQueryKey(updatedBusiness.slug),
+              }),
+            ]
+          : []),
+      ]);
       toast({ title: "Plan assigned", description: "Subscription updated successfully." });
       setSubDialogOpen(false);
     } catch {

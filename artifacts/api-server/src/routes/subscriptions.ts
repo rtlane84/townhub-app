@@ -38,6 +38,11 @@ import {
   serializeSubscriptionFeature,
 } from "../lib/subscription-serializers";
 import { invalidatePublicBusinessDirectoryCache } from "../lib/public-business-directory-cache";
+import {
+  reconcileAllBusinessStorefrontModes,
+  reconcileBusinessStorefrontMode,
+  reconcilePlanBusinessStorefrontModes,
+} from "../lib/storefront-mode-reconciliation";
 
 const router: IRouter = Router();
 
@@ -215,6 +220,7 @@ adminRouter.put("/subscription-plans/:id/features", async (req, res): Promise<vo
 
   try {
     await setPlanFeatures(id, parsed.data.featureIds);
+    await reconcilePlanBusinessStorefrontModes(id);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to update plan features";
     const status = message.includes("not found") ? 404 : 400;
@@ -276,6 +282,7 @@ adminRouter.put("/subscription-features/:id", async (req, res): Promise<void> =>
     .returning();
 
   if (!updated) { res.status(404).json({ error: "Feature not found" }); return; }
+  await reconcileAllBusinessStorefrontModes();
   res.json(serializeSubscriptionFeature(updated));
 });
 
@@ -283,6 +290,7 @@ adminRouter.put("/subscription-features/:id", async (req, res): Promise<void> =>
 adminRouter.delete("/subscription-features/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   await db.delete(subscriptionFeaturesTable).where(eq(subscriptionFeaturesTable.id, id));
+  await reconcileAllBusinessStorefrontModes();
   res.status(204).send();
 });
 
@@ -352,6 +360,7 @@ adminRouter.put("/businesses/:id/subscription", async (req, res): Promise<void> 
   const features = await getPlanFeatures(sub.planId);
   const enabledFeatures = features.filter((feature) => featureKeys.has(feature.key));
 
+  await reconcileBusinessStorefrontMode(businessId);
   invalidatePublicBusinessDirectoryCache();
   res.json(serializeSubscription(sub, plan, enabledFeatures));
 });

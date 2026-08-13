@@ -28,6 +28,7 @@ import {
   isBusinessSellerAgreementApprovedForProduction,
 } from "../lib/business-seller-agreement";
 import { invalidatePublicBusinessDirectoryCache } from "../lib/public-business-directory-cache";
+import { reconcileBusinessStorefrontMode } from "../lib/storefront-mode-reconciliation";
 
 const router: IRouter = Router();
 
@@ -413,6 +414,7 @@ router.post("/admin/applications/:id/approve", requireAdmin, async (req, res): P
     let attachResult = null;
     if (plan) {
       attachResult = await attachPlanToBusiness(business.id, plan, { billingInterval });
+      await reconcileBusinessStorefrontMode(business.id);
     }
 
     // Mark application as approved

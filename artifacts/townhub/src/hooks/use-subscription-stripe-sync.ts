@@ -3,7 +3,10 @@ import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getGetBusinessFeatureAccessQueryKey,
+  getGetBusinessBySlugQueryKey,
+  getGetMyBusinessQueryKey,
   getGetMySubscriptionQueryKey,
+  getListBusinessesQueryKey,
   type BusinessSubscription,
 } from "@workspace/api-client-react";
 import { resolveApiUrl } from "@/lib/api-base-url";
@@ -14,7 +17,10 @@ export type SubscriptionSyncOptions = {
   interval?: "monthly" | "yearly";
 };
 
-export function useSubscriptionStripeSync(businessId: number | undefined) {
+export function useSubscriptionStripeSync(
+  businessId: number | undefined,
+  businessSlug?: string,
+) {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
 
@@ -22,8 +28,17 @@ export function useSubscriptionStripeSync(businessId: number | undefined) {
     (id: number) => {
       void queryClient.invalidateQueries({ queryKey: getGetMySubscriptionQueryKey(id) });
       void queryClient.invalidateQueries({ queryKey: getGetBusinessFeatureAccessQueryKey(id) });
+      void queryClient.invalidateQueries({
+        queryKey: getGetMyBusinessQueryKey({ businessId: id }),
+      });
+      void queryClient.invalidateQueries({ queryKey: getListBusinessesQueryKey() });
+      if (businessSlug) {
+        void queryClient.invalidateQueries({
+          queryKey: getGetBusinessBySlugQueryKey(businessSlug),
+        });
+      }
     },
-    [queryClient],
+    [businessSlug, queryClient],
   );
 
   const syncOnce = useCallback(

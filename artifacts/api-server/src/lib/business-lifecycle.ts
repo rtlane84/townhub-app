@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { logger } from "./logger";
 import { stripe } from "./stripe";
 import { shouldCancelStripeSubscription } from "./business-lifecycle-core";
+import { reconcileBusinessStorefrontMode } from "./storefront-mode-reconciliation";
 
 export type ArchiveBusinessResult =
   | {
@@ -91,6 +92,7 @@ export async function archiveBusiness(businessId: number): Promise<ArchiveBusine
         currentPeriodEnd: null,
       })
       .where(eq(businessSubscriptionsTable.businessId, businessId));
+    await reconcileBusinessStorefrontMode(businessId);
   }
 
   await db

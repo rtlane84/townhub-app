@@ -2,14 +2,15 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   acceptsAppointmentRequests,
+  allowsStorefrontAppointments,
   allowsStorefrontOrdering,
   defaultStorefrontModeForBusinessType,
   hidesStorefrontCart,
-  informationPrimaryCtaLabel,
   isBusinessHubNavVisibleForStorefrontMode,
   isInformationStorefrontMode,
   normalizeWebsiteUrl,
   resolveStorefrontMode,
+  resolvePublicBrowseMode,
   coerceEntitledStorefrontMode,
   showsStorefrontCatalog,
   storefrontModePublicBadge,
@@ -41,7 +42,7 @@ describe("storefront mode", () => {
     );
   });
 
-  it("coerces locked modes to the best entitled option", () => {
+  it("coerces locked modes to display-only without auto-enabling another mode", () => {
     assert.equal(
       coerceEntitledStorefrontMode("ORDERING", {
         onlineOrderingAllowed: false,
@@ -54,14 +55,14 @@ describe("storefront mode", () => {
         onlineOrderingAllowed: false,
         appointmentRequestsAllowed: true,
       }),
-      "APPOINTMENT",
+      "INFORMATION",
     );
     assert.equal(
       coerceEntitledStorefrontMode("APPOINTMENT", {
         onlineOrderingAllowed: true,
         appointmentRequestsAllowed: false,
       }),
-      "ORDERING",
+      "INFORMATION",
     );
     assert.equal(
       coerceEntitledStorefrontMode("ORDERING", {
@@ -69,6 +70,13 @@ describe("storefront mode", () => {
         appointmentRequestsAllowed: false,
       }),
       "ORDERING",
+    );
+    assert.equal(
+      coerceEntitledStorefrontMode("INFORMATION", {
+        onlineOrderingAllowed: true,
+        appointmentRequestsAllowed: true,
+      }),
+      "INFORMATION",
     );
   });
 
@@ -86,7 +94,14 @@ describe("storefront mode", () => {
   });
 
   it("hides cart outside ordering mode", () => {
-    assert.equal(hidesStorefrontCart({ type: "GENERAL", storefrontMode: "ORDERING" }), false);
+    assert.equal(
+      hidesStorefrontCart({
+        type: "GENERAL",
+        storefrontMode: "ORDERING",
+        onlineOrderingEntitled: true,
+      }),
+      false,
+    );
     assert.equal(hidesStorefrontCart({ type: "GENERAL", storefrontMode: "APPOINTMENT" }), true);
     assert.equal(hidesStorefrontCart({ type: "FUNERAL_SERVICE", storefrontMode: "INFORMATION" }), true);
   });
@@ -118,6 +133,42 @@ describe("storefront mode", () => {
     );
   });
 
+  it("requires appointment entitlement even for salon appointment mode", () => {
+    const lockedSalon = {
+      type: "SALON",
+      storefrontMode: "APPOINTMENT" as const,
+      onlineOrderingEntitled: false,
+      appointmentRequestsEntitled: false,
+    };
+    assert.equal(allowsStorefrontAppointments(lockedSalon), false);
+    assert.equal(resolvePublicBrowseMode(lockedSalon), "INFORMATION");
+    assert.equal(
+      allowsStorefrontAppointments({
+        ...lockedSalon,
+        appointmentRequestsEntitled: true,
+      }),
+      true,
+    );
+    assert.equal(
+      resolvePublicBrowseMode({
+        ...lockedSalon,
+        appointmentRequestsEntitled: true,
+      }),
+      "APPOINTMENT",
+    );
+  });
+
+  it("fails closed when public entitlement fields are missing", () => {
+    assert.equal(
+      resolvePublicBrowseMode({ type: "GENERAL", storefrontMode: "ORDERING" }),
+      "INFORMATION",
+    );
+    assert.equal(
+      resolvePublicBrowseMode({ type: "SALON", storefrontMode: "APPOINTMENT" }),
+      "INFORMATION",
+    );
+  });
+
   it("shows catalog for all storefront modes when entitled", () => {
     assert.equal(showsStorefrontCatalog("ORDERING"), true);
     assert.equal(showsStorefrontCatalog("APPOINTMENT"), true);
@@ -139,15 +190,17 @@ describe("storefront mode", () => {
     );
   });
 
-  it("allows online ordering only in ordering mode", () => {
-    assert.equal(allowsStorefrontOrdering({ type: "GENERAL", storefrontMode: "ORDERING" }), true);
+  it("allows online ordering only in entitled ordering mode", () => {
+    assert.equal(
+      allowsStorefrontOrdering({
+        type: "GENERAL",
+        storefrontMode: "ORDERING",
+        onlineOrderingEntitled: true,
+      }),
+      true,
+    );
     assert.equal(allowsStorefrontOrdering({ type: "GENERAL", storefrontMode: "INFORMATION" }), false);
     assert.equal(allowsStorefrontOrdering({ type: "SALON", storefrontMode: "APPOINTMENT" }), false);
-  });
-
-  it("uses call-to-order CTA labels for display-only mode", () => {
-    assert.equal(informationPrimaryCtaLabel(true), "Call to Order");
-    assert.equal(informationPrimaryCtaLabel(false), "Contact Business");
   });
 
   it("detects information storefront mode", () => {
@@ -210,7 +263,11 @@ describe("storefront mode", () => {
     );
     assert.equal(
       storefrontCopy("INFORMATION").catalogSubtitle,
-      "Browse available items below. Online ordering is not available—please contact the business directly.",
+      "Browse available items below. Contact the business directly for more information.",
+    );
+    assert.equal(
+      storefrontCopy("INFORMATION").informationTagline,
+      "Contact this business directly for more information.",
     );
     assert.equal(storefrontCopy("ORDERING").emptyTitle, "Nothing has been added yet.");
     assert.match(storefrontCopy("ORDERING").emptyDescription, /current offerings/i);
