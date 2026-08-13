@@ -302,6 +302,7 @@ export const GetMyBusinessResponse = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
@@ -421,6 +422,7 @@ export const ListBusinessesResponseItem = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
@@ -678,6 +680,7 @@ export const GetBusinessCheckoutResponse = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
@@ -778,6 +781,7 @@ export const GetBusinessBySlugResponse = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
@@ -992,6 +996,7 @@ export const GetBusinessResponse = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
@@ -1163,6 +1168,7 @@ export const UpdateBusinessResponse = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
@@ -2576,6 +2582,7 @@ export const AssignBusinessOwnerResponse = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
@@ -2671,6 +2678,7 @@ export const ListAdminBusinessesResponseItem = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),
@@ -3841,6 +3849,7 @@ export const RegenerateBusinessNtfyTopicResponse = zod.object({
   "orderingAvailable": zod.boolean().optional().describe('Server-evaluated whether the business is accepting orders right now.'),
   "orderingUnavailableReason": zod.string().nullish().describe('Human-readable reason when orderingAvailable is false.'),
   "onlineOrderingEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the online_ordering feature. Public cart\/checkout UI must require this plus storefrontMode ORDERING. Distinct from orderingAvailable (hours\/schedule open state).\n'),
+  "appointmentRequestsEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the appointment_requests feature. Public appointment UI must require this plus storefrontMode APPOINTMENT.\n'),
   "businessWebsiteEntitled": zod.boolean().optional().describe('Whether the business subscription plan includes the business_website feature. When false, the public storefront must hide the catalog (Items\/menu\/services) even if products exist in the database.\n'),
   "publicAvailability": zod.object({
   "statusLabel": zod.string().describe('Primary status (e.g. Open now, Here now, Closed, Hours not provided).'),

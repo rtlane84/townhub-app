@@ -54,10 +54,7 @@ export function isOrderingStorefrontMode(business: {
   return resolveStorefrontMode(business) === "ORDERING";
 }
 
-/**
- * Pick a storefront mode allowed by plan entitlements.
- * Prefer keeping the current mode when allowed; otherwise ORDERING → APPOINTMENT → INFORMATION.
- */
+/** Keep the selected commerce mode only while its matching plan feature is active. */
 export function coerceEntitledStorefrontMode(
   current: StorefrontMode,
   entitlements: {
@@ -65,15 +62,9 @@ export function coerceEntitledStorefrontMode(
     appointmentRequestsAllowed: boolean;
   },
 ): StorefrontMode {
-  const orderingOk = entitlements.onlineOrderingAllowed;
-  const appointmentOk = entitlements.appointmentRequestsAllowed;
-
-  if (current === "ORDERING" && orderingOk) return "ORDERING";
-  if (current === "APPOINTMENT" && appointmentOk) return "APPOINTMENT";
+  if (current === "ORDERING" && entitlements.onlineOrderingAllowed) return "ORDERING";
+  if (current === "APPOINTMENT" && entitlements.appointmentRequestsAllowed) return "APPOINTMENT";
   if (current === "INFORMATION") return "INFORMATION";
-
-  if (orderingOk) return "ORDERING";
-  if (appointmentOk) return "APPOINTMENT";
   return "INFORMATION";
 }
 
@@ -81,42 +72,43 @@ export function showsStorefrontCatalog(
   mode: StorefrontMode,
   options?: { businessWebsiteEntitled?: boolean | null },
 ): boolean {
-  // Missing entitlement is treated as entitled for backward-compatible callers.
-  if (options?.businessWebsiteEntitled === false) return false;
+  if (options && options.businessWebsiteEntitled !== true) return false;
   return mode === "ORDERING" || mode === "APPOINTMENT" || mode === "INFORMATION";
 }
 
-export type StorefrontCartBusiness = {
+export type StorefrontEntitledBusiness = {
   type?: string | null;
   storefrontMode?: StorefrontMode | null;
-  /** When false, cart is hidden even if storefrontMode is ORDERING. */
   onlineOrderingEntitled?: boolean | null;
+  appointmentRequestsEntitled?: boolean | null;
 };
 
 /**
  * Whether the public storefront may show cart / add-to-cart.
- * Requires ORDERING mode and plan entitlement when entitlement is known.
- * Missing onlineOrderingEntitled is treated as entitled for backward-compatible
- * callers that have not loaded the field yet — prefer always setting it from the API.
+ * Requires ORDERING mode and an explicit active plan entitlement.
  */
-export function allowsStorefrontOrdering(business: StorefrontCartBusiness): boolean {
-  if (business.onlineOrderingEntitled === false) return false;
+export function allowsStorefrontOrdering(business: StorefrontEntitledBusiness): boolean {
+  if (business.onlineOrderingEntitled !== true) return false;
   return isOrderingStorefrontMode(business);
 }
 
-export function hidesStorefrontCart(business: StorefrontCartBusiness): boolean {
+export function hidesStorefrontCart(business: StorefrontEntitledBusiness): boolean {
   return !allowsStorefrontOrdering(business);
 }
 
+export function allowsStorefrontAppointments(business: StorefrontEntitledBusiness): boolean {
+  if (business.appointmentRequestsEntitled !== true) return false;
+  return isAppointmentStorefrontMode(business);
+}
+
 /**
- * Effective public browsing mode for UI copy and add buttons.
- * When ordering is not entitled, behave as INFORMATION even if mode is ORDERING.
+ * Effective public browsing mode for UI copy and actions.
+ * Unsupported commerce modes fail closed to INFORMATION.
  */
-export function resolvePublicBrowseMode(business: StorefrontCartBusiness): StorefrontMode {
+export function resolvePublicBrowseMode(business: StorefrontEntitledBusiness): StorefrontMode {
   const mode = resolveStorefrontMode(business);
-  if (mode === "ORDERING" && business.onlineOrderingEntitled === false) {
-    return "INFORMATION";
-  }
+  if (mode === "ORDERING" && !allowsStorefrontOrdering(business)) return "INFORMATION";
+  if (mode === "APPOINTMENT" && !allowsStorefrontAppointments(business)) return "INFORMATION";
   return mode;
 }
 
@@ -177,10 +169,6 @@ export function formatWebsiteDisplay(url: string): string {
   return url.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 }
 
-export function informationPrimaryCtaLabel(hasPhone: boolean): string {
-  return hasPhone ? "Call to Order" : "Contact Business";
-}
-
 export function storefrontCopy(mode: StorefrontMode) {
   const isAppointment = mode === "APPOINTMENT";
   const isInformation = mode === "INFORMATION";
@@ -189,7 +177,7 @@ export function storefrontCopy(mode: StorefrontMode) {
     catalogSubtitle: isAppointment
       ? "Browse available services and request an appointment."
       : isInformation
-        ? "Browse available items below. Online ordering is not available—please contact the business directly."
+        ? "Browse available items below. Contact the business directly for more information."
         : "Browse available items and add them to your cart.",
     allItemsLabel: "All Items",
     emptyTitle: "Nothing has been added yet.",
@@ -206,7 +194,7 @@ export function storefrontCopy(mode: StorefrontMode) {
     prepTimeLabel: (minutes: number) => (isAppointment ? `${minutes} min service` : `${minutes}m`),
     primaryCtaLabel: isAppointment ? "Request Appointment" : null,
     informationTagline: isInformation
-      ? "Online ordering is not available. Contact us directly to place an order."
+      ? "Contact this business directly for more information."
       : null,
   };
 }

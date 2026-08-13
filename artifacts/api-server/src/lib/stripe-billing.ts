@@ -27,6 +27,7 @@ import {
   snapshotFromSubscriptionRow,
 } from "./subscription-notification-core";
 import type { SubscriptionNotifySource } from "./subscription-notification-core";
+import { reconcileBusinessStorefrontMode } from "./storefront-mode-reconciliation";
 
 export {
   SUBSCRIPTION_CHECKOUT_METADATA_TYPE,
@@ -101,6 +102,8 @@ export async function upsertBusinessSubscriptionFromStripe(
       ...values,
     });
   }
+
+  await reconcileBusinessStorefrontMode(input.businessId);
 
   if (notifySource) {
     void import("./subscription-notifications")
@@ -180,6 +183,7 @@ export async function ensureStripeCustomerForBusiness(
       startedAt: new Date(),
       stripeCustomerId: customer.id,
     });
+    await reconcileBusinessStorefrontMode(businessId);
   }
 
   return { customerId: customer.id, mockMode: false };
@@ -474,6 +478,8 @@ export async function handleSubscriptionDeleted(subscription: Stripe.Subscriptio
     })
     .where(eq(businessSubscriptionsTable.businessId, resolved.businessId));
 
+  await reconcileBusinessStorefrontMode(resolved.businessId);
+
   if (before) {
     const beforeSnapshot = snapshotFromSubscriptionRow(before);
     const afterSnapshot = {
@@ -611,6 +617,7 @@ export async function changeBusinessSubscriptionPlan(input: {
         stripePriceId: validation.priceId,
       })
       .where(eq(businessSubscriptionsTable.businessId, input.businessId));
+    await reconcileBusinessStorefrontMode(input.businessId);
     return { ok: true, mode: "updated" };
   }
 

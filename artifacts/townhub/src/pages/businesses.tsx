@@ -71,6 +71,7 @@ export default function Businesses() {
           type: business.type,
           storefrontMode: business.storefrontMode,
           onlineOrderingEntitled: business.onlineOrderingEntitled,
+          appointmentRequestsEntitled: business.appointmentRequestsEntitled,
         }) && business.orderingEnabled !== false,
     );
   }, [businesses, orderingOnly]);

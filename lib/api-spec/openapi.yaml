@@ -3459,6 +3459,11 @@ components:
             Whether the business subscription plan includes the online_ordering feature.
             Public cart/checkout UI must require this plus storefrontMode ORDERING.
             Distinct from orderingAvailable (hours/schedule open state).
+        appointmentRequestsEntitled:
+          type: boolean
+          description: >
+            Whether the business subscription plan includes the appointment_requests feature.
+            Public appointment UI must require this plus storefrontMode APPOINTMENT.
         businessWebsiteEntitled:
           type: boolean
           description: >

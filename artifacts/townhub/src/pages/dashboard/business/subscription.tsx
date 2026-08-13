@@ -63,7 +63,10 @@ export default function BusinessSubscription() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { business, isLoading: bizLoading } = useSelectedBusiness();
-  const { syncOnce, invalidateBusinessHubQueries } = useSubscriptionStripeSync(business?.id);
+  const { syncOnce, invalidateBusinessHubQueries } = useSubscriptionStripeSync(
+    business?.id,
+    business?.slug,
+  );
   const [changePlanOpen, setChangePlanOpen] = useState(false);
   const [syncPending, setSyncPending] = useState(false);
   const [activationPhase, setActivationPhase] = useState<ActivationPhase>("idle");
@@ -627,6 +630,7 @@ export default function BusinessSubscription() {
             {!storeDistribution && business?.id && canChangePlan && (
               <ChangePlanDialog
                 businessId={business.id}
+                businessSlug={business.slug}
                 currentPlanId={subscription.planId}
                 currentInterval={subscription.billingInterval ?? "monthly"}
                 open={changePlanOpen}

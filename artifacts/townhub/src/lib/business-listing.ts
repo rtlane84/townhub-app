@@ -3,10 +3,8 @@ import {
   DEFAULT_PLATFORM_TIMEZONE,
   evaluatePublicAvailability,
   formatBusinessTypeLabel,
-  isAppointmentStorefrontMode,
-  isInformationStorefrontMode,
-  isOrderingStorefrontMode,
   mobileBusinessPublicLabel,
+  resolvePublicBrowseMode,
   resolvePlatformTimeZone,
   type PublicAvailabilityResult,
 } from "@workspace/api-zod";
@@ -173,6 +171,8 @@ export function getBusinessCategoryLine(
 export function getBusinessCapabilityBadges(
   business: Pick<Business, "type"> & {
     storefrontMode?: Business["storefrontMode"];
+    onlineOrderingEntitled?: boolean | null;
+    appointmentRequestsEntitled?: boolean | null;
     orderingEnabled?: boolean | null;
     orderingAvailable?: boolean | null;
     isMobileBusiness?: boolean | null;
@@ -191,14 +191,17 @@ export function getBusinessCapabilityBadges(
 export function getBusinessStorefrontBadge(
   business: Pick<Business, "type"> & {
     storefrontMode?: Business["storefrontMode"];
+    onlineOrderingEntitled?: boolean | null;
+    appointmentRequestsEntitled?: boolean | null;
     orderingEnabled?: boolean | null;
     orderingAvailable?: boolean | null;
   },
 ): "Order online" | "Book online" | null {
-  if (isOrderingStorefrontMode(business)) {
+  const mode = resolvePublicBrowseMode(business);
+  if (mode === "ORDERING") {
     return "Order online";
   }
-  if (isAppointmentStorefrontMode(business)) {
+  if (mode === "APPOINTMENT") {
     return "Book online";
   }
   return null;
@@ -214,22 +217,29 @@ export function getBusinessStorefrontBadge(
 export function getBusinessListingCta(
   business: Pick<
     Business,
-    "slug" | "phone" | "type" | "storefrontMode" | "orderingEnabled"
+    | "slug"
+    | "phone"
+    | "type"
+    | "storefrontMode"
+    | "onlineOrderingEntitled"
+    | "appointmentRequestsEntitled"
+    | "orderingEnabled"
   > & {
     orderingAvailable?: boolean | null;
   },
 ): BusinessListingCta | null {
   const storefrontHref = `/businesses/${business.slug}`;
+  const mode = resolvePublicBrowseMode(business);
 
-  if (isOrderingStorefrontMode(business)) {
+  if (mode === "ORDERING") {
     return { label: "Order", href: storefrontHref };
   }
 
-  if (isAppointmentStorefrontMode(business)) {
+  if (mode === "APPOINTMENT") {
     return { label: "Book", href: storefrontHref };
   }
 
-  if (isInformationStorefrontMode(business)) {
+  if (mode === "INFORMATION") {
     return { label: "Visit", href: storefrontHref };
   }
 

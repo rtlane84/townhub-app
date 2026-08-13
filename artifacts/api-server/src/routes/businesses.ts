@@ -132,9 +132,11 @@ type BusinessSerializationOptions = {
   mobileLocations?: FoodTruckLocationWindow[];
   timeZone?: string;
   now?: Date;
-  /** Plan entitlement for online_ordering. Defaults to true when omitted. */
+  /** Plan entitlement for online_ordering. Defaults to false when omitted. */
   onlineOrderingEntitled?: boolean;
-  /** Plan entitlement for business_website (public catalog). Defaults to true when omitted. */
+  /** Plan entitlement for appointment_requests. Defaults to false when omitted. */
+  appointmentRequestsEntitled?: boolean;
+  /** Plan entitlement for business_website (public catalog). Defaults to false when omitted. */
   businessWebsiteEntitled?: boolean;
 };
 
@@ -169,8 +171,9 @@ function serializePublicBusinessFields(
     now,
     timeZone,
   );
-  const onlineOrderingEntitled = options?.onlineOrderingEntitled ?? true;
-  const businessWebsiteEntitled = options?.businessWebsiteEntitled ?? true;
+  const onlineOrderingEntitled = options?.onlineOrderingEntitled ?? false;
+  const appointmentRequestsEntitled = options?.appointmentRequestsEntitled ?? false;
+  const businessWebsiteEntitled = options?.businessWebsiteEntitled ?? false;
 
   return {
     id: b.id,
@@ -219,6 +222,7 @@ function serializePublicBusinessFields(
     orderingAvailable: availability.available,
     orderingUnavailableReason: availability.reason,
     onlineOrderingEntitled,
+    appointmentRequestsEntitled,
     businessWebsiteEntitled,
     publicAvailability,
     accentColor: b.accentColor,
@@ -233,9 +237,11 @@ export function serializeBusiness(
     mobileLocations?: FoodTruckLocationWindow[];
     timeZone?: string;
     now?: Date;
-    /** Plan entitlement for online_ordering. Defaults to true when omitted (owner paths that set it explicitly should pass it). */
+    /** Plan entitlement for online_ordering. Defaults to false when omitted. */
     onlineOrderingEntitled?: boolean;
-    /** Plan entitlement for business_website. Defaults to true when omitted. */
+    /** Plan entitlement for appointment_requests. Defaults to false when omitted. */
+    appointmentRequestsEntitled?: boolean;
+    /** Plan entitlement for business_website. Defaults to false when omitted. */
     businessWebsiteEntitled?: boolean;
   },
 ) {
@@ -271,6 +277,7 @@ export function serializePublicBusiness(
     timeZone?: string;
     now?: Date;
     onlineOrderingEntitled?: boolean;
+    appointmentRequestsEntitled?: boolean;
     businessWebsiteEntitled?: boolean;
   },
 ) {
@@ -285,13 +292,15 @@ async function serializeBusinessWithEntitlements(
     now?: Date;
   },
 ) {
-  const [onlineOrderingEntitled, businessWebsiteEntitled] = await Promise.all([
+  const [onlineOrderingEntitled, appointmentRequestsEntitled, businessWebsiteEntitled] = await Promise.all([
     businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING),
+    businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.APPOINTMENT_REQUESTS),
     businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE),
   ]);
   return serializeBusiness(b, {
     ...options,
     onlineOrderingEntitled,
+    appointmentRequestsEntitled,
     businessWebsiteEntitled,
   });
 }
@@ -306,13 +315,15 @@ async function serializePublicBusinessWithEntitlements(
     now?: Date;
   },
 ) {
-  const [onlineOrderingEntitled, businessWebsiteEntitled] = await Promise.all([
+  const [onlineOrderingEntitled, appointmentRequestsEntitled, businessWebsiteEntitled] = await Promise.all([
     businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.ONLINE_ORDERING),
+    businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.APPOINTMENT_REQUESTS),
     businessHasFeature(b.id, SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE),
   ]);
   return serializePublicBusiness(b, {
     ...options,
     onlineOrderingEntitled,
+    appointmentRequestsEntitled,
     businessWebsiteEntitled,
   });
 }
@@ -395,7 +406,13 @@ router.get("/businesses", async (req, res): Promise<void> => {
     .filter((business) => business.isMobileBusiness)
     .map((business) => business.id);
 
-  const [locs, timeZone, orderingEntitledById, websiteEntitledById] = await Promise.all([
+  const [
+    locs,
+    timeZone,
+    orderingEntitledById,
+    appointmentEntitledById,
+    websiteEntitledById,
+  ] = await Promise.all([
     mobileBusinessIds.length > 0
       ? db
           .select({
@@ -421,6 +438,10 @@ router.get("/businesses", async (req, res): Promise<void> => {
     ),
     mapBusinessesHaveFeature(
       businesses.map((business) => business.id),
+      SUBSCRIPTION_FEATURE_KEYS.APPOINTMENT_REQUESTS,
+    ),
+    mapBusinessesHaveFeature(
+      businesses.map((business) => business.id),
       SUBSCRIPTION_FEATURE_KEYS.BUSINESS_WEBSITE,
     ),
   ]);
@@ -443,6 +464,7 @@ router.get("/businesses", async (req, res): Promise<void> => {
         mobileLocations: mobileLocationsByBusiness.get(business.id),
         timeZone,
         onlineOrderingEntitled: orderingEntitledById.get(business.id) === true,
+        appointmentRequestsEntitled: appointmentEntitledById.get(business.id) === true,
         businessWebsiteEntitled: websiteEntitledById.get(business.id) === true,
       }),
   );
@@ -994,9 +1016,9 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
         access.business.storefrontMode,
     });
     if (currentMode === "ORDERING" && !onlineOrderingEntitled) {
-      updateData.storefrontMode = appointmentRequestsEntitled ? "APPOINTMENT" : "INFORMATION";
+      updateData.storefrontMode = "INFORMATION";
     } else if (currentMode === "APPOINTMENT" && !appointmentRequestsEntitled) {
-      updateData.storefrontMode = onlineOrderingEntitled ? "ORDERING" : "INFORMATION";
+      updateData.storefrontMode = "INFORMATION";
     }
   }
 
@@ -1065,6 +1087,7 @@ router.patch("/businesses/manage/:id", requireAuth, async (req, res): Promise<vo
       serializeBusiness(business, {
         timeZone: await getPlatformTimeZone(),
         onlineOrderingEntitled,
+        appointmentRequestsEntitled,
         businessWebsiteEntitled,
       }),
     );

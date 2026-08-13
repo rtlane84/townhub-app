@@ -4,7 +4,7 @@ import { Truck, CalendarDays, ShoppingBag, Info } from "lucide-react";
 import {
   formatBusinessTypeLabel,
   mobileBusinessPublicLabel,
-  resolveStorefrontMode,
+  resolvePublicBrowseMode,
   storefrontModePublicBadge,
   type StorefrontMode,
 } from "@workspace/api-zod";
@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils";
 export type BusinessTagsSource = {
   type: string;
   storefrontMode?: StorefrontMode | null;
+  onlineOrderingEntitled?: boolean | null;
+  appointmentRequestsEntitled?: boolean | null;
   active?: boolean;
   pickupEnabled?: boolean;
   deliveryEnabled?: boolean;
@@ -99,7 +101,7 @@ function BusinessServiceTags({
   accentColor?: string | null;
   showClosedInTags?: boolean;
 }) {
-  const storefrontMode = resolveStorefrontMode(business);
+  const storefrontMode = resolvePublicBrowseMode(business);
 
   return (
     <>
