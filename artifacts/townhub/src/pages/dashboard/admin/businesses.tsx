@@ -8,12 +8,20 @@ import {
   useListUsers,
   useAssignBusinessOwner,
   useListSubscriptionPlans,
+  useGetBusinessSubscription,
   getListAdminBusinessesQueryKey,
   getListBusinessesQueryKey,
   getGetBusinessBySlugQueryKey,
+  getGetBusinessSubscriptionQueryKey,
+  getGetBusinessSubscriptionQueryOptions,
+  ApiError,
   BusinessType,
 } from "@workspace/api-client-react";
 import { planAssignmentLabel } from "@/lib/subscription-plans";
+import {
+  formatBillingIntervalLabel,
+  subscriptionStatusDisplayLabel,
+} from "@/lib/subscription-display";
 import { resolveApiUrl } from "@/lib/api-base-url";
 import { AdminDashboardLayout } from "@/components/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +67,49 @@ function slugify(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+function BusinessSubscriptionSummary({ businessId }: { businessId: number }) {
+  const { data: subscription, error, isLoading } = useGetBusinessSubscription(businessId, {
+    query: {
+      queryKey: getGetBusinessSubscriptionQueryKey(businessId),
+      retry: false,
+    },
+  });
+
+  if (isLoading) {
+    return <Skeleton className="mt-1.5 h-5 w-36" data-testid={`subscription-loading-${businessId}`} />;
+  }
+
+  if (error) {
+    const noSubscription = error instanceof ApiError && error.status === 404;
+    return (
+      <Badge
+        variant="outline"
+        className="mt-1.5 text-[11px] font-normal text-muted-foreground"
+        data-testid={`subscription-plan-${businessId}`}
+      >
+        {noSubscription ? "No subscription" : "Plan unavailable"}
+      </Badge>
+    );
+  }
+
+  if (!subscription) return null;
+
+  const interval = formatBillingIntervalLabel(subscription.billingInterval);
+  const details = [
+    subscriptionStatusDisplayLabel(subscription),
+    interval === "Not set" ? null : interval,
+  ].filter((value): value is string => value != null);
+
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+      <Badge variant="outline" data-testid={`subscription-plan-${businessId}`}>
+        Plan: {subscription.plan?.name ?? `#${subscription.planId}`}
+      </Badge>
+      <span>{details.join(" · ")}</span>
+    </div>
+  );
+}
+
 export default function AdminBusinesses() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -77,6 +128,7 @@ export default function AdminBusinesses() {
   const [subBusinessId, setSubBusinessId] = useState<number | null>(null);
   const [subPlanId, setSubPlanId] = useState<string>("");
   const [subBillingInterval, setSubBillingInterval] = useState<"monthly" | "yearly">("monthly");
+  const [subLoadingCurrent, setSubLoadingCurrent] = useState(false);
   const [subSaving, setSubSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [assignBusinessId, setAssignBusinessId] = useState<number | null>(null);
@@ -157,11 +209,35 @@ export default function AdminBusinesses() {
     setAssignDialogOpen(true);
   }
 
-  function openChangePlan(businessId: number) {
+  async function openChangePlan(businessId: number) {
     setSubBusinessId(businessId);
     setSubPlanId("");
     setSubBillingInterval("monthly");
     setSubDialogOpen(true);
+    setSubLoadingCurrent(true);
+
+    try {
+      const subscription = await queryClient.fetchQuery(
+        getGetBusinessSubscriptionQueryOptions(businessId, {
+          query: {
+            queryKey: getGetBusinessSubscriptionQueryKey(businessId),
+            retry: false,
+          },
+        }),
+      );
+      setSubPlanId(String(subscription.planId));
+      setSubBillingInterval(subscription.billingInterval === "yearly" ? "yearly" : "monthly");
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 404)) {
+        toast({
+          title: "Could not load current plan",
+          description: "You can still select a plan manually.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setSubLoadingCurrent(false);
+    }
   }
 
   async function openRemoveDialog(businessId: number, businessName: string) {
@@ -214,6 +290,9 @@ export default function AdminBusinesses() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: getListAdminBusinessesQueryKey() }),
         queryClient.invalidateQueries({ queryKey: getListBusinessesQueryKey() }),
+        queryClient.invalidateQueries({
+          queryKey: getGetBusinessSubscriptionQueryKey(subBusinessId),
+        }),
         ...(updatedBusiness
           ? [
               queryClient.invalidateQueries({
@@ -296,9 +375,10 @@ export default function AdminBusinesses() {
                           <> · No owner</>
                         )}
                       </p>
+                      <BusinessSubscriptionSummary businessId={biz.id} />
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Change plan" onClick={() => openChangePlan(biz.id)}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="Change plan" onClick={() => void openChangePlan(biz.id)}>
                         <Layers className="h-3.5 w-3.5" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" title="Assign owner" onClick={() => openAssign(biz.id, biz.ownerId ?? null)} data-testid={`button-assign-owner-${biz.id}`}>
@@ -439,8 +519,8 @@ export default function AdminBusinesses() {
             <div>
               <label className="text-sm font-medium mb-1.5 block">Plan</label>
               <Select value={subPlanId} onValueChange={setSubPlanId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a plan…" />
+                <SelectTrigger disabled={subLoadingCurrent}>
+                  <SelectValue placeholder={subLoadingCurrent ? "Loading current plan…" : "Choose a plan…"} />
                 </SelectTrigger>
                 <SelectContent>
                   {plans.map((p) => (
@@ -454,7 +534,7 @@ export default function AdminBusinesses() {
             <div>
               <label className="text-sm font-medium mb-1.5 block">Billing interval</label>
               <Select value={subBillingInterval} onValueChange={(v) => setSubBillingInterval(v as "monthly" | "yearly")}>
-                <SelectTrigger>
+                <SelectTrigger disabled={subLoadingCurrent}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -466,7 +546,7 @@ export default function AdminBusinesses() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSubDialogOpen(false)}>Cancel</Button>
-            <LoadingButton onClick={() => void handleSavePlan()} disabled={!subPlanId} loading={subSaving} loadingText="Saving…">
+            <LoadingButton onClick={() => void handleSavePlan()} disabled={!subPlanId || subLoadingCurrent} loading={subSaving} loadingText="Saving…">
               Assign Plan
             </LoadingButton>
           </DialogFooter>

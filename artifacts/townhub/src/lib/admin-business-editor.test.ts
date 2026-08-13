@@ -40,4 +40,13 @@ describe("admin business editor", () => {
     assert.doesNotMatch(payloadSource, /deliveryFee/);
     assert.doesNotMatch(payloadSource, /minimumOrder/);
   });
+
+  it("shows each business subscription and preselects it when changing plans", () => {
+    assert.match(editorSource, /BusinessSubscriptionSummary businessId=\{biz\.id\}/);
+    assert.match(editorSource, /Plan: \{subscription\.plan\?\.name/);
+    assert.match(editorSource, /subscriptionStatusDisplayLabel\(subscription\)/);
+    assert.match(editorSource, /formatBillingIntervalLabel\(subscription\.billingInterval\)/);
+    assert.match(editorSource, /setSubPlanId\(String\(subscription\.planId\)\)/);
+    assert.match(editorSource, /Loading current plan…/);
+  });
 });
