@@ -19,7 +19,7 @@ export class ClerkUserDesyncError extends Error {
     const relinkCommand =
       `pnpm --filter @workspace/api-server run relink-clerk-user -- ` +
       `--from-clerk-user-id=${localUser.id} --clerk-user-id=${currentClerkUserId}`;
-    super("Clerk user identity does not match the linked TownHub account.");
+    super("Clerk user identity does not match the linked TownHaven account.");
     this.name = "ClerkUserDesyncError";
     this.currentClerkUserId = currentClerkUserId;
     this.localUserId = localUser.id;

@@ -34,7 +34,7 @@ describe("storefront URL owner UX", () => {
     assert.match(field, /Copy Link/);
     assert.match(field, /public web address/);
     assert.match(field, /don't have to update links you've already shared/);
-    assert.match(field, /Need to change your storefront link\? Contact TownHub support and we'll be happy to help\./);
+    assert.match(field, /Need to change your storefront link\? Contact TownHaven support and we'll be happy to help\./);
   });
 });
 

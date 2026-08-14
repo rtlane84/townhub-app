@@ -50,7 +50,7 @@ describe("ntfy-owner-notifications", () => {
     assert.match(message.message, /Customer: Alex/);
     assert.match(message.message, /\$24\.50/);
     assert.match(message.message, /^Pickup$/m);
-    assert.match(message.message, /Open in TownHub:/);
+    assert.match(message.message, /Open in TownHaven:/);
     assert.match(message.click!, /\/dashboard\/business\/orders\/9/);
   });
 
@@ -68,14 +68,14 @@ describe("ntfy-owner-notifications", () => {
     assert.match(message.message, /Customer: Jamie/);
     assert.match(message.message, /Service: Haircut/);
     assert.match(message.message, /When: 2026-07-10 at/);
-    assert.match(message.message, /Open in TownHub:/);
+    assert.match(message.message, /Open in TownHaven:/);
     assert.match(message.click!, /\/dashboard\/business\/appointments/);
   });
 
   it("formats test notification copy like Discord test payload", () => {
     const message = buildOwnerNtfyTestMessage("Clay Diner");
-    assert.equal(message.title, "TownHub test notification");
+    assert.equal(message.title, "TownHaven test notification");
     assert.match(message.message, /Phone alerts are configured for \*\*Clay Diner\*\*\./);
-    assert.match(message.message, /Status: This is a test message from TownHub\./);
+    assert.match(message.message, /Status: This is a test message from TownHaven\./);
   });
 });

@@ -5,7 +5,7 @@ import GoogleSignIn
 import Security
 
 /**
- * Native auth helpers for TownHub Capacitor:
+ * Native auth helpers for TownHaven Capacitor:
  * - ASWebAuthenticationSession (legacy browser OAuth; kept for fallbacks)
  * - Sign in with Apple (ASAuthorization → Clerk oauth_token_apple)
  * - Google Sign-In (GIDSignIn → Clerk google_one_tap / authenticateWithGoogleOneTap)

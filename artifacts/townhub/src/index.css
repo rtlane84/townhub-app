@@ -134,7 +134,7 @@
   --popover-foreground: 222 22% 12%;
   --popover-border: 220 14% 90%;
 
-  /* TownHub navy — overridden at runtime by PlatformThemeProvider */
+  /* TownHaven navy — overridden at runtime by PlatformThemeProvider */
   --primary: 221 83% 32%;
   --primary-foreground: 0 0% 100%;
 
@@ -562,7 +562,7 @@ html.native-app .native-pressable:active {
     font-weight: 500;
   }
 
-  /* Custom profile-menu items (Delete TownHub account) — Clerk defaults are low-contrast grey. */
+  /* Custom profile-menu items (Delete TownHaven account) — Clerk defaults are low-contrast grey. */
   .cl-userButtonPopoverCustomItemButton,
   .cl-userButtonPopoverCustomItemButton span,
   .cl-userButtonPopoverCustomItemButtonIconBox,

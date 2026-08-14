@@ -1,6 +1,6 @@
 /**
- * Split names like "Clay TownHub" / "TownHub" into styled parts.
- * Falls back to a single string when "Hub" isn't present.
+ * Split names like "TownHaven" / "Community TownHaven" into styled parts.
+ * The `hub` property name is retained for compatibility with persisted theme fields.
  */
 export type BrandParts = {
   prefix: string;
@@ -10,20 +10,20 @@ export type BrandParts = {
 
 export function splitPlatformBrandName(name: string): BrandParts {
   const trimmed = name.trim();
-  const townHub = trimmed.match(/^(.*?)(Town)(Hub)$/i);
-  if (townHub) {
+  const townHaven = trimmed.match(/^(.*?)(Town)(Haven)$/i);
+  if (townHaven) {
     return {
-      prefix: townHub[1] ?? "",
-      town: townHub[2] ?? "Town",
-      hub: townHub[3] ?? "Hub",
+      prefix: townHaven[1] ?? "",
+      town: townHaven[2] ?? "Town",
+      hub: townHaven[3] ?? "Haven",
     };
   }
-  const hubOnly = trimmed.match(/^(.*)(Hub)$/i);
-  if (hubOnly && hubOnly[1]?.trim()) {
+  const havenOnly = trimmed.match(/^(.*)(Haven)$/i);
+  if (havenOnly && havenOnly[1]?.trim()) {
     return {
       prefix: "",
-      town: hubOnly[1],
-      hub: hubOnly[2] ?? "Hub",
+      town: havenOnly[1],
+      hub: havenOnly[2] ?? "Haven",
     };
   }
   return { prefix: trimmed, town: null, hub: null };

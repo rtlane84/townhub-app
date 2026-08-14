@@ -24,9 +24,9 @@ describe("business sales page", () => {
     assert.match(page, /mobileBusinessMapImage/);
     assert.match(page, /On the move/);
     assert.match(page, /Let customers know where to find you today/);
-    assert.match(page, /TownHub map showing where mobile businesses are today/);
+    assert.match(page, /TownHaven map showing where mobile businesses are today/);
     assert.match(page, /home-clay-today\.png/);
-    assert.match(page, /TownHub home screen showing local businesses, events, and mobile businesses in Clay/);
+    assert.match(page, /TownHaven home screen showing local businesses, events, and mobile businesses in Clay/);
   });
 
   it("uses the app marketing visual language and a readable final CTA", () => {
@@ -44,8 +44,8 @@ describe("business sales page", () => {
 
   it("wires an unauthenticated public route", () => {
     const app = readFileSync(`${srcRoot}/App.tsx`, "utf8");
-    assert.match(app, /const BusinessesForTownHub = lazyWithRetry\(\(\) => import\("@\/pages\/businesses-for-townhub"\)\)/);
-    assert.match(app, /<SuspenseRoute path="\/for-businesses" component=\{BusinessesForTownHub\}/);
+    assert.match(app, /const BusinessesForTownHaven = lazyWithRetry\(\(\) => import\("@\/pages\/businesses-for-townhub"\)\)/);
+    assert.match(app, /<SuspenseRoute path="\/for-businesses" component=\{BusinessesForTownHaven\}/);
     assert.match(app, /"\/for-businesses"/);
   });
 });

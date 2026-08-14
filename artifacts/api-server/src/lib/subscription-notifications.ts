@@ -52,7 +52,7 @@ export {
 } from "./subscription-notification-core";
 
 const GRACE_PERIOD_NOTE =
-  "TownHub keeps your subscription active while Stripe retries payment over the next several days. Update your payment method soon to avoid losing access to paid features.";
+  "TownHaven keeps your subscription active while Stripe retries payment over the next several days. Update your payment method soon to avoid losing access to paid features.";
 
 async function resolveOwnerEmailForSubscription(business: {
   notificationEmail?: string | null;

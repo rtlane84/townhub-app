@@ -1,5 +1,5 @@
 /**
- * JS bridge for TownHub native OAuth.
+ * JS bridge for TownHaven native OAuth.
  * Lives in the app package so Vite can resolve `@capacitor/core` (workspace
  * peer deps are not visible to Rollup from linked packages).
  */

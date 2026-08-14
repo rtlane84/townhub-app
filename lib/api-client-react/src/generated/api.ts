@@ -385,7 +385,7 @@ export const getRequestMyAccountDeletionUrl = () => {
 }
 
 /**
- * @summary Request deletion of the current user's TownHub account
+ * @summary Request deletion of the current user's TownHaven account
  */
 export const requestMyAccountDeletion = async (requestMyAccountDeletionBody: RequestMyAccountDeletionBody, options?: RequestInit): Promise<AccountDeletionRequest> => {
 
@@ -434,7 +434,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RequestMyAccountDeletionMutationError = ErrorType<void>
 
     /**
- * @summary Request deletion of the current user's TownHub account
+ * @summary Request deletion of the current user's TownHaven account
  */
 export const useRequestMyAccountDeletion = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestMyAccountDeletion>>, TError,{data: BodyType<RequestMyAccountDeletionBody>}, TContext>, request?: SecondParameter<typeof customFetch>}

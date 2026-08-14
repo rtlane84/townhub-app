@@ -1,17 +1,17 @@
-# TownHub Staging and Production Environments
+# TownHaven Staging and Production Environments
 
-TownHub uses two isolated deployed environments. The existing Cloudflare frontend, Railway API, and test data become **staging**. Production is created separately and receives only approved production data.
+TownHaven uses two isolated deployed environments. The existing Cloudflare frontend, Railway API, and test data become **staging**. Production is created separately and receives only approved production data.
 
 ## Canonical topology
 
 | Surface | Staging | Production |
 |---|---|---|
-| Frontend | `https://staging.townhub.io` | `https://townhub.io` |
-| Frontend alias | None | `https://www.townhub.io` redirects to `https://townhub.io` |
-| API | `https://api-staging.townhub.io` | `https://api.townhub.io` |
+| Frontend | `https://staging.townhaven.io` | `https://townhaven.io` |
+| Frontend alias | None | `https://www.townhaven.io` redirects to `https://townhaven.io` |
+| API | `https://api-staging.townhaven.io` | `https://api.townhaven.io` |
 | Cloudflare | Existing Worker, renamed/labeled staging | Separate Worker and deploy environment |
 | Railway | Existing API service, labeled staging | Separate project/service |
-| PostgreSQL | Existing Supabase TownHub project (`eajzpwkodnglonzxocep`, `ca-central-1`) | TownHub Production Supabase project (`ubntmzbkxyqsvihojcfp`, `us-east-1`) |
+| PostgreSQL | Existing Supabase TownHaven project (`eajzpwkodnglonzxocep`, `ca-central-1`) | TownHaven Production Supabase project (`ubntmzbkxyqsvihojcfp`, `us-east-1`) |
 | Clerk | Development/staging instance | Production instance |
 | Stripe | Test mode; staging webhook destinations | Live mode; production webhook destinations |
 | Supabase storage | Staging project/bucket | Separate production project/bucket |
@@ -25,7 +25,7 @@ No database URL, secret key, webhook secret, storage service-role key, Clerk sec
 
 1. Record the current Cloudflare Worker, Railway service, database, domains, Clerk instance, Stripe mode/webhooks, Supabase bucket, notification providers, Sentry projects, and all build/runtime variables. Record names and last four characters or provider IDs—never copy secret values into documentation.
 2. Label or rename the existing Cloudflare and Railway resources as staging.
-3. Attach `staging.townhub.io` and `api-staging.townhub.io`.
+3. Attach `staging.townhaven.io` and `api-staging.townhaven.io`.
 4. Set `DEPLOYMENT_ENVIRONMENT=staging` and `NODE_ENV=production` on the API. “Staging” describes data/provider isolation; Express still uses production runtime safeguards.
 5. Set API `APP_BASE_URL` to the staging frontend and `NATIVE_ALLOWED_ORIGINS=capacitor://localhost`. Allow only the staging browser origin plus explicitly approved preview origins.
 6. Set frontend `VITE_API_BASE_URL` to the staging API, `VITE_DISTRIBUTION_CHANNEL=web`, the staging Clerk publishable key, and staging Sentry DSN.
@@ -53,11 +53,11 @@ Existing test data may remain in staging. Do not copy it into production unless 
 
 ## Create production
 
-1. Create a new Railway project/service for the production API and connect it only to the TownHub Production Supabase PostgreSQL database.
-2. Create a separate Cloudflare Worker/deploy environment, attach `townhub.io`, and redirect `www.townhub.io` to the apex domain.
+1. Create a new Railway project/service for the production API and connect it only to the TownHaven Production Supabase PostgreSQL database.
+2. Create a separate Cloudflare Worker/deploy environment, attach `townhaven.io`, and redirect `www.townhaven.io` to the apex domain.
 3. Create or select the Clerk production instance. Configure only production origins, redirects, native application details, Apple connection, and authorized support/admin accounts.
 4. Configure Stripe live mode. Create separate Connect and platform Billing webhook destinations pointing to the production API. Never reuse staging webhook secrets.
-5. Apply the reviewed schema and access controls to the TownHub Production Supabase project, enable managed database backups, and create separate production storage and provider credentials. Verify bucket access and deletion procedures. (Schema, access controls, storage, provider separation, R2 logical backups, and the 2026-07-15 restore drill are complete; provider PITR on a paid plan remains recommended.)
+5. Apply the reviewed schema and access controls to the TownHaven Production Supabase project, enable managed database backups, and create separate production storage and provider credentials. Verify bucket access and deletion procedures. (Schema, access controls, storage, provider separation, R2 logical backups, and the 2026-07-15 restore drill are complete; provider PITR on a paid plan remains recommended.)
 6. Configure verified production email/SMS identities, Sentry projects/releases, uptime monitors, log drain, alert recipients, job scheduler, and APNs credentials.
 7. Set `DEPLOYMENT_ENVIRONMENT=production`, production URLs, secrets, and build metadata.
 8. Run the production environment gates for the API and frontend before deployment.
@@ -136,28 +136,28 @@ Canonical branch mapping for automatic deploys:
 
 | Git branch | API (Railway) | Frontend (Cloudflare Workers Builds) |
 |---|---|---|
-| `main` | Production API (`api.townhub.io`) | Production Worker / custom domains `townhub.io` (+ `www` redirect) |
-| `develop` | Staging API (`api-staging.townhub.io`) | Staging Worker / custom domain `staging.townhub.io` |
+| `main` | Production API (`api.townhaven.io`) | Production Worker / custom domains `townhaven.io` (+ `www` redirect) |
+| `develop` | Staging API (`api-staging.townhaven.io`) | Staging Worker / custom domain `staging.townhaven.io` |
 
 ### Verified on 2026-07-15
 
 - Git branches `main` and `develop` both exist on `origin`.
-- Public health checks returned HTTP 200 for `https://api.townhub.io/health`, `https://api-staging.townhub.io/health`, `https://townhub.io/`, and `https://staging.townhub.io/` (rechecked later the same day).
-- Frontend isolation probe: `townhub.io` bundles `VITE` API origin `https://api.townhub.io`; `staging.townhub.io` bundles `https://api-staging.townhub.io`. Asset hashes differ between the two hosts.
-- API isolation probe: production `GET /api/businesses` returned 0 businesses; staging returned 3. Staging theme `platformName` is `ClayTownHub`; production theme has no pilot platform name.
+- Public health checks returned HTTP 200 for `https://api.townhaven.io/health`, `https://api-staging.townhaven.io/health`, `https://townhaven.io/`, and `https://staging.townhaven.io/` (rechecked later the same day).
+- Frontend isolation probe: `townhaven.io` bundles `VITE` API origin `https://api.townhaven.io`; `staging.townhaven.io` bundles `https://api-staging.townhaven.io`. Asset hashes differ between the two hosts.
+- API isolation probe: production `GET /api/businesses` returned 0 businesses; staging returned 3. Staging theme `platformName` is `TownHaven`; production theme has no pilot platform name.
 - Repo `wrangler.toml` defines `[env.staging]` → `townhub-app` and `[env.production]` → `townhub-production`.
 - **Cloudflare Workers Builds (dashboard-confirmed):**
-  - `townhub-production`: Git `rtlane84/townhub-app`; build `pnpm --filter @workspace/townhub run build`; deploy `npx wrangler deploy --env production`; production branch `main`; non-production branch builds **Disabled**; build vars include `DEPLOYMENT_ENVIRONMENT=production`, `VITE_API_BASE_URL=https://api.townhub.io`, `VITE_PUBLIC_WEB_URL=https://townhub.io`, `VITE_DISTRIBUTION_CHANNEL=web`, `VITE_CLERK_PUBLISHABLE_KEY` (`pk_live_…`), and `VITE_SENTRY_DSN`.
-  - `townhub-app` (staging): same repo; same build command; deploy `npx wrangler deploy --env staging`; production branch `develop`; non-production branch builds **Enabled** (tighten later if preview deploys to staging are unwanted); build vars include `DEPLOYMENT_ENVIRONMENT=staging`, `VITE_API_BASE_URL=https://api-staging.townhub.io`, `VITE_PUBLIC_WEB_URL=https://staging.townhub.io`, `VITE_DISTRIBUTION_CHANNEL=web`, `VITE_CLERK_PUBLISHABLE_KEY` (`pk_test_…`), and `VITE_SENTRY_DSN`.
+  - `townhub-production`: Git `rtlane84/townhub-app`; build `pnpm --filter @workspace/townhub run build`; deploy `npx wrangler deploy --env production`; production branch `main`; non-production branch builds **Disabled**; build vars include `DEPLOYMENT_ENVIRONMENT=production`, `VITE_API_BASE_URL=https://api.townhaven.io`, `VITE_PUBLIC_WEB_URL=https://townhaven.io`, `VITE_DISTRIBUTION_CHANNEL=web`, `VITE_CLERK_PUBLISHABLE_KEY` (`pk_live_…`), and `VITE_SENTRY_DSN`.
+  - `townhub-app` (staging): same repo; same build command; deploy `npx wrangler deploy --env staging`; production branch `develop`; non-production branch builds **Enabled** (tighten later if preview deploys to staging are unwanted); build vars include `DEPLOYMENT_ENVIRONMENT=staging`, `VITE_API_BASE_URL=https://api-staging.townhaven.io`, `VITE_PUBLIC_WEB_URL=https://staging.townhaven.io`, `VITE_DISTRIBUTION_CHANNEL=web`, `VITE_CLERK_PUBLISHABLE_KEY` (`pk_test_…`), and `VITE_SENTRY_DSN`.
 
 ### Railway branch watches (confirmed 2026-07-15)
 
-Single Railway project **TownHub** (`9b013f1f-…`) with two environments and one API service:
+Single Railway project **TownHaven** (`9b013f1f-…`) with two environments and one API service:
 
 | Environment | Custom domain | Git branch trigger | Identity / payments | Database project |
 |---|---|---|---|---|
-| `production` | `api.townhub.io` | `main` | Clerk `pk_live_` / Stripe live | Supabase `ubntmzbkxyqsvihojcfp` |
-| `staging` | `api-staging.townhub.io` | `develop` (was incorrectly `main`; updated) | Clerk `pk_test_` / Stripe test | Supabase `eajzpwkodnglonzxocep` |
+| `production` | `api.townhaven.io` | `main` | Clerk `pk_live_` / Stripe live | Supabase `ubntmzbkxyqsvihojcfp` |
+| `staging` | `api-staging.townhaven.io` | `develop` (was incorrectly `main`; updated) | Clerk `pk_test_` / Stripe test | Supabase `eajzpwkodnglonzxocep` |
 
 - Staging and production do **not** share `DATABASE_URL` hosts, Supabase project IDs, Clerk keys, Stripe keys, or webhook signing secrets (compared via dashboard session without copying secret values).
 - Railway service Settings UI showed **GitHub Repo not found** for the branch picker in both environments even while deploys and GraphQL `deploymentTriggers` remained readable; branch wiring was verified/updated through the authenticated Railway GraphQL API (`deploymentTriggerUpdate`).
@@ -167,4 +167,4 @@ Single Railway project **TownHub** (`9b013f1f-…`) with two environments and on
 
 1. **Optional Cloudflare harden:** disable non-production branch builds on `townhub-app` if only `develop` should update staging.
 2. **Optional Railway UI:** reopen service Source → reconnect GitHub if the branch picker still shows **GitHub Repo not found** (triggers are already correct; staging UI now shows `develop`).
-3. **Better Stack (OPS-002) complete:** uptime monitors live (owner ack’d test alert); Errors DSNs on Railway + Cloudflare Builds; Locomotive sidecars ship API logs from staging and production into Telemetry source `TownHub Railway API logs` (Live Tail verified). Free status page deferred (billing gate). GitHub Actions still probes every 5 minutes; Railway `healthcheckPath=/health` is set on staging and production.
+3. **Better Stack (OPS-002) complete:** uptime monitors live (owner ack’d test alert); Errors DSNs on Railway + Cloudflare Builds; Locomotive sidecars ship API logs from staging and production into Telemetry source `TownHaven Railway API logs` (Live Tail verified). Free status page deferred (billing gate). GitHub Actions still probes every 5 minutes; Railway `healthcheckPath=/health` is set on staging and production.

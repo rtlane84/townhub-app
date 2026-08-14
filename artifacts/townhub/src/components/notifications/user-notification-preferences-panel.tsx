@@ -33,7 +33,7 @@ type Props = {
 
 export function UserNotificationPreferencesPanel({
   audience = "BUSINESS_OWNER",
-  title = "TownHub App Push",
+  title = "TownHaven App Push",
   description = "New order and appointment alerts on this phone.",
   enableDescription,
   acceptsAppointments = false,

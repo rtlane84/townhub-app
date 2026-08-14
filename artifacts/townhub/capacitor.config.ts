@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "com.lanetech.townhub",
-  appName: "TownHub",
+  appName: "TownHaven",
   webDir: "dist/public",
   server: {
     // Store builds load the reviewed Vite bundle copied by `cap sync`.

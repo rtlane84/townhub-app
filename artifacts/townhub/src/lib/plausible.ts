@@ -1,8 +1,8 @@
 import { init } from "@plausible-analytics/tracker";
 
-const PRODUCTION_DOMAIN = "townhub.io";
+const PRODUCTION_DOMAIN = "townhaven.io";
 
-/** Init Plausible only on production web builds (townhub.io), not staging or local. */
+/** Init Plausible only on production web builds (townhaven.io), not staging or local. */
 export function initPlausible(): void {
   if (typeof window === "undefined") return;
 

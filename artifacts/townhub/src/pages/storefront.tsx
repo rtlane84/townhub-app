@@ -366,7 +366,7 @@ export default function Storefront() {
   async function handleShare() {
     const result = await shareStorefrontPage({
       title: b.name,
-      text: `Check out ${b.name} on TownHub`,
+      text: `Check out ${b.name} on TownHaven`,
       url: pageUrl,
     });
     if (result === "copied") {

@@ -108,7 +108,7 @@ export async function pageApiJson<T>(
       throw new Error(
         `Expected JSON from ${requestUrl} but got HTML (${result.status}, ` +
           `${result.contentType ?? "no content-type"}). ` +
-          `Set E2E_API_URL to the API host (e.g. https://api-staging.townhub.io), not the SPA.`,
+          `Set E2E_API_URL to the API host (e.g. https://api-staging.townhaven.io), not the SPA.`,
       );
     }
 

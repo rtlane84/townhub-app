@@ -1,6 +1,6 @@
 # Testing
 
-How to run TownHub tests and what each layer covers.
+How to run TownHaven tests and what each layer covers.
 
 ## Quick commands
 
@@ -68,7 +68,7 @@ Match validation to risk (from [AGENTS.md](../AGENTS.md)):
 
 - API route / auth / checkout → API tests + relevant Playwright when env supports it
 - Shared OpenAPI contract → codegen + library and affected package typechecks + targeted tests
-- Frontend page/component → TownHub typecheck + targeted unit test; visual check when UI changes
+- Frontend page/component → TownHaven typecheck + targeted unit test; visual check when UI changes
 - Docs only → review links/commands; `git diff --check`
 
 Do not fabricate a passing result when a required secret or service is unavailable — run every safe local check and state the limitation.

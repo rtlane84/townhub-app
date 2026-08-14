@@ -11,9 +11,9 @@ describe("resolvePublicStorefrontOrigin", () => {
     assert.equal(
       resolvePublicStorefrontOrigin(
         "capacitor://localhost",
-        "https://townhub.io/",
+        "https://townhaven.io/",
       ),
-      "https://townhub.io",
+      "https://townhaven.io",
     );
   });
 
@@ -23,8 +23,8 @@ describe("resolvePublicStorefrontOrigin", () => {
       "http://localhost:23032",
     );
     assert.equal(
-      resolvePublicStorefrontOrigin("https://staging.townhub.io", null),
-      "https://staging.townhub.io",
+      resolvePublicStorefrontOrigin("https://staging.townhaven.io", null),
+      "https://staging.townhaven.io",
     );
   });
 
@@ -41,9 +41,9 @@ describe("buildPublicStorefrontUrl", () => {
     assert.equal(
       buildPublicStorefrontUrl("clay-diner", {
         runtimeOrigin: "capacitor://localhost",
-        publicWebBaseUrl: "https://townhub.io",
+        publicWebBaseUrl: "https://townhaven.io",
       }),
-      "https://townhub.io/businesses/clay-diner",
+      "https://townhaven.io/businesses/clay-diner",
     );
   });
 
@@ -51,9 +51,9 @@ describe("buildPublicStorefrontUrl", () => {
     assert.equal(
       buildPublicStorefrontDisplayUrl("clay-diner", {
         runtimeOrigin: "capacitor://localhost",
-        publicWebBaseUrl: "https://townhub.io",
+        publicWebBaseUrl: "https://townhaven.io",
       }),
-      "townhub.io/businesses/clay-diner",
+      "townhaven.io/businesses/clay-diner",
     );
   });
 });

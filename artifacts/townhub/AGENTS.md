@@ -1,4 +1,4 @@
-# TownHub Frontend and Capacitor Guidance
+# TownHaven Frontend and Capacitor Guidance
 
 These instructions refine the root `AGENTS.md` for the production React application and its Capacitor iOS shell. `artifacts/mockup-sandbox` is separate and is not a source for production behavior.
 

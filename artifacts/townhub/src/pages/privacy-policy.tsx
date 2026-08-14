@@ -1,16 +1,16 @@
 import { Link } from "wouter";
 
-const effectiveDate = "July 26, 2026";
+const effectiveDate = "August 9, 2026";
 
 export default function PrivacyPolicy() {
   return (
     <article className="container mx-auto max-w-3xl px-4 py-10 sm:py-14">
       <p className="text-sm text-muted-foreground">Effective {effectiveDate}</p>
-      <h1 className="mt-2 font-serif text-3xl font-bold sm:text-4xl">TownHub Privacy Policy</h1>
+      <h1 className="mt-2 font-serif text-3xl font-bold sm:text-4xl">TownHaven Privacy Policy</h1>
       <div className="prose prose-slate mt-8 max-w-none dark:prose-invert">
         <p>
-          TownHub, operated by LaneTech, helps residents discover and transact with local
-          businesses. This policy explains the information TownHub handles and the choices
+          TownHaven is operated by LaneTech LLC. TownHaven helps residents discover and transact with
+          local businesses. This policy explains the information TownHaven handles and the choices
           available to you.
         </p>
 
@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
           <li>Account details, such as your name, email address, account identifier, and role.</li>
           <li>Order and appointment details, including contact information, items, fulfillment choices, and status.</li>
           <li>Business listing and owner-provided content, including business contact details, photos, products, hours, and locations.</li>
-          <li>Payment status and provider identifiers. TownHub does not store complete card numbers.</li>
+          <li>Payment status and provider identifiers. TownHaven does not store complete card numbers.</li>
           <li>Device tokens, notification preferences, diagnostics, security events, and usage information needed to operate and improve the service.</li>
           <li>
             Optional session diagnostics (including session replay of on-screen interactions) via Better Stack when enabled,
@@ -45,14 +45,14 @@ export default function PrivacyPolicy() {
 
         <h2>Cookies and analytics</h2>
         <p>
-          TownHub uses essential browser storage for sign-in, security, and cart functionality. We use
+          TownHaven uses essential browser storage for sign-in, security, and cart functionality. We use
           privacy-focused analytics to understand site performance and do not use advertising cookies or sell
           personal information for third-party behavioral advertising.
         </p>
 
         <h2>Retention and deletion</h2>
         <p>
-          We retain information while your account is active and as needed to operate TownHub, resolve
+          We retain information while your account is active and as needed to operate TownHaven, resolve
           disputes, prevent fraud, and meet tax, accounting, payment, and other legal obligations.
           You can initiate account deletion from Account settings while signed in. We may preserve
           transaction or business records when legally required and will explain any applicable retention.
@@ -68,7 +68,7 @@ export default function PrivacyPolicy() {
         <h2>Security and children</h2>
         <p>
           We use access controls, encryption in transit, provider security controls, and monitoring to
-          protect information. No system is completely secure. TownHub is not directed to children under 13.
+          protect information. No system is completely secure. TownHaven is not directed to children under 13.
         </p>
 
         <h2>Changes and contact</h2>
@@ -78,7 +78,7 @@ export default function PrivacyPolicy() {
         </p>
       </div>
       <Link href="/" className="mt-8 inline-flex text-sm font-medium text-primary hover:underline">
-        Return to TownHub
+        Return to TownHaven
       </Link>
     </article>
   );

@@ -48,7 +48,7 @@ export function AppMarketingHero() {
               <div className="absolute left-[38%] sm:left-[34%] md:left-[28%] top-[6%] rotate-6 z-0 opacity-95">
                 <PhoneFrame
                   src={businessDetail}
-                  alt="TownHub business storefront for a local bakery"
+                  alt="TownHaven business storefront for a local bakery"
                   size="lg"
                   loading="eager"
                   className={cn("w-[min(200px,52vw)] sm:w-[230px] md:w-[260px]")}
@@ -58,7 +58,7 @@ export function AppMarketingHero() {
               <div className="absolute left-0 sm:left-[2%] top-0 -rotate-2 z-10 motion-safe:transition-transform motion-safe:hover:-rotate-1 motion-safe:duration-700">
                 <PhoneFrame
                   src={heroHome}
-                  alt="TownHub home screen showing today's community highlights"
+                  alt="TownHaven home screen showing today's community highlights"
                   size="xl"
                   loading="eager"
                   className={cn(

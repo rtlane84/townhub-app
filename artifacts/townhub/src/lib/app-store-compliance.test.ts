@@ -85,4 +85,5 @@ describe("App Store compliance wiring", () => {
     assert.match(privacyManifest, /NSPrivacyCollectedDataTypeDeviceID/);
     assert.match(privacyManifest, /NSPrivacyCollectedDataTypePhotosorVideos/);
   });
+
 });

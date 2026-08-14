@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-TownHub serves public marketplace, customer, Business Hub, and admin workflows from `artifacts/townhub`, a responsive React/Vite application. The iOS project under `artifacts/townhub/ios` is a Capacitor shell that packages the reviewed Vite build and calls the selected remote API. Maintaining a second native implementation would split behavior and exceed the beta scope.
+TownHaven serves public marketplace, customer, Business Hub, and admin workflows from `artifacts/townhub`, a responsive React/Vite application. The iOS project under `artifacts/townhub/ios` is a Capacitor shell that packages the reviewed Vite build and calls the selected remote API. Maintaining a second native implementation would split behavior and exceed the beta scope.
 
 ## Decision
 

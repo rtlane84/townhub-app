@@ -19,7 +19,7 @@ export function TownhubLogoMark({
     <span className={cn("inline-flex items-center gap-2", className)}>
       <img
         src={townhubLogo}
-        alt="TownHub"
+        alt="TownHaven"
         width={sizePx}
         height={sizePx}
         className="shrink-0 object-contain"
@@ -33,7 +33,7 @@ export function TownhubLogoMark({
             wordmarkClassName,
           )}
         >
-          TownHub
+          TownHaven
         </span>
       ) : null}
     </span>

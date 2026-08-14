@@ -123,7 +123,7 @@ console.log(`Mockup files sharing production basenames: ${mockupOverlap.length}`
 if (includeBundle) {
   const bundle = largestEntryBundle();
   if (!bundle) {
-    hardFailures.push("frontend bundle not found; run the TownHub build first");
+    hardFailures.push("frontend bundle not found; run the TownHaven build first");
   } else {
     const displayPath = relative(workspaceRoot, bundle.path);
     console.log(`Largest entry bundle: ${bundle.bytes} bytes (${displayPath})`);

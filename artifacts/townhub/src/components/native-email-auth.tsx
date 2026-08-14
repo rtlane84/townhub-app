@@ -206,7 +206,7 @@ export function NativeEmailSignInForm({ className }: { className?: string }) {
           Sign in with email
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Use the email and password for your TownHub account.
+          Use the email and password for your TownHaven account.
         </p>
       </div>
       <div className="space-y-1.5">

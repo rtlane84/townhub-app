@@ -63,7 +63,7 @@ export function AppMarketingFeatureOverview() {
             <span className="italic text-townhub-blue">all in one place.</span>
           </h2>
           <p className="text-[17px] md:text-[18px] text-gray-600 font-sans">
-            TownHub brings local businesses, events, announcements, mobile vendors, and online
+            TownHaven brings local businesses, events, announcements, mobile vendors, and online
             ordering together in one convenient place.
           </p>
         </div>
@@ -132,11 +132,11 @@ export function AppMarketingFeatureOverview() {
           <DualPhonePair
             front={{
               src: businessDetail,
-              alt: "Local bakery storefront on TownHub",
+              alt: "Local bakery storefront on TownHaven",
             }}
             back={{
               src: orderLocal,
-              alt: "Order summary and pay at pickup on TownHub",
+              alt: "Order summary and pay at pickup on TownHaven",
             }}
             desktopShadowClassName="shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
             className="px-2 sm:px-4"

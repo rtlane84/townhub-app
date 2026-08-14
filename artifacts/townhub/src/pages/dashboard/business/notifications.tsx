@@ -382,7 +382,7 @@ export default function BusinessNotifications() {
           <h1 className="text-2xl font-serif font-bold">Notifications</h1>
           <p className="text-muted-foreground text-sm mt-1">
             Choose how your business receives new order and appointment alerts. Payment, billing, and
-            refund notices are always sent to the owner’s login email and by TownHub app push.
+            refund notices are always sent to the owner’s login email and by TownHaven app push.
           </p>
         </div>
 
@@ -761,7 +761,7 @@ export default function BusinessNotifications() {
 
         <UserNotificationPreferencesPanel
           audience="BUSINESS_OWNER"
-          title="TownHub App Push"
+          title="TownHaven App Push"
           description="New order and appointment alerts on this phone."
           acceptsAppointments={acceptsAppointments}
           enableDescription="Notify this phone when a new order is placed or an appointment is requested."

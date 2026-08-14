@@ -159,7 +159,7 @@ export function buildPublicHealthResponse(now = new Date()): PublicHealthRespons
 export function buildApplicationHealth(now = new Date()): ApplicationHealth {
   const environment = process.env.NODE_ENV?.trim() || "development";
   return {
-    name: process.env.APP_NAME?.trim() || "TownHub",
+    name: process.env.APP_NAME?.trim() || "TownHaven",
     environment,
     environmentLabel: environmentLabel(environment),
     version: process.env.APP_VERSION?.trim() || undefined,

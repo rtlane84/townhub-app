@@ -58,7 +58,7 @@ export type HelpSearchResults = HelpDirectory & {
 export const featuredVideos: HelpFeaturedVideo[] = [
   {
     id: "welcome",
-    title: "Welcome to TownHub",
+    title: "Welcome to TownHaven",
     description: "Tour local discovery, customer ordering, and the Business Hub.",
     duration: "4 min",
     audience: "all",
@@ -86,7 +86,7 @@ export const customerHelp: HelpDirectory = {
   categories: [
     {
       id: "discover",
-      title: "Discover TownHub",
+      title: "Discover TownHaven",
       description: "Find local businesses, services, events, and mobile stops.",
       guides: [
         {
@@ -104,7 +104,7 @@ export const customerHelp: HelpDirectory = {
         {
           id: "storefront-types",
           title: "Understand each kind of storefront",
-          summary: "TownHub businesses can sell items, accept appointment requests, or share information.",
+          summary: "TownHaven businesses can sell items, accept appointment requests, or share information.",
           steps: [
             "Ordering storefronts show a catalog and Add buttons when online ordering is available.",
             "Appointment storefronts let you request a service, preferred date, and time.",
@@ -148,7 +148,7 @@ export const customerHelp: HelpDirectory = {
           summary: "Review quantities and totals before checkout.",
           steps: [
             "Use the cart controls to change quantities or remove an item.",
-            "TownHub keeps one business in a cart at a time so payment, tax, and fulfillment stay with the correct business.",
+            "TownHaven keeps one business in a cart at a time so payment, tax, and fulfillment stay with the correct business.",
             "If you add from another business, confirm whether you want to clear the current cart first.",
           ],
           keywords: ["quantity", "remove", "clear cart", "multiple businesses"],
@@ -190,10 +190,10 @@ export const customerHelp: HelpDirectory = {
           summary: "Each business controls which payment methods it accepts.",
           steps: [
             "Choose online card payment or pay at pickup when the option appears.",
-            "Card payment opens secure Stripe Checkout for that business; return to TownHub after Stripe finishes.",
+            "Card payment opens secure Stripe Checkout for that business; return to TownHaven after Stripe finishes.",
             "Pay-at-pickup orders are created immediately with payment still due to the business.",
           ],
-          note: "TownHub never asks you to send card details to a business through messages or email.",
+          note: "TownHaven never asks you to send card details to a business through messages or email.",
           keywords: ["Stripe", "credit card", "cash", "in person", "pay later"],
         },
         {
@@ -201,9 +201,9 @@ export const customerHelp: HelpDirectory = {
           title: "Handle a canceled or delayed card checkout",
           summary: "A browser return alone does not mean payment succeeded.",
           steps: [
-            "Wait while TownHub confirms the payment after returning from Stripe.",
+            "Wait while TownHaven confirms the payment after returning from Stripe.",
             "If checkout was canceled or failed, return to the cart and try again; do not assume an order was placed.",
-            "If confirmation remains delayed, keep the page open briefly, then contact the business or TownHub support before paying a second time.",
+            "If confirmation remains delayed, keep the page open briefly, then contact the business or TownHaven support before paying a second time.",
           ],
           keywords: ["failed", "canceled", "pending", "confirming", "charged twice", "duplicate"],
         },
@@ -246,7 +246,7 @@ export const customerHelp: HelpDirectory = {
             "Ask the business about cancellation before it has prepared or delivered the order.",
             "Card refunds may take time to appear after the business issues them. Pay-at-pickup refunds are handled directly by the business.",
           ],
-          note: "TownHub support can investigate a platform or payment-status problem, but it does not decide a business's refund policy.",
+          note: "TownHaven support can investigate a platform or payment-status problem, but it does not decide a business's refund policy.",
           keywords: ["wrong item", "cancel", "refund", "money back", "contact business"],
         },
       ],
@@ -280,7 +280,7 @@ export const customerHelp: HelpDirectory = {
           summary: "Use Account for profile access and account-deletion requests.",
           steps: [
             "Open Account while signed in to manage your identity profile.",
-            "Use the account deletion section when you want TownHub to review and process deletion of your platform account.",
+            "Use the account deletion section when you want TownHaven to review and process deletion of your platform account.",
             "A deletion request does not replace contacting a business about an active order or appointment.",
           ],
           keywords: ["profile", "delete account", "privacy", "personal information"],
@@ -289,10 +289,10 @@ export const customerHelp: HelpDirectory = {
         {
           id: "who-to-contact",
           title: "Know who to contact",
-          summary: "Order questions go to the business; site and account problems go to TownHub support.",
+          summary: "Order questions go to the business; site and account problems go to TownHaven support.",
           steps: [
             "Contact the business for item availability, preparation, delivery, appointment, cancellation, and refund-policy questions.",
-            "Contact TownHub support for sign-in trouble, broken pages, missing confirmation access, or a platform payment-status concern.",
+            "Contact TownHaven support for sign-in trouble, broken pages, missing confirmation access, or a platform payment-status concern.",
           ],
           keywords: ["support", "help", "problem", "business phone"],
         },
@@ -516,7 +516,7 @@ const businessOwnerHelp: HelpDirectory = {
     {
       id: "owner-payments-plans",
       title: "Payments and subscription",
-      description: "Keep customer payments separate from the plan paid to TownHub.",
+      description: "Keep customer payments separate from the plan paid to TownHaven.",
       guides: [
         {
           id: "owner-stripe-connect",
@@ -525,16 +525,16 @@ const businessOwnerHelp: HelpDirectory = {
           journeyStep: 13,
           steps: [
             "In Settings, start Stripe Connect onboarding and complete the requested business and payout details in the system browser.",
-            "Return to TownHub and confirm that charges are enabled; follow any verification warning shown in the Business Hub.",
+            "Return to TownHaven and confirm that charges are enabled; follow any verification warning shown in the Business Hub.",
             "Stripe Connect is not required for pay-at-pickup, appointment-only, or information-only operation.",
           ],
-          note: "Customer order payments go to the business's connected Stripe account. They are separate from the TownHub subscription.",
+          note: "Customer order payments go to the business's connected Stripe account. They are separate from the TownHaven subscription.",
           keywords: ["payout", "verification", "charges enabled", "bank", "customer payment"],
           link: { href: "/dashboard/business/settings", label: "Open payment settings" },
         },
         {
           id: "owner-subscription",
-          title: "Review the TownHub plan and billing",
+          title: "Review the TownHaven plan and billing",
           summary: "Understand the plan, trial, subscription state, and enabled features.",
           journeyStep: 14,
           steps: [
@@ -542,7 +542,7 @@ const businessOwnerHelp: HelpDirectory = {
             "For a paid plan, start the trial or subscription through secure Stripe Billing checkout when prompted.",
             "Use Manage Billing for invoices and payment-method updates; resolve past-due warnings to avoid feature loss.",
           ],
-          note: "Stripe Billing pays TownHub for the software plan. It is not the Stripe Connect account used for customer orders.",
+          note: "Stripe Billing pays TownHaven for the software plan. It is not the Stripe Connect account used for customer orders.",
           keywords: ["trial", "invoice", "renewal", "past due", "manage billing", "locked"],
           link: { href: "/dashboard/business/subscription", label: "Open Subscription" },
         },
@@ -649,7 +649,7 @@ const businessOwnerHelp: HelpDirectory = {
           summary: "Enable and test the channels that fit the business.",
           journeyStep: 21,
           steps: [
-            "Open Notifications and configure Email, SMS, free ntfy phone notifications, Discord, or TownHub App Push where available.",
+            "Open Notifications and configure Email, SMS, free ntfy phone notifications, Discord, or TownHaven App Push where available.",
             "Use each provider's test action after saving a valid destination or setup value.",
             "Enable In-shop sound for a local chime while Business Hub is open.",
           ],
@@ -728,7 +728,7 @@ const businessOwnerHelp: HelpDirectory = {
     {
       id: "connect-versus-billing",
       question: "What is the difference between Stripe Connect and Stripe Billing?",
-      answer: "Stripe Connect lets customers pay your business for orders. Stripe Billing is the separate subscription your business pays TownHub for its software plan.",
+      answer: "Stripe Connect lets customers pay your business for orders. Stripe Billing is the separate subscription your business pays TownHaven for its software plan.",
       keywords: ["customer payments", "plan", "payout"],
     },
     {
@@ -767,13 +767,13 @@ export function resolveBusinessOwnerHelpForDistribution(storeDistribution: boole
     "owner-subscription",
     (guide) => ({
       ...guide,
-      title: "Review the TownHub plan and status",
+      title: "Review the TownHaven plan and status",
       summary: "See the selected plan, subscription status, and enabled features.",
       steps: [
         "Open Business Hub → Subscription to review the current plan, status, and enabled features.",
         "Subscription purchases and changes are not available inside this app.",
-        "Tap Manage on the web to open the TownHub website in your browser, then sign in with the same account to subscribe or update billing.",
-        "If your business was recently approved, you may also follow the secure setup instructions sent to the account email, or contact TownHub support when the subscription needs attention.",
+        "Tap Manage on the web to open the TownHaven website in your browser, then sign in with the same account to subscribe or update billing.",
+        "If your business was recently approved, you may also follow the secure setup instructions sent to the account email, or contact TownHaven support when the subscription needs attention.",
       ],
       note: "Return to Subscription after setup to confirm that the expected features are enabled.",
     }),

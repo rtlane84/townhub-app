@@ -1,4 +1,4 @@
-# TownHub Architecture
+# TownHaven Architecture
 
 System design reference for developers and AI assistants. For setup instructions see [SETUP.md](SETUP.md). For security rules see [../SECURITY.md](../SECURITY.md).
 
@@ -6,7 +6,7 @@ System design reference for developers and AI assistants. For setup instructions
 
 ## Overview
 
-TownHub is a contract-first monorepo:
+TownHaven is a contract-first monorepo:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -224,7 +224,7 @@ Guide: [STRIPE_SETUP.md](STRIPE_SETUP.md).
 
 ## Stripe Billing (Platform Subscriptions)
 
-Businesses pay TownHub for subscription plans. Uses the same platform Stripe account (not connected accounts).
+Businesses pay TownHaven for subscription plans. Uses the same platform Stripe account (not connected accounts).
 
 ```text
 Admin assigns plan OR business checks out via /subscription/checkout
@@ -282,9 +282,9 @@ Fire-and-forget delivery via `notification-service.ts` (and related orchestrator
 | Discord / ntfy | Per-business webhook / topic | Business Hub → Notifications |
 | Push (iOS) | APNs | `APNS_*` — see [NOTIFICATIONS.md](NOTIFICATIONS.md) |
 
-**Operational owner alerts** (new order, appointment request): Email / SMS / Discord / ntfy / TownHub App Push each have a single **Enable** control.
+**Operational owner alerts** (new order, appointment request): Email / SMS / Discord / ntfy / TownHaven App Push each have a single **Enable** control.
 
-**Critical Stripe / payment alerts** (refund failed, Connect unhealthy): always owner email + TownHub app push; never SMS/Discord/ntfy; persistent Hub banner while Connect is `pending`/`restricted`.
+**Critical Stripe / payment alerts** (refund failed, Connect unhealthy): always owner email + TownHaven app push; never SMS/Discord/ntfy; persistent Hub banner while Connect is `pending`/`restricted`.
 
 Guide: [NOTIFICATIONS.md](NOTIFICATIONS.md), including live Business Hub alerts.
 

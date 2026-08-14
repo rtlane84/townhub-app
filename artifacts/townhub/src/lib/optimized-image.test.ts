@@ -10,7 +10,7 @@ describe("optimized-image", () => {
   const supabaseUrl =
     "https://example.supabase.co/storage/v1/object/public/media/platform/hero.png";
 
-  it("detects TownHub media URLs", () => {
+  it("detects TownHaven media URLs", () => {
     assert.equal(isOptimizableMediaUrl(supabaseUrl), true);
     assert.equal(isOptimizableMediaUrl("/api/media/files/hero.png"), true);
     assert.equal(isOptimizableMediaUrl("https://cdn.example.com/hero.png"), false);

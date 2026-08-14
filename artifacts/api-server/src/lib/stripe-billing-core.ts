@@ -111,7 +111,7 @@ export function mapStripeSubscriptionStatus(
 }
 
 /**
- * Maps Stripe subscription state to TownHub status.
+ * Maps Stripe subscription state to TownHaven status.
  * When cancel_at_period_end is set, access continues until period end (ACTIVE/TRIAL).
  */
 export function resolveSubscriptionStatusFromStripe(

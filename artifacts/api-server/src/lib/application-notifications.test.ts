@@ -45,7 +45,7 @@ describe("application approved emails", () => {
       }),
     );
 
-    assert.match(email.html, /Welcome to TownHub/);
+    assert.match(email.html, /Welcome to TownHaven/);
     assert.match(email.html, /Open Business Hub/);
     assert.match(email.html, /Next Steps/);
     assert.match(email.html, /Watch the Business Owner Quick Start video/);
@@ -89,7 +89,7 @@ describe("application rejected owner emails", () => {
       }),
     );
 
-    assert.match(email.subject, /Update on your TownHub application/i);
+    assert.match(email.subject, /Update on your TownHaven application/i);
     assert.match(email.subject, /Clay Diner/);
     assert.match(email.html, /Not approved/);
     assert.match(email.html, /We need a local phone number before approval/);

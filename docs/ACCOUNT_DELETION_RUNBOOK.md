@@ -1,6 +1,6 @@
 # Account Deletion Operations
 
-TownHub lets every signed-in user initiate account deletion from **Account → Delete TownHub account**. The request is recorded immediately and scheduled for processing within 30 days. Users can cancel while it remains pending.
+TownHaven lets every signed-in user initiate account deletion from **Account → Delete TownHaven account**. The request is recorded immediately and scheduled for processing within 30 days. Users can cancel while it remains pending.
 
 Account deletion is an operational workflow because customer orders, business ownership, Stripe subscriptions, refunds, disputes, tax records, and public business content can require different treatment. Do not mark a request complete until every applicable step below is verified.
 
@@ -31,7 +31,7 @@ For each pending request:
 1. Confirm the request ID, Clerk user ID, email snapshot, role, request date, and scheduled date.
 2. Check for business ownership, pending applications, active orders, refunds, disputes, and legal holds.
 3. For a business owner, decide with the owner whether each business is transferred to another verified owner or archived. Do not orphan an active business.
-4. Resolve any TownHub business subscription in Stripe Billing. Stripe Connect customer-payment records are a separate payment domain and must not be treated as the TownHub subscription.
+4. Resolve any TownHaven business subscription in Stripe Billing. Stripe Connect customer-payment records are a separate payment domain and must not be treated as the TownHaven subscription.
 5. Remove device tokens and notification preferences. Remove or anonymize personal profile and user-created content unless a documented legal or transactional retention requirement applies.
 6. Retain only the minimum order, refund, payment, tax, fraud-prevention, dispute, and audit records required by policy or law. Document the category, reason, and retention period; do not leave retained records publicly accessible.
 7. Delete the identity from Clerk. If the account used Sign in with Apple, verify that the Apple authorization/token is revoked as required by Apple before closing the request.
@@ -68,7 +68,7 @@ Then delete the Clerk user (Backend API `DELETE /users/{user_id}` or dashboard).
 
 ## Staging provider-cleanup rehearsal (2026-07-15)
 
-Customer-only path on staging (`api-staging.townhub.io` + staging Clerk/Postgres):
+Customer-only path on staging (`api-staging.townhaven.io` + staging Clerk/Postgres):
 
 | Step | Result |
 |---|---|

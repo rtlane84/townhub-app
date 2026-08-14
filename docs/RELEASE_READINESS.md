@@ -1,4 +1,4 @@
-# TownHub Release Readiness
+# TownHaven Release Readiness
 
 **Baseline commit:** `833f4f12`
 **Audit started:** July 14, 2026
@@ -19,7 +19,7 @@ closed only when its implementation and required validation are complete.
 | API tests | Pass | 453/453 across 146 suites when permitted to open the temporary localhost listener used by the rate-limit test (July 16) |
 | Production build | Pass | `pnpm run build` passed July 16; bundled Vite production build and unsigned iPhone-simulator Release build are also recorded |
 | Provider E2E | Pass for current web gate | 2026-07-16 staging: public **3/3**, owner **4/4**, admin **2/2**, hosted Stripe checkout **1/1**, and full refund **1/1** passed. The Stripe helper handles prefilled email summaries and the current agent-disclosure control. Broader public/guest/owner/admin **11/11** was recorded 2026-07-15. Signed archive and devices remain |
-| Physical iPhone | Pass (staging TF); production TF pending install smoke | Cap production auth verified 2026-07-15. Staging TestFlight exercised successfully by external testers before 2026-07-22. Production App Store Connect upload **1.0.0 (15)** completed 2026-07-22 from `main` (`v1.0.0` / `v1.0.0-build15`); binary targets `api.townhub.io` with `VITE_DISTRIBUTION_CHANNEL=app-store`. Remaining: install production TF build on device and re-smoke matrix against live data |
+| Physical iPhone | Pass (staging TF); production TF pending install smoke | Cap production auth verified 2026-07-15. Staging TestFlight exercised successfully by external testers before 2026-07-22. Production App Store Connect upload **1.0.0 (15)** completed 2026-07-22 from `main` (`v1.0.0` / `v1.0.0-build15`); binary targets `api.townhaven.io` with `VITE_DISTRIBUTION_CHANNEL=app-store`. Remaining: install production TF build on device and re-smoke matrix against live data |
 
 ## Release blockers
 
@@ -28,7 +28,7 @@ closed only when its implementation and required validation are complete.
 | IOS-001 | P0 | Native packaging | Capacitor `server.url` loads remotely deployed executable web code | TestFlight/App Store builds bundle reviewed Vite assets and call only the selected remote API | Complete |
 | IOS-002 | P0 | Account lifecycle | No in-app account-deletion workflow or API exists | Authenticated, idempotent deletion request and audited anonymization/provider cleanup flow | Complete: contract/API/UI/schema/runbook live; staging customer provider-cleanup rehearsal recorded 2026-07-15 (Clerk delete, token/pref purge, anonymize+DISABLE, request COMPLETED); owner/Stripe/Apple paths remain checklist-driven for first real case |
 | IOS-003 | P0 | Authentication | iOS offers Google social login without Sign in with Apple | Equivalent Sign in with Apple path configured through Clerk and native return flow | Complete: native ASAuthorization Apple + GIDSignIn Google with Clerk token exchange; Production returning Apple + Google new/returning verified 2026-07-15 (SignIn-first + fresh SignUp token; bot CAPTCHA off for Cap); brand-new Apple still needs a second Apple ID for formal smoke |
-| IOS-004 | P0 | Privacy | No app privacy manifest, legal routes, or verified App Store privacy inventory | Privacy manifest, privacy/terms/support pages, retention policy, and accurate disclosures | Complete: routes + PrivacyInfo; App Privacy published on TownHub Local (`6791258844`) 2026-07-15 (see `docs/APP_STORE_PRIVACY.md`); soft follow-ups = first-archive Privacy Report + optional counsel |
+| IOS-004 | P0 | Privacy | No app privacy manifest, legal routes, or verified App Store privacy inventory | Privacy manifest, privacy/terms/support pages, retention policy, and accurate disclosures | Complete: routes + PrivacyInfo; App Privacy published on TownHaven Local (`6791258844`) 2026-07-15 (see `docs/APP_STORE_PRIVACY.md`); soft follow-ups = first-archive Privacy Report + optional counsel |
 | IOS-005 | P0 | Store billing | Owner Stripe Billing subscribe/change/portal flows are reachable from the shared app | Store builds retain plan status but suppress owner SaaS purchase and billing-management calls to action | Complete |
 | ENV-001 | P0 | Environments | Staging and production isolation is not implemented or verified | Separate domains, data, credentials, webhooks, storage, identity, payments, push, and monitoring | Complete: domains/data/Clerk/Stripe/Supabase isolation verified; Cloudflare Builds `develop`→`townhub-app` / `main`→`townhub-production`; Railway staging trigger set to `develop`, production remains `main`; production Google OAuth custom credentials + consent published 2026-07-15 |
 | DB-001 | P0 | Database security | Supabase reported RLS disabled and broad `anon`/`authenticated` access on the staging public schema | Remove public PostgREST access or enable reviewed RLS policies in staging, verify direct API access, and apply the locked-down posture to production | Complete: staging and production schema/RLS lockdowns applied and verified; API remains the application database boundary |
@@ -46,8 +46,8 @@ closed only when its implementation and required validation are complete.
 | Staging TestFlight | External testers reported no issues (operator confirmation) |
 | Promote | PR [#2](https://github.com/rtlane84/townhub-app/pull/2) merged to `main` (`50a88414`); git tag `v1.0.0` |
 | CI on promote | Typecheck/test/build + CodeQL green after link/regex fixes |
-| Production web/API smoke | `townhub.io` and `api.townhub.io` health/public routes returned 200; home/businesses/for-businesses/legal/sign-in verified |
-| Production iOS | `pnpm release:ios:production` → Archive → App Store Connect upload **1.0.0 (15)** (`9316a43e`, tag `v1.0.0-build15`); bundle contains `api.townhub.io` + `app-store` channel (not staging) |
+| Production web/API smoke | `townhaven.io` and `api.townhaven.io` health/public routes returned 200; home/businesses/for-businesses/legal/sign-in verified |
+| Production iOS | `pnpm release:ios:production` → Archive → App Store Connect upload **1.0.0 (15)** (`9316a43e`, tag `v1.0.0-build15`); bundle contains `api.townhaven.io` + `app-store` channel (not staging) |
 
 ### Next — production TestFlight + App Store
 
@@ -59,7 +59,7 @@ closed only when its implementation and required validation are complete.
 ### Physical-device smoke (minimum for archive)
 
 - [x] Staging TF: fresh launch / auth / browse exercised by testers (pre-promote)
-- [ ] Production TF build **15**: fresh launch; home shows ClayTownHub branding/data
+- [ ] Production TF build **15**: fresh launch; home shows TownHaven branding/data
 - [ ] Apple returning user; Google; email; sign-out → Account shows real sign-in buttons (not skeleton)
 - [ ] Guest or signed-in browse → cart → pay-at-pickup or card (system browser return)
 - [ ] My Orders / List Your Business when signed in
@@ -79,8 +79,8 @@ Full matrix remains in `docs/IOS_APP.md` (Required physical-device matrix).
 - Help content remains bundled; changes to its code or copy require a native
   app update even though the website can deploy independently.
 - The existing Cloudflare/Railway deployment and test data become staging.
-- Production uses `townhub.io`, with `www.townhub.io` redirected to the apex; staging uses `staging.townhub.io`.
-- The API uses `api.townhub.io` in production and `api-staging.townhub.io` in staging.
+- Production uses `townhaven.io`, with `www.townhaven.io` redirected to the apex; staging uses `staging.townhaven.io`.
+- The API uses `api.townhaven.io` in production and `api-staging.townhaven.io` in staging.
 - Production uses isolated provider resources, including a separate Supabase project in `us-east-1`.
 - Apple Developer enrollment is complete as an individual membership; Android follows iOS.
 

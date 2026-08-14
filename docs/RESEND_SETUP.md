@@ -1,10 +1,10 @@
 # Resend Email Setup
 
-TownHub sends transactional email through [Resend](https://resend.com) when configured. Without it, notifications are still written to the database but **not delivered** (status `LOGGED`).
+TownHaven sends transactional email through [Resend](https://resend.com) when configured. Without it, notifications are still written to the database but **not delivered** (status `LOGGED`).
 
 Resend is preferred over SMTP when `RESEND_API_KEY` is set.
 
-## What TownHub sends
+## What TownHaven sends
 
 See **[NOTIFICATIONS.md](./NOTIFICATIONS.md)** for the full order lifecycle flow (customer email/SMS, business alerts, triggers, and link rules).
 
@@ -16,7 +16,7 @@ Summary:
 | Order status change | Customer | Email + SMS per lifecycle event |
 | New order | Business owner | Email / SMS / Discord / ntfy when that channel’s **Enable** is on |
 | New appointment request | Business owner | Same channels when Enable is on and appointments are enabled |
-| Refund failed / Stripe Connect issue | Business owner | **Email + TownHub app push only** (mandatory; ignores Email Enable) |
+| Refund failed / Stripe Connect issue | Business owner | **Email + TownHaven app push only** (mandatory; ignores Email Enable) |
 
 Operational owner alerts are configured under **Business Hub → Notifications** (one Enable per channel). Critical payment alerts cannot be turned off there — see [NOTIFICATIONS.md](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
 
@@ -50,7 +50,7 @@ Production email should come from **your** domain (e.g. `orders@yourtown.com`), 
 
 1. Resend → **API Keys** → **Create API Key**.
 2. Name it for your environment (e.g. `townhub-production`).
-3. Use **Sending access** (full access is not required for TownHub).
+3. Use **Sending access** (full access is not required for TownHaven).
 4. Copy the key once — it starts with `re_`.
 
 Store the key in Railway environment variables. **Never commit it to git.**
@@ -59,18 +59,18 @@ Store the key in Railway environment variables. **Never commit it to git.**
 
 ## 4. Set environment variables
 
-TownHub requires **both** variables for Resend to be considered configured:
+TownHaven requires **both** variables for Resend to be considered configured:
 
 | Variable | Required | Example | Notes |
 |----------|----------|---------|-------|
 | `RESEND_API_KEY` | Yes | `re_...` | API key from step 3 |
-| `RESEND_FROM` | Yes | `TownHub <orders@yourtown.com>` | Must use an address on your **verified** domain |
+| `RESEND_FROM` | Yes | `TownHaven <orders@yourtown.com>` | Must use an address on your **verified** domain |
 
 Add to `.env` locally or your host’s secret store:
 
 ```bash
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxx
-RESEND_FROM=TownHub <orders@yourtown.com>
+RESEND_FROM=TownHaven <orders@yourtown.com>
 ```
 
 `RESEND_FROM` may be a plain address (`orders@yourtown.com`) or include a display name as shown above.
@@ -81,13 +81,13 @@ If `RESEND_API_KEY` is set but `RESEND_FROM` is missing, email is treated as **n
 
 **Customer problem reports:** `POST /api/support/reports` emails the support inbox. Set optional `SUPPORT_INBOX_EMAIL` to override the default (`Ronnie@LaneTechWV.com`). Delivery uses the same Resend/SMTP configuration.
 
-### Inbound mail (replies to `updates@townhub.io`)
+### Inbound mail (replies to `updates@townhaven.io`)
 
-Resend only **sends** TownHub transactional mail. Routing replies or other inbound messages for addresses on `townhub.io` is DNS / mailbox configuration, not an app setting.
+Resend only **sends** TownHaven transactional mail. Routing replies or other inbound messages for addresses on `townhaven.io` is DNS / mailbox configuration, not an app setting.
 
-To forward `updates@townhub.io` → `ronnie@lanetechwv.com`:
+To forward `updates@townhaven.io` → `ronnie@lanetechwv.com`:
 
-1. Prefer **Cloudflare Email Routing** (if DNS for `townhub.io` is on Cloudflare): Email → Routing → create address `updates@townhub.io` → destination `ronnie@lanetechwv.com` (verify the destination once).
+1. Prefer **Cloudflare Email Routing** (if DNS for `townhaven.io` is on Cloudflare): Email → Routing → create address `updates@townhaven.io` → destination `ronnie@lanetechwv.com` (verify the destination once).
 2. Or create the mailbox / alias in Google Workspace (or your mail host) and set a forward to `ronnie@lanetechwv.com`.
 3. Keep Resend’s domain DNS (SPF/DKIM) intact so outbound `RESEND_FROM` still verifies.
 

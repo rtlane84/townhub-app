@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Repository branding examples, development fixtures, and tests use Clay and Clay businesses. TownHub is intended to support many localities eventually, but the current beta strategy is to validate the product in one concentrated launch market before expanding.
+Repository branding examples, development fixtures, and tests use Clay and Clay businesses. TownHaven is intended to support many localities eventually, but the current beta strategy is to validate the product in one concentrated launch market before expanding.
 
 ## Decision
 

@@ -5,7 +5,7 @@
  * tag embeds Sentry and sharing the global instance corrupts both. When the
  * JS token is set, skip VITE_SENTRY_DSN init in sentry.ts.
  *
- * Operator setup: Better Stack → Errors → TownHub Frontend → Frontend tab
+ * Operator setup: Better Stack → Errors → TownHaven Frontend → Frontend tab
  * (or RUM → Connect application) → copy token into VITE_BETTERSTACK_JS_TOKEN.
  */
 

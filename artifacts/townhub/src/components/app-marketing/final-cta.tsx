@@ -19,7 +19,7 @@ export function AppMarketingFinalCta() {
               Your community is waiting.
             </h2>
             <p className="text-[17px] md:text-[18px] text-gray-600 mb-10 max-w-md mx-auto lg:mx-0 font-sans">
-              Download TownHub and discover what&apos;s happening close to home.
+              Download TownHaven and discover what&apos;s happening close to home.
             </p>
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4">
               <AppStoreButton />
@@ -40,7 +40,7 @@ export function AppMarketingFinalCta() {
               <div className="absolute left-[38%] sm:left-[34%] md:left-[28%] top-[8%] rotate-6 z-0 opacity-95">
                 <PhoneFrame
                   src={businessDetail}
-                  alt="Featured local business on TownHub"
+                  alt="Featured local business on TownHaven"
                   size="lg"
                   className={cn("w-[min(190px,50vw)] sm:w-[220px] md:w-[250px]")}
                 />
@@ -48,7 +48,7 @@ export function AppMarketingFinalCta() {
               <div className="absolute left-0 sm:left-[2%] top-0 -rotate-2 z-10">
                 <PhoneFrame
                   src={heroHome}
-                  alt="TownHub home screen"
+                  alt="TownHaven home screen"
                   size="xl"
                   className={cn(
                     "w-[min(260px,68vw)] sm:w-[min(280px,72vw)] md:w-[min(300px,78vw)] max-w-[320px]",

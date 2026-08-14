@@ -21,7 +21,7 @@ import {
 import type { EmailContent, SubscriptionNotificationData, SubscriptionNotificationEvent } from "./types";
 
 const GRACE_PERIOD_NOTE =
-  "TownHub keeps your subscription active while Stripe retries payment over the next several days. Update your payment method soon to avoid losing access to paid features.";
+  "TownHaven keeps your subscription active while Stripe retries payment over the next several days. Update your payment method soon to avoid losing access to paid features.";
 
 function formatSubscriptionDate(value?: Date | string | null): string {
   if (!value) return "—";
@@ -162,14 +162,14 @@ function buildSubscriptionEmail(data: SubscriptionNotificationData, config: Subs
 export function buildSubscriptionWelcomeEmail(data: SubscriptionNotificationData): EmailContent {
   const isTrial = data.statusLabel.toLowerCase().includes("trial");
   return buildSubscriptionEmail(data, {
-    subject: `Welcome to TownHub — ${data.planName} plan`,
+    subject: `Welcome to TownHaven — ${data.planName} plan`,
     preheader: `Your ${data.planName} subscription for ${data.businessName} is ready.`,
-    heading: "Welcome to TownHub",
+    heading: "Welcome to TownHaven",
     badge: { label: isTrial ? "Trial" : "Active", tone: isTrial ? "warning" : "success" },
     introHtml: [
       renderParagraph(`Hi there,`),
       renderParagraph(
-        `Thanks for subscribing <strong>${data.businessName}</strong> to TownHub on the <strong>${data.planName}</strong> plan.`,
+        `Thanks for subscribing <strong>${data.businessName}</strong> to TownHaven on the <strong>${data.planName}</strong> plan.`,
       ),
       isTrial
         ? renderParagraph(
@@ -177,7 +177,7 @@ export function buildSubscriptionWelcomeEmail(data: SubscriptionNotificationData
           )
         : renderParagraph(`Your subscription is active and ready to use.`),
       renderMutedParagraph(
-        "TownHub sends onboarding and account updates like this one. Stripe continues to send official payment receipts and invoices separately.",
+        "TownHaven sends onboarding and account updates like this one. Stripe continues to send official payment receipts and invoices separately.",
       ),
     ].join(""),
     includeNextSteps: true,
@@ -189,7 +189,7 @@ export function buildSubscriptionWelcomeEmail(data: SubscriptionNotificationData
 
 export function buildSubscriptionTrialStartedEmail(data: SubscriptionNotificationData): EmailContent {
   return buildSubscriptionEmail(data, {
-    subject: `Your TownHub trial has started — ${data.planName}`,
+    subject: `Your TownHaven trial has started — ${data.planName}`,
     preheader: `Your ${data.planName} trial for ${data.businessName} is now active.`,
     heading: "Your trial has started",
     badge: { label: "Trial", tone: "warning" },
@@ -197,7 +197,7 @@ export function buildSubscriptionTrialStartedEmail(data: SubscriptionNotificatio
       renderParagraph(`Your <strong>${data.planName}</strong> trial for <strong>${data.businessName}</strong> is now active.`),
       data.trialEndsAt
         ? renderParagraph(`Your trial ends on <strong>${formatSubscriptionDate(data.trialEndsAt)}</strong>.`)
-        : renderParagraph("Use this time to set up your storefront and explore TownHub."),
+        : renderParagraph("Use this time to set up your storefront and explore TownHaven."),
       renderMutedParagraph("We'll remind you before your trial ends."),
     ].join(""),
     includeNextSteps: true,
@@ -219,7 +219,7 @@ export function buildSubscriptionTrialEndingEmail(
 
   return buildSubscriptionEmail(data, {
     subject,
-    preheader: `${data.businessName}'s TownHub trial ends ${daysRemaining === 1 ? "tomorrow" : "in 7 days"}.`,
+    preheader: `${data.businessName}'s TownHaven trial ends ${daysRemaining === 1 ? "tomorrow" : "in 7 days"}.`,
     heading,
     badge: { label: daysRemaining === 1 ? "Ends tomorrow" : "7 days left", tone: "warning" },
     introHtml: [
@@ -267,17 +267,17 @@ export function buildSubscriptionActivatedEmail(data: SubscriptionNotificationDa
 export function buildSubscriptionPaymentSucceededEmail(data: SubscriptionNotificationData): EmailContent {
   return buildSubscriptionEmail(data, {
     subject: `Payment received — ${data.planName}`,
-    preheader: `Your TownHub subscription payment for ${data.businessName} was successful.`,
+    preheader: `Your TownHaven subscription payment for ${data.businessName} was successful.`,
     heading: "Payment received",
     badge: { label: "Paid", tone: "success" },
     introHtml: [
       renderParagraph(
-        `Your recurring TownHub subscription payment for <strong>${data.businessName}</strong> on the <strong>${data.planName}</strong> plan was successful.`,
+        `Your recurring TownHaven subscription payment for <strong>${data.businessName}</strong> on the <strong>${data.planName}</strong> plan was successful.`,
       ),
       data.nextBillingDate
         ? renderParagraph(`Your next billing date is <strong>${formatSubscriptionDate(data.nextBillingDate)}</strong>.`)
         : "",
-      renderMutedParagraph("This is a TownHub account update — not a receipt. Stripe sends the official receipt and invoice separately."),
+      renderMutedParagraph("This is a TownHaven account update — not a receipt. Stripe sends the official receipt and invoice separately."),
     ].join(""),
     detailOptions: { includeTrialEnd: false, includeAmount: true },
     actionLabel: "Manage Billing",
@@ -289,7 +289,7 @@ export function buildSubscriptionPaymentSucceededEmail(data: SubscriptionNotific
 export function buildSubscriptionPaymentFailedEmail(data: SubscriptionNotificationData): EmailContent {
   return buildSubscriptionEmail(data, {
     subject: `Action required — payment failed for ${data.businessName}`,
-    preheader: `Update your payment method to keep ${data.businessName} on TownHub.`,
+    preheader: `Update your payment method to keep ${data.businessName} on TownHaven.`,
     heading: "Payment failed",
     badge: { label: "Past due", tone: "danger" },
     introHtml: [
@@ -311,7 +311,7 @@ export function buildSubscriptionPaymentFailedEmail(data: SubscriptionNotificati
 export function buildSubscriptionCancelScheduledEmail(data: SubscriptionNotificationData): EmailContent {
   return buildSubscriptionEmail(data, {
     subject: `Cancellation scheduled — ${data.businessName}`,
-    preheader: `${data.businessName}'s TownHub subscription is scheduled to cancel.`,
+    preheader: `${data.businessName}'s TownHaven subscription is scheduled to cancel.`,
     heading: "Cancellation scheduled",
     badge: { label: "Canceling", tone: "warning" },
     introHtml: [
@@ -333,12 +333,12 @@ export function buildSubscriptionCancelScheduledEmail(data: SubscriptionNotifica
 export function buildSubscriptionCanceledEmail(data: SubscriptionNotificationData): EmailContent {
   return buildSubscriptionEmail(data, {
     subject: `Subscription ended — ${data.businessName}`,
-    preheader: `${data.businessName}'s TownHub subscription has ended.`,
+    preheader: `${data.businessName}'s TownHaven subscription has ended.`,
     heading: "Subscription ended",
     badge: { label: "Canceled", tone: "neutral" },
     introHtml: [
       renderParagraph(
-        `The TownHub subscription for <strong>${data.businessName}</strong> on the <strong>${data.planName}</strong> plan has ended.`,
+        `The TownHaven subscription for <strong>${data.businessName}</strong> on the <strong>${data.planName}</strong> plan has ended.`,
       ),
       renderParagraph("Paid features have been disabled. Resubscribe anytime to restore access."),
     ].join(""),
@@ -353,12 +353,12 @@ export function buildSubscriptionCanceledEmail(data: SubscriptionNotificationDat
 export function buildSubscriptionExpiredEmail(data: SubscriptionNotificationData): EmailContent {
   return buildSubscriptionEmail(data, {
     subject: `Subscription expired — ${data.businessName}`,
-    preheader: `${data.businessName}'s TownHub subscription expired after failed payments.`,
+    preheader: `${data.businessName}'s TownHaven subscription expired after failed payments.`,
     heading: "Subscription expired",
     badge: { label: "Expired", tone: "danger" },
     introHtml: [
       renderParagraph(
-        `The TownHub subscription for <strong>${data.businessName}</strong> expired after repeated failed payments.`,
+        `The TownHaven subscription for <strong>${data.businessName}</strong> expired after repeated failed payments.`,
       ),
       renderParagraph("Paid features have been disabled. Update your payment method and resubscribe to restore access."),
     ].join(""),

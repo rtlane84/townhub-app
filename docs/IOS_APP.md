@@ -1,6 +1,8 @@
-# TownHub iOS App (Capacitor)
+# TownHaven iOS App (Capacitor)
 
-TownHub iOS is a Capacitor shell around the responsive React application. App Store builds package the reviewed Vite assets inside the native bundle and call a selected remote API. They do not use Capacitor `server.url` or download the deployed web application as executable UI.
+TownHaven iOS is a Capacitor shell around the responsive React application. App Store builds package the reviewed Vite assets inside the native bundle and call a selected remote API. They do not use Capacitor `server.url` or download the deployed web application as executable UI.
+
+The TownHaven rebrand intentionally retains bundle ID `com.lanetech.townhub` and callback scheme `townhub://` so the live app updates in place. Already-installed TownHub builds continue using `api.townhub.io`; keep that hostname routed to the same production API as `api.townhaven.io`. See [TOWNHAVEN_REBRAND_RUNBOOK.md](./TOWNHAVEN_REBRAND_RUNBOOK.md).
 
 ## Prerequisites
 
@@ -90,7 +92,7 @@ Apple uses the **native `ASAuthorization` sheet** — no browser, no redirect:
 
 - **Clerk → Apple connection → enable "Use custom credentials"** and add the Apple **Services ID**, **Team ID**, **Key ID**, and **.p8 key**. Without custom credentials Clerk uses shared dev credentials whose `aud` won't match the app's identity token, and the exchange fails.
 - **Apple Developer:** a **Services ID** and a **Sign in with Apple key (.p8)** tied to bundle `com.lanetech.townhub`. The **Sign in with Apple** capability/entitlement is already in `App.entitlements`.
-- Configure Apple private-email relay for TownHub sender domains (Hide My Email).
+- Configure Apple private-email relay for TownHaven sender domains (Hide My Email).
 - **Production bot sign-up protection / CAPTCHA must stay off** for the Capacitor app (Turnstile fails in WKWebView and blocks first-time Apple sign-up).
 - Add `capacitor://localhost` to the Clerk instance **allowed_origins** so the WebView can load Clerk.
 
@@ -118,7 +120,7 @@ Without those env vars the Google button still appears but shows a configuration
 
 The iOS app includes the customer marketplace, Business Hub, and role-protected admin dashboard. Customer checkout for physical goods/services remains available.
 
-TownHub owner SaaS billing is read-only in store distributions:
+TownHaven owner SaaS billing is read-only in store distributions:
 
 - Owners can see the assigned plan, status, enabled features, and renewal/access dates.
 - In-app Subscribe, Start Trial, Change Plan, Stripe Billing portal, and billing deep-link actions remain suppressed (no Stripe Billing CTAs inside the Capacitor shell).
@@ -132,7 +134,7 @@ TownHub owner SaaS billing is read-only in store distributions:
 
 ## Account deletion and legal pages
 
-- Signed-in users open **Account → Delete TownHub account**, type `DELETE`, and receive a processing date.
+- Signed-in users open **Account → Delete TownHaven account**, type `DELETE`, and receive a processing date.
 - Pending requests can be canceled and are visible in Admin → Users.
 - Operators follow [ACCOUNT_DELETION_RUNBOOK.md](./ACCOUNT_DELETION_RUNBOOK.md).
 - `/privacy-policy` and `/terms-of-service` are bundled routes and must also be deployed at stable public HTTPS URLs for App Store Connect metadata.
@@ -141,7 +143,7 @@ TownHub owner SaaS billing is read-only in store distributions:
 
 ## Push notifications
 
-TownHub uses Capacitor Push Notifications and the shared notification pipeline. The Xcode project includes Push Notifications and remote-notification background mode declarations.
+TownHaven uses Capacitor Push Notifications and the shared notification pipeline. The Xcode project includes Push Notifications and remote-notification background mode declarations.
 
 Before device testing:
 
@@ -227,7 +229,7 @@ Then smoke on a physical iPhone and use **Product → Archive** in Xcode.
 | Google Sign-In sheet fails / no callback | Confirm `Info.plist` has `GIDClientID` and the reversed iOS client URL scheme; AppDelegate must call `GIDSignIn.sharedInstance.handle(url)`. |
 | Signed out whenever the app is closed | Confirm the native bundle initializes Clerk with `standardBrowser: false` and includes the Keychain-backed Clerk client-token transport, then rebuild and reinstall/update the TestFlight app. A web deploy alone cannot change the bundled Clerk configuration. |
 | `x.map` / `x.filter` is not a function on native | List API payload wasn’t an array. Public pages use `asArray()`. Re-check Cap Cookies/Http are disabled. |
-| Generic “TownHub” branding / empty home data / “Loading sign-in…” forever | Native bundle missing `VITE_API_BASE_URL` and/or baked-in `VITE_CLERK_PROXY_URL` from root `.env`. Source `.env.native.staging` (see `.env.native.staging.example`), confirm `ios:sync` preflight passes, rebuild from Xcode. Home should show **ClayTownHub** when API is reachable. |
+| Generic “TownHaven” branding / empty home data / “Loading sign-in…” forever | Native bundle missing `VITE_API_BASE_URL` and/or baked-in `VITE_CLERK_PROXY_URL` from root `.env`. Source `.env.native.staging` (see `.env.native.staging.example`), confirm `ios:sync` preflight passes, rebuild from Xcode. Home should show **TownHaven** when API is reachable. |
 | Stripe return fails | API `APP_BASE_URL`, browser callback, pending token propagation, and webhook delivery |
 | Push fails | App ID/profile capability, APNs environment/key/team/bundle ID, device token registration |
 | In-app Stripe Subscribe / Manage Billing appear on owner Subscription | Release env gate and `VITE_DISTRIBUTION_CHANNEL=app-store`. Store builds should show **Manage on the web** only. |

@@ -1,10 +1,10 @@
-# Stripe Billing Setup (TownHub Platform Subscriptions)
+# Stripe Billing Setup (TownHaven Platform Subscriptions)
 
-This guide covers **businesses paying TownHub** for subscription plans. It is separate from **Stripe Connect**, which handles customer order payments to each business’s connected account.
+This guide covers **businesses paying TownHaven** for subscription plans. It is separate from **Stripe Connect**, which handles customer order payments to each business’s connected account.
 
 | Flow | Who pays whom | Stripe account |
 |------|----------------|----------------|
-| **Stripe Billing** (this doc) | Business → TownHub platform | Platform Stripe account |
+| **Stripe Billing** (this doc) | Business → TownHaven platform | Platform Stripe account |
 | **Stripe Connect** (`docs/STRIPE_SETUP.md`) | Customer → Business | Business connected account |
 
 ---
@@ -38,7 +38,7 @@ If `STRIPE_SECRET_KEY` is unset, the API runs in mock mode (**development only**
 
 ### 1. Products and prices
 
-For each **paid** subscription plan in TownHub Admin → Subscription Plans:
+For each **paid** subscription plan in TownHaven Admin → Subscription Plans:
 
 1. Create a **Product** in the Stripe Dashboard (platform account).
 2. Create recurring **Prices** for monthly and/or yearly billing.
@@ -147,7 +147,7 @@ Business owners use **Business Hub → Subscription → Change Plan** to:
 Behavior:
 
 - If the business has **no active Stripe subscription** (`INCOMPLETE` / `CANCELED`), Change Plan starts Stripe Checkout.
-- If a Stripe subscription exists, TownHub calls `stripe.subscriptions.update` with **proration** (`create_prorations`) — no duplicate subscriptions.
+- If a Stripe subscription exists, TownHaven calls `stripe.subscriptions.update` with **proration** (`create_prorations`) — no duplicate subscriptions.
 - Webhooks (`customer.subscription.updated`) sync the new plan, price, and interval.
 
 Admins can still manually assign plans via **Admin → Businesses**.
@@ -156,7 +156,7 @@ Admins can still manually assign plans via **Admin → Businesses**.
 
 ## Cancellation behavior
 
-| Stripe state | TownHub status | Feature access |
+| Stripe state | TownHaven status | Feature access |
 |--------------|----------------|----------------|
 | `cancel_at_period_end=true`, status `active`/`trialing` | `ACTIVE` / `TRIAL` | Enabled until period end |
 | Status `canceled` or `customer.subscription.deleted` | `CANCELED` | Paid features locked |
@@ -186,7 +186,7 @@ After returning from the Customer Portal, the subscription page auto-refreshes.
 
 ## Webhook synchronization
 
-| Event | TownHub action |
+| Event | TownHaven action |
 |-------|----------------|
 | `checkout.session.completed` (subscription mode) | Attach Stripe subscription, sync plan/interval/status |
 | `customer.subscription.updated` | Sync status, periods, `cancelAtPeriodEnd`, plan from price ID |
@@ -194,7 +194,7 @@ After returning from the Customer Portal, the subscription page auto-refreshes.
 | `invoice.paid` | Full subscription resync |
 | `invoice.payment_failed` | Full subscription resync (typically `PAST_DUE`) |
 
-Webhook sync also triggers TownHub subscription lifecycle emails (welcome, payment failed, etc.). See [NOTIFICATIONS.md](./NOTIFICATIONS.md#subscription-lifecycle-email).
+Webhook sync also triggers TownHaven subscription lifecycle emails (welcome, payment failed, etc.). See [NOTIFICATIONS.md](./NOTIFICATIONS.md#subscription-lifecycle-email).
 
 Order payment webhooks (`checkout.session.completed` with `metadata.pendingCheckoutId`, or legacy `metadata.orderId`) are never mixed with subscription events.
 

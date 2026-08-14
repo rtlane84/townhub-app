@@ -168,7 +168,7 @@ export function buildOwnerStripeConnectIssueEmail(input: {
     actionLabel: "Open payment settings",
     actionUrl: openUrl,
     footerNote:
-      "This is a critical payment alert. TownHub always sends these by email and app push so you can keep accepting payments.",
+      "This is a critical payment alert. TownHaven always sends these by email and app push so you can keep accepting payments.",
   });
 
   const text = [input.headline, "", input.detail, "", `Open payment settings: ${openUrl}`].join("\n");
@@ -189,7 +189,7 @@ export function buildAdminStripeConnectIssueEmail(input: {
   const openUrl = dashboardAdminSystemStatusUrl();
   const html = renderEmailLayout({
     preheader: `${input.businessName}: ${input.headline}`,
-    businessName: "TownHub",
+    businessName: "TownHaven",
     heading: "Connected business Stripe issue",
     bodyHtml: [
       `<p style="margin:0 0 12px;color:#334155;font-size:15px;line-height:1.6;"><strong>${input.businessName}</strong></p>`,
@@ -199,7 +199,7 @@ export function buildAdminStripeConnectIssueEmail(input: {
     actionLabel: "Open Operations Center",
     actionUrl: openUrl,
     footerNote:
-      "TownHub notifies platform admins when a connected business Stripe account needs attention.",
+      "TownHaven notifies platform admins when a connected business Stripe account needs attention.",
   });
 
   const text = [
@@ -213,7 +213,7 @@ export function buildAdminStripeConnectIssueEmail(input: {
   ].join("\n");
 
   return {
-    subject: `[TownHub] ${input.headline} — ${input.businessName}`,
+    subject: `[TownHaven] ${input.headline} — ${input.businessName}`,
     text,
     html,
   };

@@ -339,7 +339,7 @@ export async function queryRecentPlatformActivity(limit = 50): Promise<PlatformA
         id: `settings-changed-${settings.updatedAt.toISOString()}`,
         type: "settings_changed",
         title: "Platform settings changed",
-        detail: settings.platformName ?? "TownHub",
+        detail: settings.platformName ?? "TownHaven",
         timestamp: settings.updatedAt.toISOString(),
       });
 

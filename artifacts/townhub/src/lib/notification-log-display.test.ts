@@ -42,7 +42,7 @@ describe("notification-log-display", () => {
   });
 
   it("labels push delivery provider", () => {
-    assert.equal(notificationDeliveryProvider("PUSH"), "TownHub App Push");
+    assert.equal(notificationDeliveryProvider("PUSH"), "TownHaven App Push");
     assert.equal(notificationDeliveryProvider("EMAIL"), "Resend / SMTP");
     assert.equal(notificationDeliveryProvider("SMS"), "Twilio");
   });

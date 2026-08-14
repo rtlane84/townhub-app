@@ -1,10 +1,10 @@
 # Twilio SMS Setup
 
-TownHub sends **owner-only** SMS alerts through [Twilio](https://www.twilio.com) when configured. Without Twilio, SMS notifications are still logged to the database but **not delivered** (status `LOGGED`).
+TownHaven sends **owner-only** SMS alerts through [Twilio](https://www.twilio.com) when configured. Without Twilio, SMS notifications are still logged to the database but **not delivered** (status `LOGGED`).
 
 SMS is optional. Email can work independently.
 
-## What TownHub sends
+## What TownHaven sends
 
 See **[NOTIFICATIONS.md](./NOTIFICATIONS.md)** for the full order lifecycle flow.
 
@@ -44,7 +44,7 @@ To rotate credentials later: create a new Auth Token in the console, update secr
 
 ## 3. Provision a sending phone number
 
-TownHub sends from a single platform number configured in `TWILIO_FROM_NUMBER`.
+TownHaven sends from a single platform number configured in `TWILIO_FROM_NUMBER`.
 
 1. Twilio Console → **Phone Numbers** → **Manage** → **Buy a number** (or use a trial number).
 2. Choose a number with **SMS** capability.
@@ -139,8 +139,15 @@ Check API server logs for `[operational] sms_send_failed` or `order_notification
 
 ---
 
+## US toll-free verification
+
+Production SMS to US/Canada from a toll-free `TWILIO_FROM_NUMBER` requires Twilio toll-free verification. For the LaneTech / TownHaven resubmit checklist (owner opt-in filing, rejection codes 30530 / 30445 / 30488 / 30508), see **[TWILIO_TOLLFREE_VERIFICATION.md](./TWILIO_TOLLFREE_VERIFICATION.md)**.
+
+---
+
 ## Related docs
 
+- [TWILIO_TOLLFREE_VERIFICATION.md](./TWILIO_TOLLFREE_VERIFICATION.md) — toll-free verification resubmit guide
 - [STRIPE_SETUP.md](./STRIPE_SETUP.md) — card payments
 - [NOTIFICATIONS.md](./NOTIFICATIONS.md) — full order notification flow
 - [RESEND_SETUP.md](./RESEND_SETUP.md) — email notifications

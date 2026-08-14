@@ -21,7 +21,7 @@ export function AppMarketingCommunityMessage() {
           </h2>
           <div className="w-16 h-1 bg-townhub-orange mb-8 rounded-full" aria-hidden />
           <p className="text-xl md:text-2xl text-white/80 leading-relaxed mb-12 max-w-2xl font-sans">
-            TownHub brings the people, businesses, events, and updates that make a community special
+            TownHaven brings the people, businesses, events, and updates that make a community special
             into one convenient place.
           </p>
           <ul className="flex flex-col sm:flex-row gap-6 sm:gap-12">

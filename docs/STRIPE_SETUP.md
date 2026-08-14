@@ -1,6 +1,6 @@
 # Stripe Connect Payment Setup
 
-TownHub uses **[Stripe Connect](https://stripe.com/docs/connect)** so each business receives card payments through its own connected Stripe account. The platform Stripe keys enable Connect onboarding and webhooks — **customer payments go to the business**, not a single shared TownHub balance.
+TownHaven uses **[Stripe Connect](https://stripe.com/docs/connect)** so each business receives card payments through its own connected Stripe account. The platform Stripe keys enable Connect onboarding and webhooks — **customer payments go to the business**, not a single shared TownHaven balance.
 
 Pay-at-pickup orders (`IN_PERSON`) never use Stripe and are not marked paid by webhooks.
 
@@ -11,7 +11,7 @@ Pay-at-pickup orders (`IN_PERSON`) never use Stripe and are not marked paid by w
 
 | Audience                              | What you configure                                                      |
 | ------------------------------------- | ----------------------------------------------------------------------- |
-| **Platform owner** (TownHub operator) | Stripe platform account, Connect, API keys, webhook endpoint            |
+| **Platform owner** (TownHaven operator) | Stripe platform account, Connect, API keys, webhook endpoint            |
 | **Business owner**                    | Connect their business via **Business Dashboard → Settings → Payments** |
 
 
@@ -25,10 +25,10 @@ Pay-at-pickup orders (`IN_PERSON`) never use Stripe and are not marked paid by w
 2. **Enable Connect** — this is required before businesses can connect:
    - Open [Stripe Dashboard → Connect](https://dashboard.stripe.com/connect)
    - Complete the platform profile / Connect onboarding
-   - Until this step is done, **Connect Stripe** in TownHub will fail with “Connect is not enabled”
+   - Until this step is done, **Connect Stripe** in TownHaven will fail with “Connect is not enabled”
 3. Use **Test mode** while developing; switch to **Live mode** only when ready for real money.
 
-TownHub creates **Express** connected accounts for businesses and runs **direct charges** on those accounts (Checkout sessions are created on the connected account).
+TownHaven creates **Express** connected accounts for businesses and runs **direct charges** on those accounts (Checkout sessions are created on the connected account).
 
 ### 2. Platform API keys (server only)
 
@@ -55,7 +55,7 @@ If `STRIPE_SECRET_KEY` is unset, checkout runs in **mock mode** (dev only — re
 
 Both destinations use: `https://your-api-host/api/checkout/webhook`
 
-TownHub verifies signatures against `STRIPE_CONNECT_WEBHOOK_SECRET`, then `STRIPE_PLATFORM_WEBHOOK_SECRET`, then legacy `STRIPE_WEBHOOK_SECRET`.
+TownHaven verifies signatures against `STRIPE_CONNECT_WEBHOOK_SECRET`, then `STRIPE_PLATFORM_WEBHOOK_SECRET`, then legacy `STRIPE_WEBHOOK_SECRET`.
 
 #### A) Connected accounts (customer orders + refunds)
 
@@ -122,7 +122,7 @@ Each business that accepts **online card payments** must connect its own Stripe 
 - Status: **Not connected**
 - Click **Connect Stripe**
 - Complete Stripe’s secure onboarding (business details, bank account, identity as required)
-- You are returned to TownHub payment settings
+- You are returned to TownHaven payment settings
 
 **If setup is incomplete:**
 
@@ -157,7 +157,7 @@ Stored `stripeConnectStatus` values: `not_connected` | `pending` | `connected` |
 - **pending** — account exists but onboarding / charges not ready (or requirements due)
 - **restricted** — Stripe `disabled_reason`, or charges OK but **payouts disabled**, or other blocking Connect states
 
-When Connect becomes unhealthy (or a refund fails with a server error), TownHub sends **mandatory** owner email + TownHub app push, and Business Hub shows a persistent warning while status is `pending` or `restricted`. These alerts are **not** gated by Notifications channel Enable toggles and are **not** sent via SMS/Discord/ntfy. Details: [NOTIFICATIONS.md — Critical Stripe / payment alerts](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
+When Connect becomes unhealthy (or a refund fails with a server error), TownHaven sends **mandatory** owner email + TownHaven app push, and Business Hub shows a persistent warning while status is `pending` or `restricted`. These alerts are **not** gated by Notifications channel Enable toggles and are **not** sent via SMS/Discord/ntfy. Details: [NOTIFICATIONS.md — Critical Stripe / payment alerts](./NOTIFICATIONS.md#critical-stripe--payment-alerts).
 
 ---
 
@@ -228,7 +228,7 @@ Safety measures:
 
 | Symptom                                            | Likely cause                                                                    |
 | -------------------------------------------------- | ------------------------------------------------------------------------------- |
-| **Connect Stripe** fails / “Connect is not enabled” | Platform operator has not completed [Stripe Connect setup](https://dashboard.stripe.com/connect) on the TownHub Stripe account (test or live mode must match your keys) |
+| **Connect Stripe** fails / “Connect is not enabled” | Platform operator has not completed [Stripe Connect setup](https://dashboard.stripe.com/connect) on the TownHaven Stripe account (test or live mode must match your keys) |
 | Status stuck **Setup in progress**                 | Incomplete onboarding — click **Continue Stripe setup**                         |
 | Status **Restricted**                              | Stripe disabled the account — use **Manage Stripe** or Stripe support           |
 | Checkout works but no order appears                | Webhook missing, wrong URL, secret mismatch, or not listening to Connected accounts |

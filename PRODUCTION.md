@@ -1,4 +1,4 @@
-# TownHub — Production Checklist
+# TownHaven — Production Checklist
 
 Follow these steps before going live. The canonical Cloudflare + Railway staging/production topology and isolation procedure is [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md). For local setup see [docs/SETUP.md](docs/SETUP.md), architecture see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and security behavior see [SECURITY.md](SECURITY.md).
 
@@ -67,7 +67,7 @@ See [docs/STRIPE_SETUP.md](docs/STRIPE_SETUP.md) (Connect) and [docs/STRIPE_BILL
 | Secret | Purpose |
 |--------|---------|
 | `RESEND_API_KEY` | Resend API key |
-| `RESEND_FROM` | Verified sender (e.g. `TownHub <orders@yourdomain.com>`) |
+| `RESEND_FROM` | Verified sender (e.g. `TownHaven <orders@yourdomain.com>`) |
 
 Or SMTP: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`. See [docs/RESEND_SETUP.md](docs/RESEND_SETUP.md).
 
@@ -188,7 +188,7 @@ For production traffic, use a connection pooler (PgBouncer, Neon pooler, Supabas
 
 Local development works without setting these.
 
-**Staging / production (Railway):** set `DATABASE_POOL_MAX=20` (or `25`) on the TownHub API service in each environment. The previous default of `10` is tight when several clients hit `GET /api/businesses` at once (directory listing still does a few DB round-trips). Stay below your Postgres plan’s connection limit.
+**Staging / production (Railway):** set `DATABASE_POOL_MAX=20` (or `25`) on the TownHaven API service in each environment. The previous default of `10` is tight when several clients hit `GET /api/businesses` at once (directory listing still does a few DB round-trips). Stay below your Postgres plan’s connection limit.
 
 **Supabase `DATABASE_URL`:** use the **Session Pooler** URI (port **5432**) for the long-lived Node `pg` pool. Prefer that over a direct DB host under concurrent API traffic. Do **not** point the API at the Transaction pooler (port **6543**) unless you have validated that mode with this driver — session mode matches the app’s connection lifecycle. Confirm in Supabase → Project Settings → Database → Connection string (pooler), and that Railway staging vs production each use their own project URI.
 
@@ -251,7 +251,7 @@ Set optional env vars `APP_VERSION` and `GIT_COMMIT_SHA` to match the tag/commit
 
 ## 7. Deploy
 
-TownHub is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`artifacts/townhub`). Your host may run both in one service or split them — follow your provider's model.
+TownHaven is a monorepo: Express API (`artifacts/api-server`) and Vite frontend (`artifacts/townhub`). Your host may run both in one service or split them — follow your provider's model.
 
 ### Generic deployment steps
 
@@ -273,8 +273,8 @@ Repo root is a pnpm monorepo. Use **two Workers Builds projects** (not classic P
 
 | Builds project | Git branch | Deploy command | Worker script | Domain |
 |---|---|---|---|---|
-| Staging | `develop` | `npx wrangler deploy --env staging` | `townhub-app` | `staging.townhub.io` |
-| Production | `main` | `npx wrangler deploy --env production` | `townhub-production` | `townhub.io` (+ `www` redirect) |
+| Staging | `develop` | `npx wrangler deploy --env staging` | `townhub-app` | `staging.townhaven.io` |
+| Production | `main` | `npx wrangler deploy --env production` | `townhub-production` | `townhaven.io` (+ `www` redirect) |
 
 Shared build settings:
 
@@ -304,7 +304,7 @@ If install fails with `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`:
 3. Or set env `SKIP_DEPENDENCY_INSTALL=true` and change the build command to:
    `pnpm install --no-frozen-lockfile && pnpm --filter @workspace/townhub run build`
 
-After deploy, confirm `https://YOUR_WORKER_URL/native-sso-callback` shows “Returning to TownHub…” (not a 404), then update Clerk’s mobile SSO allowlist, native `VITE_PUBLIC_WEB_URL`, and API `APP_BASE_URL` to the matching environment URL.
+After deploy, confirm `https://YOUR_WORKER_URL/native-sso-callback` shows “Returning to TownHaven…” (not a 404), then update Clerk’s mobile SSO allowlist, native `VITE_PUBLIC_WEB_URL`, and API `APP_BASE_URL` to the matching environment URL.
 
 **Note:** Commit and push the updated root `wrangler.toml` before redeploying so CI picks up the assets config.
 

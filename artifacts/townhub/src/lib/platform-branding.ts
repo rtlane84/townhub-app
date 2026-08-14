@@ -1,6 +1,6 @@
 import type { PlatformTheme } from "@workspace/api-client-react";
 
-export const DEFAULT_PLATFORM_NAME = "TownHub";
+export const DEFAULT_PLATFORM_NAME = "TownHaven";
 
 export const DEFAULT_HERO_TAGLINE =
   "Your town's best bakeries, florists, markets, and shops—all in one place. Fresh, local, and community-driven.";
@@ -165,6 +165,9 @@ export function resolvePlatformName(
   theme?: Pick<PlatformTheme, "platformName"> | null,
 ): string {
   const name = theme?.platformName?.trim();
+  if (/^(?:Clay\s*)?TownHub$/i.test(name ?? "")) {
+    return DEFAULT_PLATFORM_NAME;
+  }
   return name || DEFAULT_PLATFORM_NAME;
 }
 
@@ -360,7 +363,7 @@ export type BrandingFields = {
 
 export function themeToBrandingFields(theme: PlatformTheme): BrandingFields {
   return {
-    platformName: theme.platformName?.trim() || DEFAULT_PLATFORM_NAME,
+    platformName: resolvePlatformName(theme),
     townName: theme.townName?.trim() || "",
     tagline: theme.tagline?.trim() || "",
     logoUrl: theme.logoUrl?.trim() || "",

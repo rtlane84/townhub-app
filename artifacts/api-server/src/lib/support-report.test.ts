@@ -24,11 +24,11 @@ describe("support report helpers", () => {
   it("formats subject with category label and page path", () => {
     assert.equal(
       formatSupportReportSubject("BUG", "/businesses/cafe"),
-      "[TownHub report] Bug — /businesses/cafe",
+      "[TownHaven report] Bug — /businesses/cafe",
     );
     assert.equal(
       formatSupportReportSubject("QUESTION", "/help"),
-      "[TownHub report] Question — /help",
+      "[TownHaven report] Question — /help",
     );
   });
 

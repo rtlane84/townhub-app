@@ -1,6 +1,6 @@
-# TownHub API overview
+# TownHaven API overview
 
-Short guide for developers working on or calling the TownHub HTTP API. The machine-readable contract is [`lib/api-spec/openapi.yaml`](../lib/api-spec/openapi.yaml).
+Short guide for developers working on or calling the TownHaven HTTP API. The machine-readable contract is [`lib/api-spec/openapi.yaml`](../lib/api-spec/openapi.yaml).
 
 ## Where the reference lives
 
@@ -23,8 +23,8 @@ Do not hand-edit generated files under `lib/api-client-react/src/generated` or `
 | Environment | API origin (examples) |
 |-------------|------------------------|
 | Local | `http://localhost:8080` |
-| Staging | `https://api-staging.townhub.io` |
-| Production | `https://api.townhub.io` |
+| Staging | `https://api-staging.townhaven.io` |
+| Production | `https://api.townhaven.io` |
 
 - Process health: `GET /health`
 - OpenAPI-mounted health: `GET /api/healthz` (when routed)

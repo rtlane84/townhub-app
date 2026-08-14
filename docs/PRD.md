@@ -1,6 +1,6 @@
-# TownHub Product Requirements Document
+# TownHaven Product Requirements Document
 
-**Product:** TownHub  
+**Product:** TownHaven
 **Category:** Multi-tenant local commerce SaaS and community marketplace  
 **Stage:** Beta / production readiness  
 **Document status:** Working product baseline  
@@ -10,11 +10,11 @@
 
 ## 1. Product Summary
 
-TownHub is a local commerce platform that gives a town or county one digital destination for discovering businesses, ordering products, requesting appointments, following food trucks, and finding community events.
+TownHaven is a local commerce platform that gives a town or county one digital destination for discovering businesses, ordering products, requesting appointments, following food trucks, and finding community events.
 
-Participating businesses receive a hosted storefront and an operations hub for managing their presence, catalog, orders, appointments, notifications, locations, and subscription. The TownHub operator receives a platform administration system for onboarding businesses, managing plans and community content, monitoring operations, and governing the marketplace.
+Participating businesses receive a hosted storefront and an operations hub for managing their presence, catalog, orders, appointments, notifications, locations, and subscription. The TownHaven operator receives a platform administration system for onboarding businesses, managing plans and community content, monitoring operations, and governing the marketplace.
 
-TownHub is not intended to replace every specialized business system. Its purpose is to give small local businesses a simple, affordable way to become discoverable and transact online without building and maintaining independent websites and apps.
+TownHaven is not intended to replace every specialized business system. Its purpose is to give small local businesses a simple, affordable way to become discoverable and transact online without building and maintaining independent websites and apps.
 
 ### Product promise
 
@@ -30,7 +30,7 @@ Small-town commerce is fragmented across social media pages, outdated websites, 
 
 Existing marketplace products are often optimized for national delivery networks, charge high transaction fees, weaken the direct relationship between a business and its customers, or do not accommodate the variety of local businesses found in one community.
 
-TownHub addresses this gap with a locally branded, multi-business platform that supports several operating models:
+TownHaven addresses this gap with a locally branded, multi-business platform that supports several operating models:
 
 - product ordering for pickup or local delivery;
 - pay online or pay at pickup;
@@ -50,9 +50,9 @@ Become the default digital front door for local commerce in a town or county.
 ### Beta objectives
 
 1. Prove that a resident can reliably discover a business and complete a local order or appointment request.
-2. Prove that a business owner can set up and operate their TownHub presence primarily from a phone.
+2. Prove that a business owner can set up and operate their TownHaven presence primarily from a phone.
 3. Prove that the platform operator can onboard, support, bill, and monitor businesses without engineering intervention.
-4. Validate that participating businesses receive enough customer activity or operational value to pay for TownHub.
+4. Validate that participating businesses receive enough customer activity or operational value to pay for TownHaven.
 5. Establish a secure and observable production foundation before expanding to additional towns.
 
 ### Non-goals for beta
@@ -71,7 +71,7 @@ Become the default digital front door for local commerce in a town or county.
 
 ### Initial market
 
-Independent businesses and residents in Clay, the first pilot locality, operated by a local TownHub administrator.
+Independent businesses and residents in Clay, the first pilot locality, operated by a local TownHaven administrator.
 
 ### Initial business segments
 
@@ -86,7 +86,7 @@ Independent businesses and residents in Clay, the first pilot locality, operated
 
 ### Expansion model
 
-TownHub should first demonstrate repeatable onboarding and retention in Clay. The long-term product is intended for many localities, but geographic expansion and locality-level tenancy are post-validation work, not beta requirements.
+TownHaven should first demonstrate repeatable onboarding and retention in Clay. The long-term product is intended for many localities, but geographic expansion and locality-level tenancy are post-validation work, not beta requirements.
 
 ---
 
@@ -155,13 +155,13 @@ A guest customer is a resident who checks out without creating an account. Guest
 
 ### 7.1 Discover and order as a guest
 
-1. Resident lands on the TownHub homepage.
+1. Resident lands on the TownHaven homepage.
 2. Resident searches, filters, or opens a featured business.
 3. Resident reviews hours, fulfillment availability, products, and business information.
 4. Resident adds products from one business to the cart.
 5. Resident selects an available pickup or delivery option and supplies required details.
 6. Resident pays online through the business's connected Stripe account or selects pay at pickup when enabled.
-7. TownHub displays a protected confirmation and sends a confirmation notification.
+7. TownHaven displays a protected confirmation and sends a confirmation notification.
 8. Business receives the order and updates its status.
 9. Customer receives meaningful status updates.
 
@@ -181,7 +181,7 @@ Appointments are requests during beta; the platform does not promise real-time s
 2. Owner submits business details and selects an available plan.
 3. Platform administrator receives an application alert.
 4. Administrator reviews, approves, rejects, or requests correction outside the platform.
-5. On approval, TownHub creates or activates the business, assigns ownership, and attaches the selected or default plan.
+5. On approval, TownHaven creates or activates the business, assigns ownership, and attaches the selected or default plan.
 6. Trial or paid subscription state begins according to plan configuration.
 7. Owner completes storefront, fulfillment, notification, and payment setup.
 8. Administrator activates the business when launch requirements are satisfied.
@@ -193,7 +193,7 @@ Appointments are requests during beta; the platform does not promise real-time s
 3. Owner accepts and progresses the order through the relevant statuses.
 4. Customer receives selected lifecycle notifications.
 5. Owner marks the order completed or performs an authorized cancellation/refund.
-6. TownHub records the operational and payment outcome for audit and support.
+6. TownHaven records the operational and payment outcome for audit and support.
 
 ### 7.5 Operate the marketplace
 
@@ -321,7 +321,7 @@ Priority definitions:
 | SUB-03 | P0 | Start and display trials according to plan configuration. |
 | SUB-04 | P0 | Use Stripe Billing for production business subscriptions. |
 | SUB-05 | P0 | Enforce plan features and inactive subscription states on the server. |
-| SUB-06 | P0 | Keep customer order payments separate from TownHub subscription billing. |
+| SUB-06 | P0 | Keep customer order payments separate from TownHaven subscription billing. |
 | SUB-07 | P0 | Process billing webhooks idempotently and reflect the resulting state. |
 | SUB-08 | P1 | Provide owners with self-service billing and plan-change actions where commercially appropriate. |
 | SUB-09 | P1 | Notify owners and administrators of trial and payment lifecycle events. |
@@ -330,7 +330,7 @@ Priority definitions:
 
 | ID | Priority | Requirement |
 |---|---|---|
-| MOB-01 | P1 | Deliver the responsive TownHub experience through a Capacitor iOS shell. |
+| MOB-01 | P1 | Deliver the responsive TownHaven experience through a Capacitor iOS shell. |
 | MOB-02 | P1 | Support safe-area layout, native navigation conventions, splash behavior, external browser flows, and deep links. |
 | MOB-03 | P1 | Complete Clerk authentication and Stripe flows without trapping users in an unsupported WebView flow. |
 | MOB-04 | P1 | Register devices for APNs and route notification taps to authorized destinations. |
@@ -344,7 +344,7 @@ Priority definitions:
 2. A business must be active, authorized for the feature, and operationally available before accepting an order or appointment request.
 3. Product prices are stored and exchanged as decimal currency values; clients must not reinterpret them as cents.
 4. Online customer payments belong to the selected business's Stripe connected account.
-5. TownHub subscription payments belong to the platform Stripe account and are a separate billing domain.
+5. TownHaven subscription payments belong to the platform Stripe account and are a separate billing domain.
 6. Guest customer PII is accessible only with a valid signed token or an authorized owner/admin/customer identity.
 7. Business owners may mutate only businesses they are authorized to manage.
 8. Platform feature gates and subscription entitlements must be enforced server-side.
@@ -420,7 +420,7 @@ Priority definitions:
 
 ## 12. Analytics and Success Metrics
 
-TownHub should instrument a minimal event taxonomy before beta. Analytics must avoid sensitive order details.
+TownHaven should instrument a minimal event taxonomy before beta. Analytics must avoid sensitive order details.
 
 ### North-star metric
 
@@ -542,7 +542,7 @@ Potential scope, subject to validation:
 
 ## 14. Launch Acceptance Criteria
 
-TownHub is ready for a controlled production beta only when all of the following are true:
+TownHaven is ready for a controlled production beta only when all of the following are true:
 
 ### Customer
 
@@ -609,11 +609,11 @@ The product owner must resolve these before general availability:
    - **Trial:** 14 days on both public plans. **Setup fee:** $0. **Platform transaction fee:** 0% (Connect fees still apply to customer payments).
    - **Founding / complimentary:** first Clay pilot businesses may use `isBeta` / $0 plans, then convert to Business Showcase or Business Ordering.
    - **Not sold as SKUs at launch:** separate Mobile plan, paid Spotlight/featured placement, multi-location add-on.
-3. Who is responsible for refunds, disputes, fulfillment failures, and customer support: TownHub, the business, or both?
+3. Who is responsible for refunds, disputes, fulfillment failures, and customer support: TownHaven, the business, or both?
 4. What merchant verification is required before activation?
-5. Which taxes are calculated by TownHub versus configured and remitted by each business?
+5. Which taxes are calculated by TownHaven versus configured and remitted by each business?
 6. What are the order, notification-log, device-token, and account-deletion retention policies?
-7. What service-level expectation will TownHub communicate for order acknowledgement and support?
+7. What service-level expectation will TownHaven communicate for order acknowledgement and support?
 8. Will the beta run one API instance, or must shared live-event infrastructure ship first?
 9. Is iOS TestFlight part of the town beta or a later retention experiment?
 10. Which analytics provider and consent model will be used?

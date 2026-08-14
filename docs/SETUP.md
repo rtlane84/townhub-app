@@ -1,6 +1,6 @@
 # Local Development Setup
 
-Step-by-step guide for running TownHub from a clean clone. For architecture context see [ARCHITECTURE.md](ARCHITECTURE.md). For security behavior see [../SECURITY.md](../SECURITY.md).
+Step-by-step guide for running TownHaven from a clean clone. For architecture context see [ARCHITECTURE.md](ARCHITECTURE.md). For security behavior see [../SECURITY.md](../SECURITY.md).
 
 ---
 
@@ -85,7 +85,7 @@ Do not hardcode a deployed Clerk proxy URL in `App.tsx`; configure it per enviro
 
 ## Database
 
-TownHub uses Drizzle ORM with a push-based workflow (no migration files in repo).
+TownHaven uses Drizzle ORM with a push-based workflow (no migration files in repo).
 
 ```bash
 # Apply schema to your database

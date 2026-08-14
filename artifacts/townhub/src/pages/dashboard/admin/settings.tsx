@@ -375,7 +375,7 @@ export default function AdminSettings() {
   );
   const prefixLabel = brandParts.prefix.trim() || "Prefix";
   const townLabel = brandParts.town || "Town";
-  const hubLabel = brandParts.hub || "Hub";
+  const hubLabel = brandParts.hub || "Haven";
 
   return (
     <AdminDashboardLayout>
@@ -426,10 +426,10 @@ export default function AdminSettings() {
                     onChange={(e) =>
                       handleBrandingChange("platformName", e.target.value)
                     }
-                    placeholder="Clay TownHub"
+                    placeholder="TownHaven"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Names ending in TownHub (e.g. Clay TownHub) get a
+                    Names ending in TownHaven (for example, Community TownHaven) get a
                     three-color wordmark below.
                   </p>
                 </div>

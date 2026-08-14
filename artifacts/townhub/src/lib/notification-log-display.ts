@@ -3,7 +3,7 @@
 export function notificationDeliveryProvider(channel: string | undefined): string {
   if (channel === "SMS") return "Twilio";
   if (channel === "EMAIL") return "Resend / SMTP";
-  if (channel === "PUSH") return "TownHub App Push";
+  if (channel === "PUSH") return "TownHaven App Push";
   if (channel === "NTFY") return "ntfy";
   if (channel === "DISCORD") return "Discord";
   return "Unknown";

@@ -51,7 +51,7 @@ export function buildPublicStorefrontUrl(
   return `${origin}${path}`;
 }
 
-/** Host + path without protocol — e.g. townhub.io/businesses/clay-diner */
+/** Host + path without protocol — e.g. townhaven.io/businesses/clay-diner */
 export function buildPublicStorefrontDisplayUrl(
   slug: string,
   options?: { runtimeOrigin?: string; publicWebBaseUrl?: string | null },

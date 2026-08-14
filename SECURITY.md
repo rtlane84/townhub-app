@@ -1,12 +1,12 @@
-# TownHub — Security Model
+# TownHaven — Security Model
 
-This document describes how TownHub protects data and operations in the current codebase. For local setup and deployment, see [docs/SETUP.md](docs/SETUP.md) and [PRODUCTION.md](PRODUCTION.md). For system design context, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+This document describes how TownHaven protects data and operations in the current codebase. For local setup and deployment, see [docs/SETUP.md](docs/SETUP.md) and [PRODUCTION.md](PRODUCTION.md). For system design context, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
 ## Authentication
 
-TownHub uses [Clerk](https://clerk.com) for identity. The API applies `@clerk/express` middleware globally; route handlers read `userId` via `getAuth(req)`.
+TownHaven uses [Clerk](https://clerk.com) for identity. The API applies `@clerk/express` middleware globally; route handlers read `userId` via `getAuth(req)`.
 
 Authenticated API calls pass the Clerk session JWT as an `Authorization: Bearer <token>` header. The frontend `ClerkApiTokenBridge` wires this into all generated hooks and raw fetches, which keeps web and bundled native calls on the same API authorization path.
 
@@ -22,7 +22,7 @@ First-run admin promotion: `POST /api/admin/bootstrap` (works only while zero ad
 
 ### User account status
 
-TownHub stores an app-level account status on each user:
+TownHaven stores an app-level account status on each user:
 
 | Status | Description |
 |--------|-------------|
@@ -31,7 +31,7 @@ TownHub stores an app-level account status on each user:
 
 **Disable, don't delete:** Admins disable users instead of deleting them. Disabled users remain in the database and stay linked to past orders, businesses, applications, notifications, and audit history. An admin can re-enable the account later.
 
-**Clerk identity is separate:** Disabling a user is app-level only. TownHub does not delete the Clerk user. If Clerk identity removal is ever required, that is a separate manual action in Clerk (or your identity provider).
+**Clerk identity is separate:** Disabling a user is app-level only. TownHaven does not delete the Clerk user. If Clerk identity removal is ever required, that is a separate manual action in Clerk (or your identity provider).
 
 **Safeguards:**
 
@@ -108,7 +108,7 @@ Optional future hardening:
 
 ## Supabase database boundary
 
-TownHub does not expose application tables directly to browser or mobile clients. Every table in the Supabase `public` schema has PostgreSQL row-level security enabled with no `anon` or `authenticated` policies, so PostgREST access is intentionally deny-all.
+TownHaven does not expose application tables directly to browser or mobile clients. Every table in the Supabase `public` schema has PostgreSQL row-level security enabled with no `anon` or `authenticated` policies, so PostgREST access is intentionally deny-all.
 
 The API server is the only application data boundary. It connects to PostgreSQL with the protected server-side database role and enforces Clerk authentication, roles, ownership, subscription features, and business status in API routes. The Supabase service-role credential is used server-side for scoped Storage operations only and must never be shipped to a client.
 

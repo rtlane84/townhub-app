@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Native Apple (ASAuthorization) and Google (GIDSignIn) auth for TownHub Capacitor + Clerk token exchange.",
+  "description": "Native Apple (ASAuthorization) and Google (GIDSignIn) auth for TownHaven Capacitor + Clerk token exchange.",
   "main": "index.js",
   "module": "index.js",
   "types": "index.d.ts",
@@ -22,7 +22,7 @@
     "TownhubCapacitorAuthSession.podspec",
     "Package.swift"
   ],
-  "author": "TownHub",
+  "author": "TownHaven",
   "license": "UNLICENSED",
   "capacitor": {
     "ios": {

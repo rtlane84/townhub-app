@@ -23,7 +23,7 @@ setBaseUrl(apiBaseUrl || null);
 
 if (isNativeApp() && !apiBaseUrl) {
   console.error(
-    "[TownHub] Native build is missing VITE_API_BASE_URL. Re-run ios:sync after sourcing .env.native.staging.",
+    "[TownHaven] Native build is missing VITE_API_BASE_URL. Re-run ios:sync after sourcing .env.native.staging.",
   );
 }
 

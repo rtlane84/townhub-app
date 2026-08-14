@@ -158,7 +158,7 @@ export async function ensureLaunchSubscriptionPlans(): Promise<{
     name: LAUNCH_PLAN_SHOWCASE_NAME,
     legacyNames: LEGACY_SHOWCASE_PLAN_NAMES,
     description:
-      "Create a public TownHub page with your hours, photos, products, menu, or services. Customers can browse, call, or request an appointment. Online ordering is not included.",
+      "Create a public TownHaven page with your hours, photos, products, menu, or services. Customers can browse, call, or request an appointment. Online ordering is not included.",
     monthlyPrice: "20.00",
     yearlyPrice: "200.00",
     trialDays: 14,

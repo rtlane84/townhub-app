@@ -97,7 +97,7 @@ export const clerkUserButtonAppearance = {
       "!text-foreground hover:!bg-muted rounded-md px-3 py-2.5 transition-colors",
     userButtonPopoverActionButtonText: "!text-foreground !opacity-100 font-medium text-sm",
     userButtonPopoverActionButtonIcon: "!text-foreground !opacity-90",
-    // Custom items (Delete TownHub account) default to Clerk's dim grey; render as destructive.
+    // Custom items (Delete TownHaven account) default to Clerk's dim grey; render as destructive.
     userButtonPopoverCustomItemButton:
       "!text-destructive hover:!bg-destructive/10 rounded-md px-3 py-2.5 transition-colors",
     userButtonPopoverCustomItemButtonIconBox: "!text-destructive !opacity-100",

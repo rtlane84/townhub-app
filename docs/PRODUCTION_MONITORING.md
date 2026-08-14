@@ -1,12 +1,12 @@
 # Production Monitoring
 
-TownHub includes application-level health, admin diagnostics, structured logs, and Sentry error capture. External uptime, centralized logs, provider alerts, and tested notification routing must be configured in each deployed environment; repository code alone cannot provide those guarantees.
+TownHaven includes application-level health, admin diagnostics, structured logs, and Sentry error capture. External uptime, centralized logs, provider alerts, and tested notification routing must be configured in each deployed environment; repository code alone cannot provide those guarantees.
 
 ## Public health endpoint
 
 **`GET /health`**
 
-Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.). Operator checks on 2026-07-14 and again on 2026-07-15 returned HTTP 200 for both `https://api.townhub.io/health` and `https://api-staging.townhub.io/health`. Frontend origins `https://townhub.io/` and `https://staging.townhub.io/` also returned HTTP 200 on 2026-07-15. GitHub Actions workflow `.github/workflows/uptime-health-check.yml` has been succeeding on schedule (example run `29416225184`). These are not a substitute for Better Stack / UptimeRobot human alert routing because Actions notifications alone may miss a non-GitHub contact path.
+Use this endpoint for external uptime monitors (UptimeRobot, Better Stack, etc.). Operator checks on 2026-07-14 and again on 2026-07-15 returned HTTP 200 for both `https://api.townhaven.io/health` and `https://api-staging.townhaven.io/health`. Frontend origins `https://townhaven.io/` and `https://staging.townhaven.io/` also returned HTTP 200 on 2026-07-15. GitHub Actions workflow `.github/workflows/uptime-health-check.yml` has been succeeding on schedule (example run `29416225184`). These are not a substitute for Better Stack / UptimeRobot human alert routing because Actions notifications alone may miss a non-GitHub contact path.
 
 **Response (minimal, safe):**
 
@@ -37,7 +37,7 @@ For the production beta, create these monitors in both staging and production:
 | Monitor | Check | Interval | Alert condition |
 |---|---|---|---|
 | API process | `GET https://api…/health` | 1 minute | Two failures, non-200, or 10-second timeout |
-| Frontend | `GET https://townhub.io/` in production; `GET https://staging.townhub.io/` in staging | 1–5 minutes | Two failures, non-200, or 10-second timeout |
+| Frontend | `GET https://townhaven.io/` in production; `GET https://staging.townhaven.io/` in staging | 1–5 minutes | Two failures, non-200, or 10-second timeout |
 | TLS/domain | Frontend and API certificates | Daily | Expiry within 21 days or certificate error |
 
 Route production alerts to the platform owner and one backup contact. Staging alerts may be lower urgency but must still reach an actively reviewed channel.
@@ -56,11 +56,11 @@ Team `t570646` (Uptime + Errors + Telemetry + RUM/JS tag) is configured to maxim
 
 | Area | Status | Notes |
 |---|---|---|
-| Uptime monitors | Partial / verify | Free tier allows up to 10 monitors. Confirm [Monitors](https://uptime.betterstack.com/team/t570646/monitors) still includes production `https://api.townhub.io/health` with email alerts; add staging API + frontend origins within the free allotment. GitHub Actions `.github/workflows/uptime-health-check.yml` remains the backup probe. |
-| Test alert | Acknowledged | Monitor `api.townhub.io/health` test alert received by owner (2026-07-15). Add a second team member before launch and confirm a test alert reaches both inboxes. |
+| Uptime monitors | Partial / verify | Free tier allows up to 10 monitors. Confirm [Monitors](https://uptime.betterstack.com/team/t570646/monitors) still includes production `https://api.townhaven.io/health` with email alerts; add staging API + frontend origins within the free allotment. GitHub Actions `.github/workflows/uptime-health-check.yml` remains the backup probe. |
+| Test alert | Acknowledged | Monitor `api.townhaven.io/health` test alert received by owner (2026-07-15). Add a second team member before launch and confirm a test alert reaches both inboxes. |
 | Status page | Deferred | Creating a status page redirected to billing/features; stay on free Pay as you go — do not purchase bundles just for OPS-002. Revisit after free-plan status-page entitlement is clear. |
-| Errors (Sentry-compatible) | Live; privacy scrub deployed 2026-07-18 | `TownHub Frontend` + `TownHub API` apps receive staging and production events. API requests attach `request_id`, optional Clerk `user.id`, and `business_id` when present. Do not commit DSNs. |
-| Frontend JS tag / session replay | Code ready — set token | Set Cloudflare (and native) `VITE_BETTERSTACK_JS_TOKEN` from Errors → TownHub Frontend → **Frontend** tab (or RUM → Connect application). When set, standalone `VITE_SENTRY_DSN` is skipped to avoid dual Sentry globals. In the Frontend tab: enable session replays; add exclude selector `.th-bs-exclude`; sample replays under free-tier limits (5k/mo). |
+| Errors (Sentry-compatible) | Live; privacy scrub deployed 2026-07-18 | `TownHaven Frontend` + `TownHaven API` apps receive staging and production events. API requests attach `request_id`, optional Clerk `user.id`, and `business_id` when present. Do not commit DSNs. |
+| Frontend JS tag / session replay | Code ready — set token | Set Cloudflare (and native) `VITE_BETTERSTACK_JS_TOKEN` from Errors → TownHaven Frontend → **Frontend** tab (or RUM → Connect application). When set, standalone `VITE_SENTRY_DSN` is skipped to avoid dual Sentry globals. In the Frontend tab: enable session replays; add exclude selector `.th-bs-exclude`; sample replays under free-tier limits (5k/mo). |
 | Logs (Railway → Telemetry) | Connected (ingest verified 2026-07-18) | Staging `locomotive` and production `locomotive-production` both target Better Stack HTTP ingest. Free: ~3 GB / **3-day** retention. |
 
 Dashboards: [Monitors](https://uptime.betterstack.com/team/t570646/monitors), [Errors applications](https://errors.betterstack.com/team/t570646/applications), [Log sources](https://telemetry.betterstack.com/team/t570646/sources), [RUM](https://rum.betterstack.com/team/t570646/applications).
@@ -78,7 +78,7 @@ Alert or user report
 
 ### Example A — Card checkout total too small
 
-1. [Telemetry](https://telemetry.betterstack.com/team/t570646/tail) → source **TownHub Railway API logs**
+1. [Telemetry](https://telemetry.betterstack.com/team/t570646/tail) → source **TownHaven Railway API logs**
 2. Search `amount_too_small` or `Stripe checkout session rejected`
 3. Note `businessId`, `requestId` / `stripeRequestId`, total cents
 4. Client should receive HTTP **400** with a clear message (not a mystery 500)
@@ -86,13 +86,13 @@ Alert or user report
 
 ### Example B — Unhandled API exception
 
-1. [TownHub API Errors](https://errors.betterstack.com/team/t570646/errors?s=2601802)
+1. [TownHaven API Errors](https://errors.betterstack.com/team/t570646/errors?s=2601802)
 2. Open the issue → stack, tags (`request_id`, `business_id`, `route`), user id when signed in
 3. Correlate the same `request_id` in Logs if you need the raw Pino line
 
 ### Example C — Frontend / Clerk blip
 
-1. [TownHub Frontend Errors](https://errors.betterstack.com/team/t570646/errors?s=2601794)
+1. [TownHaven Frontend Errors](https://errors.betterstack.com/team/t570646/errors?s=2601794)
 2. Check environment + user count; ignore isolated transient Clerk network errors unless clustered
 3. With JS tag enabled, open the linked **session replay** when present
 
@@ -103,7 +103,7 @@ Alert or user report
 
 ### Example E — Successful payment
 
-Not an Errors issue — Stripe Dashboard + TownHub orders / admin.
+Not an Errors issue — Stripe Dashboard + TownHaven orders / admin.
 
 ## Admin Operations Center
 
@@ -134,7 +134,7 @@ Each service reports:
 | Status | Meaning |
 |--------|---------|
 | **healthy** | A real successful check (for example a database ping, or a recorded successful job/weather refresh) |
-| **configured** | Credentials or settings are present; for most providers TownHub did **not** perform a live provider ping. Stripe may stay `configured` after a successful live platform account check. |
+| **configured** | Credentials or settings are present; for most providers TownHaven did **not** perform a live provider ping. Stripe may stay `configured` after a successful live platform account check. |
 | **degraded** | Partially working or suboptimal (for example local storage in production, Stripe platform payouts disabled, or restricted Connect businesses) |
 | **unavailable** | Required or expected capability is broken or incomplete for use |
 | **not_configured** | Optional capability intentionally unset |
@@ -178,14 +178,14 @@ Logs include IDs useful for debugging (`businessId`, `orderId`, `appointmentRequ
 
 Set in deployment for richer Admin System Status:
 
-- `APP_NAME` — display name (default: TownHub)
+- `APP_NAME` — display name (default: TownHaven)
 - `APP_VERSION` — release version
 - `BUILD_DATE` — ISO build timestamp
 - `GIT_COMMIT_SHA` — git commit (short or full)
 
 ## Sentry / Better Stack Errors setup
 
-Create separate Better Stack Errors apps for the API (`SENTRY_DSN`) and frontend. For frontend **session replay**, set `VITE_BETTERSTACK_JS_TOKEN` (JS tag). When the JS token is present, TownHub skips standalone `@sentry/react` init so the tag owns browser errors + replay.
+Create separate Better Stack Errors apps for the API (`SENTRY_DSN`) and frontend. For frontend **session replay**, set `VITE_BETTERSTACK_JS_TOKEN` (JS tag). When the JS token is present, TownHaven skips standalone `@sentry/react` init so the tag owns browser errors + replay.
 
 Tag events with **`DEPLOYMENT_ENVIRONMENT`** (`staging` or `production`) so Better Stack can filter staging vs production. The API reads `DEPLOYMENT_ENVIRONMENT` (fallback `NODE_ENV`). The frontend build exposes it as `VITE_DEPLOYMENT_ENVIRONMENT` from `DEPLOYMENT_ENVIRONMENT` or an explicit `VITE_DEPLOYMENT_ENVIRONMENT`. Cloudflare Builds already set `DEPLOYMENT_ENVIRONMENT`; Railway must set it per environment.
 
@@ -195,7 +195,7 @@ Tag events with **`DEPLOYMENT_ENVIRONMENT`** (`staging` or `production`) so Bett
 - Optional release tags: `APP_VERSION`, `GIT_COMMIT_SHA`, `VITE_APP_VERSION`, `VITE_GIT_COMMIT_SHA`
 - Development-only tests: `GET /api/debug/sentry` and `/debug/sentry`; neither route is mounted in production
 
-Verify one event from each staging surface and confirm routing to the primary operator. TownHub scrubs request headers, cookies, bodies, query strings and URL values, exception-message text, credentials, payment fields, common secret keys, e-mail addresses, and Clerk-style provider identifiers. Do not add customer PII, tokens, provider identifiers, or secrets to Sentry context manually. A stable signed-in user ID and route/business identifiers may be attached for diagnosis and must be reflected accurately in privacy disclosures.
+Verify one event from each staging surface and confirm routing to the primary operator. TownHaven scrubs request headers, cookies, bodies, query strings and URL values, exception-message text, credentials, payment fields, common secret keys, e-mail addresses, and Clerk-style provider identifiers. Do not add customer PII, tokens, provider identifiers, or secrets to Sentry context manually. A stable signed-in user ID and route/business identifiers may be attached for diagnosis and must be reflected accurately in privacy disclosures.
 
 When a DSN is absent, the app continues without sending events. Admin Operations Center reports only whether Sentry is configured and never exposes the DSN.
 
@@ -208,7 +208,7 @@ When a DSN is absent, the app continues without sending events. Admin Operations
 | **GitHub Actions `uptime-health-check.yml`** | Independent 5-minute probes of staging/production API `/health` and frontend origins |
 | **Managed Postgres backups** | Database disaster recovery — see [DATABASE_BACKUP_AND_RECOVERY.md](DATABASE_BACKUP_AND_RECOVERY.md) |
 | **Stripe Dashboard → Webhooks** | Delivery logs and retry inspection |
-| **Better Stack HTTP logs + Railway Locomotive** | Centralize Pino JSON logs (free: 3 GB / 3 days). Staging `locomotive` and production `locomotive-production` ship TownHub API logs to Telemetry source `TownHub Railway API logs`. |
+| **Better Stack HTTP logs + Railway Locomotive** | Centralize Pino JSON logs (free: 3 GB / 3 days). Staging `locomotive` and production `locomotive-production` ship TownHaven API logs to Telemetry source `TownHaven Railway API logs`. |
 
 ## Required alert matrix for beta
 
@@ -223,7 +223,7 @@ When a DSN is absent, the app continues without sending events. Admin Operations
 | Job overdue or failed | Operations Center + scheduler logs | Owner |
 | Account deletion approaching deadline | Admin → Users queue | Platform owner/privacy operator |
 
-Production alerts must not depend solely on the TownHub application or the same provider being monitored.
+Production alerts must not depend solely on the TownHaven application or the same provider being monitored.
 
 ## Release verification
 

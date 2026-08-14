@@ -236,6 +236,6 @@ describe("appointment owner notifications", () => {
     assert.match(email.text, /appointments/);
     assert.match(email.html, /New Appointment Request/);
     assert.match(email.html, /Review Request/);
-    assert.match(email.html, /TownHub/);
+    assert.match(email.html, /TownHaven/);
   });
 });

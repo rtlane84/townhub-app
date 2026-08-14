@@ -6,11 +6,11 @@ Accepted
 
 ## Context
 
-Business subscriptions pay TownHub, while customer orders pay individual businesses through Connect. Combining those domains would make ownership, reconciliation, feature gating, and webhook behavior unsafe.
+Business subscriptions pay TownHaven, while customer orders pay individual businesses through Connect. Combining those domains would make ownership, reconciliation, feature gating, and webhook behavior unsafe.
 
 ## Decision
 
-Create business-plan customers, Checkout subscriptions, portal sessions, and plan changes on the TownHub platform Stripe account. Store their state in `business_subscriptions` and map Stripe prices to `subscription_plans`. Route platform subscription events separately from Connect order/refund events even though both webhook destinations use `/api/checkout/webhook`.
+Create business-plan customers, Checkout subscriptions, portal sessions, and plan changes on the TownHaven platform Stripe account. Store their state in `business_subscriptions` and map Stripe prices to `subscription_plans`. Route platform subscription events separately from Connect order/refund events even though both webhook destinations use `/api/checkout/webhook`.
 
 ## Consequences
 

@@ -211,7 +211,7 @@ function activeSnapshot() {
 describe("subscription email templates", () => {
   it("builds branded welcome email with next steps and business hub CTA", () => {
     const email = buildSubscriptionWelcomeEmail(sampleEmailData);
-    assert.match(email.subject, /Welcome to TownHub/);
+    assert.match(email.subject, /Welcome to TownHaven/);
     assert.match(email.html, /Next Steps/);
     assert.match(email.html, /Open Business Hub/);
     assert.match(email.html, /Watch Quick Start Video/);

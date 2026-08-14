@@ -1,5 +1,5 @@
 /**
- * Shared design-system class tokens for TownHub's premium Apple-quality UI.
+ * Shared design-system class tokens for TownHaven's premium Apple-quality UI.
  * Prefer these over ad-hoc shadow/radius strings so web + native stay cohesive.
  */
 
@@ -46,4 +46,4 @@ export const DASHBOARD_NAV_ACTIVE =
 
 /** Dashboard main canvas */
 export const DASHBOARD_MAIN =
-  "flex-1 overflow-x-hidden bg-[hsl(var(--background))]";
+  "min-w-0 flex-1 overflow-x-clip bg-[hsl(var(--background))]";

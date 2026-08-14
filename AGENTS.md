@@ -1,12 +1,12 @@
-# TownHub Repository Instructions
+# TownHaven Repository Instructions
 
 These instructions apply to the entire repository. Follow them before making changes. If a more specific `AGENTS.md` is added beneath a directory later, its instructions take precedence for files in that subtree.
 
 ## Product Context
 
-TownHub is a multi-tenant local commerce SaaS and community marketplace. Residents discover businesses, place pickup or delivery orders, request appointments, follow food trucks, and view community events. Business owners manage their storefronts and daily operations. Platform administrators manage the marketplace, plans, businesses, users, and platform health.
+TownHaven is a multi-tenant local commerce SaaS and community marketplace. Residents discover businesses, place pickup or delivery orders, request appointments, follow food trucks, and view community events. Business owners manage their storefronts and daily operations. Platform administrators manage the marketplace, plans, businesses, users, and platform health.
 
-Clay is the confirmed first pilot locality: make its deployment and first businesses reliable before geographic expansion. TownHub is intended to serve many localities eventually, but locality-level data isolation and operations are not established by the current configurable branding alone. Do not hardcode Clay into reusable commerce, identity, billing, or notification logic; future multi-locality support requires an explicit architecture decision.
+Clay is the confirmed first pilot locality: make its deployment and first businesses reliable before geographic expansion. TownHaven is intended to serve many localities eventually, but locality-level data isolation and operations are not established by the current configurable branding alone. Do not hardcode Clay into reusable commerce, identity, billing, or notification logic; future multi-locality support requires an explicit architecture decision.
 
 The current objective is a safe, reliable production beta—not maximum feature count. Prioritize work that:
 
@@ -209,7 +209,7 @@ Read `docs/NOTIFICATIONS.md` before changing notification or live-update behavio
 
 ## Mobile and Capacitor Gotchas
 
-- TownHub's iOS app is a Capacitor shell around responsive Vite assets bundled into the reviewed native application.
+- TownHaven's iOS app is a Capacitor shell around responsive Vite assets bundled into the reviewed native application.
 - Web behavior must remain correct when adding native-only behavior.
 - Google OAuth cannot run inside WKWebView; preserve the Safari bounce and deep-link flow.
 - Stripe Checkout and Connect open in the system browser on native.
@@ -249,7 +249,7 @@ Match validation to the risk of the change.
 | Change                        | Minimum expected validation                                                                       |
 | ----------------------------- | ------------------------------------------------------------------------------------------------- |
 | Documentation only            | Review links/commands and run `git diff --check`                                                  |
-| Frontend component or page    | TownHub typecheck plus targeted unit/UI test; visually verify meaningful UI changes when possible |
+| Frontend component or page    | TownHaven typecheck plus targeted unit/UI test; visually verify meaningful UI changes when possible |
 | API route or middleware       | API typecheck plus targeted route tests                                                           |
 | Shared API contract           | Codegen, library typecheck, affected frontend/API typechecks, targeted tests                      |
 | Database schema or query      | Library/API typecheck, targeted tests, and an explicit migration/push plan                        |
@@ -275,4 +275,4 @@ A change is done when:
 - the final diff contains no secrets, debug code, accidental generated files, or unrelated edits;
 - the handoff states what changed, what was verified, and any remaining risks or manual steps.
 
-Passing compilation alone is not done. A feature must work as an end-to-end TownHub workflow, including authorization and failure behavior.
+Passing compilation alone is not done. A feature must work as an end-to-end TownHaven workflow, including authorization and failure behavior.

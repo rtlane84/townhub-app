@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.version = package['version']
   s.summary = package['description']
   s.license = package['license']
-  s.homepage = 'https://townhub.io'
+  s.homepage = 'https://townhaven.io'
   s.author = package['author']
   s.source = { :git => 'https://github.com/rtlane84/townhub-app.git', :tag => 'v' + package['version'] }
   s.source_files = 'ios/Sources/**/*.{swift,h,m,c,cc,mm,cpp}'

@@ -51,7 +51,7 @@ export function disableUserCopy(user: UserSummary): ConfirmActionCopy {
     title: "Disable user?",
     body: [
       `Disable ${displayName} (${user.email})?`,
-      "The account stays in TownHub and keeps its order, business, and audit history.",
+      "The account stays in TownHaven and keeps its order, business, and audit history.",
       "The user will be blocked from admin, business, and signed-in customer actions until re-enabled.",
       "This does not delete the Clerk identity. Clerk deletion is a separate manual action if ever needed.",
     ],
