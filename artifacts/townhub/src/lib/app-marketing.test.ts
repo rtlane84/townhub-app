@@ -144,7 +144,7 @@ describe("app marketing page", () => {
   it("exposes a static Open Graph image for social crawlers", () => {
     const html = readFileSync(`${srcRoot}/../index.html`, "utf8");
     assert.match(html, /property="og:image"/);
-    assert.match(html, /https:\/\/townhaven\.io\/opengraph\.jpg/);
+    assert.ok(html.includes("https://townhaven.io/opengraph.jpg"));
     assert.match(html, /name="twitter:image"/);
   });
 
