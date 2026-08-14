@@ -31,7 +31,7 @@ export function formatSupportReportSubject(
   category: SupportReportCategory,
   pagePath: string,
 ): string {
-  return `[TownHub report] ${CATEGORY_LABEL[category]} — ${pagePath}`;
+  return `[TownHaven report] ${CATEGORY_LABEL[category]} — ${pagePath}`;
 }
 
 export function formatSupportReportBody(payload: SupportReportPayload): string {

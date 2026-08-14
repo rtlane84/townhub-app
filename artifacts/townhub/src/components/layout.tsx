@@ -70,7 +70,7 @@ function HeaderUserButton() {
     <UserButton appearance={clerkUserButtonAppearance}>
       <UserButton.MenuItems>
         <UserButton.Link
-          label="Delete TownHub account"
+          label="Delete TownHaven account"
           labelIcon={<AlertTriangle className="h-4 w-4" aria-hidden />}
           href={accountPageHref}
         />

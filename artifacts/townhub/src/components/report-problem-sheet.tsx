@@ -136,7 +136,7 @@ export function ReportProblemSheet({
         <SheetHeader className="text-left">
           <SheetTitle>Report a problem</SheetTitle>
           <SheetDescription>
-            Tell us about a TownHub platform issue. For order, delivery, appointment, or refund
+            Tell us about a TownHaven platform issue. For order, delivery, appointment, or refund
             questions, contact the business first.
           </SheetDescription>
         </SheetHeader>

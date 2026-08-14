@@ -3,23 +3,23 @@ import { describe, it } from "node:test";
 import { splitPlatformBrandName } from "./platform-brand-name.ts";
 
 describe("platform brand name", () => {
-  it("splits Clay TownHub into prefix, Town, and Hub", () => {
-    assert.deepEqual(splitPlatformBrandName("Clay TownHub"), {
-      prefix: "Clay ",
+  it("splits a prefixed TownHaven into prefix, Town, and Haven", () => {
+    assert.deepEqual(splitPlatformBrandName("Community TownHaven"), {
+      prefix: "Community ",
       town: "Town",
-      hub: "Hub",
+      hub: "Haven",
     });
   });
 
-  it("splits TownHub without a prefix", () => {
-    assert.deepEqual(splitPlatformBrandName("TownHub"), {
+  it("splits TownHaven without a prefix", () => {
+    assert.deepEqual(splitPlatformBrandName("TownHaven"), {
       prefix: "",
       town: "Town",
-      hub: "Hub",
+      hub: "Haven",
     });
   });
 
-  it("falls back when Hub is absent", () => {
+  it("falls back when Haven is absent", () => {
     assert.deepEqual(splitPlatformBrandName("Marketplace"), {
       prefix: "Marketplace",
       town: null,

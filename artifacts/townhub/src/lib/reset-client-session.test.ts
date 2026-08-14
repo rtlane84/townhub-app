@@ -79,8 +79,8 @@ describe("resolveAuthTokenWithTimeout", () => {
 });
 
 describe("platform branding defaults and splash hold", () => {
-  it("defaults platform name to TownHub not LocalOrderHub", () => {
-    assert.match(brandingSource, /DEFAULT_PLATFORM_NAME\s*=\s*"TownHub"/);
+  it("defaults platform name to TownHaven not LocalOrderHub", () => {
+    assert.match(brandingSource, /DEFAULT_PLATFORM_NAME\s*=\s*"TownHaven"/);
     assert.doesNotMatch(brandingSource, /LocalOrderHub/);
   });
 

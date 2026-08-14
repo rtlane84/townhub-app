@@ -6,7 +6,7 @@ import { initNativePushNotifications } from "@/lib/native-push";
 
 /**
  * After login on a native shell, request push permission and register the
- * device token with the TownHub API.
+ * device token with the TownHaven API.
  */
 export function NativePushRegistration() {
   const { isSignedIn, isLoaded } = useUser();

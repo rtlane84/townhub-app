@@ -98,7 +98,7 @@ export default function BusinessSubscription() {
     } catch {
       toast({
         title: "Could not open website",
-        description: "Open townhub.io in a browser and sign in to manage your subscription.",
+        description: "Open townhaven.io in a browser and sign in to manage your subscription.",
         variant: "destructive",
       });
     }
@@ -367,7 +367,7 @@ export default function BusinessSubscription() {
                     <p className="text-muted-foreground mt-1">
                       Paid features are no longer available.
                       {storeDistribution
-                        ? " Use Manage on the web below to subscribe again, or contact TownHub support for account help."
+                        ? " Use Manage on the web below to subscribe again, or contact TownHaven support for account help."
                         : " Choose a plan below to subscribe again."}
                     </p>
                   </div>
@@ -383,7 +383,7 @@ export default function BusinessSubscription() {
                     <p className="font-medium text-amber-900">Payment past due</p>
                     <p className="text-amber-800/90 mt-1">
                       {storeDistribution
-                        ? "Your subscription needs attention. Use Manage on the web below to update billing, or contact TownHub support."
+                        ? "Your subscription needs attention. Use Manage on the web below to update billing, or contact TownHaven support."
                         : "Update your payment method in Manage Billing to avoid losing access."}
                     </p>
                   </div>
@@ -407,7 +407,7 @@ export default function BusinessSubscription() {
                         <>Your subscription is scheduled to cancel at the end of the current billing period.</>
                       )}{" "}
                       {storeDistribution
-                        ? " Contact TownHub support for account help."
+                        ? " Contact TownHaven support for account help."
                         : " Reactivate anytime in Manage Billing."}
                     </p>
                   </div>
@@ -553,15 +553,15 @@ export default function BusinessSubscription() {
                   {complimentary
                     ? "Billing is managed by the platform for this plan."
                     : storeDistribution
-                      ? "View your TownHub subscription status and plan details."
-                      : "Manage your TownHub subscription through Stripe."}
+                      ? "View your TownHaven subscription status and plan details."
+                      : "Manage your TownHaven subscription through Stripe."}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {storeDistribution && !complimentary && (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
-                      Subscribe, change plans, and update billing on the TownHub website. Opens in your
+                      Subscribe, change plans, and update billing on the TownHaven website. Opens in your
                       browser — sign in with the same account. If your business was recently approved,
                       you may also use the setup instructions sent to your account email.
                     </p>

@@ -73,7 +73,7 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid ${BORDER_COLOR};border-radius:16px;overflow:hidden;">
           <tr>
             <td style="background:${BRAND_COLOR};padding:20px 32px;text-align:center;">
-              <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#93c5fd;">TownHub</div>
+              <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#93c5fd;">TownHaven</div>
             </td>
           </tr>
           <tr>
@@ -89,7 +89,7 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
           <tr>
             <td style="padding:20px 32px;background:#f1f5f9;border-top:1px solid ${BORDER_COLOR};text-align:center;">
               <p style="margin:0;font-size:12px;color:${MUTED_COLOR};line-height:1.5;">
-                Powered by <strong style="color:${BRAND_COLOR};">TownHub</strong> · Supporting local businesses
+                Powered by <strong style="color:${BRAND_COLOR};">TownHaven</strong> · Supporting local businesses
               </p>
             </td>
           </tr>

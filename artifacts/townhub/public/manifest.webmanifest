@@ -1,7 +1,7 @@
 {
-  "name": "TownHub Business Hub",
-  "short_name": "TownHub",
-  "description": "Manage orders, appointments, and your local business from TownHub.",
+  "name": "TownHaven Business Hub",
+  "short_name": "TownHaven",
+  "description": "Manage orders, appointments, and your local business from TownHaven.",
   "start_url": "/dashboard/business",
   "scope": "/",
   "display": "standalone",

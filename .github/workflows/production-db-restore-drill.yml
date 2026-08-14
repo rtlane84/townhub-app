@@ -201,7 +201,7 @@ jobs:
           set -e
           echo "data_restore_exit=$data_rc"
 
-          # Fail closed if none of the TownHub application tables appeared.
+          # Fail closed if none of the TownHaven application tables appeared.
           app_tables="$(psql "$RESTORE_DATABASE_URL" -At <<'SQL'
           SELECT count(*)
           FROM information_schema.tables

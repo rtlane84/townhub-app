@@ -1,5 +1,5 @@
 /**
- * Canonical order-status color system for TownHub.
+ * Canonical order-status color system for TownHaven.
  * Use these helpers everywhere (orders list, kitchen, detail, filters, badges).
  *
  * Palette:

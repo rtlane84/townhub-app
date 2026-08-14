@@ -831,7 +831,7 @@ export default function ListYourBusiness() {
                   </Link>{" "}
                   and the{" "}
                   <Link href="/terms-of-service" className="font-medium text-primary underline underline-offset-2">
-                    TownHub Terms of Service
+                    TownHaven Terms of Service
                   </Link>.
                 </span>
               </label>

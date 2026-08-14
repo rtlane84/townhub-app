@@ -1,10 +1,12 @@
-# TownHub live release process (web + iOS)
+# TownHaven live release process (web + iOS)
+
+For the one-time TownHub-to-TownHaven domain and App Store transition, also follow [TOWNHAVEN_REBRAND_RUNBOOK.md](./TOWNHAVEN_REBRAND_RUNBOOK.md). The legacy production API hostname remains supported for installed pre-rebrand iOS builds.
 
 Day-to-day runbook after staging and production are live. For environment isolation see [ENVIRONMENTS.md](./ENVIRONMENTS.md). For go-live gates see [../PRODUCTION.md](../PRODUCTION.md). For Capacitor details and the physical-device matrix see [IOS_APP.md](./IOS_APP.md).
 
 ## Mental model
 
-TownHub has **three surfaces** that update differently:
+TownHaven has **three surfaces** that update differently:
 
 | Surface | How users get updates | Trigger |
 |---|---|---|
@@ -16,18 +18,18 @@ The iOS app embeds a snapshot of the React UI at `ios:sync` time. A GitHub push 
 
 | Git branch | API | Frontend |
 |---|---|---|
-| `develop` | `api-staging.townhub.io` | `staging.townhub.io` |
-| `main` | `api.townhub.io` | `townhub.io` |
+| `develop` | `api-staging.townhaven.io` | `staging.townhaven.io` |
+| `main` | `api.townhaven.io` | `townhaven.io` |
 
 ## Default day-to-day flow
 
 1. Branch from `develop`: `git checkout develop && git pull && git checkout -b fix/…` (or `feat/…`).
 2. Build and test locally.
-3. Open a PR → `develop`. After merge, wait for the staging deploy and smoke the changed flow on [staging.townhub.io](https://staging.townhub.io).
+3. Open a PR → `develop`. After merge, wait for the staging deploy and smoke the changed flow on [staging.townhaven.io](https://staging.townhaven.io).
 4. Decide whether phones need the change (see [When you need a new iOS build](#when-you-need-a-new-ios-build)).
    - **No** → go to step 5.
    - **Yes** → cut a **staging TestFlight** from that commit (see [Staging TestFlight](#staging-testflight)), then continue.
-5. Promote with a PR `develop` → `main` (short what / why / smoke-done note). After merge, smoke [townhub.io](https://townhub.io).
+5. Promote with a PR `develop` → `main` (short what / why / smoke-done note). After merge, smoke [townhaven.io](https://townhaven.io).
 6. Tag the production commit when cutting a named release:
 
    ```bash
@@ -63,9 +65,9 @@ No TestFlight. No App Store. Installed apps keep talking to the API; server beha
 Example: checkout button, Help text, or any change under `artifacts/townhub` that users see.
 
 ```
-feature → PR develop → smoke staging.townhub.io
+feature → PR develop → smoke staging.townhaven.io
        → staging TestFlight
-       → PR main → smoke townhub.io
+       → PR main → smoke townhaven.io
        → production iOS prepare + Archive → App Store
 ```
 

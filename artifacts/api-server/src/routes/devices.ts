@@ -194,7 +194,7 @@ router.post("/me/notifications/test-push", requireAuth, async (req, res): Promis
       userIds: [req.dbUser!.id],
       businessId: 0,
       eventType: "NEW_ORDER",
-      title: "TownHub test notification",
+      title: "TownHaven test notification",
       body: "Push notifications are working on this device.",
       deepLink,
       category: "OWNER_NEW_ORDER",

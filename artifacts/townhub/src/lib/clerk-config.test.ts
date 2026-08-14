@@ -8,7 +8,7 @@ import {
 test("resolveClerkProxyUrlForRuntime ignores proxy on native", () => {
   assert.equal(
     resolveClerkProxyUrlForRuntime({
-      proxyUrl: "https://staging.townhub.io/api/__clerk",
+      proxyUrl: "https://staging.townhaven.io/api/__clerk",
       isNative: true,
     }),
     undefined,
@@ -28,10 +28,10 @@ test("resolveClerkProxyUrlForRuntime returns undefined for localhost proxy on we
 test("resolveClerkProxyUrlForRuntime keeps HTTPS proxy on web", () => {
   assert.equal(
     resolveClerkProxyUrlForRuntime({
-      proxyUrl: "https://staging.townhub.io/api/__clerk",
+      proxyUrl: "https://staging.townhaven.io/api/__clerk",
       isNative: false,
     }),
-    "https://staging.townhub.io/api/__clerk",
+    "https://staging.townhaven.io/api/__clerk",
   );
 });
 

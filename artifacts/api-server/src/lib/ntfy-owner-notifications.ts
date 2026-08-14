@@ -26,7 +26,7 @@ export function buildOwnerNewOrderNtfyMessage(order: OrderNotificationData) {
   if (reference) {
     messageLines.push(reference);
   }
-  messageLines.push(`Open in TownHub: ${orderUrl}`);
+  messageLines.push(`Open in TownHaven: ${orderUrl}`);
   return {
     title: "New order",
     message: messageLines.join("\n"),
@@ -51,7 +51,7 @@ export function buildOwnerNewAppointmentNtfyMessage(input: {
     `Customer: ${input.customerName}`,
     `Service: ${service}`,
     `When: ${when}`,
-    `Open in TownHub: ${url}`,
+    `Open in TownHaven: ${url}`,
   ].join("\n");
   return {
     title: "New appointment request",
@@ -63,11 +63,11 @@ export function buildOwnerNewAppointmentNtfyMessage(input: {
 
 export function buildOwnerNtfyTestMessage(businessName: string) {
   return {
-    title: "TownHub test notification",
+    title: "TownHaven test notification",
     message: [
       `Phone alerts are configured for **${businessName}**.`,
       "",
-      "Status: This is a test message from TownHub.",
+      "Status: This is a test message from TownHaven.",
     ].join("\n"),
     tags: ["white_check_mark"],
   };

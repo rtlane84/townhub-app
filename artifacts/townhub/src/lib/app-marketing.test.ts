@@ -11,13 +11,13 @@ describe("app marketing page", () => {
   it("exposes store and support settings in one config module", () => {
     assert.equal(
       appMarketingConfig.appStoreUrl,
-      "https://apps.apple.com/us/app/townhub-local/id6791258844",
+      "https://apps.apple.com/us/app/townhaven/id6791258844",
     );
     assert.equal(appMarketingConfig.appStoreId, "6791258844");
     assert.equal(appMarketingConfig.businessSignupUrl, "/list-your-business");
     assert.equal(typeof appMarketingConfig.supportEmail, "string");
     assert.equal(appMarketingConfig.androidAvailable, false);
-    assert.match(appMarketingConfig.pageTitle, /TownHub/);
+    assert.match(appMarketingConfig.pageTitle, /TownHaven/);
     assert.ok(appMarketingConfig.metaDescription.length > 40);
   });
 
@@ -48,13 +48,13 @@ describe("app marketing page", () => {
     assert.match(agreementSource, /launch draft/);
   });
 
-  it("declares proprietary TownHub rights without claiming user business content", () => {
+  it("declares proprietary TownHaven rights without claiming user business content", () => {
     const termsSource = readFileSync(`${srcRoot}/pages/terms-of-service.tsx`, "utf8");
     const packageJson = readFileSync(`${srcRoot}/../../../package.json`, "utf8");
     const license = readFileSync(`${srcRoot}/../../../LICENSE`, "utf8");
     assert.match(packageJson, /"license": "UNLICENSED"/);
     assert.match(license, /Copyright \(c\) 2026 LaneTech/);
-    assert.match(termsSource, /TownHub intellectual property/);
+    assert.match(termsSource, /TownHaven intellectual property/);
     assert.match(termsSource, /reverse engineer/);
     assert.match(termsSource, /scrape or automatically extract data/);
     assert.match(termsSource, /except for content submitted by\s+users or businesses/);
@@ -132,7 +132,7 @@ describe("app marketing page", () => {
     const packageJson = readFileSync(`${srcRoot}/../package.json`, "utf8");
     assert.match(packageJson, /@plausible-analytics\/tracker/);
     assert.match(plausibleSource, /@plausible-analytics\/tracker/);
-    assert.match(plausibleSource, /PRODUCTION_DOMAIN = "townhub\.io"/);
+    assert.match(plausibleSource, /PRODUCTION_DOMAIN = "townhaven\.io"/);
     assert.match(plausibleSource, /domain: PRODUCTION_DOMAIN/);
     assert.match(plausibleSource, /VITE_DEPLOYMENT_ENVIRONMENT/);
     assert.match(plausibleSource, /deploymentEnvironment !== "production"/);
@@ -144,7 +144,7 @@ describe("app marketing page", () => {
   it("exposes a static Open Graph image for social crawlers", () => {
     const html = readFileSync(`${srcRoot}/../index.html`, "utf8");
     assert.match(html, /property="og:image"/);
-    assert.match(html, /https:\/\/townhub\.io\/opengraph\.jpg/);
+    assert.match(html, /https:\/\/townhaven\.io\/opengraph\.jpg/);
     assert.match(html, /name="twitter:image"/);
   });
 

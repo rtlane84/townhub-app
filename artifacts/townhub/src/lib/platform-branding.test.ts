@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { readFile } from "node:fs/promises";
+import {
+  DEFAULT_PLATFORM_NAME,
+  resolvePlatformName,
+} from "./platform-branding.ts";
 
 describe("platform branding hero settings", () => {
   it("preserves cover/center defaults and sets overlay/button defaults", async () => {
@@ -226,5 +230,19 @@ describe("hero composition parity between live homepage and admin preview", () =
     assert.match(businessLayout, /DASHBOARD_MOBILE_NAV_TOP_CLASS/);
     assert.doesNotMatch(adminLayout, /top-16/);
     assert.doesNotMatch(businessLayout, /top-16/);
+  });
+
+});
+
+
+describe("resolvePlatformName", () => {
+  it("normalizes known legacy product names to TownHaven", () => {
+    assert.equal(resolvePlatformName({ platformName: "TownHub" }), DEFAULT_PLATFORM_NAME);
+    assert.equal(resolvePlatformName({ platformName: "ClayTownHub" }), DEFAULT_PLATFORM_NAME);
+    assert.equal(resolvePlatformName({ platformName: "Clay TownHub" }), DEFAULT_PLATFORM_NAME);
+  });
+
+  it("preserves genuinely custom platform names", () => {
+    assert.equal(resolvePlatformName({ platformName: "Main Street Market" }), "Main Street Market");
   });
 });

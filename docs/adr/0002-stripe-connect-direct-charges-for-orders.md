@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-Each ordering business owns a Stripe Express connected account. TownHub must keep customer funds and refund operations associated with that business rather than charging all orders on the platform account.
+Each ordering business owns a Stripe Express connected account. TownHaven must keep customer funds and refund operations associated with that business rather than charging all orders on the platform account.
 
 ## Decision
 

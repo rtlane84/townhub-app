@@ -14,7 +14,7 @@ const sampleTheme: PlatformTheme = {
   accentColor: "#F59E0B",
   backgroundColor: "#F4F5F8",
   buttonColor: "#1E3A8A",
-  platformName: "Clay TownHub",
+  platformName: "TownHaven",
 };
 
 describe("platform-theme-cache", () => {

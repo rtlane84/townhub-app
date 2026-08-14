@@ -25,7 +25,7 @@ export function buildOwnerNewOrderDiscordPayload(order: OrderNotificationData) {
   if (reference) {
     fields.push({ name: "Reference", value: reference.replace(/^Reference: /, ""), inline: true });
   }
-  fields.push({ name: "Open in TownHub", value: orderUrl });
+  fields.push({ name: "Open in TownHaven", value: orderUrl });
 
   return {
     embeds: [
@@ -60,7 +60,7 @@ export function buildOwnerNewAppointmentDiscordPayload(input: {
           { name: "Customer", value: input.customerName, inline: true },
           { name: "Service", value: input.serviceName?.trim() || "General request", inline: true },
           { name: "When", value: when, inline: false },
-          { name: "Open in TownHub", value: url },
+          { name: "Open in TownHaven", value: url },
         ],
       },
     ],
@@ -71,10 +71,10 @@ export function buildOwnerDiscordTestPayload(businessName: string) {
   return {
     embeds: [
       {
-        title: "TownHub test notification",
+        title: "TownHaven test notification",
         description: `Discord alerts are configured for **${businessName}**.`,
         color: ORDER_EMBED_COLOR,
-        fields: [{ name: "Status", value: "This is a test message from TownHub." }],
+        fields: [{ name: "Status", value: "This is a test message from TownHaven." }],
       },
     ],
   };

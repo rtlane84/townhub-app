@@ -1,4 +1,4 @@
-"""Generate the TownHub business outreach handout as a US Letter PDF."""
+"""Generate the TownHaven business outreach handout as a US Letter PDF."""
 
 from pathlib import Path
 
@@ -16,7 +16,7 @@ from reportlab.platypus import Paragraph
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "output" / "pdf" / "townhub-business-outreach-handout.pdf"
-APPLY_URL = "https://townhub.io/list-your-business"
+APPLY_URL = "https://townhaven.io/list-your-business"
 
 NAVY = HexColor("#17357A")
 BLUE = HexColor("#2563EB")
@@ -79,8 +79,8 @@ def build():
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     canvas = __import__("reportlab.pdfgen.canvas", fromlist=["Canvas"]).Canvas(str(OUTPUT), pagesize=letter)
     page_w, page_h = letter
-    canvas.setTitle("TownHub - Business Outreach Handout")
-    canvas.setAuthor("TownHub")
+    canvas.setTitle("TownHaven - Business Outreach Handout")
+    canvas.setAuthor("TownHaven")
     styles = getSampleStyleSheet()
     body = ParagraphStyle("body", parent=styles["BodyText"], fontName="Helvetica", fontSize=9.4, leading=12.5, textColor=INK)
     small = ParagraphStyle("small", parent=body, fontSize=8.1, leading=10.3, textColor=MUTED)
@@ -89,7 +89,7 @@ def build():
     canvas.rect(0, page_h - 1.66 * inch, page_w, 1.66 * inch, fill=1, stroke=0)
     canvas.setFillColor(WHITE)
     canvas.setFont("Helvetica-Bold", 12)
-    canvas.drawString(0.55 * inch, page_h - 0.52 * inch, "TownHub | Clay, West Virginia")
+    canvas.drawString(0.55 * inch, page_h - 0.52 * inch, "TownHaven | Clay, West Virginia")
     canvas.setFont("Helvetica-Bold", 25)
     canvas.drawString(0.55 * inch, page_h - 0.93 * inch, "Put your business where Clay looks first.")
     canvas.setFillColor(HexColor("#DCE8FF"))
@@ -98,34 +98,34 @@ def build():
 
     intro_y = page_h - 1.95 * inch
     canvas.setFillColor(INK)
-    paragraph(canvas, "<b>More dependable than a social post.</b> TownHub gives independent Clay businesses one polished place customers can use to browse, call, request an appointment, or order when your business is ready.", 0.55 * inch, intro_y, 7.4 * inch, body)
+    paragraph(canvas, "<b>More dependable than a social post.</b> TownHaven gives independent Clay businesses one polished place customers can use to browse, call, request an appointment, or order when your business is ready.", 0.55 * inch, intro_y, 7.4 * inch, body)
 
     cards_y = page_h - 2.75 * inch
     plan_card(canvas, 0.55 * inch, cards_y, 3.57 * inch, "Business Showcase", "$20", "$200", "Your public page for hours, photos, products, menu, or services. Customers can browse, call, or request an appointment. Online ordering is not included.", ["Business page & catalog", "Appointment requests", "Mobile business schedule", "Email notifications", "Analytics"])
-    plan_card(canvas, 4.38 * inch, cards_y, 3.57 * inch, "Business Ordering", "$40", "$400", "Everything in Business Showcase, plus pickup and delivery ordering. You manage orders from your TownHub dashboard.", ["Pickup and delivery ordering", "Order management dashboard", "SMS & email notifications", "Appointments & mobile schedule", "Analytics"], recommended=True)
+    plan_card(canvas, 4.38 * inch, cards_y, 3.57 * inch, "Business Ordering", "$40", "$400", "Everything in Business Showcase, plus pickup and delivery ordering. You manage orders from your TownHaven dashboard.", ["Pickup and delivery ordering", "Order management dashboard", "SMS & email notifications", "Appointments & mobile schedule", "Analytics"], recommended=True)
 
     lower_y = page_h - 6.28 * inch
     canvas.setFillColor(LIGHT)
     canvas.roundRect(0.55 * inch, lower_y - 1.32 * inch, 4.65 * inch, 1.32 * inch, 12, fill=1, stroke=0)
     canvas.setFillColor(NAVY)
     canvas.setFont("Helvetica-Bold", 12)
-    canvas.drawString(0.76 * inch, lower_y - 0.25 * inch, "What TownHub does - and what stays yours")
+    canvas.drawString(0.76 * inch, lower_y - 0.25 * inch, "What TownHaven does - and what stays yours")
     reassurance = [
         "You control your business, fulfillment, and delivery choices.",
         "Appointment requests are yours to review and confirm.",
-        "No setup fee. No TownHub platform transaction fee.",
+        "No setup fee. No TownHaven platform transaction fee.",
         "Stripe processing fees still apply to eligible card payments.",
     ]
     bullet_list(canvas, reassurance, 0.76 * inch, lower_y - 0.45 * inch, 4.2 * inch, small)
 
     qr_widget = qr.QrCodeWidget(APPLY_URL)
     bounds = qr_widget.getBounds()
-    size = 1.21 * inch
+    size = 1.0 * inch
     drawing = Drawing(size, size, transform=[size / (bounds[2] - bounds[0]), 0, 0, size / (bounds[3] - bounds[1]), 0, 0])
     drawing.add(qr_widget)
-    renderPDF.draw(drawing, canvas, 5.54 * inch, lower_y - 1.22 * inch)
+    renderPDF.draw(drawing, canvas, 5.55 * inch, lower_y - 1.11 * inch)
     canvas.setFillColor(NAVY)
-    cta_x = 6.56 * inch
+    cta_x = 6.68 * inch
     canvas.setFont("Helvetica-Bold", 11)
     canvas.drawString(cta_x, lower_y - 0.32 * inch, "Start your trial")
     canvas.setFillColor(MUTED)
@@ -133,7 +133,7 @@ def build():
     canvas.drawString(cta_x, lower_y - 0.49 * inch, "Scan to apply, or visit")
     canvas.setFillColor(BLUE)
     canvas.setFont("Helvetica-Bold", 7.5)
-    canvas.drawString(cta_x, lower_y - 0.64 * inch, "townhub.io/")
+    canvas.drawString(cta_x, lower_y - 0.64 * inch, "townhaven.io/")
     canvas.drawString(cta_x, lower_y - 0.77 * inch, "list-your-business")
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 7.3)
@@ -144,7 +144,7 @@ def build():
     canvas.line(0.55 * inch, 0.55 * inch, page_w - 0.55 * inch, 0.55 * inch)
     canvas.setFillColor(MUTED)
     canvas.setFont("Helvetica", 7.4)
-    canvas.drawString(0.55 * inch, 0.36 * inch, "TownHub is a local business discovery and commerce platform. It is not a POS replacement or a TownHub-managed delivery fleet.")
+    canvas.drawString(0.55 * inch, 0.36 * inch, "TownHaven is a local business discovery and commerce platform. It is not a POS replacement or a TownHaven-managed delivery fleet.")
     canvas.save()
 
 

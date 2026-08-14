@@ -18,7 +18,7 @@ type OptimizedMediaImageProps = Omit<
 };
 
 /**
- * Responsive delivery for TownHub-managed media. Unsupported external media is
+ * Responsive delivery for TownHaven-managed media. Unsupported external media is
  * intentionally left direct so the API optimizer's source allowlist stays narrow.
  */
 export function OptimizedMediaImage({

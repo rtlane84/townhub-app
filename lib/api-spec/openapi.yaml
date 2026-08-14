@@ -96,7 +96,7 @@ paths:
     post:
       operationId: requestMyAccountDeletion
       tags: [auth]
-      summary: Request deletion of the current user's TownHub account
+      summary: Request deletion of the current user's TownHaven account
       requestBody:
         required: true
         content:

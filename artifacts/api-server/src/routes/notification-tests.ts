@@ -64,7 +64,7 @@ router.post(
     }
 
     const subject = `[Test] ${business.name} notification email`;
-    const body = `This is a test notification email from TownHub for ${business.name}. If you received this, email alerts are configured correctly.`;
+    const body = `This is a test notification email from TownHaven for ${business.name}. If you received this, email alerts are configured correctly.`;
 
     try {
       const outcome = await deliverOwnerEmail({
@@ -112,7 +112,7 @@ router.post(
       return;
     }
 
-    const body = `TownHub test SMS for ${business.name}. SMS alerts are configured correctly.`;
+    const body = `TownHaven test SMS for ${business.name}. SMS alerts are configured correctly.`;
 
     try {
       const outcome = await deliverOwnerSms({

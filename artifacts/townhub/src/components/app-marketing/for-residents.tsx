@@ -20,7 +20,7 @@ export function AppMarketingForResidents() {
             />
             <PhoneFrame
               src={eventsScreen}
-              alt="TownHub home screen with community spotlight and events"
+              alt="TownHaven home screen with community spotlight and events"
               size="xl"
               className={`${PHONE_FRAME_SINGLE_CLASS} shadow-2xl`}
             />
@@ -36,7 +36,7 @@ export function AppMarketingForResidents() {
             </h2>
             <p className="text-[17px] md:text-[18px] text-gray-600 mb-10 leading-relaxed max-w-lg font-sans">
               Stop searching through scattered posts to find business hours, event details,
-              food-truck locations, and important announcements. TownHub puts the information you
+              food-truck locations, and important announcements. TownHaven puts the information you
               need in one easy place.
             </p>
             <ul className="space-y-5">

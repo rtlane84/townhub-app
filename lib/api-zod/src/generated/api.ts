@@ -52,7 +52,7 @@ export const GetMyAccountDeletionRequestResponse = zod.object({
 
 
 /**
- * @summary Request deletion of the current user's TownHub account
+ * @summary Request deletion of the current user's TownHaven account
  */
 export const RequestMyAccountDeletionBody = zod.object({
   "confirmation": zod.enum(['DELETE'])

@@ -10,7 +10,7 @@ const SETTINGS_HELP =
   "This is your business's public web address. It stays the same even if you rename your business, so you don't have to update links you've already shared.";
 
 const SUPPORT_NOTE =
-  "Need to change your storefront link? Contact TownHub support and we'll be happy to help.";
+  "Need to change your storefront link? Contact TownHaven support and we'll be happy to help.";
 
 type StorefrontUrlFieldProps = {
   slug: string;

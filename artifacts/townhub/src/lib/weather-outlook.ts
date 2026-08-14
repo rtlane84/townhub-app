@@ -3,7 +3,7 @@ import type {
   WeatherForecast,
 } from "@workspace/api-client-react";
 
-/** WeatherKit condition groups used for TownHub's forecast wording. */
+/** WeatherKit condition groups used for TownHaven's forecast wording. */
 function isThunderstorm(conditionCode: string) {
   return [
     "IsolatedThunderstorms",

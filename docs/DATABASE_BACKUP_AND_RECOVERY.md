@@ -1,4 +1,4 @@
-# TownHub — Production Database Backup & Recovery
+# TownHaven — Production Database Backup & Recovery
 
 Operational plan for protecting production data before and during first-town launch. This is **operational safety work** — not a customer-facing feature.
 
@@ -8,7 +8,7 @@ Operational plan for protecting production data before and during first-town lau
 
 ## 1. What we are protecting
 
-TownHub’s **system of record** is PostgreSQL (`DATABASE_URL`). The API uses Drizzle ORM with a push-based schema workflow (no migration files in repo).
+TownHaven’s **system of record** is PostgreSQL (`DATABASE_URL`). The API uses Drizzle ORM with a push-based schema workflow (no migration files in repo).
 
 | Store | Contents | Backup responsibility |
 |-------|----------|---------------------|
@@ -24,7 +24,7 @@ TownHub’s **system of record** is PostgreSQL (`DATABASE_URL`). The API uses Dr
 
 ## 2. Production database topology (aligned with this repo)
 
-| Layer | How TownHub uses it |
+| Layer | How TownHaven uses it |
 |-------|---------------------|
 | **App hosts** | Cloudflare frontend and Railway API, isolated between staging and production |
 | **Database** | Any PostgreSQL 14+ reachable via `DATABASE_URL` |
@@ -35,7 +35,7 @@ Production must use a separate managed PostgreSQL database with verified automat
 
 ### Recommended providers (first-town launch)
 
-Choose **one** managed Postgres. All are compatible with TownHub’s `pg` + Drizzle stack.
+Choose **one** managed Postgres. All are compatible with TownHaven’s `pg` + Drizzle stack.
 
 | Provider | Why it fits | Backup features (typical) |
 |----------|-------------|---------------------------|
@@ -90,9 +90,9 @@ pg_dump "$DATABASE_URL" \
 - Before any production `drizzle push` that is not purely additive
 - After major data imports or admin bulk changes
 
-### 3.3 Automated Supabase-to-R2 backup (TownHub beta)
+### 3.3 Automated Supabase-to-R2 backup (TownHaven beta)
 
-TownHub includes `.github/workflows/production-db-backup.yml`. It creates separate roles, schema, and data dumps with the Supabase CLI, validates the archive, uploads it to a Cloudflare R2 bucket, and verifies the uploaded object. The first manual production run succeeded on 2026-07-15 (GitHub Actions run `29389309625`, archive `townhub-production-2026-07-15T04-35-16Z.zip` in R2 bucket `townhub-production-backups`). The nightly 02:00 UTC schedule is enabled after the restore drill below.
+TownHaven includes `.github/workflows/production-db-backup.yml`. It creates separate roles, schema, and data dumps with the Supabase CLI, validates the archive, uploads it to a Cloudflare R2 bucket, and verifies the uploaded object. The first manual production run succeeded on 2026-07-15 (GitHub Actions run `29389309625`, archive `townhub-production-2026-07-15T04-35-16Z.zip` in R2 bucket `townhub-production-backups`). The nightly 02:00 UTC schedule is enabled after the restore drill below.
 
 Restore drills use `.github/workflows/production-db-restore-drill.yml`, which downloads an R2 archive into an **ephemeral GitHub Actions Postgres** service (`townhub_restore_drill` on localhost). It never targets staging or production.
 
@@ -119,7 +119,7 @@ Configure an R2 lifecycle rule for the retention period you want. The workflow p
 | **Restore target** | Ephemeral GitHub Actions Postgres `townhub_restore_drill` on localhost (not staging `eajzpwkodnglonzxocep`, not production `ubntmzbkxyqsvihojcfp`) |
 | **Restore run** | GitHub Actions `29389988277` (success) |
 | **Verification** | `public` tables = 31; core app tables present (`users`, `businesses`, `products`, `orders`, `platform_settings`, `subscription_plans`); row counts `users=1 businesses=0 products=0 orders=0 platform_settings=1 subscription_plans=2`; fresh `psql` connectivity to the restored database succeeded |
-| **Notes** | Some Supabase `auth.*` / `storage.*` COPY statements error on plain Postgres stubs; TownHub application schema/data restored and counted successfully. Production remains empty of pilot businesses/orders by design. |
+| **Notes** | Some Supabase `auth.*` / `storage.*` COPY statements error on plain Postgres stubs; TownHaven application schema/data restored and counted successfully. Production remains empty of pilot businesses/orders by design. |
 
 Repeat this drill quarterly (or after backup pipeline changes) via workflow_dispatch on `production-db-restore-drill.yml`.
 
@@ -246,7 +246,7 @@ Complete before accepting real customer orders:
 ### Railway deployment
 
 - Set `DATABASE_URL` in the isolated Railway production environment. Prefer the **Supabase Session Pooler** URI (port **5432**) for the Node `pg` pool — see [PRODUCTION.md](../PRODUCTION.md) connection pool notes. Staging and production must each use their own project URI.
-- Set `DATABASE_POOL_MAX=20` (or `25`) on the TownHub API service for staging and production. Do not exceed the provider’s allowed connections.
+- Set `DATABASE_POOL_MAX=20` (or `25`) on the TownHaven API service for staging and production. Do not exceed the provider’s allowed connections.
 - After changing either variable, redeploy or restart the API so every instance reloads the value.
 - Staging and local databases must never use the production URL.
 
@@ -259,7 +259,7 @@ Complete before accepting real customer orders:
 
 - Same project often hosts both Postgres and the media bucket — confirm backup scope covers both.
 - Database connection string: Project Settings → Database → URI (use pooler mode for serverless/API).
-- The TownHub Production Supabase project was checked on 2026-07-14. Its dashboard reports the **Free** plan and states that project backups are not included. Off-host R2 logical backups plus the 2026-07-15 restore drill satisfy the launch recovery path; upgrading to a paid plan with provider PITR remains recommended before higher traffic.
+- The TownHaven Production Supabase project was checked on 2026-07-14. Its dashboard reports the **Free** plan and states that project backups are not included. Off-host R2 logical backups plus the 2026-07-15 restore drill satisfy the launch recovery path; upgrading to a paid plan with provider PITR remains recommended before higher traffic.
 
 ---
 

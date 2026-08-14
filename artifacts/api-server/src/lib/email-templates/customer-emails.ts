@@ -223,7 +223,7 @@ export function buildCustomerOrderCompletedEmail(order: OrderNotificationData): 
     ],
     includeItems: false,
     badge: { label: "Completed", tone: "success" },
-    footerNote: "Thank you for supporting local businesses through TownHub.",
+    footerNote: "Thank you for supporting local businesses through TownHaven.",
   });
 }
 

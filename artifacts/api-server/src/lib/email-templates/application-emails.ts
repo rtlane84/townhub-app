@@ -56,15 +56,15 @@ export function buildApplicationApprovedEmail(data: ApplicationApprovedEmailData
 
   const heading = data.requiresCheckout
     ? "Your application was approved"
-    : "Welcome to TownHub";
+    : "Welcome to TownHaven";
 
   const subject = data.requiresCheckout
     ? `Application approved — complete your ${data.planName} subscription`
-    : `Application approved — welcome to TownHub`;
+    : `Application approved — welcome to TownHaven`;
 
   const preheader = data.requiresCheckout
     ? `${data.businessName} was approved. Complete subscription setup to go live.`
-    : `${data.businessName} was approved and is ready to set up on TownHub.`;
+    : `${data.businessName} was approved and is ready to set up on TownHaven.`;
 
   const badge = data.requiresCheckout
     ? { label: "Setup required", tone: "warning" as const }
@@ -74,21 +74,21 @@ export function buildApplicationApprovedEmail(data: ApplicationApprovedEmailData
 
   const introHtml = data.requiresCheckout
     ? [
-        renderParagraph(`Great news — <strong>${data.businessName}</strong> has been approved for TownHub.`),
+        renderParagraph(`Great news — <strong>${data.businessName}</strong> has been approved for TownHaven.`),
         renderParagraph(
           `Your <strong>${data.planName}</strong> plan is assigned. Complete subscription checkout in the Business Hub to activate billing and unlock paid features.`,
         ),
         renderMutedParagraph(
-          "Stripe will send official receipts and invoices after checkout. TownHub sends account updates like this one.",
+          "Stripe will send official receipts and invoices after checkout. TownHaven sends account updates like this one.",
         ),
       ].join("")
     : [
-        renderParagraph(`Great news — <strong>${data.businessName}</strong> has been approved for TownHub.`),
+        renderParagraph(`Great news — <strong>${data.businessName}</strong> has been approved for TownHaven.`),
         renderParagraph(
           `Your <strong>${data.planName}</strong> plan is active${data.trialEndsAt ? ` with a trial through <strong>${formatDate(data.trialEndsAt)}</strong>` : ""}.`,
         ),
         renderMutedParagraph(
-          "TownHub sends onboarding updates like this one. Stripe sends payment receipts separately when billing begins.",
+          "TownHaven sends onboarding updates like this one. Stripe sends payment receipts separately when billing begins.",
         ),
       ].join("");
 
@@ -168,7 +168,7 @@ export function buildApplicationSubmittedAdminEmail(
   if (data.phone) detailRows.push({ label: "Phone", value: data.phone });
   if (data.address) detailRows.push({ label: "Address", value: data.address });
 
-  const subject = `[TownHub] New business application — ${data.businessName}`;
+  const subject = `[TownHaven] New business application — ${data.businessName}`;
   const preheader = `${data.businessName} submitted a listing application for review.`;
   const heading = "New business application";
 
@@ -189,7 +189,7 @@ export function buildApplicationSubmittedAdminEmail(
     bodyHtml,
     actionLabel: "Review application",
     actionUrl: data.reviewApplicationsUrl,
-    footerNote: "You are receiving this because you are a TownHub platform administrator.",
+    footerNote: "You are receiving this because you are a TownHaven platform administrator.",
   });
 
   const text = [
@@ -213,13 +213,13 @@ export type ApplicationRejectedEmailData = {
 };
 
 export function buildApplicationRejectedEmail(data: ApplicationRejectedEmailData): EmailContent {
-  const subject = `Update on your TownHub application — ${data.businessName}`;
+  const subject = `Update on your TownHaven application — ${data.businessName}`;
   const preheader = `Your listing application for ${data.businessName} was not approved at this time.`;
   const heading = "Application update";
 
   const introHtml = [
     renderParagraph(
-      `Thank you for applying to list <strong>${data.businessName}</strong> on TownHub. After review, we are not able to approve this application right now.`,
+      `Thank you for applying to list <strong>${data.businessName}</strong> on TownHaven. After review, we are not able to approve this application right now.`,
     ),
     data.reviewNote
       ? renderParagraph(`<strong>Note from our team:</strong> ${data.reviewNote}`)

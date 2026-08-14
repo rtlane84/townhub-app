@@ -11,7 +11,7 @@ Before granting production access, verify all of the following:
 - [ ] The contributor agreement assigns work product to LaneTech and includes confidentiality obligations.
 - [ ] Repository, design, hosting, and provider access is limited to the contributor&apos;s role and has a named offboarding owner.
 - [ ] External code, media, fonts, icons, and templates have a recorded source and license compatible with proprietary use.
-- [ ] No contributor uses personal accounts, unapproved assets, or copied competitor material in TownHub work.
+- [ ] No contributor uses personal accounts, unapproved assets, or copied competitor material in TownHaven work.
 
 On offboarding, revoke access, retrieve company materials, and confirm the assignment record is complete.
 

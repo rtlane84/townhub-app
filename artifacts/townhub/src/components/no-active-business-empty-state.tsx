@@ -13,7 +13,7 @@ export function NoActiveBusinessEmptyState() {
           </div>
           <CardTitle className="font-serif text-xl">You don&apos;t have an active business yet.</CardTitle>
           <CardDescription>
-            Apply to list your business on Town Hub. Once approved, you can complete subscription setup and manage orders from here.
+            Apply to list your business on TownHaven. Once approved, you can complete subscription setup and manage orders from here.
           </CardDescription>
         </CardHeader>
         <CardContent>

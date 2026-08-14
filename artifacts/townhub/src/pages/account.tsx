@@ -75,15 +75,15 @@ export default function Account() {
         <h1 className="font-serif text-3xl font-bold">Account</h1>
         <p className="mt-1 text-muted-foreground">
           {user?.primaryEmailAddress?.emailAddress
-            ? `Manage TownHub account deletion for ${user.primaryEmailAddress.emailAddress}.`
-            : "Manage TownHub account deletion."}
+            ? `Manage TownHaven account deletion for ${user.primaryEmailAddress.emailAddress}.`
+            : "Manage TownHaven account deletion."}
         </p>
       </div>
 
       <Card className="border-destructive/30">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base text-destructive">
-            <AlertTriangle className="h-4 w-4" /> Delete TownHub account
+            <AlertTriangle className="h-4 w-4" /> Delete TownHaven account
           </CardTitle>
           <CardDescription>
             Request deletion of your account and associated personal data. Records that must be kept

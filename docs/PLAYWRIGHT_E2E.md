@@ -1,6 +1,6 @@
 # Playwright E2E Testing
 
-TownHub uses [Playwright](https://playwright.dev/) for end-to-end smoke and regression tests before beta launch. The suite focuses on high-value customer, business owner, and admin workflows — not exhaustive coverage.
+TownHaven uses [Playwright](https://playwright.dev/) for end-to-end smoke and regression tests before beta launch. The suite focuses on high-value customer, business owner, and admin workflows — not exhaustive coverage.
 
 ## Quick start
 
@@ -174,7 +174,7 @@ Stripe card checkout and refund workflows run only when `E2E_STRIPE_CHECKOUT=1` 
 
 Without that, pay-at-pickup smoke tests still run; Stripe workflow specs skip with a clear message.
 
-As of July 15, 2026: staging Sandbox Connect + online payments are ready. Authed helper calls against `E2E_BASE_URL` alone used to hit the SPA (`staging.townhub.io/api` → HTML); `pageApiJson` now always uses `E2E_API_URL`. Hosted Checkout uses Stripe’s Accordion payment UI — the helper selects **Card**, fills email if needed, then card iframes (not the older always-visible card frame).
+As of July 15, 2026: staging Sandbox Connect + online payments are ready. Authed helper calls against `E2E_BASE_URL` alone used to hit the SPA (`staging.townhaven.io/api` → HTML); `pageApiJson` now always uses `E2E_API_URL`. Hosted Checkout uses Stripe’s Accordion payment UI — the helper selects **Card**, fills email if needed, then card iframes (not the older always-visible card frame).
 
 ## Debugging failures
 

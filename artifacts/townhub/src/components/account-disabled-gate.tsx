@@ -32,7 +32,7 @@ export function AccountDisabledGate({ children }: { children: ReactNode }) {
         <div className="max-w-md text-center space-y-3">
           <h1 className="font-serif text-2xl font-bold">Account disabled</h1>
           <p className="text-sm text-muted-foreground">
-            Your TownHub account has been disabled. You can still browse public pages and place guest
+            Your TownHaven account has been disabled. You can still browse public pages and place guest
             checkout orders, but signed-in access is blocked.
           </p>
           <p className="text-sm text-muted-foreground">

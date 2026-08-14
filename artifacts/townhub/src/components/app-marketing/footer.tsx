@@ -92,7 +92,7 @@ export function AppMarketingFooter() {
         </div>
 
         <div className="pt-8 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-gray-400">&copy; {currentYear} TownHub. All rights reserved.</p>
+          <p className="text-sm text-gray-400">&copy; {currentYear} TownHaven. All rights reserved.</p>
           <p className="text-sm text-gray-400">
             Launching first in {appMarketingConfig.launchCommunity}
           </p>

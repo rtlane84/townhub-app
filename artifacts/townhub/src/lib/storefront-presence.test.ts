@@ -89,9 +89,9 @@ describe("shareStorefrontPage", () => {
   it("uses a public HTTPS storefront URL for sharing, not capacitor://", () => {
     const url = buildPublicStorefrontUrl("clay-diner", {
       runtimeOrigin: "capacitor://localhost",
-      publicWebBaseUrl: "https://townhub.io",
+      publicWebBaseUrl: "https://townhaven.io",
     });
-    assert.equal(url, "https://townhub.io/businesses/clay-diner");
+    assert.equal(url, "https://townhaven.io/businesses/clay-diner");
     assert.doesNotMatch(url, /^capacitor:/);
   });
 });

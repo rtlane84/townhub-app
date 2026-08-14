@@ -1,6 +1,6 @@
 # WeatherKit setup
 
-TownHub uses Apple WeatherKit as its single production weather provider. The API server calls the WeatherKit REST API; browser and iOS clients call TownHub's `/api/weather` endpoint.
+TownHaven uses Apple WeatherKit as its single production weather provider. The API server calls the WeatherKit REST API; browser and iOS clients call TownHaven's `/api/weather` endpoint.
 
 ## Required server configuration
 
@@ -16,9 +16,9 @@ Create a WeatherKit key and service identifier in the Apple Developer account, t
 
 WeatherKit accepts coordinates rather than a place-name query, so the latitude and longitude must match the configured `weatherLocation` label. Do not put the private key in the frontend bundle, source control, or logs.
 
-WeatherKit requires Apple attribution wherever its weather data is displayed. TownHub displays “Weather by Apple” alongside the homepage weather card.
+WeatherKit requires Apple attribution wherever its weather data is displayed. TownHaven displays “Weather by Apple” alongside the homepage weather card.
 
-`GET /api/weather` preserves Apple's `conditionCode` values (for example, `Foggy`, `MostlyCloudy`, or `ScatteredThunderstorms`) and includes a readable `summary`. This makes the provider value easy to verify without exposing the private key: after deployment, open the endpoint in a browser and inspect `current.conditionCode` and each `daily[].conditionCode`. TownHub uses those values for its weather icon and friendly forecast sentence.
+`GET /api/weather` preserves Apple's `conditionCode` values (for example, `Foggy`, `MostlyCloudy`, or `ScatteredThunderstorms`) and includes a readable `summary`. This makes the provider value easy to verify without exposing the private key: after deployment, open the endpoint in a browser and inspect `current.conditionCode` and each `daily[].conditionCode`. TownHaven uses those values for its weather icon and friendly forecast sentence.
 
 The API caches a WeatherKit response for up to 10 minutes. The active homepage refreshes weather every 10 minutes; reloading the page or returning focus to it may also fetch a newer response once the browser cache is stale.
 

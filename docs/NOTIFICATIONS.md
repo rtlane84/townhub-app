@@ -1,8 +1,8 @@
-# TownHub Notifications
+# TownHaven Notifications
 
-Canonical reference for TownHub’s cross-platform notification system.
+Canonical reference for TownHaven’s cross-platform notification system.
 
-TownHub sends notifications when meaningful **business events** happen — not when raw database status labels change internally. Delivery is fire-and-forget: notifications never block API responses. Attempts are logged to `notification_logs` (viewable in **Admin → System Status**).
+TownHaven sends notifications when meaningful **business events** happen — not when raw database status labels change internally. Delivery is fire-and-forget: notifications never block API responses. Attempts are logged to `notification_logs` (viewable in **Admin → System Status**).
 
 ---
 
@@ -170,13 +170,13 @@ Categories are the unit of **user preference** and push routing. Audience: Platf
 | `CUSTOMER_APPOINTMENT_REMINDER` | No | Appointment reminders |
 | `CUSTOMER_EVENT_REMINDER` | No | Event reminders |
 
-Business **channel** settings (Email / SMS / Discord / ntfy Enable + destinations) live on the business record and are independent of category preferences. Category preferences primarily gate optional **TownHub App Push** for signed-in users.
+Business **channel** settings (Email / SMS / Discord / ntfy Enable + destinations) live on the business record and are independent of category preferences. Category preferences primarily gate optional **TownHaven App Push** for signed-in users.
 
 ### Business Hub → Notifications (owner UI)
 
 | Control | What it does |
 | ------- | ------------ |
-| **Email / SMS / Discord / ntfy / TownHub App Push → Enable** | When on, that channel receives **all** operational owner alerts: new orders, and appointment requests when appointments are enabled. When off, neither operational event is sent on that channel. |
+| **Email / SMS / Discord / ntfy / TownHaven App Push → Enable** | When on, that channel receives **all** operational owner alerts: new orders, and appointment requests when appointments are enabled. When off, neither operational event is sent on that channel. |
 | Destination / setup fields | Notification email, phone, Discord webhook, ntfy topic |
 | **Plan features `email_notifications` / `sms_notifications`** | When the business plan lacks the feature, that Email or SMS card is **hidden**, channel flags are forced off, and operational email/SMS are not sent. Discord, ntfy, and App Push are unchanged by these keys. |
 | **In-shop sound** | Local chime for live Business Hub toasts only |
@@ -191,18 +191,18 @@ Per-event DB flags on the business (`notifyNewOrdersByEmail`, …) and user pref
 
 ## Critical Stripe / payment alerts
 
-These are **not** controlled by Email / SMS / Discord / ntfy Enable or by TownHub App Push category toggles.
+These are **not** controlled by Email / SMS / Discord / ntfy Enable or by TownHaven App Push category toggles.
 
 | Event | Trigger | Delivery |
 | ----- | ------- | -------- |
-| Refund failed | Owner refund API returns 5xx after a failed Stripe refund | Owner **login email** + **TownHub app push** |
-| Stripe Connect issue | `account.updated` / Connect sync enters an unhealthy state | Owner **login email** + **TownHub app push**, plus platform-admin **email** (`ADMIN_STRIPE_CONNECT_ISSUE` via `PLATFORM_ADMIN_EMAIL` / admin users) |
+| Refund failed | Owner refund API returns 5xx after a failed Stripe refund | Owner **login email** + **TownHaven app push** |
+| Stripe Connect issue | `account.updated` / Connect sync enters an unhealthy state | Owner **login email** + **TownHaven app push**, plus platform-admin **email** (`ADMIN_STRIPE_CONNECT_ISSUE` via `PLATFORM_ADMIN_EMAIL` / admin users) |
 
 Connect issues include: account disconnected (was connected), charges disabled, payouts disabled, verification / additional information required, restricted account, and other states that block normal payment or payout operation (`pending` with a connected account, or `restricted`). Payouts disabled is stored as Connect status `restricted`.
 
 **Owner email destination:** Critical alerts use the primary owner’s **login email** (`users.email`, falling back to Clerk primary via `resolveOwnerLoginEmail`). They do **not** use the business Notification email field. That field (and Email Enable) only control new order / appointment emails.
 
-**Channels (owner):** login email + TownHub app push only. **Never** SMS, Discord, or ntfy.
+**Channels (owner):** login email + TownHaven app push only. **Never** SMS, Discord, or ntfy.
 
 **Hub UI:** while Connect status is `pending` or `restricted`, Business Hub shows a persistent warning banner (CTA → Settings). Refund failures are notified immediately; they do not keep a separate persistent banner.
 
@@ -213,7 +213,7 @@ Implementation: `stripe-critical-alerts.ts`, `notifyOwnerRefundFailed` / `notify
 ## User notification preferences
 
 - API: `GET` / `PUT` `/api/me/notification-preferences`
-- UI: Business Hub → **Notifications** → “TownHub App Push” (single Enable for operational push)
+- UI: Business Hub → **Notifications** → “TownHaven App Push” (single Enable for operational push)
 - Defaults: all **toggleable** implemented categories **enabled** until the user opts out
 - Non-toggleable categories (e.g. `OWNER_STRIPE_ISSUE`) are omitted from the UI and rejected on PUT
 - Unimplemented categories (e.g. `OWNER_SUBSCRIPTION` push) are omitted until wired
@@ -297,7 +297,7 @@ The live-page indicator reports **Live**, **Reconnecting**, **Polling**, or **Of
 
 ## Subscription lifecycle email
 
-Business subscriptions pay TownHub and are separate from Stripe Connect customer payments. TownHub sends owner onboarding/account-status emails; Stripe sends official invoices and receipts.
+Business subscriptions pay TownHaven and are separate from Stripe Connect customer payments. TownHaven sends owner onboarding/account-status emails; Stripe sends official invoices and receipts.
 
 | Event | Trigger |
 |-------|---------|

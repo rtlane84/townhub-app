@@ -1,4 +1,4 @@
-# TownHub database
+# TownHaven database
 
 Schema lives in [`lib/db/src/schema`](../lib/db/src/schema). There is **no** checked-in migration generation/application workflow — only Drizzle `push` / `push-force`.
 

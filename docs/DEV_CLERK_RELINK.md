@@ -1,6 +1,6 @@
 # Dev Clerk User Relink
 
-If you change or repair Clerk keys locally, Clerk may issue a **new user ID** for the same email. TownHub stores the Clerk user ID as `users.id` and references it from:
+If you change or repair Clerk keys locally, Clerk may issue a **new user ID** for the same email. TownHaven stores the Clerk user ID as `users.id` and references it from:
 
 - `businesses.owner_id`
 - `business_applications.user_id` / `reviewed_by`

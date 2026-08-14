@@ -1,6 +1,6 @@
-# TownHub
+# TownHaven
 
-TownHub is a multi-tenant local marketplace platform. Customers browse town businesses, place orders, request appointments, and follow community events. Business owners manage catalogs, orders, and subscriptions. Platform admins oversee businesses, plans, and platform settings.
+TownHaven is a multi-tenant local marketplace platform. Customers browse town businesses, place orders, request appointments, and follow community events. Business owners manage catalogs, orders, and subscriptions. Platform admins oversee businesses, plans, and platform settings.
 
 Clay, West Virginia is the first pilot locality. Branding and content are configurable; locality-level data isolation is not a config toggle yet (see [docs/adr/0005-clay-first-pilot-scope.md](docs/adr/0005-clay-first-pilot-scope.md)).
 
@@ -14,7 +14,7 @@ Clay, West Virginia is the first pilot locality. Branding and content are config
 - Business owner dashboard (orders, kitchen view, products, categories, modifier groups, appointments, billing)
 - Platform admin dashboard (businesses, applications, users, plans, features, events, system status)
 - Subscription plans with server-side feature gates (online ordering, appointment requests, etc.)
-- Stripe Billing for businesses paying TownHub (separate from Connect order payments)
+- Stripe Billing for businesses paying TownHaven (separate from Connect order payments)
 - Email (Resend/SMTP) and SMS (Twilio) notifications
 - Supabase Storage media library with business-scoped uploads
 - Community events, highlights, food truck locations, WeatherKit weather widget

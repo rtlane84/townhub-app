@@ -5,7 +5,7 @@ import { expectPageHeading } from "../helpers/assertions";
 test.describe("Public pages smoke", () => {
   test("homepage loads", async ({ page }) => {
     await gotoHome(page);
-    await expect(page).toHaveTitle(/TownHub|Local/i);
+    await expect(page).toHaveTitle(/TownHaven|Local/i);
     await expect(page.getByRole("link", { name: /businesses/i }).first()).toBeVisible();
   });
 

@@ -17,7 +17,7 @@ type PlatformBrandMarkProps = {
 };
 
 /**
- * Wordmark: prefix (Clay) + Town + Hub, each with its own color.
+ * Wordmark: optional prefix + Town + Haven, each with its own color.
  * Defaults: muted / primary / heading. Overrides via theme CSS vars or `colors` prop.
  */
 export function PlatformBrandMark({

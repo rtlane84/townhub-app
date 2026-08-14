@@ -13,7 +13,7 @@ export function buildNativeCheckoutReturnHtml(webOrigin: string): string {
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Returning to TownHub…</title>
+    <title>Returning to TownHaven…</title>
     <style>
       :root {
         color-scheme: light;
@@ -87,7 +87,7 @@ export function buildNativeCheckoutReturnHtml(webOrigin: string): string {
   </head>
   <body>
     <div>
-      <p>Returning to TownHub…</p>
+      <p>Returning to TownHaven…</p>
       <p><a id="open-app" href="townhub://cart">Tap here if the app doesn’t open</a></p>
     </div>
   </body>

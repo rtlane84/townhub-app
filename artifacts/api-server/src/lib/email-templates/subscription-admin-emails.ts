@@ -58,7 +58,7 @@ export function buildPlatformAdminSubscriptionEmail(
   switch (event) {
     case "ADMIN_SUBSCRIPTION_PAID_STARTED":
       return buildAdminSubscriptionEmail(data, {
-        subject: `[TownHub] Paid subscription started — ${data.businessName}`,
+        subject: `[TownHaven] Paid subscription started — ${data.businessName}`,
         preheader: `${data.businessName} started a paid ${data.planName} subscription.`,
         heading: "Paid subscription started",
         introHtml: renderParagraph(
@@ -67,16 +67,16 @@ export function buildPlatformAdminSubscriptionEmail(
       });
     case "ADMIN_TRIAL_STARTED":
       return buildAdminSubscriptionEmail(data, {
-        subject: `[TownHub] Trial started — ${data.businessName}`,
+        subject: `[TownHaven] Trial started — ${data.businessName}`,
         preheader: `${data.businessName} started a ${data.planName} trial.`,
         heading: "Trial started",
         introHtml: renderParagraph(
-          `<strong>${data.businessName}</strong> started a <strong>${data.planName}</strong> trial on TownHub.`,
+          `<strong>${data.businessName}</strong> started a <strong>${data.planName}</strong> trial on TownHaven.`,
         ),
       });
     case "ADMIN_PAYMENT_FAILED":
       return buildAdminSubscriptionEmail(data, {
-        subject: `[TownHub] Payment failed — ${data.businessName}`,
+        subject: `[TownHaven] Payment failed — ${data.businessName}`,
         preheader: `Subscription payment failed for ${data.businessName}.`,
         heading: "Subscription payment failed",
         introHtml: [
@@ -88,20 +88,20 @@ export function buildPlatformAdminSubscriptionEmail(
       });
     case "ADMIN_SUBSCRIPTION_CANCELED":
       return buildAdminSubscriptionEmail(data, {
-        subject: `[TownHub] Subscription canceled — ${data.businessName}`,
+        subject: `[TownHaven] Subscription canceled — ${data.businessName}`,
         preheader: `${data.businessName}'s subscription has ended.`,
         heading: "Subscription canceled",
         introHtml: renderParagraph(
-          `The TownHub subscription for <strong>${data.businessName}</strong> on <strong>${data.planName}</strong> has ended.`,
+          `The TownHaven subscription for <strong>${data.businessName}</strong> on <strong>${data.planName}</strong> has ended.`,
         ),
       });
     case "ADMIN_SUBSCRIPTION_EXPIRED":
       return buildAdminSubscriptionEmail(data, {
-        subject: `[TownHub] Subscription expired — ${data.businessName}`,
+        subject: `[TownHaven] Subscription expired — ${data.businessName}`,
         preheader: `${data.businessName}'s subscription expired after failed payments.`,
         heading: "Subscription expired",
         introHtml: renderParagraph(
-          `The TownHub subscription for <strong>${data.businessName}</strong> expired after failed payments.`,
+          `The TownHaven subscription for <strong>${data.businessName}</strong> expired after failed payments.`,
         ),
       });
     default: {

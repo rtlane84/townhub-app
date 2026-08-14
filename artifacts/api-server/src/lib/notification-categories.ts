@@ -115,7 +115,7 @@ export const NOTIFICATION_CATEGORIES = {
     label: "Subscription updates",
     description: "Trial, billing, and plan changes for your business.",
     defaultEnabled: true,
-    // Push not wired yet — hide from TownHub App Push until implemented.
+    // Push not wired yet — hide from TownHaven App Push until implemented.
     implemented: false,
   },
 

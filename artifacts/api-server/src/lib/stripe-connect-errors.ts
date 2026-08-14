@@ -16,7 +16,7 @@ export function mapStripeConnectStartError(err: unknown): StripeConnectHttpError
         code: "stripe_connect_not_enabled",
         error:
           "Stripe Connect is not enabled on the platform Stripe account yet. " +
-          "The TownHub platform operator must open the Stripe Dashboard → Connect and complete platform setup, then retry.",
+          "The TownHaven platform operator must open the Stripe Dashboard → Connect and complete platform setup, then retry.",
       };
     }
 

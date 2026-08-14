@@ -130,7 +130,7 @@ function serializeMediaAsset(row: typeof mediaAssetsTable.$inferSelect) {
   };
 }
 
-// GET /api/media/optimize — on-the-fly resize + modern format delivery for TownHub media URLs
+// GET /api/media/optimize — on-the-fly resize + modern format delivery for TownHaven media URLs
 router.get("/media/optimize", async (req, res): Promise<void> => {
   const sourceUrl = typeof req.query.src === "string" ? req.query.src.trim() : "";
   const width = parseOptimizedWidth(req.query.w);

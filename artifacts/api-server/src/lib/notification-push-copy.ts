@@ -122,7 +122,7 @@ export function buildAdminApplicationPush(input: {
 }): PushCopy {
   return {
     title: "New business application",
-    body: `${input.businessName} applied to join TownHub.`,
+    body: `${input.businessName} applied to join TownHaven.`,
     deepLink: buildNotificationDeepLinkPath({ type: "ADMIN_APPLICATIONS" }),
   };
 }

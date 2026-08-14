@@ -227,7 +227,7 @@ export default function Help() {
             <Search className="h-9 w-9 text-muted-foreground/50" aria-hidden />
             <h2 className="mt-4 font-serif text-xl font-semibold">No matching help found</h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Try a shorter phrase, switch audiences, or contact TownHub support for a platform question.
+              Try a shorter phrase, switch audiences, or contact TownHaven support for a platform question.
             </p>
             <Button variant="outline" className="mt-5" onClick={() => setQuery("")}>Show all guides</Button>
           </CardContent>

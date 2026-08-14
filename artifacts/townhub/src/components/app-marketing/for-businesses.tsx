@@ -27,7 +27,7 @@ export function AppMarketingForBusinesses() {
               Built for local <br className="hidden md:block" /> businesses, too.
             </h2>
             <p className="text-[17px] md:text-[18px] text-gray-600 mb-8 leading-relaxed max-w-lg font-sans">
-              TownHub gives local businesses a dedicated place to share information, reach nearby
+              TownHaven gives local businesses a dedicated place to share information, reach nearby
               customers, manage products, and receive online orders, without relying on social
               media alone.
             </p>

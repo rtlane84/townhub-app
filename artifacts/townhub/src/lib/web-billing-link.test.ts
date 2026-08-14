@@ -8,21 +8,21 @@ import {
 describe("getOwnerSubscriptionWebUrl", () => {
   it("appends the subscription path to an HTTPS base", () => {
     assert.equal(
-      getOwnerSubscriptionWebUrl("https://townhub.io"),
-      `https://townhub.io${OWNER_SUBSCRIPTION_WEB_PATH}`,
+      getOwnerSubscriptionWebUrl("https://townhaven.io"),
+      `https://townhaven.io${OWNER_SUBSCRIPTION_WEB_PATH}`,
     );
   });
 
   it("strips trailing slashes from the base", () => {
     assert.equal(
-      getOwnerSubscriptionWebUrl("https://staging.townhub.io/"),
-      `https://staging.townhub.io${OWNER_SUBSCRIPTION_WEB_PATH}`,
+      getOwnerSubscriptionWebUrl("https://staging.townhaven.io/"),
+      `https://staging.townhaven.io${OWNER_SUBSCRIPTION_WEB_PATH}`,
     );
   });
 
   it("rejects non-HTTPS bases", () => {
     assert.throws(
-      () => getOwnerSubscriptionWebUrl("http://townhub.io"),
+      () => getOwnerSubscriptionWebUrl("http://townhaven.io"),
       /HTTPS/,
     );
     assert.throws(
