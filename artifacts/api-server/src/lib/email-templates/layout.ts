@@ -35,7 +35,13 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
   const heading = escapeHtml(options.heading);
   const businessName = options.businessName ? escapeHtml(options.businessName) : "";
   const logoBlock = options.businessLogoUrl
-    ? `<img src="${escapeHtml(options.businessLogoUrl)}" alt="${businessName}" width="64" height="64" style="display:block;border-radius:12px;object-fit:cover;margin:0 auto 16px;" />`
+    ? `<table role="presentation" width="80" cellspacing="0" cellpadding="0" style="width:80px;margin:0 auto 16px;background:#ffffff;border:1px solid ${BORDER_COLOR};border-radius:14px;">
+                  <tr>
+                    <td width="80" height="80" align="center" valign="middle" style="width:80px;height:80px;padding:8px;text-align:center;vertical-align:middle;">
+                      <img src="${escapeHtml(options.businessLogoUrl)}" alt="${businessName}" style="display:block;width:auto;height:auto;max-width:64px;max-height:64px;margin:0 auto;" />
+                    </td>
+                  </tr>
+                </table>`
     : "";
   const renderPrimaryButton =
     options.primaryButtonVariant === "large" ? renderButtonLarge : renderButton;
