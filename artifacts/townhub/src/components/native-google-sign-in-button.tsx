@@ -3,7 +3,7 @@ import { useClerk } from "@clerk/react";
 import { useSignIn, useSignUp } from "@clerk/react/legacy";
 import { useLocation } from "wouter";
 import { LoadingButton } from "@/components/ui/loading-button";
-import { Apple } from "lucide-react";
+import signInWithAppleLogo from "@/assets/sign-in-with-apple-logo";
 import { isIOS } from "@/lib/native-platform";
 import { AuthSession } from "@/lib/native-auth-session";
 import { consumePostAuthRedirect, rememberPostAuthRedirect } from "@/lib/native-post-auth-redirect";
@@ -156,11 +156,17 @@ export function NativeAppleSignInButton({ className }: { className?: string }) {
       <LoadingButton
         type="button"
         variant="outline"
-        className="w-full min-h-11 bg-black text-white border-black hover:bg-black/85 hover:text-white"
+        className="w-full h-11 min-h-11 gap-0 overflow-hidden border-black bg-black p-0 text-[19px] font-medium text-white hover:bg-black/85 hover:text-white"
         loading={pending}
+        loadingText="Continue with Apple"
         onClick={() => void signInWithApple()}
       >
-        <Apple className="mr-2 h-4 w-4" aria-hidden="true" />
+        <img
+          src={signInWithAppleLogo}
+          alt=""
+          className="h-11 w-11 shrink-0"
+          aria-hidden="true"
+        />
         Continue with Apple
       </LoadingButton>
       {error ? <p className="mt-2 text-xs text-destructive text-center">{error}</p> : null}

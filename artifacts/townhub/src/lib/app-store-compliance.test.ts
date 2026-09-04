@@ -9,6 +9,10 @@ const socialSource = readFileSync(
   `${srcRoot}/components/native-google-sign-in-button.tsx`,
   "utf8",
 );
+const appleLogoSource = readFileSync(
+  `${srcRoot}/assets/sign-in-with-apple-logo.ts`,
+  "utf8",
+);
 const tabBarSource = readFileSync(
   `${srcRoot}/components/native-bottom-tab-bar.tsx`,
   "utf8",
@@ -31,6 +35,17 @@ describe("App Store compliance wiring", () => {
     assert.match(socialSource, /authenticateWithGoogleOneTap/);
     assert.match(socialSource, /AuthSession\.googleSignIn/);
     assert.match(entitlements, /com\.apple\.developer\.applesignin/);
+  });
+
+  it("uses Apple-provided Sign in with Apple artwork", () => {
+    assert.match(socialSource, /@\/assets\/sign-in-with-apple-logo/);
+    assert.match(socialSource, /h-11 w-11/);
+    assert.doesNotMatch(socialSource, /import \{ Apple \} from "lucide-react"/);
+    assert.match(
+      appleLogoSource,
+      /https:\/\/appleid\.cdn-apple\.com\/appleid\/button\/logo/,
+    );
+    assert.match(appleLogoSource, /data:image\/png;base64/);
   });
 
   it("routes native email sign-in to the in-app sign-in page", () => {
