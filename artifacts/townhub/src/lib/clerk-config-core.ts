@@ -6,10 +6,10 @@ export function resolveClerkPublishableKeyForRuntime(options: {
   isNative: boolean;
 }): string {
   const envKey = options.envKey?.trim();
-  if (envKey && options.isNative) {
+  if (envKey) {
     return envKey;
   }
-  return publishableKeyFromHost(options.hostname, options.envKey);
+  return publishableKeyFromHost(options.hostname);
 }
 
 export function resolveClerkProxyUrlForRuntime(options: {
